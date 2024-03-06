@@ -31,20 +31,40 @@ services:
 
       # almacenamos los datos de la base de datos en un volumen
       - db_data:/var/lib/postgresql/data
+    
+    depends_on:
+      - traefik
 
+  # configuramos el contenedor del cliente
   ukun-clientes:
     build: ./ukun-clientes
     ports:
-      - "8080:8080"
+      - "8081:8081"
+    labels:
+      - "traefik.http.routers.ukun-clientes.rule=Host(`localhost`)"
     depends_on:
       - db
+      - traefik
   
+  # configuramos el contenedor del empleado
   ukun-empleados:
     build: ./ukun-empleados
     ports:
-      - "8081:8080"
+      - "8082:8082"
+    labels:
+      - "traefik.http.routers.ukun-empleados.rule=(Host(`localhost`) && PathPrefix(`/empleados`))"
     depends_on:
       - db
+      - traefik
+
+  traefik:
+    image: traefik:v3.0
+    command: --api.insecure=true --providers.docker
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
 
 volumes:
   db_data:
