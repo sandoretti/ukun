@@ -38,6 +38,13 @@ services:
       - "8080:8080"
     depends_on:
       - db
+  
+  ukun-empleados:
+    build: ./ukun-empleados
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
 
 volumes:
   db_data:
