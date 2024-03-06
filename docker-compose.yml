@@ -1,6 +1,8 @@
 version: '3.9'
 
 services:
+
+  # configuramos el contenedor de la base de datos
   db:
     # utilizamos la imagen de postgres para el contenedor como base de datos
     image: postgres
@@ -21,10 +23,6 @@ services:
 
       # nombre de la base de datos
       POSTGRES_DB: ukun_db
-    
-    # mapeamos el puerto 5432 del contenedor al puerto 5432 del host
-    ports:
-      - "5432:5432"
 
     # configuramos los volúmenes para la base de datos
     volumes:
@@ -33,6 +31,13 @@ services:
 
       # almacenamos los datos de la base de datos en un volumen
       - db_data:/var/lib/postgresql/data
+
+  ukun_clientes:
+    build: ./ukun_clientes
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
 
 volumes:
   db_data:
