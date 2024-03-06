@@ -3,7 +3,7 @@
 CREATE TABLE cuenta (
     id SERIAL PRIMARY KEY,                  -- Identificador de la cuenta
     correo VARCHAR(255) UNIQUE,             -- Correo electrónico de la cuenta
-    contrasenna VARCHAR(255) NOT NULL,      -- Contraseña de la cuenta
+    contrasenna VARCHAR(16) NOT NULL,       -- Contraseña de la cuenta
     nombre VARCHAR(255) NOT NULL,           -- Nombre del propietario de la cuenta
     apellido VARCHAR(255) NOT NULL          -- Apellido del propietario de la cuenta
 );
