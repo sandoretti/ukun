@@ -32,6 +32,9 @@ services:
       # almacenamos los datos de la base de datos en un volumen
       - db_data:/var/lib/postgresql/data
     
+    ports:
+      - "5431:5432"
+    
     depends_on:
       - traefik
 
@@ -41,7 +44,8 @@ services:
     ports:
       - "8081:8081"
     labels:
-      - "traefik.http.routers.ukun-clientes.rule=Host(`localhost`)"
+      - "traefik.http.routers.ukun-clientes.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.ukun-clientes.entrypoints=web"
     depends_on:
       - db
       - traefik
@@ -52,14 +56,18 @@ services:
     ports:
       - "8082:8082"
     labels:
-      - "traefik.http.routers.ukun-empleados.rule=(Host(`localhost`) && PathPrefix(`/empleados`))"
+      - "traefik.http.routers.ukun-empleados.rule=PathPrefix(`/empleados`)"
+      - "traefik.http.routers.ukun-empleados.entrypoints=web"
     depends_on:
       - db
       - traefik
 
   traefik:
     image: traefik:v3.0
-    command: --api.insecure=true --providers.docker
+    command: 
+      - "--api.insecure=true"
+      - "--providers.docker"
+      - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
       - "8080:8080"
