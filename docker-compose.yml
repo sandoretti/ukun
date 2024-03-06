@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  db:
+    # utilizamos la imagen de postgres para el contenedor como base de datos
+    image: postgres
+
+    # reiniciamos el contenedor siempre que se detenga
+    restart: always
+
+    # configuramos la memoria compartida
+    shm_size: 128mb
+
+    # configuramos las variables de entorno para la base de datos
+    environment:
+      # contraseña de la base de datos
+      POSTGRES_PASSWORD: 12345
+
+      # usuario de la base de datos
+      POSTGRES_USER: ukun
+
+      # nombre de la base de datos
+      POSTGRES_DB: ukun_db
+    
+    # mapeamos el puerto 5432 del contenedor al puerto 5432 del host
+    ports:
+      - "5432:5432"
+
+    # configuramos los volúmenes para la base de datos
+    volumes:
+      # inicializamos las tablas de la base de datos
+      - ./database/tables.sql:/docker-entrypoint-initdb.d/init.sql
+
+      # almacenamos los datos de la base de datos en un volumen
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
