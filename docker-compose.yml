@@ -27,13 +27,13 @@ services:
     # configuramos los volúmenes para la base de datos
     volumes:
       # inicializamos las tablas de la base de datos
-      - ./database/tables.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
 
       # almacenamos los datos de la base de datos en un volumen
       - db_data:/var/lib/postgresql/data
     
     ports:
-      - "5431:5432"
+      - "5432:5432"
     
     depends_on:
       - traefik
@@ -44,6 +44,7 @@ services:
     ports:
       - "8081:8081"
     labels:
+      # Enrutamos las peticiones que lleguen a la raíz del dominio al contenedor del cliente
       - "traefik.http.routers.ukun-clientes.rule=PathPrefix(`/`)"
       - "traefik.http.routers.ukun-clientes.entrypoints=web"
     depends_on:
@@ -56,6 +57,7 @@ services:
     ports:
       - "8082:8082"
     labels:
+      # Enrutamos las peticiones que lleguen a la raíz del dominio al contenedor del empleado
       - "traefik.http.routers.ukun-empleados.rule=PathPrefix(`/empleados`)"
       - "traefik.http.routers.ukun-empleados.entrypoints=web"
     depends_on:
