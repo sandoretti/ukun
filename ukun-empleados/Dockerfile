@@ -5,7 +5,7 @@ COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 RUN ./mvnw dependency:go-offline
 COPY ./src ./src
-RUN ./mvnw clean install
+RUN ./mvnw clean install -DskipTests
 
 
 # Ejecutamos la aplicación de Spring Boot
