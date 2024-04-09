@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+
+<div th:if="${error != null}" th:text="${error}"></div>
+<div>
+    <form th:action="@{/empleados/login}" method="post">
+        <label>
+            <input type="email" th:name="correo">
+        </label>
+        <label>
+            <input type="password" th:name="contrasenna">
+        </label>
+        <input type="submit" value="Iniciar sesión">
+    </form>
+</div>
+
+
+</body>
+</html>
