@@ -19,14 +19,10 @@ public class HomeController {
     @Autowired
     private ILoginService loginService;
 
-    @RequestMapping(value = {"/", "", "/home"})
-    public String home(Model model) {
-        Empleado empleado = (Empleado) model.getAttribute("empleado");
-
-        if (empleado != null && empleado.getId() != null && empleado.getId() > 0)
-            return "index";
-
-        return "redirect:/login";
+    @RequestMapping(value = {"/", ""})
+    public String home()
+    {
+        return "index";
     }
 
     @RequestMapping("/logout")
@@ -42,7 +38,6 @@ public class HomeController {
         Empleado empleado = (Empleado) model.getAttribute("empleado");
 
         // Comprobamos si el empleado esta ya logeado en la aplicacion
-        // TODO: Realizar validacion del usuario en base de datos mediante el service
         if (empleado != null && empleado.getId() != null && empleado.getId() > 0)
             return "redirect:/";
 
