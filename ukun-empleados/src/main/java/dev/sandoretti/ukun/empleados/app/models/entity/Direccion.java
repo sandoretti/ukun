@@ -2,14 +2,13 @@ package dev.sandoretti.ukun.empleados.app.models.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.io.Serializable;
 
 @Entity
 @Table(name = "direccion")
-@Getter @Setter
+@Data
 public class Direccion implements Serializable
 {
     @Id

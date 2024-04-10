@@ -2,15 +2,13 @@ package dev.sandoretti.ukun.empleados.app.models.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 @Entity
 @Table(name = "tienda")
-@Getter @Setter
+@Data
 public class Tienda implements Serializable
 {
     @Id
@@ -29,12 +27,4 @@ public class Tienda implements Serializable
 
     @NotEmpty
     private String telefono;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Tienda tienda = (Tienda) o;
-        return Objects.equals(id, tienda.id);
-    }
 }
