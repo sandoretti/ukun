@@ -22,6 +22,18 @@ public class StockController
     private IStockService stockService;
 
     /**
+     * Establece la tienda correspondiente al usuario
+     * @param model Modelo
+     * @return Tienda del empleado
+     */
+    @ModelAttribute
+    public Tienda tienda(Model model)
+    {
+        Empleado empleado = (Empleado) model.getAttribute("empleado");
+        return empleado.getTienda();
+    }
+
+    /**
      * Establece la lista de los productos con stock correspondientes a la tienda
      * @param model Model
      * @return Lista de productos con stock
@@ -29,8 +41,7 @@ public class StockController
     @ModelAttribute
     public List<StockProducto> stockProductos(Model model)
     {
-        Empleado empleado = (Empleado) model.getAttribute("empleado");
-        Tienda tienda = empleado.getTienda();
+        Tienda tienda = (Tienda) model.getAttribute("tienda");
 
         return stockService.findStockProductoByTienda(tienda);
     }
@@ -38,7 +49,6 @@ public class StockController
     @RequestMapping(value = {"", "/"})
     public String menu(Model model)
     {
-        model.addAttribute("title", "Stock");
         return "stock";
     }
 }

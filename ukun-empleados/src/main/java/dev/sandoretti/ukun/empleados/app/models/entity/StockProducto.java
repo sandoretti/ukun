@@ -9,7 +9,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Entity
-@Table(name="producto")
+@Table(name="stock_tienda")
 @Data
 public class StockProducto implements Serializable
 {

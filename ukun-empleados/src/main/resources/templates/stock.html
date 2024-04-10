@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock</title>
+</head>
+<body>
+
+<h1 th:text="'Stock de la tienda' + ${tienda.nombre}"></h1>
+
+<ul>
+    <li th:each="stockProducto: ${stockProductoList}" th:text="${stockProducto.producto.nombre} + ' ' + ${stockProducto.stock}"></li>
+</ul>
+</body>
+</html>
