@@ -8,7 +8,7 @@
 
 <div th:if="${error != null}" th:text="${error}"></div>
 <div>
-    <form th:action="@{/empleados/login}" method="post">
+    <form th:action="@{/login}" method="post">
         <label>
             <input type="email" th:name="correo">
         </label>

@@ -1,7 +1,6 @@
 package dev.sandoretti.ukun.empleados.app.controllers;
 
 import dev.sandoretti.ukun.empleados.app.models.entity.Empleado;
-import dev.sandoretti.ukun.empleados.app.models.service.IEmpleadoService;
 import dev.sandoretti.ukun.empleados.app.models.service.ILoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -11,31 +10,30 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @SessionAttributes("empleado")
-@RequestMapping("/empleados")
-public class EmpleadoController {
+@RequestMapping("/")
+public class HomeController {
     @Autowired
     private ILoginService loginService;
 
-    @RequestMapping(value = {"/", ""})
+    @RequestMapping(value = {"/", "", "/home"})
     public String home(Model model) {
         Empleado empleado = (Empleado) model.getAttribute("empleado");
 
         if (empleado != null && empleado.getId() != null && empleado.getId() > 0)
             return "index";
 
-        return "redirect:/empleados/login";
+        return "redirect:/login";
     }
 
     @RequestMapping("/logout")
     public String logout(Model model)
     {
         model.addAttribute("empleado", new Empleado());
-        return "redirect:/empleados/login";
+        return "redirect:/login";
     }
 
     @RequestMapping("/login")
@@ -46,7 +44,7 @@ public class EmpleadoController {
         // Comprobamos si el empleado esta ya logeado en la aplicacion
         // TODO: Realizar validacion del usuario en base de datos mediante el service
         if (empleado != null && empleado.getId() != null && empleado.getId() > 0)
-            return "redirect:/empleados";
+            return "redirect:/";
 
         return "login";
     }
@@ -62,14 +60,14 @@ public class EmpleadoController {
         if (result.hasErrors())
         {
             flash.addFlashAttribute("error", "Error al iniciar sesión");
-            return "redirect:/empleados/login";
+            return "redirect:/login";
         }
 
         // Si los campos son vacios
         if (correo.isBlank() || contrasenna.isBlank())
         {
             flash.addFlashAttribute("error", "Alguno de los campos está vacío");
-            return "redirect:/empleados/login";
+            return "redirect:/login";
         }
 
         // Buscamos el empleado mediante el servicio segun la cuenta dada
@@ -79,13 +77,13 @@ public class EmpleadoController {
         if (empleado == null)
         {
             flash.addFlashAttribute("error", "El correo o contraseña no corresponden con una cuenta existente");
-            return "redirect:/empleados/login";
+            return "redirect:/login";
         }
 
         // Establecemos el empleado como atributo de la sesion
         model.addAttribute("empleado", empleado);
 
         // Volvemos a la ventana de inicio del empleado
-        return "redirect:/empleados";
+        return "redirect:/";
     }
 }
