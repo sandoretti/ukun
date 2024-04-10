@@ -11,7 +11,7 @@ import java.io.Serializable;
 public class StockProductoId implements Serializable
 {
     @Column(name = "tienda_id")
-    private Long tienda_id;
+    private Long tiendaId;
 
     @Column(name = "producto_id")
     private Long productoId;

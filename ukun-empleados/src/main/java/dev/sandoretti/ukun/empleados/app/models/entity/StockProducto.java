@@ -17,13 +17,13 @@ public class StockProducto implements Serializable
     private StockProductoId id;
 
     @ManyToOne
-    @MapsId("producto_id")
-    @JoinColumn(name = "producto_id")
+    @MapsId("productoId")
+    @JoinColumn(insertable = false, updatable = false)
     private Producto producto;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("tienda_id")
-    @JoinColumn(name = "tienda_id")
+    @MapsId("tiendaId")
+    @JoinColumn(insertable = false, updatable = false)
     private Tienda tienda;
 
     @NotNull
