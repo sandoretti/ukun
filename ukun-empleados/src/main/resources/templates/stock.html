@@ -6,10 +6,10 @@
 </head>
 <body>
 
-<h1 th:text="'Stock de la tienda' + ${tienda.nombre}"></h1>
+<h1 th:text="${'Stock de la tienda ' + tienda.nombre}"></h1>
 
 <ul>
-    <li th:each="stockProducto: ${stockProductoList}" th:text="${stockProducto.producto.nombre} + ' ' + ${stockProducto.stock}"></li>
+    <li th:each="stockProducto: ${stockProductosList}" th:text="${stockProducto.producto.nombre + ' ' + stockProducto.stock}"></li>
 </ul>
 </body>
 </html>

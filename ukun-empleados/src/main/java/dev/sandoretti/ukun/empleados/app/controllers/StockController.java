@@ -26,7 +26,7 @@ public class StockController
      * @param model Modelo
      * @return Tienda del empleado
      */
-    @ModelAttribute
+    @ModelAttribute("tienda")
     public Tienda tienda(Model model)
     {
         Empleado empleado = (Empleado) model.getAttribute("empleado");
@@ -38,7 +38,7 @@ public class StockController
      * @param model Model
      * @return Lista de productos con stock
      */
-    @ModelAttribute
+    @ModelAttribute("stockProductosList")
     public List<StockProducto> stockProductos(Model model)
     {
         Tienda tienda = (Tienda) model.getAttribute("tienda");
