@@ -28,7 +28,7 @@
             <td th:text="${stockProducto.producto.precio}"></td>
             <td th:text="${stockProducto.stock}"></td>
             <td><a>Editar</a></td>
-            <td><a>Eliminar</a></td>
+            <td><a th:href="@{/stock/eliminar(tiendaId=${stockProducto.id.tiendaId},productoId=${stockProducto.id.productoId})}">Eliminar</a></td>
         </tr>
         </tbody>
     </table>

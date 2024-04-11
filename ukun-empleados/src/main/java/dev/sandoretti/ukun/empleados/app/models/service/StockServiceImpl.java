@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.empleados.app.models.service;
 
 import dev.sandoretti.ukun.empleados.app.models.dao.IStockProductoCrud;
+import dev.sandoretti.ukun.empleados.app.models.embeddable.StockProductoId;
 import dev.sandoretti.ukun.empleados.app.models.entity.StockProducto;
 import dev.sandoretti.ukun.empleados.app.models.entity.Tienda;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,5 +19,10 @@ public class StockServiceImpl implements IStockService
     public List<StockProducto> findStockProductoByTienda(Tienda tienda)
     {
         return stockProductoCrud.findByTienda(tienda);
+    }
+
+    @Override
+    public void delete(StockProductoId id) {
+        stockProductoCrud.deleteById(id);
     }
 }
