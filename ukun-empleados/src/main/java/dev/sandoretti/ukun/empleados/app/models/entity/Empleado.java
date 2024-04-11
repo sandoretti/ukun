@@ -20,7 +20,7 @@ public class Empleado implements Serializable
     private Cuenta cuenta;
 
     @Column(name = "admin")
-    private String isAdmin;
+    private Boolean isAdmin;
 
     @NotEmpty
     private String empleo;
