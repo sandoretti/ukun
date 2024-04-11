@@ -10,7 +10,8 @@
 <a th:href="@{/logout}">Log out</a>
 <a th:href="@{/stock}">Stock</a>
 
-<a th:if="${empleado.isAdmin}" th:href="@{/admin}">Admin</a>
+<a th:if="${empleado.isAdmin}" th:href="@{/admin/productos}">Productos</a>
+<a th:if="${empleado.isAdmin}" th:href="@{/admin/empleados}">Empleados</a>
 
 </body>
 </html>
