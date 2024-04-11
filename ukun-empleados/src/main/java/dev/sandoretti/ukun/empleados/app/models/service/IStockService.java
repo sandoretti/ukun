@@ -20,4 +20,10 @@ public interface IStockService
      * @param id Identificador del stock producto a eliminar
      */
     public void delete(StockProductoId id);
+
+    /**
+     * Guardar el stock producto en la base de datos
+     * @param stockProducto Stock producto a guardar
+     */
+    public void save(StockProducto stockProducto);
 }

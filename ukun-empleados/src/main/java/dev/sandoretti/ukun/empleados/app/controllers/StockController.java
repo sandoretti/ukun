@@ -82,4 +82,44 @@ public class StockController
         model.addAttribute("info", "Stock eliminado exitosamente");
         return "redirect:/stock";
     }
+
+
+    @GetMapping("/editar")
+    public String editar(@RequestParam Long tiendaId,
+                         @RequestParam Long productoId,
+                         @RequestParam Long stock,
+                         Model model)
+    {
+        // Comprobamos si los parametros no son nulos, si no lo son mandamos a stock con mensaje de error
+        if (tiendaId == null || productoId == null || stock == null)
+        {
+            model.addAttribute("error", "Los parametros insertados estan vacios");
+            return "redirect:/stock";
+        }
+
+        // Comprobamos que el id de la tienda es igual que el id pasado, si no lo son mandamos a stock con mensaje de error
+        if (!Objects.equals(tienda(model).getId(), tiendaId))
+        {
+            model.addAttribute("error", "No pertenece a la tienda correspondiente");
+            return "redirect:/stock";
+        }
+
+        // Creamos el id de stock producto con los campos requeridos
+        StockProductoId stockProductoId = new StockProductoId();
+
+        stockProductoId.setProductoId(productoId);
+        stockProductoId.setTiendaId(tiendaId);
+
+        // Creamos el stockProducto a insertar en la base de datos
+        StockProducto stockProducto = new StockProducto();
+
+        stockProducto.setId(stockProductoId);
+        stockProducto.setStock(stock);
+
+        stockService.save(stockProducto);
+
+        // Mandamos mensaje de exito, junto a redireccion a stock
+        model.addAttribute("info", "Stock editado exitosamente");
+        return "redirect:/stock";
+    }
 }
