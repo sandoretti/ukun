@@ -6,10 +6,33 @@
 </head>
 <body>
 
-<h1 th:text="${'Stock de la tienda ' + tienda.nombre}"></h1>
+<h1 th:text="${'Stock de ' + tienda.nombre}"></h1>
 
-<ul>
-    <li th:each="stockProducto: ${stockProductosList}" th:text="${stockProducto.producto.nombre + ' ' + stockProducto.stock}"></li>
-</ul>
+<div>
+    <table>
+        <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Editar</th>
+            <th>Eliminar</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="stockProducto: ${stockProductosList}">
+            <td th:text="${stockProducto.producto.nombre}"></td>
+            <td th:text="${stockProducto.producto.tipo.nombre}"></td>
+            <td th:text="${stockProducto.producto.precio}"></td>
+            <td th:text="${stockProducto.stock}"></td>
+            <td><a>Editar</a></td>
+            <td><a>Eliminar</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
 </body>
 </html>
