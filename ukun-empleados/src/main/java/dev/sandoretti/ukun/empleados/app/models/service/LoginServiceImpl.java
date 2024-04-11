@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class LoginService implements ILoginService
+public class LoginServiceImpl implements ILoginService
 {
     @Autowired
     private IEmpleadoCrud empleadoCrud;
