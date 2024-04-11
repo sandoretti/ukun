@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Objects;
@@ -41,31 +42,42 @@ public class StockController
     @ModelAttribute("stockProductosList")
     public List<StockProducto> stockProductos(Model model)
     {
-        Tienda tienda = tienda(model);
+        Tienda tienda = (Tienda) model.getAttribute("tienda");
 
         return stockService.findStockProductoByTienda(tienda);
     }
 
-    @RequestMapping(value = {"", "/"})
-    public String menu(Model model)
+    @GetMapping(value = {"", "/"})
+    public String menu()
     {
         return "stock";
     }
 
+    /**
+     * Eliminar el stockProducto de la base de datos
+     * @param tiendaId Identificador de la tienda
+     * @param productoId Identificador del producto
+     * @param model Modelo
+     * @param flash Atributos de redireccion
+     * @return Redireccion
+     */
     @GetMapping("/eliminar")
-    public String eliminar(@RequestParam Long tiendaId, @RequestParam Long productoId, Model model)
+    public String eliminar(@RequestParam Long tiendaId,
+                           @RequestParam Long productoId,
+                           Model model,
+                           RedirectAttributes flash)
     {
         // Comprobamos si los parametros no son nulos, si no lo son mandamos a stock con mensaje de error
         if (tiendaId == null || productoId == null)
         {
-            model.addAttribute("error", "Los parametros insertados estan vacios");
+            flash.addFlashAttribute("error", "Los parametros insertados estan vacios");
             return "redirect:/stock";
         }
 
         // Comprobamos que el id de la tienda es igual que el id pasado, si no lo son mandamos a stock con mensaje de error
         if (!Objects.equals(tienda(model).getId(), tiendaId))
         {
-            model.addAttribute("error", "No pertenece a la tienda correspondiente");
+            flash.addFlashAttribute("error", "No pertenece a la tienda correspondiente");
             return "redirect:/stock";
         }
 
@@ -79,28 +91,38 @@ public class StockController
         stockService.delete(stockProductoId);
 
         // Mandamos mensaje de exito, junto a redireccion a stock
-        model.addAttribute("info", "Stock eliminado exitosamente");
+        flash.addFlashAttribute("success", "Stock eliminado exitosamente");
         return "redirect:/stock";
     }
 
 
+    /**
+     * Permite editar el stock del StockProducto
+     * @param tiendaId Identificador de la tienda
+     * @param productoId Identificador del producto
+     * @param stock Stock a cambiar
+     * @param model Modelo
+     * @param flash Atributos de redireccion
+     * @return Redireccion
+     */
     @GetMapping("/editar")
     public String editar(@RequestParam Long tiendaId,
                          @RequestParam Long productoId,
                          @RequestParam Long stock,
-                         Model model)
+                         Model model,
+                         RedirectAttributes flash)
     {
         // Comprobamos si los parametros no son nulos, si no lo son mandamos a stock con mensaje de error
         if (tiendaId == null || productoId == null || stock == null)
         {
-            model.addAttribute("error", "Los parametros insertados estan vacios");
+            flash.addFlashAttribute("error", "Los parametros insertados estan vacios");
             return "redirect:/stock";
         }
 
         // Comprobamos que el id de la tienda es igual que el id pasado, si no lo son mandamos a stock con mensaje de error
         if (!Objects.equals(tienda(model).getId(), tiendaId))
         {
-            model.addAttribute("error", "No pertenece a la tienda correspondiente");
+            flash.addFlashAttribute("error", "No pertenece a la tienda correspondiente");
             return "redirect:/stock";
         }
 
@@ -119,7 +141,7 @@ public class StockController
         stockService.save(stockProducto);
 
         // Mandamos mensaje de exito, junto a redireccion a stock
-        model.addAttribute("info", "Stock editado exitosamente");
+        flash.addFlashAttribute("success", "Stock editado exitosamente");
         return "redirect:/stock";
     }
 }
