@@ -25,7 +25,6 @@
             <td th:text="${producto.precio}"></td>
             <td th:text="${producto.tipo.nombre}"></td>
             <td><a th:href="@{/admin/productos/editar/{id}(id=${producto.id})}">Editar</a></td>
-            <td><a th:href="@{/admin/productos/eliminar/{id}(id=${producto.id})}">Eliminar</a></td>
         </tr>
         </tbody>
     </table>
