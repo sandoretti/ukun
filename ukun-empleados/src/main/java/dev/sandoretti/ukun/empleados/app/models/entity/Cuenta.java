@@ -16,6 +16,8 @@ public class Cuenta implements Serializable
     @SequenceGenerator(name = "cuenta_id_seq",
                        sequenceName = "cuenta_id_seq",
                        allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+            generator="cuenta_id_seq")
     @Column(name = "id", updatable = false)
     private Long id;
 
