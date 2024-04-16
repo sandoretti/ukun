@@ -47,6 +47,8 @@ services:
       # Enrutamos las peticiones que lleguen a la raíz del dominio al contenedor del cliente
       - "traefik.http.routers.ukun-clientes.rule=PathPrefix(`/`)"
       - "traefik.http.routers.ukun-clientes.entrypoints=web"
+    volumes:
+      - vol_resources:/opt/resources
     depends_on:
       - db
       - traefik
@@ -60,6 +62,8 @@ services:
       # Enrutamos las peticiones que lleguen a la raíz del dominio al contenedor del empleado
       - "traefik.http.routers.ukun-empleados.rule=PathPrefix(`/empleados`)"
       - "traefik.http.routers.ukun-empleados.entrypoints=web"
+    volumes:
+      - vol_resources:/opt/resources
     depends_on:
       - db
       - traefik
@@ -78,3 +82,10 @@ services:
 
 volumes:
   db_data:
+  vol_resources:
+    # Pegar el contenido de la carpeta resources en el contenedor
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: ./resources

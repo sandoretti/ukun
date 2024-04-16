@@ -167,70 +167,70 @@ INSERT INTO producto (nombre, precio, tipo, dir_foto, descripcion) VALUES
     'Mesa de madera',
     50.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Mesas'),
-    NULL,
+    'mesa-madera.png',
     'Mesa de madera de color marrón'
 ),
 (
     'Silla de plástico',
     10.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Sillas'),
-    NULL,
+    'silla-plastico.png',
     'Silla de plástico de color blanco'
 ),
 (
     'Cama individual',
     80.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Camas'),
-    NULL,
+    'cama-individual.png',
     'Cama individual de color azul'
 ),
 (
     'Escritorio de cristal',
     60.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Escritorios'),
-    NULL,
+    'escritorio-cristal.png',
     'Escritorio de cristal de color transparente'
 ),
 (
     'Sofá de cuero',
     120.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Sofás'),
-    NULL,
+    'sofa-cuero.png',
     'Sofá de cuero muy cómodo'
 ),
 (
     'Cama de matrimonio',
     100.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Camas'),
-    NULL,
+    'cama-matrimonio.png',
     'Cama de matrimonio tamaño king size'
 ),
 (
     'Escritorio de madera',
     70.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Escritorios'),
-    NULL,
+    'escritorio-madera.png',
     'Escritorio de madera perfecto para trabajar'
 ),
 (
     'Sofá de tela',
     150.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Sofás'),
-    NULL,
+    'sofa-tela.png',
     'Sofá de tela de color gris'
 ),
 (
     'Mesa de cristal',
     40.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Mesas'),
-    NULL,
+    'mesa-cristal.png',
     'Mesa de cristal de color transparente'
 ),
 (
     'Silla de madera',
     20.00,
     (SELECT id FROM tipo_producto WHERE nombre = 'Sillas'),
-    NULL,
+    'silla-madera.png',
     'Silla de madera de color marrón'
 );
 
