@@ -4,20 +4,21 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.io.Serializable;
 
 @Entity
 @Table(name="producto")
-@Getter @Setter
+@Data
 public class Producto implements Serializable
 {
     @Id
     @SequenceGenerator(name = "producto_id_seq",
             sequenceName = "producto_id_seq",
             allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE,
+            generator="producto_id_seq")
     @Column(name = "id", updatable = false)
     private Long id;
 
