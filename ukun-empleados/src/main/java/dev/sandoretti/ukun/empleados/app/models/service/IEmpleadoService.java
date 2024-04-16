@@ -1,25 +1,13 @@
 package dev.sandoretti.ukun.empleados.app.models.service;
 
 import dev.sandoretti.ukun.empleados.app.models.entity.Empleado;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import dev.sandoretti.ukun.empleados.app.models.entity.Tienda;
 
 import java.util.List;
 
 public interface IEmpleadoService
 {
-    /**
-     * Busca todos los empleados
-     * @return Lista de todos los empleados
-     */
-    public List<Empleado> findAll();
-
-    /**
-     * Lista todos los empleados por paginas
-     * @param pageable Paginable
-     * @return Lista de empleados en paginas
-     */
-    public Page<Empleado> findAll(Pageable pageable);
+    public List<Empleado> findByTienda(Tienda tienda);
 
     /**
      * Encuentra un empleado dado su id
