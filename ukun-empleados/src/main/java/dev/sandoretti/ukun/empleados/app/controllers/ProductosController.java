@@ -3,6 +3,7 @@ package dev.sandoretti.ukun.empleados.app.controllers;
 import dev.sandoretti.ukun.empleados.app.models.entity.Producto;
 import dev.sandoretti.ukun.empleados.app.models.entity.TipoProducto;
 import dev.sandoretti.ukun.empleados.app.models.service.IProductoService;
+import dev.sandoretti.ukun.empleados.app.models.service.IUploadFileService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 @Controller
@@ -27,7 +26,10 @@ public class ProductosController
     @Autowired
     private IProductoService productoService;
 
-    private final Logger log = LoggerFactory.getLogger(getClass());
+    @Autowired
+    private IUploadFileService uploadFileService;
+
+    private static final Logger log = LoggerFactory.getLogger(ProductosController.class);
 
     @ModelAttribute
     public List<Producto> productosList()
@@ -94,24 +96,26 @@ public class ProductosController
         // Miramos si tiene una foto asociada
         if (!foto.isEmpty())
         {
-            // Creamos la ruta hacia la imagen dentro del servicio
-            String pathFoto = producto.getNombre() + foto.getOriginalFilename();
-            String absolutePathFoto = "/opt/resources/uploads/" + pathFoto;
+            // Obtenemos el path de la foto del producto
+            String pathFoto = producto.getPathFoto();
 
-            // TODO: Eliminar la foto anterior si el producto tiene una ruta asociada
-
-            try
+            // Comprobamos si el producto tiene una foto asociada
+            if (pathFoto != null && !pathFoto.isEmpty())
             {
-                // Copiamos la foto en el servidor
-                Files.copy(foto.getInputStream(), Path.of(absolutePathFoto));
+                // Eliminamos la foto de la carpeta uploads
+                if (!uploadFileService.delete(pathFoto))
+                    log.info("Se ha eliminado la foto: ".concat(pathFoto));
+            }
 
-                // Establecemos la nueva ruta hacia la foto
-                producto.setPathFoto(pathFoto);
+            // Cargamos la nueva foto en la carpeta
+            try {
+                pathFoto = uploadFileService.copy(foto, producto.getNombre());
+            } catch (IOException e) {
+                log.error("Hubo un error al copiar la foto: ", e);
             }
-            catch (IOException e)
-            {
-                log.error(e.toString());
-            }
+
+            // Establecemos la ruta de la nueva foto
+            producto.setPathFoto(pathFoto);
         }
 
         // Miramos si el producto ya existe en la base de datos
