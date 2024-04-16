@@ -14,6 +14,7 @@
         <tr>
             <th>Nombre</th>
             <th>Tipo</th>
+            <th>Foto</th>
             <th>Precio</th>
             <th>Stock</th>
             <th>Editar</th>
@@ -25,6 +26,7 @@
         <tr th:each="stockProducto, iStat: ${stockProductosList}">
             <td th:text="${stockProducto.producto.nombre}"></td>
             <td th:text="${stockProducto.producto.tipo.nombre}"></td>
+            <td><img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${stockProducto.producto.pathFoto})}" width="50" height="50"/></td>
             <td th:text="${stockProducto.producto.precio}"></td>
             <td>
                 <form th:id="${iStat.index}" th:action="@{/stock/editar}">

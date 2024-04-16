@@ -24,6 +24,7 @@
             <td th:text="${producto.nombre}"></td>
             <td th:text="${producto.precio}"></td>
             <td th:text="${producto.tipo.nombre}"></td>
+            <td><img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}" width="50" height="50"/></td>
             <td><a th:href="@{/admin/productos/editar/{id}(id=${producto.id})}">Editar</a></td>
         </tr>
         </tbody>
