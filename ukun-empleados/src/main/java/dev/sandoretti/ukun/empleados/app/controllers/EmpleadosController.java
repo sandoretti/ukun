@@ -1,20 +1,21 @@
 package dev.sandoretti.ukun.empleados.app.controllers;
 
 import dev.sandoretti.ukun.empleados.app.models.entity.Empleado;
+import dev.sandoretti.ukun.empleados.app.models.entity.Tienda;
 import dev.sandoretti.ukun.empleados.app.models.service.IEmpleadoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
 @Controller
 @RequestMapping("/admin/empleados")
-@SessionAttributes("empleado")
+@SessionAttributes({"empleado", "nuevoEmpleado"})
 public class EmpleadosController extends AbsController
 {
     @Autowired
@@ -34,5 +35,42 @@ public class EmpleadosController extends AbsController
 
         model.addAttribute("empleadosList", empleados);
         return "empleados";
+    }
+
+    @GetMapping(value = "/crear")
+    public String crear(Model model)
+    {
+        model.addAttribute("nuevoEmpleado", new Empleado());
+
+        return "crearEmpleado";
+    }
+
+    @PostMapping("/crear")
+    public String crear(@Valid @ModelAttribute("nuevoEmpleado") Empleado nuevoEmpleado,
+                        BindingResult result,
+                        Model model,
+                        RedirectAttributes flash)
+    {
+        // Comprobamos si la validacion del nuevo empleado es correcta
+        if (result.hasErrors())
+            return "crearEmpleado";
+
+        // Obtenemos el adminstrador
+        Empleado administrador = empleado(model);
+
+        // Obtenemos la tienda del administrador y se la asignamos al nuevo empleado
+        Tienda tienda = administrador.getTienda();
+        nuevoEmpleado.setTienda(tienda);
+
+        // TODO: Validar el correo, saber si existe un correo igual
+
+        // Guardamos el nuevo empleado dentro de la base de datos
+        empleadoService.save(nuevoEmpleado);
+
+        // Devolvemos un mensaje de exito
+        flash.addFlashAttribute("success", "Empleado creado con exito");
+
+        // Redirigimos a la pantalla principal de empleados
+        return "redirect:/admin/empleados";
     }
 }
