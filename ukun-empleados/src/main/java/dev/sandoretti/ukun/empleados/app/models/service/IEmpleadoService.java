@@ -27,4 +27,11 @@ public interface IEmpleadoService
      * @param id Identificador del empleado
      */
     public void delete(Long id);
+
+    /**
+     * Valida el correo si exite en la base de datos
+     * @param correo Correo a validar
+     * @return Si el correo es valido para insertar
+     */
+    public boolean validarCorreo(String correo);
 }

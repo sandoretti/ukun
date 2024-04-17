@@ -55,14 +55,26 @@ public class EmpleadosController extends AbsController
         if (result.hasErrors())
             return "crearEmpleado";
 
+        // Obtenemos el correo del nuevo empleado
+        String correoNuevoEmpleado = nuevoEmpleado.getCuenta().getCorreo().toLowerCase();
+
+        // Miramos si el correo existe y si existe, lanzamos un error volviendo a la pagina
+        if (empleadoService.validarCorreo(correoNuevoEmpleado))
+        {
+            model.addAttribute("error", "El correo ya existe");
+
+            return "crearEmpleado";
+        }
+
+        // Cambiamos el correo a minusculas
+        nuevoEmpleado.getCuenta().setCorreo(correoNuevoEmpleado);
+
         // Obtenemos el adminstrador
         Empleado administrador = empleado(model);
 
         // Obtenemos la tienda del administrador y se la asignamos al nuevo empleado
         Tienda tienda = administrador.getTienda();
         nuevoEmpleado.setTienda(tienda);
-
-        // TODO: Validar el correo, saber si existe un correo igual
 
         // Guardamos el nuevo empleado dentro de la base de datos
         empleadoService.save(nuevoEmpleado);

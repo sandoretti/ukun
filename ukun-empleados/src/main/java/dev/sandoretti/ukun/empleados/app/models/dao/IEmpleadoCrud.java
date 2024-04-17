@@ -15,4 +15,6 @@ public interface IEmpleadoCrud extends PagingAndSortingRepository<Empleado, Long
 
     @Query("SELECT e FROM Empleado e WHERE e.tienda = ?1")
     public List<Empleado> findByTienda(Tienda tienda);
+
+    public boolean existsByCuenta_Correo(String correo);
 }
