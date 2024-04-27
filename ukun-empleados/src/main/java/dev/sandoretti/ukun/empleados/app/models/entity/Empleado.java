@@ -2,14 +2,13 @@ package dev.sandoretti.ukun.empleados.app.models.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.io.Serializable;
 
 @Entity
 @Table(name="empleado")
-@Getter @Setter
+@Data
 public class Empleado implements Serializable
 {
     @Id
@@ -21,7 +20,7 @@ public class Empleado implements Serializable
     private Cuenta cuenta;
 
     @Column(name = "admin")
-    private String isAdmin;
+    private Boolean isAdmin;
 
     @NotEmpty
     private String empleo;

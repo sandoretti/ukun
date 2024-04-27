@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nuevo empleado</title>
+</head>
+<body>
+
+<h1>Nuevo empleado</h1>
+<form th:action="@{/admin/empleados/crear}" th:object="${nuevoEmpleado}" method="post">
+    <div>
+        <label>Nombre</label>
+        <div>
+            <input type="text" th:field="*{cuenta.nombre}">
+        </div>
+        <small th:if="${#fields.hasErrors('cuenta.nombre')}" th:errors="*{cuenta.nombre}"></small>
+    </div>
+
+    <div>
+        <label>Apellido</label>
+        <div>
+            <input type="text" th:field="*{cuenta.apellido}">
+        </div>
+        <small th:if="${#fields.hasErrors('cuenta.apellido')}" th:errors="*{cuenta.apellido}"></small>
+    </div>
+
+    <div>
+        <label>Correo</label>
+        <div>
+            <input type="email" th:field="*{cuenta.correo}">
+        </div>
+        <small th:if="${#fields.hasErrors('cuenta.correo')}" th:errors="*{cuenta.correo}"></small>
+    </div>
+
+    <div>
+        <label>Contraseña</label>
+        <div>
+            <input type="password" th:field="*{cuenta.contrasenna}">
+        </div>
+        <small th:if="${#fields.hasErrors('cuenta.contrasenna')}" th:errors="*{cuenta.contrasenna}"></small>
+    </div>
+
+    <div>
+        <label>Empleo</label>
+        <div>
+            <input type="text" th:field="*{empleo}">
+        </div>
+        <small th:if="${#fields.hasErrors('empleo')}" th:errors="*{empleo}"></small>
+    </div>
+
+    <div>
+        <label>¿El empleado es administrador?</label>
+        <div>
+            <input type="checkbox" th:field="*{isAdmin}"/>
+        </div>
+    </div>
+
+    <div>
+        <div>
+            <input type="submit" value="Crear empleado">
+        </div>
+    </div>
+</form>
+
+</body>
+</html>

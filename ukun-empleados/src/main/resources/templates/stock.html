@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Stock</title>
+</head>
+<body>
+
+<h1 th:text="${'Stock de ' + tienda.nombre}"></h1>
+
+<div>
+    <table>
+        <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Foto</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Editar</th>
+            <th>Eliminar</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="stockProducto, iStat: ${stockProductosList}">
+            <td th:text="${stockProducto.producto.nombre}"></td>
+            <td th:text="${stockProducto.producto.tipo.nombre}"></td>
+            <td><img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${stockProducto.producto.pathFoto})}" width="50" height="50"/></td>
+            <td th:text="${stockProducto.producto.precio}"></td>
+            <td>
+                <form th:id="${iStat.index}" th:action="@{/stock/editar}">
+                    <input th:form="${iStat.index}" type="hidden" th:value="${stockProducto.id.tiendaId}" name="tiendaId"/>
+                    <input th:form="${iStat.index}" type="hidden" th:value="${stockProducto.id.productoId}" name="productoId"/>
+                    <input th:form="${iStat.index}" type="text" th:value="${stockProducto.stock}" name="stock"/>
+                </form>
+            </td>
+            <td><input th:form="${iStat.index}" type="submit" value="Editar"/></td>
+            <td><a th:href="@{/stock/eliminar(tiendaId=${stockProducto.id.tiendaId},productoId=${stockProducto.id.productoId})}">Eliminar</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

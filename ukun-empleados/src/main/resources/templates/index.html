@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>Empleados</title>
@@ -7,6 +7,11 @@
 <body>
 
 <h1>Aplicacion empleados</h1>
+<a th:href="@{/logout}">Log out</a>
+<a th:href="@{/stock}">Stock</a>
+
+<a th:if="${empleado.isAdmin}" th:href="@{/admin/productos}">Productos</a>
+<a th:if="${empleado.isAdmin}" th:href="@{/admin/empleados}">Empleados</a>
 
 </body>
 </html>
