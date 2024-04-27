@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Empleados</title>
+</head>
+<body>
+
+<h1 th:text="${'Empleados de ' + empleado.tienda.nombre}"></h1>
+
+<a th:href="@{/admin/empleados/crear}">Crear</a>
+
+<div>
+    <table>
+        <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Correo</th>
+            <th>Empleo</th>
+            <th>Administrador</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="emp: ${empleadosList}">
+            <td th:text="${emp.id}"></td>
+            <td th:text="${emp.cuenta.nombre}"></td>
+            <td th:text="${emp.cuenta.apellido}"></td>
+            <td th:text="${emp.cuenta.correo}"></td>
+            <td th:text="${emp.empleo}"></td>
+            <td th:text="${emp.isAdmin} ? 'Si' : 'No'"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>
