@@ -525,3 +525,42 @@ INSERT INTO stock_tienda (producto_id, tienda_id, stock) VALUES
     (SELECT id FROM tienda_barcelona),
     22
 );
+
+
+-- Tabla cliente
+WITH cliente_data AS (
+    INSERT INTO cuenta (correo, contrasenna, nombre, apellido)
+    VALUES ('joel.sandoval@email.com', '123456', 'Joel', 'Sandoval') RETURNING id
+),
+direccion_data AS (
+    INSERT INTO direccion (calle, provincia, ciudad, codigo_postal)
+    VALUES ('Calle Mayor, 1', 'Madrid', 'Alcalá de Henares', '28803') RETURNING id
+),
+tarjeta_data AS (
+    INSERT INTO tarjeta (numero, fecha_expiracion, cvv)
+    VALUES ('1234567890123456', '2025-12-01', '123') RETURNING id
+)
+INSERT INTO cliente (id, id_direccion, id_tarjeta, tienda_fav)
+VALUES
+(
+    (SELECT id FROM cliente_data),
+    (SELECT id FROM direccion_data),
+    (SELECT id FROM tarjeta_data),
+    (SELECT id FROM tienda WHERE nombre = 'Ukun Alcalá de Henares')
+);
+
+WITH cliente_data AS (
+    INSERT INTO cuenta (correo, contrasenna, nombre, apellido)
+    VALUES ('carmen.amoretti@email.com', '123456', 'Carmen', 'Amoretti') RETURNING id
+),
+direccion_data AS (
+    INSERT INTO direccion (calle, provincia, ciudad, codigo_postal)
+    VALUES ('Avenida de la Constitución, 1', 'Madrid', 'Torrejón de Ardoz', '28103') RETURNING id
+)
+INSERT INTO cliente (id, id_direccion, tienda_fav)
+VALUES
+(
+    (SELECT id FROM cliente_data),
+    (SELECT id FROM direccion_data),
+    (SELECT id FROM tienda WHERE nombre = 'Ukun Torrejón de Ardoz')
+);
