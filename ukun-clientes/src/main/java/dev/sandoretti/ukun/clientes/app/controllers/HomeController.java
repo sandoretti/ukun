@@ -25,13 +25,13 @@ public class HomeController
     }
 
     @GetMapping(value = {"/", ""})
-    public String home(Model model)
+    public String home()
     {
         return "index";
     }
 
     @GetMapping("/login")
-    public String login(Model model)
+    public String login()
     {
         return "login";
     }
