@@ -15,5 +15,5 @@ public interface IClienteService
      * Guarda el cliente en la base de datos
      * @param cliente Cliente a guardar
      */
-    public void save(Cliente cliente);
+    public Cliente save(Cliente cliente);
 }

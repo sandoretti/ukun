@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.clientes.app.models.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,20 +16,23 @@ public class Cliente implements Serializable
     @Id
     private Long id;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "id")
     @MapsId
+    @Valid
     private Cuenta cuenta;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "id_direccion")
+    @Valid
     private Direccion direccion;
 
     @ManyToOne
     @JoinColumn(name = "tienda_fav")
     private Tienda tienda;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "id_tarjeta")
+    @Valid
     private Tarjeta tarjeta;
 }

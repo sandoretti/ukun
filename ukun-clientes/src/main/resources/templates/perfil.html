@@ -37,6 +37,18 @@
                     <small th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></small>
                 </dd>
             </dl>
+
+            <dl>
+                <dt>
+                    <label for="tiendafav">Tienda favorita</label>
+                </dt>
+                <dd>
+                    <select id="tiendafav" th:field="${cliente.tienda.id}">
+                        <option th:each="tienda: ${tiendaList}" th:text="${tienda.nombre}"
+                                th:value="${tienda.id}" th:selected="${tienda==cliente.tienda}"></option>
+                    </select>
+                </dd>
+            </dl>
         </div>
 
         <hr>
@@ -115,7 +127,7 @@
         </div>
 
         <p>
-            <input type="submit" value="Enviar tarjeta">
+            <input type="submit" value="Editar información">
         </p>
     </form>
 </body>

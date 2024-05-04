@@ -20,8 +20,8 @@ public class ClienteServiceImpl implements IClienteService
     }
 
     @Override
-    public void save(Cliente cliente)
+    public Cliente save(Cliente cliente)
     {
-        clienteDAO.save(cliente);
+        return clienteDAO.save(cliente);
     }
 }

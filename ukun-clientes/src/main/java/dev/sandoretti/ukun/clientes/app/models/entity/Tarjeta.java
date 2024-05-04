@@ -27,7 +27,6 @@ public class Tarjeta implements Serializable
     private Long id;
 
     @NotEmpty
-    @Size(min = 16, max = 16)
     @Pattern(regexp = "\\d{16}", message = "El número de tarjeta debe contener exactamente 16 dígitos")
     private String numero;
 
@@ -37,7 +36,6 @@ public class Tarjeta implements Serializable
     private Date fechaExpiracion;
 
     @NotEmpty
-    @Size(min = 3, max = 3)
     @Pattern(regexp = "\\d{3}", message = "El CVV debe contener exactamente 3 dígitos")
     private String cvv;
 }
