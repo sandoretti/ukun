@@ -18,12 +18,6 @@ public class HomeController
     @Autowired
     private ILoginService loginService;
 
-    @ModelAttribute
-    private Cliente cliente(Model model)
-    {
-        return (Cliente) model.getAttribute("cliente");
-    }
-
     @GetMapping(value = {"/", ""})
     public String home()
     {
@@ -39,17 +33,9 @@ public class HomeController
     @PostMapping("/login")
     public String login(@ModelAttribute("correo") String correo,
                         @ModelAttribute("contrasenna") String contrasenna,
-                        BindingResult result,
                         Model model,
                         RedirectAttributes flash)
     {
-        // Si el resultado tiene errores, devolvemos con un mensaje de error
-        if (result.hasErrors())
-        {
-            flash.addFlashAttribute("error", "Error al iniciar sesión");
-            return "redirect:/login";
-        }
-
         // Si los campos son vacios
         if (correo.isBlank() || contrasenna.isBlank())
         {

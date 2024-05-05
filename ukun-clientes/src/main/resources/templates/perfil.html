@@ -7,7 +7,7 @@
 <body>
     <h1 th:text="${'Perfil de ' + cliente.cuenta.nombre}"></h1>
 
-    <form th:action="@{/perfil/editar}" method="post">
+    <form th:action="@{/perfil}" method="post">
         <div th:object="${cliente.cuenta}">
             <h2>Datos de la cuenta</h2>
             <dl>

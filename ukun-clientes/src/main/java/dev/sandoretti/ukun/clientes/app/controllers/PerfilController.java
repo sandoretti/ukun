@@ -32,16 +32,20 @@ public class PerfilController extends AbsController
     }
 
     @GetMapping(value = {"", "/"})
-    public String perfil(Model model)
+    public String perfil(@ModelAttribute("cliente") Cliente cliente,
+                         Model model)
     {
+        Cliente clienteActualizado = clienteService.findById(cliente.getId());
+        model.addAttribute("cliente", clienteActualizado);
+
         return "perfil";
     }
 
-    @PostMapping("/editar")
+    @PostMapping({"", "/"})
     public String editar(@Valid @ModelAttribute("cliente") Cliente clienteModificado,
-                             BindingResult result,
-                             Model model,
-                             RedirectAttributes flash)
+                         BindingResult result,
+                         Model model,
+                         RedirectAttributes flash)
     {
         // Obtenenos el cliente correspondiente a la base de datos
         Cliente clienteActual = clienteService.findById(clienteModificado.getId());
@@ -49,17 +53,16 @@ public class PerfilController extends AbsController
         // Si el cliente es el mismo, volvemos a la pagina de perfil
         if (clienteActual.equals(clienteModificado))
         {
-            return "redirect:/perfil";
+            return "perfil";
         }
 
         // Comprobamos si no tiene errores de validacion, si lo tiene, redirigimos con mensaje de error
         if (result.hasErrors())
         {
             log.error("Errores: {}", result.getAllErrors());
-            model.addAttribute("cliente", clienteActual);
-            flash.addFlashAttribute("error", "Error al editar la cuenta");
+            model.addAttribute("error", "Error al editar la cuenta");
 
-            return "redirect:/perfil";
+            return "perfil";
         }
 
         // Obtenemos los ids de los clientes
@@ -74,9 +77,6 @@ public class PerfilController extends AbsController
 
         // Guardamos el cliente modificado en la base de datos
         clienteActual = clienteService.save(clienteModificado);
-
-        // Guardamos el cliente como
-        model.addAttribute("cliente", clienteActual);
 
         // Mandamos un mensaje de exito
         flash.addFlashAttribute("success", "Campos modificados con exito");
