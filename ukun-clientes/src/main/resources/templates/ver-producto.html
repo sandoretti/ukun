@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${producto.nombre}"></title>
+</head>
+<body>
+
+<h1 th:text="${producto.nombre}"></h1>
+<img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}" width="300" height="300"
+     th:alt="${producto.nombre}"/>
+<p th:text="${producto.descripcion}"></p>
+<p th:text="${producto.tipo.nombre}"></p>
+<p th:text="${producto.precio}"></p>
+<p th:text="${ 'Stock de la tienda online: ' + (stockOnline != null ? stockOnline : '0')}" ></p>
+<p th:if="${cliente != null}"
+        th:text="${ 'Stock de '+ cliente.tienda.nombre + ': ' + (stockFavorita != null ? stockFavorita : '0')}" ></p>
+</body>
+</html>

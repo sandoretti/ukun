@@ -19,4 +19,10 @@ public class ProductoServiceImpl implements IProductoService
     public List<Producto> findAll() {
         return (List<Producto>) productoDAO.findAll();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Producto findById(Long id) {
+        return productoDAO.findById(id).orElse(null);
+    }
 }
