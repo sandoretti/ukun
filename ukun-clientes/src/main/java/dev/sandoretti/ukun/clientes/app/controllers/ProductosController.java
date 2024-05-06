@@ -32,36 +32,37 @@ public class ProductosController extends AbsController
     @Autowired
     private ITiendaService tiendaService;
 
-    @ModelAttribute("productosList")
-    public List<Producto> productosList()
-    {
-        return productoService.findAll();
-    }
-
-    @ModelAttribute("disponibilidadOnline")
-    public HashMap<Long, Boolean> disponibilidadOnline()
-    {
-        Tienda tiendaOnline = tiendaService.findByNombre("Ukun Online");
-
-        return disponibilidadTienda(tiendaOnline);
-    }
-
+    /**
+     * Crea un HashMap que asigna las ids de los productos con su disponibilidad en la tienda dada
+     * @param tienda Tienda a buscar
+     * @return Hashmap de IDS de productos con boolean de la disponibilidad del producto
+     */
     private HashMap<Long, Boolean> disponibilidadTienda(Tienda tienda)
     {
+        // Obtenemos el stock de los productos de la tienda dada
         List<StockProducto> stockProductosOnline = stockService.findByTienda(tienda);
+
+        // Inicializamos el hashmap de los productos
         HashMap<Long, Boolean> disponibleProductoHash = new HashMap<>();
 
+        // Inicializamos parametros necesarios para la asignacion
         Long idProducto;
         boolean disponibleProducto;
 
+        // Recorremos todos los stocks
         for (StockProducto stock : stockProductosOnline)
         {
-            idProducto = stock.getProducto().getId();
+            // Obtenemos el id del producto del stock
+            idProducto = stock.getId().getProductoId();
+
+            // Miramos si el producto esta disponible si el stock del producto es mayor a 0
             disponibleProducto = stock.getStock() > 0;
 
+            // Lo metemos en el hasmap
             disponibleProductoHash.put(idProducto, disponibleProducto);
         }
 
+        // Devolvemos el Hashmap
         return disponibleProductoHash;
     }
 
@@ -69,19 +70,33 @@ public class ProductosController extends AbsController
     public String home(@ModelAttribute("cliente") Cliente cliente,
                        Model model)
     {
-        HashMap<Long, Boolean> disponibilidadFavorita = null;
+        // Obtenemos la lista de los productos
+        List<Producto> productosList = productoService.findAll();
 
+        // Obtenemos la tienda online
+        Tienda tiendaOnline = tiendaService.findByNombre("Ukun Online");
+
+        // Obtenemos los stocks de los productos de la tienda online e inicializamos los de la favorita
+        HashMap<Long, Boolean> disponibilidadFavorita = null,
+                disponibilidadOnline = disponibilidadTienda(tiendaOnline);
+
+        // Comprobamos que el cliente no se nulo
         if (cliente != null)
         {
+            // Obtenemos la tienda favorita del cliente
             Tienda tiendaFav = cliente.getTienda();
 
+            // Si la tienda no es nula, obtenemos el stock de los productos de la tienda favorita
             if (tiendaFav != null)
                 disponibilidadFavorita = disponibilidadTienda(tiendaFav);
         }
 
-
+        // Asignamos lo obtenido como atributos del modelo
+        model.addAttribute("productosList", productosList);
+        model.addAttribute("disponibilidadOnline", disponibilidadOnline);
         model.addAttribute("disponibilidadFavorita", disponibilidadFavorita);
 
+        // Mandamos a la vista de productos.html
         return "productos";
     }
 }
