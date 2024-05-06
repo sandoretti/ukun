@@ -8,4 +8,5 @@ public interface ITiendaService
 {
     public List<Tienda> findAll();
     public Tienda findById(Long id);
+    public Tienda findByNombre(String nombre);
 }

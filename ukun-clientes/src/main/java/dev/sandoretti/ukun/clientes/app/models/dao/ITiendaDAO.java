@@ -5,5 +5,5 @@ import org.springframework.data.repository.CrudRepository;
 
 public interface ITiendaDAO extends CrudRepository<Tienda, Long>
 {
-
+    public Tienda findByNombre(String nombre);
 }

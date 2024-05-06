@@ -25,4 +25,9 @@ public class TiendaServiceImpl implements ITiendaService
     public Tienda findById(Long id) {
         return tiendaDAO.findById(id).orElse(null);
     }
+
+    @Override
+    public Tienda findByNombre(String nombre) {
+        return tiendaDAO.findByNombre(nombre);
+    }
 }

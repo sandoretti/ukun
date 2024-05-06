@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Productos</title>
+</head>
+<body>
+
+<h1>Productos</h1>
+
+<div>
+  <div th:each="producto: ${productosList}">
+      <img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}" width="100" height="100"
+           th:alt="${producto.nombre}"/>
+      <h2 th:text="${producto.nombre}"></h2>
+      <p th:text="${producto.precio}"></p>
+      <p th:text="${producto.tipo.nombre}"></p>
+      <p th:text="${disponibilidadOnline != null
+                      && disponibilidadOnline.containsKey(producto.id)
+                      && disponibilidadOnline[producto.id]} ? 'Disponible' : 'No hay existencias'"></p>
+      <p th:if="${cliente != null}"
+              th:text="${disponibilidadFavorita != null
+                      && disponibilidadFavorita.containsKey(producto.id)
+                      && disponibilidadFavorita[producto.id]} ? 'Disponible en su tienda favorita' : 'No hay existencias en su tienda favorita'"></p>
+  </div>
+</div>
+
+</body>
+</html>

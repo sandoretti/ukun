@@ -526,6 +526,61 @@ INSERT INTO stock_tienda (producto_id, tienda_id, stock) VALUES
     22
 );
 
+WITH tienda_online as (
+    SELECT id FROM tienda WHERE nombre = 'Ukun Online'
+)
+INSERT INTO stock_tienda (producto_id, tienda_id, stock) VALUES
+(
+    (SELECT id FROM producto WHERE nombre = 'Mesa de madera'),
+    (SELECT id FROM tienda_online),
+    20
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Silla de plástico'),
+    (SELECT id FROM tienda_online),
+    30
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Cama individual'),
+    (SELECT id FROM tienda_online),
+    25
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Escritorio de cristal'),
+    (SELECT id FROM tienda_online),
+    10
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Sofá de cuero'),
+    (SELECT id FROM tienda_online),
+    15
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Cama de matrimonio'),
+    (SELECT id FROM tienda_online),
+    20
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Escritorio de madera'),
+    (SELECT id FROM tienda_online),
+    12
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Sofá de tela'),
+    (SELECT id FROM tienda_online),
+    18
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Mesa de cristal'),
+    (SELECT id FROM tienda_online),
+    25
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Silla de madera'),
+    (SELECT id FROM tienda_online),
+    35
+);
+
 
 -- Tabla cliente
 WITH cliente_data AS (
