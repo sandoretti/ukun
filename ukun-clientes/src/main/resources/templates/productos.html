@@ -23,6 +23,7 @@
               th:text="${(disponibilidadFavorita != null
                         && disponibilidadFavorita.containsKey(producto.id)
                         && disponibilidadFavorita[producto.id] ? 'Disponible' : 'No hay existencias') + ' en ' + tiendaFav}"></p>
+      <a th:if="${existCliente}" th:href="@{/carrito/add(producto=${producto.id})}">Añadir al carrito</a>
       <a th:href="@{/productos/ver/{id}(id=${producto.id})}">Ver producto</a>
   </div>
 </div>

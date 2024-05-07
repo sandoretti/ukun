@@ -15,5 +15,6 @@
 <p th:text="${ 'Stock de la tienda online: ' + (stockOnline != null ? stockOnline : '0')}" ></p>
 <p th:if="${cliente != null}"
         th:text="${ 'Stock de '+ cliente.tienda.nombre + ': ' + (stockFavorita != null ? stockFavorita : '0')}" ></p>
+<a th:if="${cliente!=null}" th:href="@{/carrito/add(producto=${producto.id})}">Añadir al carrito</a>
 </body>
 </html>
