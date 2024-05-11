@@ -30,7 +30,15 @@ public class CarritoController extends AbsController
                         Model model)
     {
         List<Carrito> carritoProductos = carritoService.findByCliente(cliente);
+        float total = 0f;
+
+        for (Carrito carrito : carritoProductos)
+        {
+            total += carrito.getCantidad() * carrito.getProducto().getPrecio();
+        }
+
         model.addAttribute("carritoProductos", carritoProductos);
+        model.addAttribute("total", total);
 
         return "carrito";
     }
@@ -55,20 +63,36 @@ public class CarritoController extends AbsController
             return pathOrigen;
         }
 
-        // Construimos el carrito con los atributos necesarios
-        Carrito carrito = new Carrito();    // Inicializamos carrito
         Long idCliente = cliente.getId();   // Obtenemos el id del cliente
         CarritoId carritoId = new CarritoId(idCliente, idProducto); // Construimos el id del carrito
-        carrito.setId(carritoId);   // Establecemos el id del carrito
-        carrito.setCantidad(cantidad);  // Establecemos la cantidad a añadir
-        carrito.setCliente(cliente);    // Establecemos el cliente
-        carrito.setProducto(producto);  // Establecemos el producto
+
+        // Construimos el carrito con los datos obtenidos
+        Carrito carrito = new Carrito(carritoId, cliente, producto, cantidad);
 
         // Guardamos el carrito en la base de datos
         carritoService.guardar(carrito);
 
-        flash.addFlashAttribute("info", "Producto annadido al carrito");
+        flash.addFlashAttribute("info", "Producto añadido al carrito");
 
         return pathOrigen;
+    }
+
+    @GetMapping("/delete")
+    public String delete(@RequestParam(name = "producto") Long idProducto,
+                         @ModelAttribute("cliente") Cliente cliente,
+                         RedirectAttributes flash,
+                         HttpServletRequest request)
+    {
+        // Construimos el id del carrito
+        CarritoId carritoId = new CarritoId(cliente.getId(), idProducto);
+
+        // Eliminamos el producto del carrito del cliente, si no existe lo ignora
+        carritoService.eliminar(carritoId);
+
+        // Mandamos un mensaje de exito
+        flash.addFlashAttribute("info", "Producto eliminado al carrito");
+
+        // Volvemos a la pagina de origen
+        return pathOrigenRedirect(request);
     }
 }

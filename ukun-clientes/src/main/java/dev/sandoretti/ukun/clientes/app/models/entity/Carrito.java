@@ -4,13 +4,15 @@ import dev.sandoretti.ukun.clientes.app.models.embeddable.CarritoId;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
 @Entity
 @Table(name="carrito")
-@Data
+@Data @NoArgsConstructor @AllArgsConstructor
 public class Carrito implements Serializable
 {
     @EmbeddedId
