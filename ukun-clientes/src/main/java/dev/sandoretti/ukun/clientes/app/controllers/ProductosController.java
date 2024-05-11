@@ -103,8 +103,8 @@ public class ProductosController extends AbsController
         return "productos";
     }
 
-    @GetMapping("/ver/{id}")
-    public String ver(@PathVariable("id") Long productoId,
+    @GetMapping("/ver/{idProducto}")
+    public String ver(@PathVariable("idProducto") Long productoId,
                       @ModelAttribute("cliente") Cliente cliente,
                       RedirectAttributes flash,
                       Model model)

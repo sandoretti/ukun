@@ -8,6 +8,9 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer
 {
@@ -25,7 +28,6 @@ public class WebConfig implements WebMvcConfigurer
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(clienteInterceptor)
-                .addPathPatterns("/perfil/**")
-                .addPathPatterns("/carrito/**");
+                .addPathPatterns("/perfil/**", "/carrito/**", "/pedidos/**");
     }
 }
