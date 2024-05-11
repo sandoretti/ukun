@@ -25,6 +25,7 @@ public class WebConfig implements WebMvcConfigurer
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(clienteInterceptor)
-                .addPathPatterns("/perfil");
+                .addPathPatterns("/perfil")
+                .addPathPatterns("/carrito");
     }
 }
