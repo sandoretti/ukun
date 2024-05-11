@@ -1,9 +1,9 @@
 package dev.sandoretti.ukun.clientes.app.models.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -26,7 +26,8 @@ public class Producto implements Serializable
     private String nombre;
 
     @NotNull
-    @Min(0)
+    @PositiveOrZero
+    @Column(nullable = false, precision = 10, scale = 2)
     private Float precio;
 
     @OneToOne
