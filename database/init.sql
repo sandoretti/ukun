@@ -141,9 +141,11 @@ CREATE TABLE pedido (
 -- Tabla producto_pedido
 -- La tabla producto_pedido almacena la información de los productos en los pedidos de los clientes
 CREATE TABLE producto_pedido (
-    pedido_id INTEGER NOT NULL,     -- Identificador del pedido
-    producto_id INTEGER NOT NULL,   -- Identificador del producto
-    cantidad INTEGER NOT NULL,      -- Cantidad del producto en el pedido
+    pedido_id INTEGER NOT NULL,                 -- Identificador del pedido
+    producto_id INTEGER NOT NULL,               -- Identificador del producto
+    cantidad INTEGER NOT NULL,                  -- Cantidad del producto en el pedido
+    precio_unitario DECIMAL(10, 2) NOT NULL,    -- Precio unitario del producto
+    precio_total DECIMAL(10, 2) NOT NULL,       -- Precio total del producto
 
     -- Foreign keys de las tablas pedido y producto
     FOREIGN KEY (pedido_id) REFERENCES pedido(id),
