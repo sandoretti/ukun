@@ -10,4 +10,5 @@ public interface IStockService
 {
     public List<StockProducto> findByTienda(Tienda tienda);
     public StockProducto findById(StockProductoId id);
+    public void save(List<StockProducto> stockProducto);
 }

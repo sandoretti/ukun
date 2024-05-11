@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -39,17 +39,16 @@ public class Pedido implements Serializable
     private Tarjeta tarjeta;
 
     @NotNull
-    private Date fecha;
+    private LocalDateTime fecha;
 
     @NotNull
     @PositiveOrZero
-    @Column(nullable = false, precision = 10, scale = 2)
     private Float total;
 
-    @OneToMany(mappedBy = "id.pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductoPedido> productos;
 
-    public Pedido(Cliente cliente, List<Carrito> productosCarrito)
+    public Pedido(Cliente cliente)
     {
         // Annadimos el cliente
         this.cliente = cliente;
@@ -58,28 +57,32 @@ public class Pedido implements Serializable
         this.direccion = cliente.getDireccion();
         this.tarjeta = cliente.getTarjeta();
 
-        // Obtenemos la fecha actual al realizar el pedido
-        this.fecha = new Date();
+        // Obtenemos la fecha actual al realizar el pedido y el total a 0
+        this.fecha = LocalDateTime.now();
+        this.total = 0F;
+        this.productos = new ArrayList<>();
+    }
 
-        // Inicializamos la lista de productos y el total a 0
-        List<ProductoPedido> productosPedidoList = new ArrayList<>();
+    public void setProductosYTotal(List<Carrito> productosCarrito)
+    {
+        this.productos.clear();
+
+        // Total a 0
         Float totalProductos = 0F;
 
         // Recorremos todos los productos del carrito
         for (Carrito carrito : productosCarrito)
         {
             // Creamos el producto del pedido a partir del producto del carrito
-            ProductoPedido productoPedido = new ProductoPedido(carrito.getProducto(), carrito.getCantidad());
+            ProductoPedido productoPedido = new ProductoPedido(this, carrito.getProducto(), carrito.getCantidad());
 
             // Annadimos el producto pedido a la lista
-            productosPedidoList.add(productoPedido);
+            this.productos.add(productoPedido);
 
             // Sumamos el total del producto al precio total del pedido
             totalProductos += productoPedido.getPrecioTotal();
         }
 
-        // Asignamos la lista de productos del pedido y el total generado
-        this.productos = productosPedidoList;
         this.total = totalProductos;
     }
 }

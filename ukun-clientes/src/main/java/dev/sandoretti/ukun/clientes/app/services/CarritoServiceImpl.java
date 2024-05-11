@@ -32,4 +32,10 @@ public class CarritoServiceImpl implements ICarritoService
     {
         carritoDAO.deleteById(id);
     }
+
+    @Override
+    public void eliminar(List<Carrito> productosCarrito)
+    {
+        carritoDAO.deleteAll(productosCarrito);
+    }
 }

@@ -20,7 +20,8 @@ public class ProductoPedido implements Serializable
     private ProductoPedidoId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pedido_id", insertable = false, updatable = false)
+    @MapsId("pedidoId")
+    @JoinColumn(name = "pedido_id")
     private Pedido pedido;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -33,19 +34,22 @@ public class ProductoPedido implements Serializable
 
     @NotNull
     @PositiveOrZero
-    @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
+    @Column(name = "precio_unitario", nullable = false)
     private Float precioUnidad;
 
     @NotNull
     @PositiveOrZero
-    @Column(name = "precio_total", nullable = false, precision = 10, scale = 2)
+    @Column(name = "precio_total", nullable = false)
     private Float precioTotal;
 
-    public ProductoPedido(Producto producto, Long cantidad)
+    public ProductoPedido(Pedido pedido, Producto producto, Long cantidad)
     {
         // Asignamos el producto y la cantidad
+        this.pedido = pedido;
         this.producto = producto;
         this.cantidad = cantidad;
+
+        this.id = new ProductoPedidoId(pedido.getId(), producto.getId());
 
         // Generamos el precio de unidad del producto
         this.precioUnidad = producto.getPrecio();

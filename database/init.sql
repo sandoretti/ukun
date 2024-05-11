@@ -127,7 +127,7 @@ CREATE TABLE carrito (
 CREATE TABLE pedido (
     id SERIAL PRIMARY KEY,          -- Identificador del pedido
     cliente_id INTEGER NOT NULL,    -- Identificador del cliente
-    fecha DATE NOT NULL,            -- Fecha del pedido
+    fecha TIMESTAMP NOT NULL,            -- Fecha del pedido
     total DECIMAL(10, 2) NOT NULL,  -- Total del pedido
     direccion_id INTEGER NOT NULL,  -- Identificador de la dirección del pedido
     tarjeta_id INTEGER NOT NULL,    -- Identificador de la tarjeta del pedido

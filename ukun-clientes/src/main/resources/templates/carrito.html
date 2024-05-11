@@ -42,6 +42,8 @@
   </table>
 
   <span th:text="${'Precio total: ' + total}"></span>
+
+  <a th:href="@{/pedidos/hacer}">Hacer pedido</a>
 </div>
 
 <div th:unless="${carritoProductos.size() != 0}">Carrito vacío</div>

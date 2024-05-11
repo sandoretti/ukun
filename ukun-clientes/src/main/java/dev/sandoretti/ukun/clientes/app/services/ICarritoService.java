@@ -13,4 +13,6 @@ public interface ICarritoService
     public Carrito guardar(Carrito carrito);
 
     public void eliminar(CarritoId id);
+
+    public void eliminar(List<Carrito> productosCarrito);
 }

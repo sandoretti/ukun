@@ -26,4 +26,10 @@ public class StockServiceImpl implements IStockService
     public StockProducto findById(StockProductoId id) {
         return stockDAO.findById(id).orElse(null);
     }
+
+    @Override
+    public void save(List<StockProducto> stockProducto)
+    {
+        stockDAO.saveAll(stockProducto);
+    }
 }
