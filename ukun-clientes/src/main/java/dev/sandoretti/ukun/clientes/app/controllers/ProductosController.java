@@ -11,10 +11,7 @@ import dev.sandoretti.ukun.clientes.app.services.ITiendaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
@@ -73,17 +70,20 @@ public class ProductosController extends AbsController
     }
 
     @GetMapping({"", "/"})
-    public String home(@ModelAttribute("cliente") Cliente cliente,
-                       Model model)
+    public String index(@RequestParam(required = false) String nombre,
+                        @RequestParam(required = false) Long tipo,
+                        @RequestParam(required = false) Integer ordenPrecio,
+                        @ModelAttribute("cliente") Cliente cliente,
+                        Model model)
     {
         // Obtenemos la lista de los productos
-        List<Producto> productosList = productoService.findAll();
+        List<Producto> productosList = productoService.filtrarProductos(nombre, tipo, ordenPrecio);
 
         // Obtenemos los stocks de los productos de la tienda online e inicializamos los de la favorita
         HashMap<Long, Boolean> disponibilidadFavorita = null,
                 disponibilidadOnline = disponibilidadTienda(tiendaOnline);
 
-        // Comprobamos que el cliente no se nulo
+        // Comprobamos que el cliente no es nulo
         if (cliente != null)
         {
             // Obtenemos la tienda favorita del cliente
@@ -102,6 +102,8 @@ public class ProductosController extends AbsController
         // Mandamos a la vista de productos.html
         return "productos";
     }
+
+
 
     @GetMapping("/ver/{idProducto}")
     public String ver(@PathVariable("idProducto") Long productoId,
