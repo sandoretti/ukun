@@ -6,4 +6,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface IClienteDAO extends CrudRepository<Cliente, Long>
 {
     public Cliente findByCuenta_CorreoAndCuenta_Contrasenna(String correo, String contrasena);
+    public boolean existsByCuenta_Correo(String correo);
 }

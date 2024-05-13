@@ -5,7 +5,10 @@
     <title>Ukun</title>
 </head>
 <body>
-    <a th:if="${cliente==null}" th:href="@{/login}">Iniciar sesion</a>
+    <div th:if="${cliente==null}">
+        <a th:href="@{/login}">Iniciar sesion</a>
+        <a th:href="@{/signup}">Crear cuenta</a>
+    </div>
 
     <div th:unless="${cliente==null}">
         <a th:href="@{/logout}">Cerrar sesion</a>
