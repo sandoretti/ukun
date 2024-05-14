@@ -1,13 +1,9 @@
 package dev.sandoretti.ukun.clientes.app.controllers;
 
-import dev.sandoretti.ukun.clientes.app.models.embeddable.StockProductoId;
 import dev.sandoretti.ukun.clientes.app.models.entity.Cliente;
 import dev.sandoretti.ukun.clientes.app.models.entity.Producto;
-import dev.sandoretti.ukun.clientes.app.models.entity.StockProducto;
 import dev.sandoretti.ukun.clientes.app.models.entity.Tienda;
 import dev.sandoretti.ukun.clientes.app.services.IProductoService;
-import dev.sandoretti.ukun.clientes.app.services.IStockService;
-import dev.sandoretti.ukun.clientes.app.services.ITiendaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
