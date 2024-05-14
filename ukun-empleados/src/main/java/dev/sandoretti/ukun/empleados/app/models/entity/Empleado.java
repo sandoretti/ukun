@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.empleados.app.models.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ public class Empleado implements Serializable
     @Id
     private Long id;
 
+    @Valid
     @OneToOne
     @JoinColumn(name = "id")
     @MapsId
