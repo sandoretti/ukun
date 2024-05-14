@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${'Carrito de ' + cliente.cuenta.nombre}"></title>
+</head>
+<body>
+
+<h1 th:text="${'Carrito de ' + cliente.cuenta.nombre}"></h1>
+
+<span th:if="${info != null}" th:text="${info}"></span>
+
+<div th:if="${carritoProductos.size() != 0}">
+  <table>
+    <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Precio</th>
+      <th>Cantidad</th>
+      <th></th>
+      <th>Total</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr th:each="productoCarrito, iStat: ${carritoProductos}">
+      <td th:text="${productoCarrito.producto.nombre}"></td>
+      <td th:text="${productoCarrito.producto.precio}"></td>
+      <td>
+        <form th:id="${iStat.index}" th:action="@{/carrito/add}">
+          <input th:form="${iStat.index}" type="hidden" th:value="${productoCarrito.producto.id}" name="producto"/>
+          <input th:form="${iStat.index}" type="text" th:value="${productoCarrito.cantidad}" name="cantidad"/>
+        </form>
+      </td>
+      <td><input th:form="${iStat.index}" type="submit" value="Editar"/></td>
+      <td th:text="${productoCarrito.producto.precio * productoCarrito.cantidad}"></td>
+      <td><a th:href="@{/carrito/delete(producto = ${productoCarrito.producto.id})}">Eliminar</a></td>
+      <td><img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${productoCarrito.producto.pathFoto})}"
+               width="50" height="50" th:alt="${productoCarrito.producto.nombre}"/></td>
+    </tr>
+    </tbody>
+  </table>
+
+  <span th:text="${'Precio total: ' + total}"></span>
+
+  <a th:href="@{/pedidos/hacer}">Hacer pedido</a>
+</div>
+
+<div th:unless="${carritoProductos.size() != 0}">Carrito vacío</div>
+
+</body>
+</html>

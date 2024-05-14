@@ -1,11 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Ukun</title>
 </head>
 <body>
-    <h1>Buenas tardes</h1>
-    <a href="/clientes">Clientes</a>
+    <div th:if="${cliente==null}">
+        <a th:href="@{/login}">Iniciar sesion</a>
+        <a th:href="@{/signup}">Crear cuenta</a>
+    </div>
+
+    <div th:unless="${cliente==null}">
+        <a th:href="@{/logout}">Cerrar sesion</a>
+        <a th:href="@{/perfil}">Perfil</a>
+        <a th:href="@{/carrito}">Carrito</a>
+    </div>
+
+    <a th:href="@{/productos}">Productos</a>
 </body>
 </html>

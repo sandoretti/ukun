@@ -127,7 +127,7 @@ CREATE TABLE carrito (
 CREATE TABLE pedido (
     id SERIAL PRIMARY KEY,          -- Identificador del pedido
     cliente_id INTEGER NOT NULL,    -- Identificador del cliente
-    fecha DATE NOT NULL,            -- Fecha del pedido
+    fecha TIMESTAMP NOT NULL,            -- Fecha del pedido
     total DECIMAL(10, 2) NOT NULL,  -- Total del pedido
     direccion_id INTEGER NOT NULL,  -- Identificador de la dirección del pedido
     tarjeta_id INTEGER NOT NULL,    -- Identificador de la tarjeta del pedido
@@ -141,9 +141,11 @@ CREATE TABLE pedido (
 -- Tabla producto_pedido
 -- La tabla producto_pedido almacena la información de los productos en los pedidos de los clientes
 CREATE TABLE producto_pedido (
-    pedido_id INTEGER NOT NULL,     -- Identificador del pedido
-    producto_id INTEGER NOT NULL,   -- Identificador del producto
-    cantidad INTEGER NOT NULL,      -- Cantidad del producto en el pedido
+    pedido_id INTEGER NOT NULL,                 -- Identificador del pedido
+    producto_id INTEGER NOT NULL,               -- Identificador del producto
+    cantidad INTEGER NOT NULL,                  -- Cantidad del producto en el pedido
+    precio_unitario DECIMAL(10, 2) NOT NULL,    -- Precio unitario del producto
+    precio_total DECIMAL(10, 2) NOT NULL,       -- Precio total del producto
 
     -- Foreign keys de las tablas pedido y producto
     FOREIGN KEY (pedido_id) REFERENCES pedido(id),
@@ -524,4 +526,98 @@ INSERT INTO stock_tienda (producto_id, tienda_id, stock) VALUES
     (SELECT id FROM producto WHERE nombre = 'Silla de madera'),
     (SELECT id FROM tienda_barcelona),
     22
+);
+
+WITH tienda_online as (
+    SELECT id FROM tienda WHERE nombre = 'Ukun Online'
+)
+INSERT INTO stock_tienda (producto_id, tienda_id, stock) VALUES
+(
+    (SELECT id FROM producto WHERE nombre = 'Mesa de madera'),
+    (SELECT id FROM tienda_online),
+    20
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Silla de plástico'),
+    (SELECT id FROM tienda_online),
+    30
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Cama individual'),
+    (SELECT id FROM tienda_online),
+    25
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Escritorio de cristal'),
+    (SELECT id FROM tienda_online),
+    10
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Sofá de cuero'),
+    (SELECT id FROM tienda_online),
+    15
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Cama de matrimonio'),
+    (SELECT id FROM tienda_online),
+    20
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Escritorio de madera'),
+    (SELECT id FROM tienda_online),
+    12
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Sofá de tela'),
+    (SELECT id FROM tienda_online),
+    18
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Mesa de cristal'),
+    (SELECT id FROM tienda_online),
+    25
+),
+(
+    (SELECT id FROM producto WHERE nombre = 'Silla de madera'),
+    (SELECT id FROM tienda_online),
+    35
+);
+
+
+-- Tabla cliente
+WITH cliente_data AS (
+    INSERT INTO cuenta (correo, contrasenna, nombre, apellido)
+    VALUES ('joel.sandoval@email.com', '123456', 'Joel', 'Sandoval') RETURNING id
+),
+direccion_data AS (
+    INSERT INTO direccion (calle, provincia, ciudad, codigo_postal)
+    VALUES ('Calle Mayor, 1', 'Madrid', 'Alcalá de Henares', '28803') RETURNING id
+),
+tarjeta_data AS (
+    INSERT INTO tarjeta (numero, fecha_expiracion, cvv)
+    VALUES ('1234567890123456', '2025-12-01', '123') RETURNING id
+)
+INSERT INTO cliente (id, id_direccion, id_tarjeta, tienda_fav)
+VALUES
+(
+    (SELECT id FROM cliente_data),
+    (SELECT id FROM direccion_data),
+    (SELECT id FROM tarjeta_data),
+    (SELECT id FROM tienda WHERE nombre = 'Ukun Alcalá de Henares')
+);
+
+WITH cliente_data AS (
+    INSERT INTO cuenta (correo, contrasenna, nombre, apellido)
+    VALUES ('carmen.amoretti@email.com', '123456', 'Carmen', 'Amoretti') RETURNING id
+),
+direccion_data AS (
+    INSERT INTO direccion (calle, provincia, ciudad, codigo_postal)
+    VALUES ('Avenida de la Constitución, 1', 'Madrid', 'Torrejón de Ardoz', '28103') RETURNING id
+)
+INSERT INTO cliente (id, id_direccion, tienda_fav)
+VALUES
+(
+    (SELECT id FROM cliente_data),
+    (SELECT id FROM direccion_data),
+    (SELECT id FROM tienda WHERE nombre = 'Ukun Torrejón de Ardoz')
 );

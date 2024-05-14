@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pedidos</title>
+</head>
+<body>
+
+<span th:if="${error != null}" th:text="${error}"></span>
+<span th:if="${info != null}" th:text="${info}"></span>
+
+<div th:if="${pedidos.size() != 0}">
+    <table>
+        <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Ciudad</th>
+            <th>Total</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="pedido: ${pedidos}">
+            <td th:text="${pedido.fecha}"></td>
+            <td th:text="${pedido.direccion.ciudad}"></td>
+            <td th:text="${pedido.total}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div th:unless="${pedidos.size() != 0}">No hay pedidos</div>
+</body>
+</html>

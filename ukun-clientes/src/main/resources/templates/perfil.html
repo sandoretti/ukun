@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Perfil</title>
+</head>
+<body>
+    <h1 th:text="${'Perfil de ' + cliente.cuenta.nombre}"></h1>
+
+    <form th:action="@{/perfil}" method="post">
+        <div th:object="${cliente.cuenta}">
+            <h2>Datos de la cuenta</h2>
+            <dl>
+                <dt>
+                    <label for="nombre">Nombre</label>
+                </dt>
+                <dd>
+                    <input id="nombre" type="text" th:field="*{nombre}">
+                    <small th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for="apellido">Apellido</label>
+                </dt>
+                <dd>
+                    <input id="apellido" type="text" th:field="*{apellido}">
+                    <small th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></small>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for="correo">Correo</label>
+                </dt>
+                <dd>
+                    <input id="correo" type="text" th:field="*{correo}">
+                    <small th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></small>
+                </dd>
+            </dl>
+
+            <dl>
+                <dt>
+                    <label for="tiendafav">Tienda favorita</label>
+                </dt>
+                <dd>
+                    <select id="tiendafav" th:field="${cliente.tienda.id}">
+                        <option th:each="tienda: ${tiendaList}" th:text="${tienda.nombre}"
+                                th:value="${tienda.id}" th:selected="${tienda==cliente.tienda}"></option>
+                    </select>
+                </dd>
+            </dl>
+        </div>
+
+        <hr>
+
+        <div th:object="${cliente.direccion}">
+            <h2>Datos de dirección</h2>
+            <dl>
+                <dt>
+                    <label for="calle">Calle</label>
+                </dt>
+                <dd>
+                    <input id="calle" type="text" th:field="*{calle}">
+                    <small th:if="${#fields.hasErrors('calle')}" th:errors="*{calle}"></small>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for="provincia">Provincia</label>
+                </dt>
+                <dd>
+                    <input id="provincia" type="text" th:field="*{provincia}">
+                    <small th:if="${#fields.hasErrors('provincia')}" th:errors="*{provincia}"></small>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for="ciudad">Ciudad</label>
+                </dt>
+                <dd>
+                    <input id="ciudad" type="text" th:field="*{ciudad}">
+                    <small th:if="${#fields.hasErrors('ciudad')}" th:errors="*{ciudad}"></small>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for="codigoPostal">Código Postal</label>
+                </dt>
+                <dd>
+                    <input id="codigoPostal" type="text" th:field="*{codigoPostal}">
+                    <small th:if="${#fields.hasErrors('codigoPostal')}" th:errors="*{codigoPostal}"></small>
+                </dd>
+            </dl>
+        </div>
+
+        <hr>
+
+        <div th:object="${cliente.tarjeta}">
+            <h2>Datos de la tarjeta</h2>
+            <dl>
+                <dt>
+                    <label for="numero">Número</label>
+                </dt>
+                <dd>
+                    <input id="numero" type="text" th:field="*{numero}">
+                    <small th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}"></small>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for="fechaExpiracion">Fecha de expiración</label>
+                </dt>
+                <dd>
+                    <input id="fechaExpiracion" type="month" th:field="*{fechaExpiracion}" placeholder="MM/yyyy">
+                    <small th:if="${#fields.hasErrors('fechaExpiracion')}" th:errors="*{fechaExpiracion}"></small>
+                </dd>
+            </dl>
+            <dl>
+                <dt>
+                    <label for="cvv">CVV</label>
+                </dt>
+                <dd>
+                    <input id="cvv" type="text" th:field="*{cvv}">
+                    <small th:if="${#fields.hasErrors('cvv')}" th:errors="*{cvv}"></small>
+                </dd>
+            </dl>
+        </div>
+
+        <p>
+            <input type="submit" value="Editar información">
+        </p>
+    </form>
+</body>
+</html>
