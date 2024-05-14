@@ -24,64 +24,19 @@ public class ProductosController extends AbsController
     @Autowired
     private IProductoService productoService;
 
-    @Autowired
-    private IStockService stockService;
-
-    private final Tienda tiendaOnline;
-
-    @Autowired
-    public ProductosController(ITiendaService tiendaService) {
-        // Consulta la tienda online y la guarda en el atributo tiendaOnline
-        this.tiendaOnline = tiendaService.findByNombre("Ukun Online");
-    }
-
-    /**
-     * Crea un HashMap que asigna las ids de los productos con su disponibilidad en la tienda dada
-     * @param tienda Tienda a buscar
-     * @return Hashmap de IDS de productos con boolean de la disponibilidad del producto
-     */
-    private HashMap<Long, Boolean> disponibilidadTienda(Tienda tienda)
-    {
-        // Obtenemos el stock de los productos de la tienda dada
-        List<StockProducto> stockProductosOnline = stockService.findByTienda(tienda);
-
-        // Inicializamos el hashmap de los productos
-        HashMap<Long, Boolean> disponibleProductoHash = new HashMap<>();
-
-        // Inicializamos parametros necesarios para la asignacion
-        Long idProducto;
-        boolean disponibleProducto;
-
-        // Recorremos todos los stocks
-        for (StockProducto stock : stockProductosOnline)
-        {
-            // Obtenemos el id del producto del stock
-            idProducto = stock.getId().getProductoId();
-
-            // Miramos si el producto esta disponible si el stock del producto es mayor a 0
-            disponibleProducto = stock.getStock() > 0;
-
-            // Lo metemos en el hasmap
-            disponibleProductoHash.put(idProducto, disponibleProducto);
-        }
-
-        // Devolvemos el Hashmap
-        return disponibleProductoHash;
-    }
-
     @GetMapping({"", "/"})
-    public String index(@RequestParam(required = false) String nombre,
+    public String index(@RequestParam(required = false) String nombreProducto,
                         @RequestParam(required = false) Long tipo,
                         @RequestParam(required = false) Integer ordenPrecio,
                         @ModelAttribute("cliente") Cliente cliente,
                         Model model)
     {
         // Obtenemos la lista de los productos
-        List<Producto> productosList = productoService.filtrarProductos(nombre, tipo, ordenPrecio);
+        List<Producto> productosList = productoService.filtrarProductos(nombreProducto, tipo, ordenPrecio);
 
         // Obtenemos los stocks de los productos de la tienda online e inicializamos los de la favorita
         HashMap<Long, Boolean> disponibilidadFavorita = null,
-                disponibilidadOnline = disponibilidadTienda(tiendaOnline);
+                disponibilidadOnline = productoService.disponibilidadTiendaOnline(productosList);
 
         // Comprobamos que el cliente no es nulo
         if (cliente != null)
@@ -91,7 +46,7 @@ public class ProductosController extends AbsController
 
             // Si la tienda no es nula, obtenemos el stock de los productos de la tienda favorita
             if (tiendaFav != null)
-                disponibilidadFavorita = disponibilidadTienda(tiendaFav);
+                disponibilidadFavorita = productoService.disponibilidadTienda(tiendaFav, productosList);
         }
 
         // Asignamos lo obtenido como atributos del modelo
@@ -102,8 +57,6 @@ public class ProductosController extends AbsController
         // Mandamos a la vista de productos.html
         return "productos";
     }
-
-
 
     @GetMapping("/ver/{idProducto}")
     public String ver(@PathVariable("idProducto") Long productoId,
@@ -125,14 +78,14 @@ public class ProductosController extends AbsController
         // Annadimos el producto al modelo
         model.addAttribute("producto", producto);
 
-        // Inicializamos los stocks
-        StockProducto stockOnline, stockFavorita = null;
+        // Obtenemos el stock de la tienda online
+        Long stockOnline = productoService.obtenerStockProductoTiendaOnline(producto);
 
-        // Obtenemos el stock del producto en la tienda online
-        stockOnline = stockService.findById(new StockProductoId(tiendaOnline.getId(), productoId));
+        // Annadimos el stock del producto en la tienda online
+        model.addAttribute("stockOnline", stockOnline);
 
-        // Annadimos el stock del producto en la tienda online, si no tiene lo dejamos nulo
-        model.addAttribute("stockOnline", stockOnline != null ? stockOnline.getStock() : null);
+        // Inicializamos el stock de la tienda favorita del cliente
+        Long stockFavorita = null;
 
         // Comprobamos que el cliente no se nulo
         if (cliente != null)
@@ -142,11 +95,11 @@ public class ProductosController extends AbsController
 
             // Si la tienda no es nula, obtenemos el stock del producto en la tienda favorita
             if (tiendaFav != null)
-                stockFavorita = stockService.findById(new StockProductoId(tiendaFav.getId(), productoId));
+                stockFavorita = productoService.obtenerStockProductoTienda(tiendaFav, producto);
         }
 
         // Annadimos el stock del producto en la tienda favorita, si no tiene lo dejamos nulo
-        model.addAttribute("stockFavorita", stockFavorita != null ? stockFavorita.getStock() : null);
+        model.addAttribute("stockFavorita", stockFavorita);
 
         return "ver-producto";
     }
