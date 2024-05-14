@@ -8,6 +8,27 @@
 
 <h1 th:text="${'Stock de ' + tienda.nombre}"></h1>
 
+<span th:if="${error!=null}" th:text="${error}"></span>
+
+<div th:if="${productoNoTienda != null && productoNoTienda.size() > 0}">
+    <form th:action="@{/stock/editar}">
+        <label>
+            Producto:
+            <select name="productoId">
+                <option th:each="producto: ${productoNoTienda}" th:text="${producto.nombre}"
+                        th:value="${producto.id}"></option>
+            </select>
+        </label>
+        <label>
+            Stock:
+            <input type="text" th:value="${0}" name="stock"/>
+        </label>
+        <input type="hidden" th:value="${tienda.id}" name="tiendaId">
+        <input type="submit" value="Nuevo Stock"/>
+    </form>
+
+</div>
+
 <div>
     <table>
         <thead>
