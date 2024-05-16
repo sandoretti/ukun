@@ -2,14 +2,20 @@
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
 <head th:replace="~{components/layout :: head}"></head>
 <body>
-<header th:replace="~{components/layout :: header}"></header>
-
-<h1>Aplicacion empleados</h1>
-<a th:href="@{/logout}">Log out</a>
-<a th:href="@{/stock}">Stock</a>
-
-<a th:if="${empleado.isAdmin}" th:href="@{/admin/productos}">Productos</a>
-<a th:if="${empleado.isAdmin}" th:href="@{/admin/empleados}">Empleados</a>
-
+    <header th:replace="~{components/layout :: header}"></header>
+    <div class="container">
+        <div class="main-container">
+            <h1 class="main-heading">Ukun Empleados</h1>
+            <div class="d-grid gap-2">
+                <a th:href="@{/stock}" class="btn btn-primary mt-3">Stock</a>
+                <a th:if="${empleado.isAdmin}" th:href="@{/admin/productos}" class="btn btn-secondary mt-3">Productos</a>
+                <a th:if="${empleado.isAdmin}" th:href="@{/admin/empleados}" class="btn btn-primary mt-3">Empleados</a>
+                <a th:href="@{/logout}" class="btn btn-danger mt-5">
+                    <i class="bi bi-box-arrow-left"></i>
+                    Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

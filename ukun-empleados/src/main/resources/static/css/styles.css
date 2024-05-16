@@ -10,6 +10,28 @@ body {
 }
 
 /* CLASES DE BOOTSTRAP */
+.btn-primary{
+    background-color: #5d9d0b;
+    border-color: #5d9d0b;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: #456e0f;
+    border-color: #456e0f;
+}
+
+.btn-secondary {
+    background-color: #a3c712;
+    border-color: #5d9d0b;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #456e0f;
+    border-color: #456e0f;
+}
+
 .navbar-text {
     color: #ffffff;
 }
@@ -30,7 +52,7 @@ body {
 }
 
 /* LOGIN */
-.login-container {
+.main-container {
     max-width: 500px;
     margin: 100px auto;
     padding: 30px;
@@ -39,7 +61,7 @@ body {
     border-radius: 5px;
 }
 
-.login-heading {
+.main-heading {
     text-align: center;
     font-weight: bold;
     margin-bottom: 20px;
@@ -59,16 +81,10 @@ body {
     border-color: #5d9d0b;
 }
 
-.login-btn {
+.main-btn {
     width: 100%;
     padding: 12px;
     border-radius: 5px;
-    background-color: #5d9d0b;
-    color: #ffffff;
     border: none;
     margin-top: 15px;
-}
-
-.login-btn:hover {
-    background-color: #456e0f;
 }
