@@ -3,11 +3,33 @@
     src: url('../AvertaStandard-Regular.otf');
 }
 
+/* MARCAS */
 body {
     font-family: 'Averta', sans-serif;
     background-color: #E9F5D8;
 }
 
+/* CLASES DE BOOTSTRAP */
+.navbar-text {
+    color: #ffffff;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.nav-link img{
+    width: 20px;
+    height: 20px;
+    opacity: 0.55;
+    margin-right: 4px;
+}
+
+.nav-link:hover img {
+    opacity: 0.8;
+}
+
+/* LOGIN */
 .login-container {
     max-width: 500px;
     margin: 100px auto;
