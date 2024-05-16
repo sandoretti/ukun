@@ -27,7 +27,7 @@ public class WebConfig implements WebMvcConfigurer
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(empleadoInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/login");
+                .excludePathPatterns("/login", "/css/**", "/resources/**", "/AvertaStandard-Regular.otf");
 
         registry.addInterceptor(adminInterceptor).addPathPatterns("/admin/**");
     }

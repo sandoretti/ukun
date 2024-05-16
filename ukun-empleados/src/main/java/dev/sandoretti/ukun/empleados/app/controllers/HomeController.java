@@ -22,7 +22,7 @@ public class HomeController {
      * @return Pagina html principal
      */
     @GetMapping(value = {"/", ""})
-    public String home()
+    public String home(@ModelAttribute("empleado") Empleado empleado)
     {
         return "index";
     }
