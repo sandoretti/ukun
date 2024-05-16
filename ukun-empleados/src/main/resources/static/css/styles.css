@@ -88,3 +88,13 @@ body {
     border: none;
     margin-top: 15px;
 }
+
+/* TABLE */
+.table-primary {
+    --bs-table-bg: #5d9d0b;
+    --bs-table-color: #fff;
+}
+
+.main-thead {
+    height: 60px;
+}

@@ -1,40 +1,37 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Empleados</title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
+<header th:replace="~{components/layout :: header}"></header>
 
-<h1 th:text="${'Empleados de ' + empleado.tienda.nombre}"></h1>
-
-<a th:href="@{/admin/empleados/crear}">Crear</a>
-
-<div>
-    <table>
-        <thead>
-        <tr>
-            <th>Id</th>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>Correo</th>
-            <th>Empleo</th>
-            <th>Administrador</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        <tr th:each="emp: ${empleadosList}">
-            <td th:text="${emp.id}"></td>
-            <td th:text="${emp.cuenta.nombre}"></td>
-            <td th:text="${emp.cuenta.apellido}"></td>
-            <td th:text="${emp.cuenta.correo}"></td>
-            <td th:text="${emp.empleo}"></td>
-            <td th:text="${emp.isAdmin} ? 'Si' : 'No'"></td>
-        </tr>
-        </tbody>
-    </table>
+<div class="container mt-4">
+    <h1 class="main-heading text-center" th:text="${'Empleados de ' + empleado.tienda.nombre}"></h1>
+    <a th:href="@{/admin/empleados/crear}" class="btn btn-primary mb-4 shadow">Crear Empleado</a>
+    <div class="table-responsive rounded-top-4 shadow-lg">
+        <table class="table table-hover table-striped mb-0">
+            <thead class="main-thead fs-5 align-middle">
+            <tr class="table-primary">
+                <th class="text-center col-1" scope="col">#</th>
+                <th class="col-2" scope="col">Nombre</th>
+                <th class="col-2" scope="col">Apellido</th>
+                <th scope="col">Correo</th>
+                <th class="col-2" scope="col">Empleo</th>
+                <th scope="col">Administrador</th>
+            </tr>
+            </thead>
+            <tbody class="table-group-divider">
+            <tr th:each="emp: ${empleadosList}">
+                <th class="text-center" scope="row" th:text="${emp.id}"></th>
+                <td th:text="${emp.cuenta.nombre}"></td>
+                <td th:text="${emp.cuenta.apellido}"></td>
+                <td th:text="${emp.cuenta.correo}"></td>
+                <td th:text="${emp.empleo}"></td>
+                <td><span th:class="'badge ' + ${emp.isAdmin ? 'text-bg-success' : 'text-bg-danger'}"
+                          th:text="${emp.isAdmin} ? 'Sí' : 'No'"></span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
-
 </body>
 </html>
