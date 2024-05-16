@@ -7,10 +7,10 @@
         <div class="main-container">
             <h1 class="main-heading">Ukun Empleados</h1>
             <div class="d-grid gap-2">
-                <a th:href="@{/stock}" class="btn btn-primary mt-3">Stock</a>
-                <a th:if="${empleado.isAdmin}" th:href="@{/admin/productos}" class="btn btn-secondary mt-3">Productos</a>
-                <a th:if="${empleado.isAdmin}" th:href="@{/admin/empleados}" class="btn btn-primary mt-3">Empleados</a>
-                <a th:href="@{/logout}" class="btn btn-danger mt-5">
+                <a th:href="@{/stock}" class="btn btn-primary mt-3 fs-4">Stock</a>
+                <a th:if="${empleado.isAdmin}" th:href="@{/admin/productos}" class="btn btn-secondary mt-3 fs-4">Productos</a>
+                <a th:if="${empleado.isAdmin}" th:href="@{/admin/empleados}" class="btn btn-primary mt-3 fs-4">Empleados</a>
+                <a th:href="@{/logout}" class="btn btn-danger mt-5 mx-auto">
                     <i class="bi bi-box-arrow-left"></i>
                     Cerrar Sesión
                 </a>
