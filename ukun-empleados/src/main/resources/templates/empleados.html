@@ -26,7 +26,7 @@
                 <td th:text="${emp.cuenta.apellido}"></td>
                 <td th:text="${emp.cuenta.correo}"></td>
                 <td th:text="${emp.empleo}"></td>
-                <td><span th:class="'badge ' + ${emp.isAdmin ? 'text-bg-success' : 'text-bg-danger'}"
+                <td><span th:class="'badge rounded-pill ' + ${emp.isAdmin ? 'text-bg-success' : 'text-bg-danger'}"
                           th:text="${emp.isAdmin} ? 'Sí' : 'No'"></span></td>
             </tr>
             </tbody>
