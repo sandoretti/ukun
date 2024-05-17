@@ -12,9 +12,9 @@
             <tr class="table-primary">
                 <th class="text-center col-1" scope="col">#</th>
                 <th>Nombre</th>
+                <th class="col-1">Foto</th>
                 <th class="col-2">Tipo</th>
                 <th class="col-2">Precio</th>
-                <th class="text-center col-1">Foto</th>
                 <th class="col-2"></th>
             </tr>
             </thead>
@@ -22,12 +22,12 @@
             <tr class="text-align-middle" th:each="producto: ${productoList}">
                 <th class="text-center" scope="row" th:text="${producto.id}"></th>
                 <td th:text="${producto.nombre}"></td>
+                <td><img class="border border-black rounded d-block"
+                         th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}"
+                         width="50" height="50" alt=""/></td>
                 <td th:text="${producto.tipo.nombre}"></td>
                 <td class="precio" th:text="${producto.precio}"></td>
-                <td><img class="border border-black rounded mx-auto d-block"
-                         th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}" 
-                         width="50" height="50" alt=""/></td>
-                <td class="text-center"><a class="btn btn-info" th:href="@{/admin/productos/editar/{id}(id=${producto.id})}">Editar</a></td>
+                <td class="text-center"><a class="btn btn-primary" th:href="@{/admin/productos/editar/{id}(id=${producto.id})}">Editar</a></td>
             </tr>
             </tbody>
         </table>
