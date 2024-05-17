@@ -4,7 +4,7 @@
 <body>
 <header th:replace="~{components/layout :: header}"></header>
 
-<div class="container mt-4">
+<div class="container mt-4 mb-5">
     <h1 class="main-heading text-center" th:text="${'Empleados de ' + empleado.tienda.nombre}"></h1>
     <a th:href="@{/admin/empleados/crear}" class="btn btn-primary mb-4 shadow">Crear Empleado</a>
     <div class="table-responsive rounded-top-4 shadow-lg">

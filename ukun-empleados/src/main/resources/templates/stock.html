@@ -4,7 +4,7 @@
 <body>
 <header th:replace="~{components/layout :: header}"></header>
 
-<div class="container mt-4">
+<div class="container mt-4 mb-5">
     <h1 class="main-heading text-center" th:text="${'Stock de ' + tienda.nombre}"></h1>
     <div th:if="${productoNoTienda != null && productoNoTienda.size() > 0}"
          class="container w-75 my-4 shadow-lg rounded" style="background-color: #cf9;">
