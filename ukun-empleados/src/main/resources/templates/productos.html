@@ -1,36 +1,40 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Productos</title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
-<h1>Productos</h1>
-
-<a th:href="@{/admin/productos/crear}">Crear</a>
-
-<div>
-    <table>
-        <thead>
-        <tr>
-            <th>Id</th>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Tipo</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        <tr th:each="producto: ${productoList}">
-            <td th:text="${producto.id}"></td>
-            <td th:text="${producto.nombre}"></td>
-            <td th:text="${producto.precio}"></td>
-            <td th:text="${producto.tipo.nombre}"></td>
-            <td><img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}" width="50" height="50"/></td>
-            <td><a th:href="@{/admin/productos/editar/{id}(id=${producto.id})}">Editar</a></td>
-        </tr>
-        </tbody>
-    </table>
+<header th:replace="~{components/layout :: header}"></header>
+<div class="container mt-4">
+    <h1 class="main-heading text-center mb-1">Productos</h1>
+    <a class="btn btn-primary mb-4 shadow" th:href="@{/admin/productos/crear}">Crear</a>
+    <div class="table-responsive rounded-top-4 shadow-lg">
+        <table class="table table-hover table-striped mb-0">
+            <thead class="main-thead fs-5 align-middle">
+            <tr class="table-primary">
+                <th class="text-center col-1" scope="col">#</th>
+                <th>Nombre</th>
+                <th class="col-2">Tipo</th>
+                <th class="col-2">Precio</th>
+                <th class="text-center col-1">Foto</th>
+                <th class="col-2"></th>
+            </tr>
+            </thead>
+            <tbody class="table-group-divider">
+            <tr class="text-align-middle" th:each="producto: ${productoList}">
+                <th class="text-center" scope="row" th:text="${producto.id}"></th>
+                <td th:text="${producto.nombre}"></td>
+                <td th:text="${producto.tipo.nombre}"></td>
+                <td class="precio" th:text="${producto.precio}"></td>
+                <td><img class="border border-black rounded mx-auto d-block"
+                         th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}" 
+                         width="50" height="50" alt=""/></td>
+                <td class="text-center"><a class="btn btn-info" th:href="@{/admin/productos/editar/{id}(id=${producto.id})}">Editar</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
+<script>
+    window.onload = formatearPrecios;
+</script>
 </body>
 </html>

@@ -9,6 +9,10 @@ body {
     background-color: #E9F5D8;
 }
 
+th, td {
+    vertical-align: middle;
+}
+
 /* CLASES DE BOOTSTRAP */
 .btn-primary{
     background-color: #5d9d0b;
