@@ -38,11 +38,4 @@ public class EmpleadoServiceImpl implements IEmpleadoService
     public void delete(Long id) {
         empleadoCrud.deleteById(id);
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean validarCorreo(String correo)
-    {
-        return empleadoCrud.existsByCuenta_Correo(correo);
-    }
 }

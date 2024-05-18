@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
 
   # configuramos el contenedor de la base de datos
@@ -16,13 +14,13 @@ services:
     # configuramos las variables de entorno para la base de datos
     environment:
       # contraseña de la base de datos
-      POSTGRES_PASSWORD: 12345
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
       # usuario de la base de datos
-      POSTGRES_USER: ukun
+      - POSTGRES_USER=${POSTGRES_USER}
 
       # nombre de la base de datos
-      POSTGRES_DB: ukun_db
+      - POSTGRES_DB=${POSTGRES_DB}
 
     # configuramos los volúmenes para la base de datos
     volumes:
@@ -47,6 +45,11 @@ services:
       # Enrutamos las peticiones que lleguen a la raíz del dominio al contenedor del cliente
       - "traefik.http.routers.ukun-clientes.rule=PathPrefix(`/`)"
       - "traefik.http.routers.ukun-clientes.entrypoints=web"
+    environment:
+      #Configuramos la base de datos
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - vol_resources:/opt/resources
     depends_on:
@@ -62,6 +65,11 @@ services:
       # Enrutamos las peticiones que lleguen a la raíz del dominio al contenedor del empleado
       - "traefik.http.routers.ukun-empleados.rule=PathPrefix(`/empleados`)"
       - "traefik.http.routers.ukun-empleados.entrypoints=web"
+    environment:
+      #Configuramos la base de datos
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - vol_resources:/opt/resources
     depends_on:

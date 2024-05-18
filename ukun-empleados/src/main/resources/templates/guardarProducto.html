@@ -1,65 +1,57 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
-
-    <h1>Editar producto</h1>
-    <form th:action="@{/admin/productos/guardar}" th:object="${producto}" method="post" enctype="multipart/form-data">
-        <div>
-            <label>Nombre</label>
-            <div>
-                <input type="text" th:field="*{nombre}">
+<header th:replace="~{components/layout :: header}"></header>
+<div class="container mt-4">
+    <h1 class="main-heading mb-5">Producto</h1>
+    <div class="container my-4 shadow-lg rounded" style="background-color: #cf9;">
+        <div class="row align-items-center mb-2">
+            <div class="col-md">
+                <form id="prodForm" class="container p-4 row g-3" th:action="@{/admin/productos/guardar}" th:object="${producto}"
+                      method="post" enctype="multipart/form-data">
+                    <div class="col-md-12">
+                        <label class="form-label input-label">Nombre</label>
+                        <input th:class="'form-control ' + ${#fields.hasErrors('nombre') ? 'is-invalid' : ''}"
+                               type="text" th:field="*{nombre}" required>
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label input-label">Descripción</label>
+                        <textarea th:class="'form-control ' + ${#fields.hasErrors('descripcion') ? 'is-invalid' : ''}"
+                                  rows="4" th:field="*{descripcion}" required></textarea>
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}"></small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label input-label">Tipo</label>
+                        <select class="form-select" th:field="*{tipo.id}">
+                            <option th:each="tipoProd: ${tipoProductoList}" th:text="${tipoProd.nombre}"
+                                    th:value="${tipoProd.id}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label input-label">Precio</label>
+                        <input th:class="'form-control ' + ${#fields.hasErrors('precio') ? 'is-invalid' : ''}"
+                               type="number" min="0" step="0.01" th:field="*{precio}" required>
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('precio')}" th:errors="*{precio}"></small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label input-label">Foto</label>
+                        <input class="form-control" id="foto" type="file" name="foto">
+                    </div>
+                </form>
             </div>
-            <small th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
-        </div>
-
-        <div>
-            <label>Precio</label>
-            <div>
-                <input type="number" step="0.01" th:field="*{precio}">
-            </div>
-            <small th:if="${#fields.hasErrors('precio')}" th:errors="*{nombre}"></small>
-        </div>
-
-        <div>
-            <label>Tipo</label>
-            <div>
-                <select th:field="*{tipo.id}">
-                    <option th:each="tipoProd: ${tipoProductoList}" th:text="${tipoProd.nombre}"
-                            th:value="${tipoProd.id}"></option>
-                </select>
-            </div>
-        </div>
-
-        <div>
-            <label>Descripcion</label>
-            <div>
-                <textarea th:field="*{descripcion}" rows="4" cols="50"></textarea>
-            </div>
-            <small th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}"></small>
-        </div>
-
-        <div th:if="${producto.pathFoto != null}">
-            <img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}" width="100" height="100">
-        </div>
-
-        <div>
-            <label for="foto">Foto</label>
-            <div>
-                <input id="foto" type="file" name="foto">
+            <div th:if="${producto.pathFoto != null}" class="col-md-3 pt-3">
+                <img class="border border-black rounded mx-auto d-block"
+                     th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}"
+                     width="200" height="200">
             </div>
         </div>
-
-        <div>
-            <div>
-                <input type="submit" value="Crear producto">
+        <div class="row">
+            <div class="d-grid col-md-12 my-4">
+                <input form="prodForm" class="btn btn-lg btn-primary w-25 mx-auto text-wrap" type="submit" value="Guardar producto">
             </div>
         </div>
-
-    </form>
-
+    </div>
 </body>
 </html>

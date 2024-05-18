@@ -1,0 +1,114 @@
+@font-face {
+    font-family: 'Averta';
+    src: url('../AvertaStandard-Regular.otf');
+}
+
+/* MARCAS */
+body {
+    font-family: 'Averta', sans-serif;
+    background-color: #E9F5D8;
+}
+
+th, td {
+    vertical-align: middle;
+}
+
+/* CLASES DE BOOTSTRAP */
+.btn-primary{
+    background-color: #5d9d0b;
+    border-color: #5d9d0b;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: #456e0f;
+    border-color: #456e0f;
+}
+
+.btn-secondary {
+    background-color: #a3c712;
+    border-color: #5d9d0b;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #456e0f;
+    border-color: #456e0f;
+}
+
+.navbar-text {
+    color: #ffffff;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.nav-link img{
+    width: 20px;
+    height: 20px;
+    opacity: 0.55;
+    margin-right: 4px;
+}
+
+.nav-link:hover img {
+    opacity: 0.8;
+}
+
+.table-hover{
+    --bs-table-hover-bg: rgba(0, 255, 0, 0.07);
+}
+
+/* LOGIN */
+.main-container {
+    max-width: 500px;
+    margin: 100px auto;
+    padding: 30px;
+    background-color: #cf9;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.main-heading {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #5d9d0b;
+}
+
+.login-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: #5d9d0b;
+}
+
+.main-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 5px;
+    border: none;
+    margin-top: 15px;
+}
+
+/* TABLE */
+.table-primary {
+    --bs-table-bg: #5d9d0b;
+    --bs-table-color: #fff;
+}
+
+.main-thead {
+    height: 60px;
+}
+
+/* FORM */
+.input-label {
+    font-weight: bold;
+    color: #5d9d0b;
+}

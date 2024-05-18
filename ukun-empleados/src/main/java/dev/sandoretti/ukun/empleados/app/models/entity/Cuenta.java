@@ -2,7 +2,7 @@ package dev.sandoretti.ukun.empleados.app.models.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -21,18 +21,18 @@ public class Cuenta implements Serializable
     @Column(name = "id", updatable = false)
     private Long id;
 
-    @NotEmpty
+    @NotBlank
     @Email
     @Column(unique = true)
     private String correo;
 
-    @NotEmpty
+    @NotBlank
     private String contrasenna;
 
-    @NotEmpty
+    @NotBlank
     private String nombre;
 
-    @NotEmpty
+    @NotBlank
     private String apellido;
 
 }
