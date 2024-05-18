@@ -18,6 +18,10 @@ public class WebConfig implements WebMvcConfigurer
     @Qualifier("clienteInterceptor")
     private HandlerInterceptor clienteInterceptor;
 
+    @Autowired
+    @Qualifier("noClienteInterceptor")
+    private HandlerInterceptor noClienteInterceptor;
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // implementamos la ruta a los resources de la aplicacion
@@ -28,6 +32,9 @@ public class WebConfig implements WebMvcConfigurer
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(clienteInterceptor)
-                .addPathPatterns("/perfil/**", "/carrito/**", "/pedidos/**");
+                .addPathPatterns("/perfil/**", "/carrito/**", "/pedidos/**", "/logout/**");
+
+        registry.addInterceptor(noClienteInterceptor)
+                .addPathPatterns("/login/**","/signup/**");
     }
 }
