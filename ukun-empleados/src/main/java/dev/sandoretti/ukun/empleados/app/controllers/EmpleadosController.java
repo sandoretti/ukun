@@ -3,11 +3,13 @@ package dev.sandoretti.ukun.empleados.app.controllers;
 import dev.sandoretti.ukun.empleados.app.models.entity.Empleado;
 import dev.sandoretti.ukun.empleados.app.models.entity.Tienda;
 import dev.sandoretti.ukun.empleados.app.models.service.IEmpleadoService;
+import dev.sandoretti.ukun.empleados.app.validators.EmpleadoValidator;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -20,6 +22,15 @@ public class EmpleadosController extends AbsController
 {
     @Autowired
     private IEmpleadoService empleadoService;
+
+    @Autowired
+    private EmpleadoValidator empleadoValidator;
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder)
+    {
+        binder.addValidators(empleadoValidator);
+    }
 
     @ModelAttribute
     public Empleado empleado(Model model)
@@ -57,14 +68,6 @@ public class EmpleadosController extends AbsController
 
         // Obtenemos el correo del nuevo empleado
         String correoNuevoEmpleado = nuevoEmpleado.getCuenta().getCorreo().toLowerCase();
-
-        // Miramos si el correo existe y si existe, lanzamos un error volviendo a la pagina
-        if (empleadoService.validarCorreo(correoNuevoEmpleado))
-        {
-            model.addAttribute("error", "El correo ya existe");
-
-            return "crearEmpleado";
-        }
 
         // Cambiamos el correo a minusculas
         nuevoEmpleado.getCuenta().setCorreo(correoNuevoEmpleado);

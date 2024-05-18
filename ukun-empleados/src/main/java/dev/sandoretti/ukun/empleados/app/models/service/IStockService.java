@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.empleados.app.models.service;
 
 import dev.sandoretti.ukun.empleados.app.models.embeddable.StockProductoId;
+import dev.sandoretti.ukun.empleados.app.models.entity.Producto;
 import dev.sandoretti.ukun.empleados.app.models.entity.StockProducto;
 import dev.sandoretti.ukun.empleados.app.models.entity.Tienda;
 
@@ -26,4 +27,20 @@ public interface IStockService
      * @param stockProducto Stock producto a guardar
      */
     public void save(StockProducto stockProducto);
+
+    /**
+     * Productos que no se encuentran dentro del stock de la tienda
+     * @param tienda Tienda a que corresponde
+     * @return
+     */
+    public List<Producto> findProductoNotInTienda(Tienda tienda);
+
+    /**
+     * Guarda el stock dentro de la base de datos
+     * @param tienda Tienda dada
+     * @param idProduto Id del producto
+     * @param stock Stock del producto
+     * @return Si se ha insertado o no
+     */
+    public boolean guardar(Tienda tienda, Long idProduto, Long stock);
 }

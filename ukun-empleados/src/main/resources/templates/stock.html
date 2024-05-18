@@ -1,46 +1,77 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Stock</title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
+<header th:replace="~{components/layout :: header}"></header>
 
-<h1 th:text="${'Stock de ' + tienda.nombre}"></h1>
+<div class="container mt-4 mb-5">
+    <h1 class="main-heading text-center" th:text="${'Stock de ' + tienda.nombre}"></h1>
+    <div th:if="${productoNoTienda != null && productoNoTienda.size() > 0}"
+         class="container w-75 my-4 shadow-lg rounded" style="background-color: #cf9;">
+        <form class="row px-4 py-3" th:action="@{/stock/editar}">
+            <div class="col-6">
+                <div class="input-group input-group-sm">
+                    <label for="prod" class="input-group-text">Producto</label>
+                    <select id="prod" class="form-select" name="productoId">
+                        <option th:each="producto: ${productoNoTienda}" th:text="${producto.nombre}"
+                                th:value="${producto.id}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="input-group input-group-sm flex-nowrap">
+                    <label for="stck" class="input-group-text">Stock</label>
+                    <input type="number" min="0" step="1" class="form-control" value="0" name="stock" id="stck">
+                </div>
+            </div>
+            <input type="hidden" th:value="${tienda.id}" name="tiendaId">
+            <input class="btn btn-primary btn-sm col-2" type="submit" value="Nuevo Stock">
+        </form>
+    </div>
 
-<div>
-    <table>
-        <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Tipo</th>
-            <th>Foto</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Editar</th>
-            <th>Eliminar</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        <tr th:each="stockProducto, iStat: ${stockProductosList}">
-            <td th:text="${stockProducto.producto.nombre}"></td>
-            <td th:text="${stockProducto.producto.tipo.nombre}"></td>
-            <td><img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${stockProducto.producto.pathFoto})}" width="50" height="50"/></td>
-            <td th:text="${stockProducto.producto.precio}"></td>
-            <td>
-                <form th:id="${iStat.index}" th:action="@{/stock/editar}">
-                    <input th:form="${iStat.index}" type="hidden" th:value="${stockProducto.id.tiendaId}" name="tiendaId"/>
-                    <input th:form="${iStat.index}" type="hidden" th:value="${stockProducto.id.productoId}" name="productoId"/>
-                    <input th:form="${iStat.index}" type="text" th:value="${stockProducto.stock}" name="stock"/>
-                </form>
-            </td>
-            <td><input th:form="${iStat.index}" type="submit" value="Editar"/></td>
-            <td><a th:href="@{/stock/eliminar(tiendaId=${stockProducto.id.tiendaId},productoId=${stockProducto.id.productoId})}">Eliminar</a></td>
-        </tr>
-        </tbody>
-    </table>
+    <div class="table-responsive rounded-top-4 shadow-lg">
+        <table class="table table-hover table-striped mb-0">
+            <thead class="main-thead fs-5 align-middle">
+            <tr class="table-primary">
+                <th class="col-3 ps-4">Nombre</th>
+                <th class="col-1">Foto</th>
+                <th>Tipo</th>
+                <th>Precio</th>
+                <th class="col-2">Stock</th>
+                <th class="col-1"></th>
+            </tr>
+            </thead>
+            <tbody class="table-group-divider">
+            <tr th:each="stockProducto, iStat: ${stockProductosList}">
+                <td class="ps-4" th:text="${stockProducto.producto.nombre}"></td>
+                <td>
+                    <img class="border border-black rounded d-block"
+                         th:src="@{/resources/uploads/{pathFoto}(pathFoto=${stockProducto.producto.pathFoto})}"
+                         width="50" height="50" alt=""/>
+                </td>
+                <td th:text="${stockProducto.producto.tipo.nombre}"></td>
+                <td class="precio" th:text="${stockProducto.producto.precio}"></td>
+                <td>
+                    <form class="input-group" th:id="${iStat.index}" th:action="@{/stock/editar}">
+                        <input th:form="${iStat.index}" type="hidden" th:value="${stockProducto.id.tiendaId}" name="tiendaId"/>
+                        <input th:form="${iStat.index}" type="hidden" th:value="${stockProducto.id.productoId}" name="productoId"/>
+                        <input class="form-control" th:form="${iStat.index}" type="number" min="0" step="1" th:value="${stockProducto.stock}" name="stock"/>
+                        <input class="btn btn-primary col-4" th:form="${iStat.index}" type="submit" value="Editar"/>
+                    </form>
+                </td>
+                <td class="text-center">
+                    <a class="btn btn-danger"
+                       th:href="@{/stock/eliminar(tiendaId=${stockProducto.id.tiendaId},productoId=${stockProducto.id.productoId})}">
+                        <i class="bi bi-trash-fill"></i>
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
-
+<script>
+    window.onload = formatearPrecios;
+</script>
 </body>
 </html>
