@@ -1,0 +1,36 @@
+@font-face {
+    font-family: 'Averta';
+    src: url('../AvertaStandard-Regular.otf');
+}
+
+body {
+    font-family: 'Averta', sans-serif;
+    background-color: #f1f9ec;
+}
+
+.header {
+    background-color: #cf9;
+}
+
+.text-primary{
+    color: #365a08 !important;
+}
+
+.nav-underline .nav-link {
+    color: #365a08 !important;
+}
+
+.nav-underline .nav-link.active,
+.nav-underline .nav-link:hover,
+.nav-underline .nav-link:focus {
+    border-bottom: 3px solid #365a08;
+    font-weight: bold;
+}
+
+.border-primary {
+    border-color: #365a08 !important;
+}
+
+.bg-primary {
+    background-color: #365a08 !important;
+}
