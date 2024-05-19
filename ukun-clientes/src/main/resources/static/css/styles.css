@@ -5,7 +5,7 @@
 
 body {
     font-family: 'Averta', sans-serif;
-    background-color: #f1f9ec;
+    background-color: #e5f6db;
 }
 
 .header {
@@ -35,7 +35,14 @@ body {
     background-color: #365a08 !important;
 }
 
-.btn-primary {
+.btn-primary, .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
     background-color: #365a08;
     border-color: #365a08;
+}
+
+.body-signin {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
