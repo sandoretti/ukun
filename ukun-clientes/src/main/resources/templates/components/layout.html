@@ -19,8 +19,11 @@
                 <a th:href="@{/}" class="col-2 align-items-center my-0">
                     <img th:src="@{/resources/logo/UkunLogo.png}" alt="Ukun" width="135" height="45">
                 </a>
-                <form class="col-5 mb-0 ms-0 me-auto" role="search">
-                    <input type="search" class="form-control" placeholder="Busca tus articulos favoritos..." aria-label="Search">
+                <form class="col-5 mb-0 ms-0 me-auto" role="search" th:action="@{/productos}" method="GET">
+                    <div class="input-group">
+                        <input type="search" class="form-control" placeholder="Busca tus artículos favoritos..." aria-label="Search" name="nombreProducto">
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                    </div>
                 </form>
                 <ul class="nav col-auto justify-content-end align-items-center gap-1">
                     <li th:if="${cliente==null}">
@@ -80,22 +83,25 @@
         <div class="container d-flex flex-wrap justify-content-start">
             <ul class="nav nav-underline gap-4">
                 <li class="nav-item">
-                    <a class="nav-link" th:href="@{/productos}">Mesas</a>
+                    <a class="nav-link" th:href="@{/productos}">Todos los productos</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Sillas</a>
+                    <a class="nav-link" th:href="@{/productos(tipo=1)}">Mesas</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Camas</a>
+                    <a class="nav-link" th:href="@{/productos(tipo=2)}">Sillas</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Escritorios</a>
+                    <a class="nav-link" th:href="@{/productos(tipo=3)}">Camas</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Sofás</a>
+                    <a class="nav-link" th:href="@{/productos(tipo=4)}">Escritorios</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Decoración</a>
+                    <a class="nav-link" th:href="@{/productos(tipo=5)}">Sofás</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/productos(tipo=6)}">Decoración</a>
                 </li>
             </ul>
         </div>

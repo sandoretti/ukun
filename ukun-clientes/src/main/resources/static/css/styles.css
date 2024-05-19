@@ -34,3 +34,8 @@ body {
 .bg-primary {
     background-color: #365a08 !important;
 }
+
+.btn-primary {
+    background-color: #365a08;
+    border-color: #365a08;
+}
