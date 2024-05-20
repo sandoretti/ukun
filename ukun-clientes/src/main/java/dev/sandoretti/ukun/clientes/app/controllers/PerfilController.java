@@ -4,11 +4,13 @@ import dev.sandoretti.ukun.clientes.app.models.entity.Cliente;
 import dev.sandoretti.ukun.clientes.app.models.entity.Tienda;
 import dev.sandoretti.ukun.clientes.app.services.IClienteService;
 import dev.sandoretti.ukun.clientes.app.services.ITiendaService;
+import dev.sandoretti.ukun.clientes.app.utilities.validator.ClienteValidator;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -41,28 +43,39 @@ public class PerfilController extends AbsController
         return "perfil";
     }
 
-    @PostMapping({"", "/"})
+    @GetMapping("/editar")
+    public String viewEditar(@ModelAttribute("cliente") Cliente cliente,
+                             Model model)
+    {
+        Cliente clienteActualizado = clienteService.findById(cliente.getId());
+        model.addAttribute("cliente", clienteActualizado);
+
+        return "editar-perfil";
+    }
+
+    @PostMapping( "/editar")
     public String editar(@Valid @ModelAttribute("cliente") Cliente clienteModificado,
                          BindingResult result,
                          Model model,
                          RedirectAttributes flash)
     {
-        // Obtenenos el cliente correspondiente a la base de datos
-        Cliente clienteActual = clienteService.findById(clienteModificado.getId());
-
-        // Si el cliente es el mismo, volvemos a la pagina de perfil
-        if (clienteActual.equals(clienteModificado))
-        {
-            return "perfil";
-        }
-
         // Comprobamos si no tiene errores de validacion, si lo tiene, redirigimos con mensaje de error
         if (result.hasErrors())
         {
             log.error("Errores: {}", result.getAllErrors());
             model.addAttribute("error", "Error al editar la cuenta");
 
-            return "perfil";
+            return "editar-perfil";
+        }
+
+        // Obtenenos el cliente correspondiente a la base de datos
+        Cliente clienteActual = clienteService.findById(clienteModificado.getId());
+
+        // Si el cliente es el mismo, volvemos a la pagina de perfil
+        if (clienteActual.equals(clienteModificado))
+        {
+            model.addAttribute("info", "No se ha modificado ningún campo");
+            return "editar-perfil";
         }
 
         // Obtenemos los ids de los clientes

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         const successMessages = document.querySelectorAll('.alert-success');
         const errorMessages = document.querySelectorAll('.alert-danger');
+        const infoMessages = document.querySelectorAll('.alert-info');
 
         successMessages.forEach(function(message) {
             message.style.display = 'none';
@@ -20,5 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
         errorMessages.forEach(function(message) {
             message.style.display = 'none';
         });
-    }, 4000); // 5000 ms = 5 segundos
+
+        infoMessages.forEach(function(message) {
+            message.style.display = 'none';
+        });
+
+    }, 4000);
 });
