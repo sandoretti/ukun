@@ -1,32 +1,67 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Productos</title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
-
-<h1>Productos</h1>
-
-<div>
-  <div th:each="producto: ${productosList}"
-       th:with="existCliente=${cliente!=null},tiendaFav=${existCliente ? cliente.tienda.nombre: '' }">
-      <img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}" width="100" height="100"
-           th:alt="${producto.nombre}"/>
-      <h2 th:text="${producto.nombre}"></h2>
-      <p th:text="${producto.precio}"></p>
-      <p th:text="${producto.tipo.nombre}"></p>
-      <p th:text="${disponibilidadOnline != null
-                      && disponibilidadOnline.containsKey(producto.id)
-                      && disponibilidadOnline[producto.id]} ? 'Disponible' : 'No hay existencias'"></p>
-      <p th:if="${existCliente}"
-              th:text="${(disponibilidadFavorita != null
-                        && disponibilidadFavorita.containsKey(producto.id)
-                        && disponibilidadFavorita[producto.id] ? 'Disponible' : 'No hay existencias') + ' en ' + tiendaFav}"></p>
-      <a th:if="${existCliente}" th:href="@{/carrito/add(producto=${producto.id})}">Añadir al carrito</a>
-      <a th:href="@{/productos/ver/{id}(id=${producto.id})}">Ver producto</a>
-  </div>
-</div>
-
+<header th:replace="~{components/layout :: header}"></header>
+<main>
+    <div class="container">
+        <div class="row justify-content-center m-4">
+            <div class="col-12 col-md-6 col-lg-4 mb-4" th:each="producto: ${productosList}"
+                 th:with="existCliente=${cliente!=null},tiendaFav=${existCliente ? cliente.tienda.nombre: '' }">
+                <div class="card h-100">
+                    <a th:href="@{/productos/ver/{id}(id=${producto.id})}">
+                        <img class="card-img-top m-auto"
+                             th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}"
+                             th:alt="${producto.nombre}"
+                             style="width: 100% !important;height: 300px !important;object-fit: contain !important;"/>
+                    </a>
+                    <div class="card-body w-100">
+                        <a th:href="@{/productos/ver/{id}(id=${producto.id})}" class="text-decoration-none text-primary">
+                            <h4 class="card-title" th:text="${producto.nombre}"></h4>
+                        </a>
+                        <p class="mb-1" th:text="${producto.tipo.nombre}"></p>
+                        <p class="precio fw-bold fs-3 mb-1" th:text="${producto.precio}"></p>
+                        <a th:if="${existCliente}" class="btn btn-primary rounded-circle btn-sm"
+                           th:href="@{/carrito/add(producto=${producto.id})}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" class="my-1">
+                                <path d="M8 16L16.7201 15.2733C19.4486 15.046 20.0611 14.45 20.3635 11.7289L21 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                <path d="M6 6H6.5M22 6H19.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                <path d="M9.5 6H16.5M13 9.5V2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                <circle cx="6" cy="20" r="2" stroke="currentColor" stroke-width="1.5" />
+                                <circle cx="17" cy="20" r="2" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M8 20L15 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                <path d="M2 2H2.966C3.91068 2 4.73414 2.62459 4.96326 3.51493L7.93852 15.0765C8.08887 15.6608 7.9602 16.2797 7.58824 16.7616L6.63213 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                        </a>
+                        <div class="mt-3">
+                            <div class="d-flex mb-1 align-items-center">
+                                <span th:class="${disponibilidadOnline != null && disponibilidadOnline.containsKey(producto.id)
+                                    && disponibilidadOnline[producto.id]} ? 'disponible-circle' : 'nodisponible-circle'">
+                                </span>
+                                <span th:text="(${disponibilidadOnline != null && disponibilidadOnline.containsKey(producto.id)
+                                    && disponibilidadOnline[producto.id]} ? 'Disponible' : 'No hay existencias') + ' para compras online'">
+                                </span>
+                            </div>
+                            <div th:if="${existCliente}" class="d-flex align-items-center">
+                                <span th:class="${disponibilidadFavorita != null
+                                    && disponibilidadFavorita.containsKey(producto.id)
+                                    && disponibilidadFavorita[producto.id] ? 'disponible-circle' : 'nodisponible-circle'}">
+                                </span>
+                                <span th:text="${(disponibilidadFavorita != null
+                                    && disponibilidadFavorita.containsKey(producto.id)
+                                    && disponibilidadFavorita[producto.id] ? 'Hay stock' : 'No hay existencias') + ' en ' + tiendaFav}">
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{components/layout :: footer}"></footer>
+<script>
+    window.onload = formatearPrecios;
+</script>
 </body>
 </html>

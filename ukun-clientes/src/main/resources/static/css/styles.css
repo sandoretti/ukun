@@ -46,3 +46,21 @@ body {
     justify-content: center;
     align-items: center;
 }
+
+.disponible-circle {
+    width: 10px;
+    height: 10px;
+    background-color: green;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.nodisponible-circle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    background-color:crimson;
+}
