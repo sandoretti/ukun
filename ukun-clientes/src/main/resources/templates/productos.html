@@ -3,7 +3,10 @@
 <head th:replace="~{components/layout :: head}"></head>
 <body>
 <header th:replace="~{components/layout :: header}"></header>
-<main>
+<main class="min-vh-100">
+    <div th:if="${productosList == null || productosList.size() == 0}">
+        <h1 class="mt-5 text-center text-primary display-1">No hay productos con su busqueda</h1>
+    </div>
     <div class="container">
         <div class="row justify-content-center m-4">
             <div class="col-12 col-md-6 col-lg-4 mb-4" th:each="producto: ${productosList}"
