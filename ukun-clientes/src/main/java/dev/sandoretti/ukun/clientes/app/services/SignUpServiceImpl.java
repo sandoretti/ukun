@@ -14,12 +14,9 @@ public class SignUpServiceImpl implements ISignUpService
     @Override
     public void registrar(Cliente cliente)
     {
+        // Ponemos el correo en minusculas
+        cliente.getCuenta().setCorreo(cliente.getCuenta().getCorreo().toLowerCase());
         clienteDAO.save(cliente);
     }
 
-    @Override
-    public boolean comprobarCorreo(String correo)
-    {
-        return clienteDAO.existsByCuenta_Correo(correo);
-    }
 }

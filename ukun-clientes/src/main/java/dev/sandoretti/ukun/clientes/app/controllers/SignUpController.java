@@ -4,11 +4,13 @@ import dev.sandoretti.ukun.clientes.app.models.entity.Cliente;
 import dev.sandoretti.ukun.clientes.app.models.entity.Tienda;
 import dev.sandoretti.ukun.clientes.app.services.ISignUpService;
 import dev.sandoretti.ukun.clientes.app.services.ITiendaService;
+import dev.sandoretti.ukun.clientes.app.utilities.validator.ClienteValidator;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.support.SessionStatus;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -26,10 +28,19 @@ public class SignUpController
     @Autowired
     private ITiendaService tiendaService;
 
+    @Autowired
+    private ClienteValidator clienteValidator;
+
     @ModelAttribute
     public List<Tienda> tiendasList()
     {
         return tiendaService.findAll();
+    }
+
+    @InitBinder
+    public void initBinder(WebDataBinder binder)
+    {
+        binder.addValidators(clienteValidator);
     }
 
     @GetMapping({"", "/"})
@@ -57,14 +68,6 @@ public class SignUpController
             return "signup";
         }
 
-        // Si el correo existe registrado, devolvemos el error
-        if (signUpService.comprobarCorreo(clienteNuevo.getCuenta().getCorreo()))
-        {
-            model.addAttribute("error", "El correo ya existe");
-
-            return "signup";
-        }
-
         // Eliminamos el cliente nuevo dentro de la sesion
         status.setComplete();
 
@@ -72,7 +75,7 @@ public class SignUpController
         signUpService.registrar(clienteNuevo);
 
         // Devolvemos el mensaje de informacion y redirigimos a la pagina principal
-        flash.addFlashAttribute("info", "El cliente se ha registrado correctamente");
+        flash.addFlashAttribute("success", "El cliente se ha registrado correctamente");
         return "redirect:/";
     }
 }

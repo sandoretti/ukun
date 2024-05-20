@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.clientes.app.models.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,16 +23,16 @@ public class Direccion implements Serializable
     @Column(name = "id", updatable = false)
     private Long id;
 
-    @NotEmpty
+    @NotBlank
     private String calle;
 
-    @NotEmpty
+    @NotBlank
     private String provincia;
 
-    @NotEmpty
+    @NotBlank
     private String ciudad;
 
-    @NotEmpty
+    @NotBlank
     @Column(name = "codigo_postal")
     private String codigoPostal;
 }
