@@ -16,16 +16,16 @@
     <div class="px-3 py-2 border-bottom header">
         <div class="container">
             <div class="d-flex flex-wrap align-items-center justify-content-auto">
-                <a th:href="@{/}" class="col-2 align-items-center my-0">
+                <a th:href="@{/}" class="col-2 order-0 align-items-center my-0">
                     <img th:src="@{/resources/logo/UkunLogo.png}" alt="Ukun" width="135" height="45">
                 </a>
-                <form class="col-5 mb-0 ms-0 me-auto" role="search" th:action="@{/productos}" method="GET">
+                <form class="col-12 col-lg-5 order-2 order-lg-1 me-auto" role="search" th:action="@{/productos}" method="GET">
                     <div class="input-group">
                         <input type="search" class="form-control" placeholder="Busca tus artículos favoritos..." aria-label="Search" name="nombreProducto">
                         <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
                     </div>
                 </form>
-                <ul class="nav col-auto justify-content-end align-items-center gap-1">
+                <ul class="nav py-2 py-lg-0 col-auto order-1 order-lg-2 ms-auto justify-content-end align-items-center gap-1">
                     <li th:if="${cliente==null}">
                         <a th:href="@{/login}" class="nav-link text-primary fw-bold d-flex align-items-center justify-content-center">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
