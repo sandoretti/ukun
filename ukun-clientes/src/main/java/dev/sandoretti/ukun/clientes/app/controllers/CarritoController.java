@@ -72,7 +72,7 @@ public class CarritoController extends AbsController
         // Guardamos el carrito en la base de datos
         carritoService.guardar(carrito);
 
-        flash.addFlashAttribute("info", "Producto añadido al carrito");
+        flash.addFlashAttribute("success", "Producto añadido al carrito");
 
         return pathOrigen;
     }
@@ -90,7 +90,7 @@ public class CarritoController extends AbsController
         carritoService.eliminar(carritoId);
 
         // Mandamos un mensaje de exito
-        flash.addFlashAttribute("info", "Producto eliminado al carrito");
+        flash.addFlashAttribute("success", "Producto eliminado al carrito");
 
         // Volvemos a la pagina de origen
         return pathOrigenRedirect(request);
