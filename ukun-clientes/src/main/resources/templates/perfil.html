@@ -1,134 +1,83 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Perfil</title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
-    <h1 th:text="${'Perfil de ' + cliente.cuenta.nombre}"></h1>
-
-    <form th:action="@{/perfil}" method="post">
-        <div th:object="${cliente.cuenta}">
-            <h2>Datos de la cuenta</h2>
-            <dl>
-                <dt>
-                    <label for="nombre">Nombre</label>
-                </dt>
-                <dd>
-                    <input id="nombre" type="text" th:field="*{nombre}">
-                    <small th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
-                </dd>
-            </dl>
-            <dl>
-                <dt>
-                    <label for="apellido">Apellido</label>
-                </dt>
-                <dd>
-                    <input id="apellido" type="text" th:field="*{apellido}">
-                    <small th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></small>
-                </dd>
-            </dl>
-            <dl>
-                <dt>
-                    <label for="correo">Correo</label>
-                </dt>
-                <dd>
-                    <input id="correo" type="text" th:field="*{correo}">
-                    <small th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></small>
-                </dd>
-            </dl>
-
-            <dl>
-                <dt>
-                    <label for="tiendafav">Tienda favorita</label>
-                </dt>
-                <dd>
-                    <select id="tiendafav" th:field="${cliente.tienda.id}">
-                        <option th:each="tienda: ${tiendaList}" th:text="${tienda.nombre}"
-                                th:value="${tienda.id}" th:selected="${tienda==cliente.tienda}"></option>
-                    </select>
-                </dd>
-            </dl>
+<header th:replace="~{components/layout :: header}"></header>
+<main class="min-vh-100">
+    <div class="container my-5">
+        <h1 class="display-2 text-primary text-center pb-4">Mi perfil</h1>
+        <div class="row align-items-center justify-content-center mb-5">
+            <div class="col-3 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="150" height="150" fill="none">
+                    <path d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M14.75 9.5C14.75 11.0188 13.5188 12.25 12 12.25C10.4812 12.25 9.25 11.0188 9.25 9.5C9.25 7.98122 10.4812 6.75 12 6.75C13.5188 6.75 14.75 7.98122 14.75 9.5Z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M5.49994 19.0001L6.06034 18.0194C6.95055 16.4616 8.60727 15.5001 10.4016 15.5001H13.5983C15.3926 15.5001 17.0493 16.4616 17.9395 18.0194L18.4999 19.0001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="col-5 mt-1 fs-5">
+                <h1 class="mb-3" th:text="${cliente.cuenta.nombre + ' ' + cliente.cuenta.apellido}"></h1>
+                    <p>
+                        <span class="fw-bold">Correo: </span>
+                        <span th:text="${cliente.cuenta.correo}"></span>
+                    </p>
+                    <p>
+                        <span class="fw-bold">Tienda favorita: </span>
+                        <span th:text="${cliente.tienda.nombre}"></span>
+                    </p>
+            </div>
         </div>
-
-        <hr>
-
-        <div th:object="${cliente.direccion}">
-            <h2>Datos de dirección</h2>
-            <dl>
-                <dt>
-                    <label for="calle">Calle</label>
-                </dt>
-                <dd>
-                    <input id="calle" type="text" th:field="*{calle}">
-                    <small th:if="${#fields.hasErrors('calle')}" th:errors="*{calle}"></small>
-                </dd>
-            </dl>
-            <dl>
-                <dt>
-                    <label for="provincia">Provincia</label>
-                </dt>
-                <dd>
-                    <input id="provincia" type="text" th:field="*{provincia}">
-                    <small th:if="${#fields.hasErrors('provincia')}" th:errors="*{provincia}"></small>
-                </dd>
-            </dl>
-            <dl>
-                <dt>
-                    <label for="ciudad">Ciudad</label>
-                </dt>
-                <dd>
-                    <input id="ciudad" type="text" th:field="*{ciudad}">
-                    <small th:if="${#fields.hasErrors('ciudad')}" th:errors="*{ciudad}"></small>
-                </dd>
-            </dl>
-            <dl>
-                <dt>
-                    <label for="codigoPostal">Código Postal</label>
-                </dt>
-                <dd>
-                    <input id="codigoPostal" type="text" th:field="*{codigoPostal}">
-                    <small th:if="${#fields.hasErrors('codigoPostal')}" th:errors="*{codigoPostal}"></small>
-                </dd>
-            </dl>
+        <div class="row align-items-center justify-content-center mb-5">
+            <div class="col-3 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="150" height="150" fill="none">
+                    <path d="M13.6177 21.367C13.1841 21.773 12.6044 22 12.0011 22C11.3978 22 10.8182 21.773 10.3845 21.367C6.41302 17.626 1.09076 13.4469 3.68627 7.37966C5.08963 4.09916 8.45834 2 12.0011 2C15.5439 2 18.9126 4.09916 20.316 7.37966C22.9082 13.4393 17.599 17.6389 13.6177 21.367Z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M15.5 11C15.5 12.933 13.933 14.5 12 14.5C10.067 14.5 8.5 12.933 8.5 11C8.5 9.067 10.067 7.5 12 7.5C13.933 7.5 15.5 9.067 15.5 11Z" stroke="currentColor" stroke-width="1.5" />
+                </svg>
+            </div>
+            <div class="col-5 mt-1 fs-5">
+                <h1 class="mb-3">Dirección de envio</h1>
+                <p>
+                    <span class="fw-bold">Calle: </span>
+                    <span th:text="${cliente.direccion.calle}"></span>
+                </p>
+                <p>
+                    <span class="fw-bold">Provicia: </span>
+                    <span th:text="${cliente.direccion.provincia}"></span>
+                </p>
+                <p>
+                    <span class="fw-bold">Ciudad: </span>
+                    <span th:text="${cliente.direccion.ciudad}"></span>
+                </p>
+                <p>
+                    <span class="fw-bold">Código Postal: </span>
+                    <span th:text="${cliente.direccion.codigoPostal}"></span>
+                </p>
+            </div>
         </div>
-
-        <hr>
-
-        <div th:object="${cliente.tarjeta}">
-            <h2>Datos de la tarjeta</h2>
-            <dl>
-                <dt>
-                    <label for="numero">Número</label>
-                </dt>
-                <dd>
-                    <input id="numero" type="text" th:field="*{numero}">
-                    <small th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}"></small>
-                </dd>
-            </dl>
-            <dl>
-                <dt>
-                    <label for="fechaExpiracion">Fecha de expiración</label>
-                </dt>
-                <dd>
-                    <input id="fechaExpiracion" type="month" th:field="*{fechaExpiracion}" placeholder="MM/yyyy">
-                    <small th:if="${#fields.hasErrors('fechaExpiracion')}" th:errors="*{fechaExpiracion}"></small>
-                </dd>
-            </dl>
-            <dl>
-                <dt>
-                    <label for="cvv">CVV</label>
-                </dt>
-                <dd>
-                    <input id="cvv" type="text" th:field="*{cvv}">
-                    <small th:if="${#fields.hasErrors('cvv')}" th:errors="*{cvv}"></small>
-                </dd>
-            </dl>
+        <div class="row align-items-center justify-content-center mb-5">
+            <div class="col-3 text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="150" height="150" fill="none">
+                    <path d="M3.3457 16.1976L16.1747 3.36866M18.6316 11.0556L16.4321 13.2551M14.5549 15.1099L13.5762 16.0886" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M3.17467 16.1411C1.60844 14.5749 1.60844 12.0355 3.17467 10.4693L10.4693 3.17467C12.0355 1.60844 14.5749 1.60844 16.1411 3.17467L20.8253 7.85891C22.3916 9.42514 22.3916 11.9645 20.8253 13.5307L13.5307 20.8253C11.9645 22.3916 9.42514 22.3916 7.85891 20.8253L3.17467 16.1411Z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M4 22H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </div>
+            <div class="col-5 mt-1 fs-5">
+                <h1 class="mb-3">Tarjeta de crédito</h1>
+                <p>
+                    <span class="fw-bold">Numero: </span>
+                    <span th:text="${'************' + cliente.tarjeta.numero.substring(12)}"></span>
+                </p>
+                <p>
+                    <span class="fw-bold">Fecha de caducidad: </span>
+                    <span th:text="${cliente.tarjeta.fechaFormateada()}"></span>
+                </p>
+            </div>
         </div>
-
-        <p>
-            <input type="submit" value="Editar información">
-        </p>
-    </form>
+        <div class="row align-items-center justify-content-center">
+            <a class="btn btn-primary fs-3" th:href="@{/perfil/editar}">Editar perfil</a>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{components/layout :: footer}"></footer>
 </body>
 </html>

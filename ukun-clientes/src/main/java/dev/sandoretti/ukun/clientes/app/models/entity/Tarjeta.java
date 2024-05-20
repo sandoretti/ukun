@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 @Entity
@@ -35,4 +36,12 @@ public class Tarjeta implements Serializable
     @NotBlank
     @Pattern(regexp = "\\d{3}", message = "El CVV debe contener exactamente 3 dígitos")
     private String cvv;
+
+    public String fechaFormateada()
+    {
+        // Define el formato deseado
+        SimpleDateFormat formatter = new SimpleDateFormat("MM/yyyy");
+
+        return formatter.format(this.fechaExpiracion);
+    }
 }
