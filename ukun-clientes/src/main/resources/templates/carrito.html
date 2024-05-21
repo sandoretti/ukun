@@ -1,52 +1,63 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${'Carrito de ' + cliente.cuenta.nombre}"></title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
-
-<h1 th:text="${'Carrito de ' + cliente.cuenta.nombre}"></h1>
-
-<span th:if="${info != null}" th:text="${info}"></span>
-
-<div th:if="${carritoProductos.size() != 0}">
-  <table>
-    <thead>
-    <tr>
-      <th>Nombre</th>
-      <th>Precio</th>
-      <th>Cantidad</th>
-      <th></th>
-      <th>Total</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    <tr th:each="productoCarrito, iStat: ${carritoProductos}">
-      <td th:text="${productoCarrito.producto.nombre}"></td>
-      <td th:text="${productoCarrito.producto.precio}"></td>
-      <td>
-        <form th:id="${iStat.index}" th:action="@{/carrito/add}">
-          <input th:form="${iStat.index}" type="hidden" th:value="${productoCarrito.producto.id}" name="producto"/>
-          <input th:form="${iStat.index}" type="text" th:value="${productoCarrito.cantidad}" name="cantidad"/>
-        </form>
-      </td>
-      <td><input th:form="${iStat.index}" type="submit" value="Editar"/></td>
-      <td th:text="${productoCarrito.producto.precio * productoCarrito.cantidad}"></td>
-      <td><a th:href="@{/carrito/delete(producto = ${productoCarrito.producto.id})}">Eliminar</a></td>
-      <td><img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${productoCarrito.producto.pathFoto})}"
-               width="50" height="50" th:alt="${productoCarrito.producto.nombre}"/></td>
-    </tr>
-    </tbody>
-  </table>
-
-  <span th:text="${'Precio total: ' + total}"></span>
-
-  <a th:href="@{/pedidos/hacer}">Hacer pedido</a>
-</div>
-
-<div th:unless="${carritoProductos.size() != 0}">Carrito vacío</div>
-
+<header th:replace="~{components/layout :: header}"></header>
+<main class="min-vh-100">
+  <div class="container my-5 w-auto" th:unless="${carritoProductos.size() != 0}">
+    <h1 class="row display-3 text-primary mb-4">El carrito se encuentra vacío</h1>
+  </div>
+  <div class="container my-5 w-auto" th:if="${carritoProductos.size() != 0}">
+    <h1 class="row display-3 text-primary mb-4">Mi carrito</h1>
+    <div class="row bg-white py-3 border rounded shadow-lg mb-4"
+         th:each="productoCarrito: ${carritoProductos}">
+      <div class="ps-0 col-4 col-md-2 d-flex justify-content-center">
+        <img class="border rounded-4 border-primary" width="150" height="150"
+             th:src="@{/resources/uploads/{pathFoto}(pathFoto=${productoCarrito.producto.pathFoto})}"
+             th:alt="${productoCarrito.producto.nombre}">
+      </div>
+      <div class="col">
+        <h3 class="text-primary" th:text="${productoCarrito.producto.nombre}"></h3>
+        <p class="precio mb-1 text-danger fw-bold fs-5"
+           th:text="${productoCarrito.producto.precio*productoCarrito.cantidad}"></p>
+        <p class="text-secondary">
+          <span>Precio ud. </span>
+          <span class="precio" th:text="${productoCarrito.producto.precio}"></span>
+        </p>
+      </div>
+      <div class="col-3">
+        <div class="row">
+          <form class="w-100 col-12 col-lg" th:action="@{/carrito/add}">
+            <input type="hidden" name="producto" th:value="${productoCarrito.producto.id}">
+            <div class="input-group">
+              <input class="form-control fs-5" type="number" min="1" name="cantidad" th:value="${productoCarrito.cantidad}">
+              <button class="btn btn-primary" type="submit">
+                <i class="bi bi-pen"></i>
+              </button>
+            </div>
+          </form>
+          <div class="col-12 pt-3 pt-lg-0 col-lg-3">
+            <a class="btn btn-danger fs-5" th:href="@{/carrito/delete(producto = ${productoCarrito.producto.id})}">
+              <i class="bi bi-trash-fill"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <p class="fs-2">
+        <span>Precio total: </span>
+        <span class="precio text-danger" th:text="${total}"></span>
+      </p>
+      <div>
+        <a class="btn btn-primary btn-lg" th:href="@{/pedidos/hacer}">Hacer pedido</a>
+      </div>
+    </div>
+  </div>
+</main>
+<footer th:replace="~{components/layout :: footer}"></footer>
+<script>
+  window.onload = formatearPrecios;
+</script>
 </body>
 </html>
