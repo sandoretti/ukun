@@ -1,4 +1,4 @@
-package dev.sandoretti.ukun.empleados.app.models.service;
+package dev.sandoretti.ukun.empleados.app.service;
 
 import dev.sandoretti.ukun.empleados.app.models.dao.IEmpleadoCrud;
 import dev.sandoretti.ukun.empleados.app.models.entity.Empleado;

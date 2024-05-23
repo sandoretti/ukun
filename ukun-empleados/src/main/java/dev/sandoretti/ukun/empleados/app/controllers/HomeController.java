@@ -1,7 +1,7 @@
 package dev.sandoretti.ukun.empleados.app.controllers;
 
 import dev.sandoretti.ukun.empleados.app.models.entity.Empleado;
-import dev.sandoretti.ukun.empleados.app.models.service.ILoginService;
+import dev.sandoretti.ukun.empleados.app.service.ILoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
