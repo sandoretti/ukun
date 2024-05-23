@@ -1,16 +1,14 @@
 package dev.sandoretti.ukun.clientes.app.models.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 @Entity
@@ -26,7 +24,7 @@ public class Tarjeta implements Serializable
             generator="tarjeta_id_seq")
     private Long id;
 
-    @NotEmpty
+    @NotBlank
     @Pattern(regexp = "\\d{16}", message = "El número de tarjeta debe contener exactamente 16 dígitos")
     private String numero;
 
@@ -35,7 +33,15 @@ public class Tarjeta implements Serializable
     @DateTimeFormat(pattern = "MM/yyyy")
     private Date fechaExpiracion;
 
-    @NotEmpty
+    @NotBlank
     @Pattern(regexp = "\\d{3}", message = "El CVV debe contener exactamente 3 dígitos")
     private String cvv;
+
+    public String fechaFormateada()
+    {
+        // Define el formato deseado
+        SimpleDateFormat formatter = new SimpleDateFormat("MM/yyyy");
+
+        return formatter.format(this.fechaExpiracion);
+    }
 }

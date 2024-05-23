@@ -1,0 +1,66 @@
+@font-face {
+    font-family: 'Averta';
+    src: url('../AvertaStandard-Regular.otf');
+}
+
+body {
+    font-family: 'Averta', sans-serif;
+    background-color: #e5f6db;
+}
+
+.header {
+    background-color: #cf9;
+}
+
+.text-primary{
+    color: #365a08 !important;
+}
+
+.nav-underline .nav-link {
+    color: #365a08 !important;
+}
+
+.nav-underline .nav-link.active,
+.nav-underline .nav-link:hover,
+.nav-underline .nav-link:focus {
+    border-bottom: 3px solid #365a08;
+    font-weight: bold;
+}
+
+.border-primary {
+    border-color: #365a08 !important;
+}
+
+.bg-primary {
+    background-color: #365a08 !important;
+}
+
+.btn-primary, .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+    background-color: #365a08;
+    border-color: #365a08;
+}
+
+.body-signin {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.disponible-circle {
+    width: 10px;
+    height: 10px;
+    background-color: green;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.nodisponible-circle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    background-color:crimson;
+}

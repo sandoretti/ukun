@@ -1,147 +1,111 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Perfil</title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
-<h1>Registrar cliente</h1>
+<main class="d-flex justify-content-center align-items-center">
+    <div class="col-md-7 col-lg-8" style="width: 600px; margin: 50px auto;">
+        <a class="d-flex justify-content-center" th:href="@{/}">
+            <img th:src="@{/resources/logo/UkunLogo.png}" alt="" width="216" height="72">
+        </a>
+        <h1 class="mb-3 text-primary">Regístrate</h1>
+        <form th:action="@{/signup}" method="post">
+            <div class="row g-3">
+                <div class="row gy-3 mb-2" th:object="${clienteNuevo.cuenta}">
+                    <div class="col-sm-6">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input th:class="'form-control ' + ${#fields.hasErrors('nombre') ? 'is-invalid' : ''}"
+                               type="text" id="nombre" th:field="*{nombre}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="apellido" class="form-label">Apellido</label>
+                        <input type="text" th:class="'form-control ' + ${#fields.hasErrors('apellido') ? 'is-invalid' : ''}"
+                               id="apellido" th:field="*{apellido}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></small>
+                    </div>
+                    <div class="col-sm-12">
+                        <label for="correo" class="form-label">Correo</label>
+                        <input type="email" th:class="'form-control ' + ${#fields.hasErrors('correo') ? 'is-invalid' : ''}"
+                               id="correo" th:field="*{correo}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></small>
+                    </div>
+                    <div class="col-sm-12">
+                        <label for="contrasenna" class="form-label">Contraseña</label>
+                        <input type="password" th:class="'form-control ' + ${#fields.hasErrors('contrasenna') ? 'is-invalid' : ''}"
+                               id="contrasenna" th:field="*{contrasenna}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('contrasenna')}" th:errors="*{contrasenna}"></small>
+                    </div>
+                    <div class="col-sm-12">
+                        <label for="tiendafav" class="form-label">Tienda favorita</label>
+                        <select class="form-select" id="tiendafav" th:field="${clienteNuevo.tienda.id}" required>
+                            <option th:each="tienda: ${tiendaList}" th:text="${tienda.nombre}"
+                                    th:value="${tienda.id}" th:selected="${tienda==clienteNuevo.tienda}"></option>
+                        </select>
+                    </div>
+                </div>
 
-<form th:action="@{/signup}" method="post">
-    <div th:object="${clienteNuevo.cuenta}">
-        <dl>
-            <dt>
-                <label for="correo">Correo</label>
-            </dt>
-            <dd>
-                <input id="correo" type="text" th:field="*{correo}">
-                <small th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></small>
-            </dd>
-        </dl>
+                <hr class="my-4">
 
-        <dl>
-            <dt>
-                <label for="contrasenna">Contraseña</label>
-            </dt>
-            <dd>
-                <input id="contrasenna" type="password" th:field="*{contrasenna}">
-                <small th:if="${#fields.hasErrors('contrasenna')}" th:errors="*{contrasenna}"></small>
-            </dd>
-        </dl>
+                <h4 class="mb-1 text-primary">Dirección de envío</h4>
+                <div class="row gy-3 mb-2" th:object="${clienteNuevo.direccion}">
+                    <div class="col-12">
+                        <label for="direccion" class="form-label">Direccion</label>
+                        <input type="text" th:class="'form-control ' + ${#fields.hasErrors('calle') ? 'is-invalid' : ''}"
+                               id="direccion" th:field="*{calle}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('calle')}" th:errors="*{calle}"></small>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="provincia" class="form-label">Provincia</label>
+                        <input type="text" th:class="'form-control ' + ${#fields.hasErrors('provincia') ? 'is-invalid' : ''}"
+                               id="provincia" th:field="*{provincia}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('provincia')}" th:errors="*{provincia}"></small>
+                    </div>
 
-        <h2>Datos de la cuenta</h2>
+                    <div class="col-md-5">
+                        <label for="ciudad" class="form-label">Ciudad</label>
+                        <input type="text" th:class="'form-control ' + ${#fields.hasErrors('ciudad') ? 'is-invalid' : ''}"
+                               id="ciudad" th:field="*{ciudad}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('ciudad')}" th:errors="*{ciudad}"></small>
+                    </div>
 
-        <dl>
-            <dt>
-                <label for="nombre">Nombre</label>
-            </dt>
-            <dd>
-                <input id="nombre" type="text" th:field="*{nombre}">
-                <small th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
-            </dd>
-        </dl>
+                    <div class="col-md-3">
+                        <label for="codigoPostal" class="form-label">Código Postal</label>
+                        <input type="text" th:class="'form-control ' + ${#fields.hasErrors('codigoPostal') ? 'is-invalid' : ''}"
+                               id="codigoPostal" th:field="*{codigoPostal}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('codigoPostal')}" th:errors="*{codigoPostal}"></small>
+                    </div>
+                </div>
 
-        <dl>
-            <dt>
-                <label for="apellido">Apellido</label>
-            </dt>
-            <dd>
-                <input id="apellido" type="text" th:field="*{apellido}">
-                <small th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></small>
-            </dd>
-        </dl>
+                <hr class="my-4">
 
-        <dl>
-            <dt>
-                <label for="tiendafav">Tienda favorita</label>
-            </dt>
-            <dd>
-                <select id="tiendafav" th:field="${clienteNuevo.tienda.id}">
-                    <option th:each="tienda: ${tiendaList}" th:text="${tienda.nombre}"
-                            th:value="${tienda.id}" th:selected="${tienda==clienteNuevo.tienda}"></option>
-                </select>
-            </dd>
-        </dl>
+                <h4 class="mb-3 text-primary">Tarjeta de crédito</h4>
+                <div class="row gy-3 mb-5" th:object="${clienteNuevo.tarjeta}">
+                    <div class="col-md-6">
+                        <label for="numero" class="form-label">Número de la tarjeta </label>
+                        <input type="text" th:class="'form-control ' + ${#fields.hasErrors('numero') ? 'is-invalid' : ''}"
+                               id="numero" th:field="*{numero}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}"></small>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="fechaExpiracion" class="form-label">Fecha de expiración</label>
+                        <input type="month" th:class="'form-control ' + ${#fields.hasErrors('fechaExpiracion') ? 'is-invalid' : ''}"
+                               id="fechaExpiracion" th:field="*{fechaExpiracion}" required="" placeholder="MM/yyyy">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('fechaExpiracion')}" th:errors="*{fechaExpiracion}"></small>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="cvv" class="form-label">CVV</label>
+                        <input type="text" th:class="'form-control ' + ${#fields.hasErrors('cvv') ? 'is-invalid' : ''}"
+                               id="cvv" th:field="*{cvv}" required="">
+                        <small class="invalid-feedback" th:if="${#fields.hasErrors('cvv')}" th:errors="*{cvv}"></small>
+                    </div>
+                </div>
+            </div>
+            <button class="w-100 btn btn-primary btn-lg" type="submit">Registrar</button>
+        </form>
+        <p class="my-3 text-center">¿Ya tienes una cuenta? <a th:href="@{/login}">Inicia Sesión</a></p>
+        <p class="my-3 text-center text-body-secondary">© 2024 Ukun</p>
     </div>
+</main>
 
-    <hr>
-
-    <div th:object="${clienteNuevo.direccion}">
-        <h2>Datos de dirección</h2>
-        <dl>
-            <dt>
-                <label for="calle">Calle</label>
-            </dt>
-            <dd>
-                <input id="calle" type="text" th:field="*{calle}">
-                <small th:if="${#fields.hasErrors('calle')}" th:errors="*{calle}"></small>
-            </dd>
-        </dl>
-        <dl>
-            <dt>
-                <label for="provincia">Provincia</label>
-            </dt>
-            <dd>
-                <input id="provincia" type="text" th:field="*{provincia}">
-                <small th:if="${#fields.hasErrors('provincia')}" th:errors="*{provincia}"></small>
-            </dd>
-        </dl>
-        <dl>
-            <dt>
-                <label for="ciudad">Ciudad</label>
-            </dt>
-            <dd>
-                <input id="ciudad" type="text" th:field="*{ciudad}">
-                <small th:if="${#fields.hasErrors('ciudad')}" th:errors="*{ciudad}"></small>
-            </dd>
-        </dl>
-        <dl>
-            <dt>
-                <label for="codigoPostal">Código Postal</label>
-            </dt>
-            <dd>
-                <input id="codigoPostal" type="text" th:field="*{codigoPostal}">
-                <small th:if="${#fields.hasErrors('codigoPostal')}" th:errors="*{codigoPostal}"></small>
-            </dd>
-        </dl>
-    </div>
-
-    <hr>
-
-    <div th:object="${clienteNuevo.tarjeta}">
-        <h2>Datos de la tarjeta</h2>
-        <dl>
-            <dt>
-                <label for="numero">Número</label>
-            </dt>
-            <dd>
-                <input id="numero" type="text" th:field="*{numero}">
-                <small th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}"></small>
-            </dd>
-        </dl>
-        <dl>
-            <dt>
-                <label for="fechaExpiracion">Fecha de expiración</label>
-            </dt>
-            <dd>
-                <input id="fechaExpiracion" type="month" th:field="*{fechaExpiracion}" placeholder="MM/yyyy">
-                <small th:if="${#fields.hasErrors('fechaExpiracion')}" th:errors="*{fechaExpiracion}"></small>
-            </dd>
-        </dl>
-        <dl>
-            <dt>
-                <label for="cvv">CVV</label>
-            </dt>
-            <dd>
-                <input id="cvv" type="text" th:field="*{cvv}">
-                <small th:if="${#fields.hasErrors('cvv')}" th:errors="*{cvv}"></small>
-            </dd>
-        </dl>
-    </div>
-
-    <p>
-        <input type="submit" value="Regístrate">
-    </p>
-</form>
 </body>
 </html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{components/layout :: head}"></head>
+<body>
+<header th:replace="~{components/layout :: header}"></header>
+<main class="min-vh-100">
+    <div class="d-flex justify-content-center align-items-center">
+        <div class="col-md-7 col-lg-8" style="width: 600px; margin: 50px auto;">
+            <h1 class="mb-3 text-primary">Edita tu perfil</h1>
+            <form th:action="@{/perfil/editar}" method="post">
+                <div class="row g-3">
+                    <div class="row gy-3 mb-2" th:object="${cliente.cuenta}">
+                        <div class="col-sm-6">
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input th:class="'form-control ' + ${#fields.hasErrors('nombre') ? 'is-invalid' : ''}"
+                                   type="text" id="nombre" th:field="*{nombre}" required="">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="apellido" class="form-label">Apellido</label>
+                            <input type="text" th:class="'form-control ' + ${#fields.hasErrors('apellido') ? 'is-invalid' : ''}"
+                                   id="apellido" th:field="*{apellido}" required="">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('apellido')}" th:errors="*{apellido}"></small>
+                        </div>
+                        <div class="col-sm-12">
+                            <label for="correo" class="form-label">Correo</label>
+                            <input type="email" th:class="'form-control ' + ${#fields.hasErrors('correo') ? 'is-invalid' : ''}"
+                                   id="correo" th:field="*{correo}" required="">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></small>
+                        </div>
+                        <div class="col-sm-12">
+                            <label for="tiendafav" class="form-label">Tienda favorita</label>
+                            <select class="form-select" id="tiendafav" th:field="${cliente.tienda.id}" required>
+                                <option th:each="tienda: ${tiendaList}" th:text="${tienda.nombre}"
+                                        th:value="${tienda.id}" th:selected="${tienda==cliente.tienda}"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h4 class="mb-1 text-primary">Dirección de envío</h4>
+                    <div class="row gy-3 mb-2" th:object="${cliente.direccion}">
+                        <div class="col-12">
+                            <label for="direccion" class="form-label">Direccion</label>
+                            <input type="text" th:class="'form-control ' + ${#fields.hasErrors('calle') ? 'is-invalid' : ''}"
+                                   id="direccion" th:field="*{calle}" required="">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('calle')}" th:errors="*{calle}"></small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="provincia" class="form-label">Provincia</label>
+                            <input type="text" th:class="'form-control ' + ${#fields.hasErrors('provincia') ? 'is-invalid' : ''}"
+                                   id="provincia" th:field="*{provincia}" required="">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('provincia')}" th:errors="*{provincia}"></small>
+                        </div>
+
+                        <div class="col-md-5">
+                            <label for="ciudad" class="form-label">Ciudad</label>
+                            <input type="text" th:class="'form-control ' + ${#fields.hasErrors('ciudad') ? 'is-invalid' : ''}"
+                                   id="ciudad" th:field="*{ciudad}" required="">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('ciudad')}" th:errors="*{ciudad}"></small>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="codigoPostal" class="form-label">Código Postal</label>
+                            <input type="text" th:class="'form-control ' + ${#fields.hasErrors('codigoPostal') ? 'is-invalid' : ''}"
+                                   id="codigoPostal" th:field="*{codigoPostal}" required="">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('codigoPostal')}" th:errors="*{codigoPostal}"></small>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h4 class="mb-3 text-primary">Tarjeta de crédito</h4>
+                    <div class="row gy-3 mb-5" th:object="${cliente.tarjeta}">
+                        <div class="col-md-6">
+                            <label for="numero" class="form-label">Número de la tarjeta </label>
+                            <input type="text" th:class="'form-control ' + ${#fields.hasErrors('numero') ? 'is-invalid' : ''}"
+                                   id="numero" th:field="*{numero}" required="">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}"></small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fechaExpiracion" class="form-label">Fecha de expiración</label>
+                            <input type="month" th:class="'form-control ' + ${#fields.hasErrors('fechaExpiracion') ? 'is-invalid' : ''}"
+                                   id="fechaExpiracion" th:field="*{fechaExpiracion}" required="" placeholder="MM/yyyy">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('fechaExpiracion')}" th:errors="*{fechaExpiracion}"></small>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="cvv" class="form-label">CVV</label>
+                            <input type="text" th:class="'form-control ' + ${#fields.hasErrors('cvv') ? 'is-invalid' : ''}"
+                                   id="cvv" th:field="*{cvv}" required="">
+                            <small class="invalid-feedback" th:if="${#fields.hasErrors('cvv')}" th:errors="*{cvv}"></small>
+                        </div>
+                    </div>
+                </div>
+                <button class="w-100 btn btn-primary btn-lg" type="submit">Editar perfil</button>
+            </form>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{components/layout :: footer}"></footer>
+
+
+</body>
+</html>

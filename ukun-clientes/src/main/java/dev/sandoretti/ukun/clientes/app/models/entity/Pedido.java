@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,6 +62,12 @@ public class Pedido implements Serializable
         this.fecha = LocalDateTime.now();
         this.total = 0F;
         this.productos = new ArrayList<>();
+    }
+
+    public String fechaFormateada()
+    {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+        return fecha.format(formatter);
     }
 
     public void setProductosYTotal(List<Carrito> productosCarrito)

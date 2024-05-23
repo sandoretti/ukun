@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Login</title>
-</head>
-<body>
-    <h1>Login de clientes</h1>
-
-    <div th:if="${error != null}" th:text="${error}"></div>
-
-    <div>
-        <form th:action="@{/login}" method="post">
-            <label>
-                <input type="email" th:name="correo">
-            </label>
-            <label>
-                <input type="password" th:name="contrasenna">
-            </label>
-            <input type="submit" value="Iniciar sesión">
-        </form>
+<head th:replace="~{components/layout :: head}"></head>
+<body class="body-signin">
+<form th:action="@{/login}" method="post" style="width: 400px;">
+    <a class="" th:href="@{/}">
+        <img th:src="@{/resources/logo/UkunIcon.png}" alt="" width="72" height="72">
+    </a>
+    <h1 class="mb-3 text-primary">Inicio de Sesión</h1>
+    <div class="form-floating mb-2">
+        <input type="email" class="form-control" id="floatingCorreo" placeholder="name@example.com" th:name="correo">
+        <label for="floatingCorreo">Correo</label>
     </div>
+    <div class="form-floating mb-4">
+        <input type="password" class="form-control" id="floatingContra" placeholder="Contraseña" th:name="contrasenna">
+        <label for="floatingContra">Contraseña</label>
+    </div>
+    <button class="btn btn-primary w-100 py-2" type="submit">Iniciar Sesión</button>
+    <div class="alert alert-danger my-3 text-center text-wrap" th:if="${error != null}" th:text="${error}"></div>
+    <p class="my-3 text-center">¿No tienes cuenta? <a href="/signup">Regístrate</a></p>
+    <p class="my-3 text-center text-body-secondary">© 2024 Ukun</p>
+</form>
 </body>
 </html>

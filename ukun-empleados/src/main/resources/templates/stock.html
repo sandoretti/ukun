@@ -46,7 +46,7 @@
                 <td class="ps-4" th:text="${stockProducto.producto.nombre}"></td>
                 <td>
                     <img class="border border-black rounded d-block"
-                         th:src="@{/resources/uploads/{pathFoto}(pathFoto=${stockProducto.producto.pathFoto})}"
+                         th:src="@{~/resources/uploads/{pathFoto}(pathFoto=${stockProducto.producto.pathFoto})}"
                          width="50" height="50" alt=""/>
                 </td>
                 <td th:text="${stockProducto.producto.tipo.nombre}"></td>
