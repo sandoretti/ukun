@@ -2,18 +2,15 @@ package dev.sandoretti.ukun.empleados.app.controllers;
 
 import dev.sandoretti.ukun.empleados.app.models.entity.Producto;
 import dev.sandoretti.ukun.empleados.app.models.entity.TipoProducto;
-import dev.sandoretti.ukun.empleados.app.models.service.IProductoService;
-import dev.sandoretti.ukun.empleados.app.models.service.IUploadFileService;
+import dev.sandoretti.ukun.empleados.app.service.IProductoService;
+import dev.sandoretti.ukun.empleados.app.service.IUploadFileService;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.AbstractController;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;

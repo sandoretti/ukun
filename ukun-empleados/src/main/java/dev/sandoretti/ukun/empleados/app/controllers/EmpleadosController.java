@@ -2,7 +2,7 @@ package dev.sandoretti.ukun.empleados.app.controllers;
 
 import dev.sandoretti.ukun.empleados.app.models.entity.Empleado;
 import dev.sandoretti.ukun.empleados.app.models.entity.Tienda;
-import dev.sandoretti.ukun.empleados.app.models.service.IEmpleadoService;
+import dev.sandoretti.ukun.empleados.app.service.IEmpleadoService;
 import dev.sandoretti.ukun.empleados.app.validators.EmpleadoValidator;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,4 +1,4 @@
-package dev.sandoretti.ukun.empleados.app.models.service;
+package dev.sandoretti.ukun.empleados.app.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
