@@ -44,7 +44,7 @@ public class PedidoController extends AbsController
             return "redirect:/pedidos";
         }
 
-        flash.addFlashAttribute("info", "Se ha creado el pedido correctamente");
+        flash.addFlashAttribute("success", "Se ha creado el pedido correctamente");
 
         return "redirect:/pedidos";
     }

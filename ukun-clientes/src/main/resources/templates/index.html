@@ -1,21 +1,41 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Ukun</title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
-    <div th:if="${cliente==null}">
-        <a th:href="@{/login}">Iniciar sesion</a>
-        <a th:href="@{/signup}">Crear cuenta</a>
+<header th:replace="~{components/layout :: header}"></header>
+<main>
+    <div class="fluid-container position-relative">
+        <div>
+            <img th:src="@{/images/portada-ukun.jpg}" alt="Ukun" class="img-fluid" style="opacity: 0.3;">
+        </div>
+        <div class="position-absolute top-50 start-50 translate-middle text-center">
+            <h1 class="display-1 text-primary">¡Bienvenido a Ukun!</h1>
+            <p class="text-black fs-2">Descubre nuestras increibles ofertas</p>
+        </div>
     </div>
-
-    <div th:unless="${cliente==null}">
-        <a th:href="@{/logout}">Cerrar sesion</a>
-        <a th:href="@{/perfil}">Perfil</a>
-        <a th:href="@{/carrito}">Carrito</a>
+    <div class="container py-5">
+        <div class="row gx-5">
+            <div class="col-md-6 mb-5">
+                <h2 class="mb-3 text-primary">Descubre el equilibrio perfecto</h2>
+                <p>Entre minimalismo y estilo en nuestra tienda. Encontrarás una cuidadosa selección de productos que reflejan la elegancia del diseño moderno, con líneas limpias y una estética sofisticada que se adapta a cualquier espacio.</p>
+            </div>
+            <div class="col-md-6 mb-5">
+                <h2 class="mb-3 text-primary">Precios asequibles sin compromisos</h2>
+                <p>Nos enorgullecemos de ofrecer precios asequibles sin comprometer la calidad ni el diseño. Creemos que el buen diseño debe estar al alcance de todos, y trabajamos arduamente para asegurarnos de que puedas transformar tu hogar u oficina con piezas que exudan elegancia y buen gusto, sin romper tu presupuesto.</p>
+            </div>
+        </div>
+        <div class="row gx-5">
+            <div class="col-md-6 mb-5">
+                <h2 class="mb-3 text-primary">Crea ambientes que reflejen tu estilo</h2>
+                <p>Ya sea que estés buscando darle un toque contemporáneo a tu sala de estar, renovar tu espacio de trabajo con muebles funcionales y elegantes, o agregar un toque de estilo a cualquier rincón de tu hogar, estamos aquí para ayudarte a crear ambientes que reflejen tu personalidad y estilo, sin importar tu presupuesto.</p>
+            </div>
+            <div class="col-md-6 mb-5">
+                <h2 class="mb-3 text-primary">Explora nuestra colección</h2>
+                <p>Descubre cómo el minimalismo se combina con precios asequibles para brindarte una experiencia de compra excepcional y la posibilidad de diseñar espacios que te inspiren día tras día.</p>
+            </div>
+        </div>
     </div>
-
-    <a th:href="@{/productos}">Productos</a>
+</main>
+<footer th:replace="~{components/layout :: footer}"></footer>
 </body>
 </html>

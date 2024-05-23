@@ -1,33 +1,52 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Pedidos</title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
-
-<span th:if="${error != null}" th:text="${error}"></span>
-<span th:if="${info != null}" th:text="${info}"></span>
-
-<div th:if="${pedidos.size() != 0}">
-    <table>
-        <thead>
-        <tr>
-            <th>Fecha</th>
-            <th>Ciudad</th>
-            <th>Total</th>
-        </tr>
-        </thead>
-
-        <tbody>
-        <tr th:each="pedido: ${pedidos}">
-            <td th:text="${pedido.fecha}"></td>
-            <td th:text="${pedido.direccion.ciudad}"></td>
-            <td th:text="${pedido.total}"></td>
-        </tr>
-        </tbody>
-    </table>
-</div>
-<div th:unless="${pedidos.size() != 0}">No hay pedidos</div>
+<header th:replace="~{components/layout :: header}"></header>
+<main class="min-vh-100">
+    <div class="container my-5 w-auto" th:unless="${pedidos.size() != 0}">
+        <h1 class="row display-3 text-primary mb-4">No tiene pedidos</h1>
+    </div>
+    <div class="container my-5 w-auto" th:if="${pedidos.size() != 0}" style="max-width: 1000px;">
+        <h1 class="row display-3 text-primary mb-4">Mis pedidos</h1>
+        <div class="row bg-white py-3 border rounded shadow-lg mb-4"
+             th:each="ped: ${pedidos}">
+            <div class="d-flex align-items-center justify-content-between">
+                <p class="text-primary fw-bold fs-3">
+                    <span>Pedido: </span>
+                    <span th:text="${ped.id}"></span>
+                </p>
+                <p class="precio text-danger fw-bold fs-4"
+                   th:text="${ped.total}"></p>
+            </div>
+            <p class="mt-0 mb-1 text-muted">
+                <span>Fecha y hora: </span>
+                <span th:text="${ped.fechaFormateada()}"></span>
+            </p>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th class="col-auto" scope="col">Nombre</th>
+                    <th class="col-2" scope="col">Cantidad</th>
+                    <th class="col-2" scope="col">Precio ud</th>
+                    <th class="col-2" scope="col">Precio total</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="prod: ${ped.productos}">
+                    <td th:text="${prod.producto.nombre}"></td>
+                    <td th:text="${prod.cantidad}"></td>
+                    <td class="precio" th:text="${prod.precioUnidad}"></td>
+                    <td class="precio" th:text="${prod.precioTotal}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{components/layout :: footer}"></footer>
+<script>
+    window.onload = formatearPrecios;
+</script>
 </body>
 </html>

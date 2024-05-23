@@ -1,20 +1,60 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="https://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${producto.nombre}"></title>
-</head>
+<head th:replace="~{components/layout :: head}"></head>
 <body>
-
-<h1 th:text="${producto.nombre}"></h1>
-<img th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}" width="300" height="300"
-     th:alt="${producto.nombre}"/>
-<p th:text="${producto.descripcion}"></p>
-<p th:text="${producto.tipo.nombre}"></p>
-<p th:text="${producto.precio}"></p>
-<p th:text="${ 'Stock de la tienda online: ' + (stockOnline != null ? stockOnline : '0')}" ></p>
-<p th:if="${cliente != null}"
-        th:text="${ 'Stock de '+ cliente.tienda.nombre + ': ' + (stockFavorita != null ? stockFavorita : '0')}" ></p>
-<a th:if="${cliente!=null}" th:href="@{/carrito/add(producto=${producto.id})}">Añadir al carrito</a>
+<header th:replace="~{components/layout :: header}"></header>
+<main class="min-vh-100">
+    <div class="container-fluid mt-5 pe-md-5 mb-5">
+        <div class="row d-fluid justify-content-around">
+            <div class="col-auto mx-auto">
+                <img class="border border-primary border-5 rounded-5"
+                     style="width: 100% !important;max-height: 700px !important;object-fit: contain !important;"
+                     th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}"
+                     th:alt="${producto.nombre}"/>
+            </div>
+            <div class="col-12 col-md-6 mx-3 py-5 py-md-0 mx-md-0">
+                <h1 class="display-2 text-primary" th:text="${producto.nombre}"></h1>
+                <h3 th:text="${producto.tipo.nombre}"></h3>
+                <p class="precio display-4" th:text="${producto.precio}"></p>
+                <p class="fs-5" th:text="${producto.descripcion}"></p>
+                <div class="container ms-0 ps-2">
+                    <div class="row">
+                        <div class="col-1 fs-1">
+                            <div class="mt-1">
+                                <i class="bi bi-truck"></i>
+                            </div>
+                        </div>
+                        <div class="col mt-1">
+                            <h5>Online</h5>
+                            <p th:text="${(stockOnline != null ? stockOnline : '0') + ' ud/s disponibles'}"></p>
+                        </div>
+                    </div>
+                    <div th:if="${cliente != null}" class="row">
+                        <div class="col-1 fs-1">
+                            <div class="mt-1">
+                                <i class="bi bi-shop"></i>
+                            </div>
+                        </div>
+                        <div class="col mt-1">
+                            <h5 th:text="${cliente.tienda.nombre}"></h5>
+                            <p th:text="${(stockFavorita != null ? stockFavorita : '0') + ' ud/s disponibles'}"></p>
+                        </div>
+                    </div>
+                </div>
+                <form th:if="${cliente != null}" class="d-inline-flex mt-3" th:action="@{/carrito/add}">
+                    <input type="hidden" th:value="${producto.id}" name="producto">
+                    <div class="input-group me-3 w-25">
+                        <input class="form-control fs-5 text-center" type="number" name="cantidad" value="1" min="1">
+                    </div>
+                    <button type="submit" class="btn btn-primary fw-bold">Añadir al carrito</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{components/layout :: footer}"></footer>
+<script>
+    window.onload = formatearPrecios;
+</script>
 </body>
 </html>
