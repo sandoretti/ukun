@@ -27,14 +27,8 @@ public class WebConfig implements WebMvcConfigurer
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(empleadoInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/login", "/css/**", "/js/**", "/resources/**", "/AvertaStandard-Regular.otf");
+                .excludePathPatterns("/login", "/css/**", "/js/**", "/AvertaStandard-Regular.otf");
 
         registry.addInterceptor(adminInterceptor).addPathPatterns("/admin/**");
-    }
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/resources/**")
-                .addResourceLocations("file:/opt/resources/");
     }
 }

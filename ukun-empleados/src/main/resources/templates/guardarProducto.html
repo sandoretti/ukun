@@ -43,7 +43,7 @@
             </div>
             <div th:if="${producto.pathFoto != null}" class="col-md-3 pt-3">
                 <img class="border border-black rounded mx-auto d-block"
-                     th:src="@{/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}"
+                     th:src="@{~/resources/uploads/{pathFoto}(pathFoto=${producto.pathFoto})}"
                      width="200" height="200">
             </div>
         </div>
