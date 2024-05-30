@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{components/layout :: head}"></head>
+<body>
+<header th:replace="~{components/layout :: header}"></header>
+<main class="my-4">
+  <div class="container">
+    <div class="row">
+      <h1 class="text-primary display-1 pb-2">Tiendas Ukun</h1>
+      <div class="card col-12 col-lg-5 m-3" th:each="tienda: ${tiendas}" th:object="${tienda}">
+        <div class="card-body">
+          <h1 class="card-title pb-2" th:text="*{nombre}"></h1>
+          <p class="fs-5">
+            <span class="fw-bold">Provincia: </span>
+            <span th:text="*{direccion.provincia}"></span>
+          </p>
+          <p class="fs-5">
+            <span class="fw-bold">Ciudad: </span>
+            <span th:text="*{direccion.ciudad}"></span>
+          </p>
+          <p class="fs-5">
+            <span class="fw-bold">Dirección: </span>
+            <span th:text="*{direccion.calle}"></span>
+          </p>
+          <p class="fs-5">
+            <span class="fw-bold">Teléfono: </span>
+            <span th:text="*{telefono}"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer th:replace="~{components/layout :: footer}"></footer>
+</body>
+</html>
