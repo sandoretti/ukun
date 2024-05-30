@@ -3,35 +3,73 @@
 <head th:replace="~{components/layout :: head}"></head>
 <body>
 <header th:replace="~{components/layout :: header}"></header>
-<main>
-    <div class="fluid-container position-relative">
+<main class="pb-5">
+    <div class="position-relative">
         <div>
             <img th:src="@{/images/portada-ukun.jpg}" alt="Ukun" class="img-fluid" style="opacity: 0.3;">
         </div>
         <div class="position-absolute top-50 start-50 translate-middle text-center">
-            <h1 class="display-1 text-primary">¡Bienvenido a Ukun!</h1>
-            <p class="text-black fs-2">Descubre nuestras increibles ofertas</p>
+            <img th:src="@{/resources/logo/UkunLogo.png}" alt="Ukun" width="750">
+            <p class="fst-italic fw-light fs-1">"Your ukun"</p>
         </div>
     </div>
     <div class="container py-5">
-        <div class="row gx-5">
-            <div class="col-md-6 mb-5">
-                <h2 class="mb-3 text-primary">Descubre el equilibrio perfecto</h2>
-                <p>Entre minimalismo y estilo en nuestra tienda. Encontrarás una cuidadosa selección de productos que reflejan la elegancia del diseño moderno, con líneas limpias y una estética sofisticada que se adapta a cualquier espacio.</p>
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-3 text-primary">Descubre el equilibrio perfecto</h1>
+                <p class="lead">Entre minimalismo y estilo en nuestra tienda, encontrarás una cuidadosa selección de productos que reflejan la elegancia del diseño moderno, con líneas limpias y una estética sofisticada.</p>
             </div>
-            <div class="col-md-6 mb-5">
-                <h2 class="mb-3 text-primary">Precios asequibles sin compromisos</h2>
-                <p>Nos enorgullecemos de ofrecer precios asequibles sin comprometer la calidad ni el diseño. Creemos que el buen diseño debe estar al alcance de todos, y trabajamos arduamente para asegurarnos de que puedas transformar tu hogar u oficina con piezas que exudan elegancia y buen gusto, sin romper tu presupuesto.</p>
+            <div class="col-md-4 text-center text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="250" height="250" fill="none">
+                    <path d="M12 5V22M12 22H9M12 22H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M21 13L18.5 8L16 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M8 13L5.5 8L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M4 8H5.0482C6.31166 8 7.5375 7.471 8.5241 6.5C10.5562 4.5 13.4438 4.5 15.4759 6.5C16.4625 7.471 17.6883 8 18.9518 8H20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M18.5 17C19.8547 17 21.0344 16.1663 21.6473 14.9349C21.978 14.2702 22.1434 13.9379 21.8415 13.469C21.5396 13 21.04 13 20.0407 13H16.9593C15.96 13 15.4604 13 15.1585 13.469C14.8566 13.9379 15.022 14.2702 15.3527 14.9349C15.9656 16.1663 17.1453 17 18.5 17Z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M5.5 17C6.85471 17 8.03442 16.1663 8.64726 14.9349C8.97802 14.2702 9.14339 13.9379 8.84151 13.469C8.53962 13 8.04 13 7.04075 13H3.95925C2.96 13 2.46038 13 2.15849 13.469C1.85661 13.9379 2.02198 14.2702 2.35273 14.9349C2.96558 16.1663 4.14528 17 5.5 17Z" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M13.5 3.5C13.5 4.32843 12.8284 5 12 5C11.1716 5 10.5 4.32843 10.5 3.5C10.5 2.67157 11.1716 2 12 2C12.8284 2 13.5 2.67157 13.5 3.5Z" stroke="currentColor" stroke-width="1.5" />
+                </svg>
             </div>
         </div>
-        <div class="row gx-5">
-            <div class="col-md-6 mb-5">
-                <h2 class="mb-3 text-primary">Crea ambientes que reflejen tu estilo</h2>
-                <p>Ya sea que estés buscando darle un toque contemporáneo a tu sala de estar, renovar tu espacio de trabajo con muebles funcionales y elegantes, o agregar un toque de estilo a cualquier rincón de tu hogar, estamos aquí para ayudarte a crear ambientes que reflejen tu personalidad y estilo, sin importar tu presupuesto.</p>
+        <hr class="border border-primary my-5">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-8 order-md-2">
+                <h1 class="mb-3 text-primary">Precios asequibles sin compromisos</h1>
+                <p class="lead">Nos enorgullecemos de ofrecer precios asequibles sin comprometer la calidad ni el diseño. Creemos que el buen diseño debe estar al alcance de todos, y trabajamos arduamente para asegurarnos de que puedas transformar tu hogar u oficina con piezas que exudan elegancia y buen gusto, sin romper tu presupuesto.</p>
             </div>
-            <div class="col-md-6 mb-5">
-                <h2 class="mb-3 text-primary">Explora nuestra colección</h2>
-                <p>Descubre cómo el minimalismo se combina con precios asequibles para brindarte una experiencia de compra excepcional y la posibilidad de diseñar espacios que te inspiren día tras día.</p>
+            <div class="col-md-4 text-center text-primary order-md-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="250" height="250" fill="none">
+                    <path d="M7.72852 15.2861H12.7285M10.2271 12.7861H10.2364M10.2294 17.7861H10.2388" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M6.5 3.69682C9.53332 6.78172 14.5357 0.123719 17.4957 2.53998C19.1989 3.93028 18.6605 7 16.4494 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M18.664 6.57831C19.6473 6.75667 19.8679 7.34313 20.1615 8.97048C20.4259 10.4361 20.5 12.1949 20.5 12.9436C20.4731 13.2195 20.3532 13.477 20.1615 13.687C18.1054 15.722 14.0251 19.565 11.9657 21.474C11.1575 22.1555 9.93819 22.1702 9.08045 21.5447C7.32407 20.0526 5.63654 18.366 3.98343 16.8429C3.3193 16.035 3.33487 14.8866 4.0585 14.1255C6.23711 11.9909 10.1793 8.33731 12.4047 6.31887C12.6278 6.1383 12.9012 6.02536 13.1942 6C13.6935 5.99988 14.5501 6.06327 15.3845 6.10896" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+            </div>
+        </div>
+        <hr class="border border-primary my-5">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-3 text-primary">Crea ambientes que reflejen tu estilo</h1>
+                <p class="lead">Ya sea que estés buscando darle un toque contemporáneo a tu sala de estar, renovar tu espacio de trabajo con muebles funcionales y elegantes, o agregar un toque de estilo a cualquier rincón de tu hogar, estamos aquí para ayudarte a crear ambientes que reflejen tu personalidad y estilo, sin importar tu presupuesto.</p>
+            </div>
+            <div class="col-md-4 text-center text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="250" height="250" fill="none">
+                    <path d="M12 13L15 15M12 13C7.52052 15.7458 4.88172 14.7808 3 13.8508C3 15.9297 3.68122 17.6692 4.69609 19M12 13L15 8.41396M15 15C14.781 17.0373 13.4267 21.1851 10.1556 22C8.34064 22 6.16762 20.9296 4.69609 19M15 15L17.5978 10M17.5978 10L20.876 3.69028C21.1655 3.1134 20.9308 2.41193 20.3519 2.12349C19.7937 1.84536 19.1147 2.05196 18.8076 2.59338L15 8.41396M17.5978 10L15 8.41396M4.69609 19C5.73446 19.1667 8.28008 19.2 10.1556 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M6 4L6.22108 4.59745C6.51097 5.38087 6.65592 5.77259 6.94167 6.05834C7.22741 6.34408 7.61913 6.48903 8.40255 6.77892L9 7L8.40255 7.22108C7.61913 7.51097 7.22741 7.65592 6.94167 7.94167C6.65592 8.22741 6.51097 8.61913 6.22108 9.40255L6 10L5.77892 9.40255C5.48903 8.61913 5.34408 8.22741 5.05833 7.94167C4.77259 7.65592 4.38087 7.51097 3.59745 7.22108L3 7L3.59745 6.77892C4.38087 6.48903 4.77259 6.34408 5.05833 6.05833C5.34408 5.77259 5.48903 5.38087 5.77892 4.59745L6 4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                </svg>
+            </div>
+        </div>
+        <hr class="border border-primary my-5">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-8 order-md-2">
+                <h1 class="mb-3 text-primary">Explora nuestra colección</h1>
+                <p class="lead">Descubre cómo nuestros productos te brindarán una experiencia de compra excepcional y la posibilidad de diseñar espacios que te inspiren día tras día en nuestra amplia gama de productos.</p>
+            </div>
+            <div class="col-md-4 text-center text-primary order-md-1">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="250" height="250" fill="none">
+                    <path d="M14 14L16.5 16.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                    <path d="M16.4333 18.5252C15.8556 17.9475 15.8556 17.0109 16.4333 16.4333C17.0109 15.8556 17.9475 15.8556 18.5252 16.4333L21.5667 19.4748C22.1444 20.0525 22.1444 20.9891 21.5667 21.5667C20.9891 22.1444 20.0525 22.1444 19.4748 21.5667L16.4333 18.5252Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M16 9C16 5.13401 12.866 2 9 2C5.13401 2 2 5.13401 2 9C2 12.866 5.13401 16 9 16C12.866 16 16 12.866 16 9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                </svg>
             </div>
         </div>
     </div>

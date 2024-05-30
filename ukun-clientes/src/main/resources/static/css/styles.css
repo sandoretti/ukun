@@ -64,3 +64,8 @@ body {
     margin-right: 8px;
     background-color:crimson;
 }
+
+.lead {
+    font-size: 1.25rem;
+    font-weight: 300;
+}
