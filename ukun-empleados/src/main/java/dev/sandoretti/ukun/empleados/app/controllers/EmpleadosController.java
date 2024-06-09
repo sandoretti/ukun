@@ -59,21 +59,25 @@ public class EmpleadosController extends AbsController
     @PostMapping("/crear")
     public String crear(@Valid @ModelAttribute("nuevoEmpleado") Empleado nuevoEmpleado,
                         BindingResult result,
+                        @ModelAttribute("empleado") Empleado administrador,
                         Model model,
                         RedirectAttributes flash)
     {
         // Comprobamos si la validacion del nuevo empleado es correcta
         if (result.hasErrors())
+        {
+            // En logs escribimos el error
+            log.error("Hay errores al intentar validar el nuevo empleado: {}", result);
+
+            // Volvemos a la ventana de crear empleado
             return "crearEmpleado";
+        }
 
         // Obtenemos el correo del nuevo empleado
         String correoNuevoEmpleado = nuevoEmpleado.getCuenta().getCorreo().toLowerCase();
 
         // Cambiamos el correo a minusculas
         nuevoEmpleado.getCuenta().setCorreo(correoNuevoEmpleado);
-
-        // Obtenemos el adminstrador
-        Empleado administrador = empleado(model);
 
         // Obtenemos la tienda del administrador y se la asignamos al nuevo empleado
         Tienda tienda = administrador.getTienda();
@@ -84,6 +88,9 @@ public class EmpleadosController extends AbsController
 
         // Devolvemos un mensaje de exito
         flash.addFlashAttribute("success", "Empleado creado con exito");
+
+        // En logs escribimos el mensaje de exito
+        log.info("Se ha insertado un nuevo empleado: {}", nuevoEmpleado);
 
         // Redirigimos a la pantalla principal de empleados
         return "redirect:/admin/empleados";
