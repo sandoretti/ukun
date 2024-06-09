@@ -60,18 +60,27 @@ public class ProductosController extends AbsController
                          Model model,
                          RedirectAttributes flash)
     {
+        // Obtenemos el producto a partir del id del producto
         Producto producto = productoService.findById(id);
 
+        // Verificamos si el producto existe dentro de la base de datos, sino lanzamos un error
         if (producto == null)
         {
+            // Lanzamos un mensaje de error
             flash.addFlashAttribute("error", "No se ha encontrado el cliente con el id asociado");
 
+            // En logs escribimos el error
+            log.error("Se ha intentado acceder a la vista de edición de un producto inexistente con el id: {}", id);
+
+            // Volvemos a la pantalla de productos
             return "redirect:/admin/productos";
         }
 
+        // Annadimos los atributos de producto y titulo
         model.addAttribute("producto", producto);
         model.addAttribute("titulo", "Editar producto");
 
+        // Devolvemos la vista
         return "guardarProducto";
     }
 
@@ -85,8 +94,13 @@ public class ProductosController extends AbsController
         // Comprobamos si no tiene errores de validacion
         if (result.hasErrors())
         {
+            // Cambiamos el titulo del formulario
             model.addAttribute("titulo", "Error en el formulario");
 
+            // En logs escribimos el error
+            log.error("Hay errores al intentar validar el producto: {}", result);
+
+            // Devolvemos la vista
             return "guardarProducto";
         }
 
@@ -123,6 +137,8 @@ public class ProductosController extends AbsController
 
         // Mandamos un mensaje de exito
         flash.addFlashAttribute("success", "Producto ".concat(mensajeFlash).concat(" con exito"));
+
+        // En logs escribimos el mensaje de exito
         log.info("Se ha ".concat(mensajeFlash).concat(" el producto: {}"), producto);
 
         // Volvemos a la pantalla de productos
@@ -141,6 +157,9 @@ public class ProductosController extends AbsController
         {
             // Devolvemos un mensaje de error
             flash.addFlashAttribute("error", "No existe el producto.");
+
+            // En logs escribimos el error
+            log.error("Se ha intentado eliminar un producto inexistente con el id: {}", idProducto);
 
             // Volvemos a la pantalla de productos
             return "redirect:/admin/productos";
@@ -162,7 +181,7 @@ public class ProductosController extends AbsController
         catch (DataIntegrityViolationException e)
         {
             // Mandamos un error por los logs
-            log.error("El producto depende de otras tablas.");
+            log.error("Se ha intentado eliminar el producto con id {} pero este depende de otras tablas ", idProducto);
 
             // Mandamos un mensaje de error a la vista
             flash.addFlashAttribute("error", "El producto no puede ser eliminado, este depende de otros.");
