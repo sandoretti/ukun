@@ -31,8 +31,10 @@ public class StockServiceImpl implements IStockService
 
     @Override
     @Transactional
-    public void delete(StockProductoId id) {
-        stockProductoCrud.deleteById(id);
+    public void delete(Long idProducto, Long idTienda)
+    {
+        StockProductoId stockProductoId = new StockProductoId(idProducto, idTienda);
+        stockProductoCrud.deleteById(stockProductoId);
     }
 
     @Override

@@ -15,7 +15,7 @@ import java.util.Objects;
 @Controller
 @SessionAttributes("empleado")
 @RequestMapping("/stock")
-public class StockController
+public class StockController extends AbsController
 {
     @Autowired
     private IStockService stockService;
@@ -59,6 +59,7 @@ public class StockController
         if (tiendaId == null || productoId == null)
         {
             flash.addFlashAttribute("error", "Los parametros insertados estan vacios");
+            log.error("Se ha intentado eliminar el stock del producto: {} y de la tienda {}", productoId, tiendaId);
             return "redirect:/stock";
         }
 
@@ -66,20 +67,20 @@ public class StockController
         if (!Objects.equals(tienda.getId(), tiendaId))
         {
             flash.addFlashAttribute("error", "No pertenece a la tienda correspondiente");
+            log.error("Se ha intentado eliminar un stock del producto: {} y de la tienda {} pero el empleado no pertenece a la misma tienda",
+                    productoId, tiendaId);
             return "redirect:/stock";
         }
 
-        // Creamos el id de stock producto con los campos requeridos
-        StockProductoId stockProductoId = new StockProductoId();
-
-        stockProductoId.setProductoId(productoId);
-        stockProductoId.setTiendaId(tiendaId);
-
         // Eliminamos el stock del producto
-        stockService.delete(stockProductoId);
+        stockService.delete(productoId, tiendaId);
+
+        // Escribimos un mensaje de exito en logs
+        log.info("Se ha eliminado correctamente el stock del producto: {} y tienda: {}", productoId, tiendaId);
 
         // Mandamos mensaje de exito, junto a redireccion a stock
         flash.addFlashAttribute("success", "Stock eliminado exitosamente");
+
         return "redirect:/stock";
     }
 
@@ -103,6 +104,8 @@ public class StockController
         if (tiendaId == null || productoId == null || stock == null)
         {
             flash.addFlashAttribute("error", "Los parametros insertados estan vacios");
+            log.error("Se han insertado parametros vacios al intentar editar un stock del producto {} y de la tienda {} con cantidad {}",
+                    productoId, tiendaId, stock);
             return "redirect:/stock";
         }
 
@@ -110,19 +113,31 @@ public class StockController
         if (!Objects.equals(tienda.getId(), tiendaId))
         {
             flash.addFlashAttribute("error", "No pertenece a la tienda correspondiente");
+            log.error("Se ha intentado editar un stock del producto: {} y de la tienda {} pero el empleado no pertenece a la misma tienda",
+                    productoId, tiendaId);
             return "redirect:/stock";
         }
 
         if (stock < 0)
         {
             flash.addFlashAttribute("error", "El stock es negativo");
+            log.error("La cantidad del stock {} aportada para editar el producto {} de la tienda {} es negativo.",
+                    stock, productoId, tiendaId);
             return "redirect:/stock";
         }
 
         if (!stockService.guardar(tienda, productoId, stock))
+        {
             flash.addFlashAttribute("error", "Error al guardar el stock");
+            log.error("No se ha podido editar el stock del producto {}, tienda {} y cantidad {}",
+                    productoId, tiendaId, stock);
+        }
         else
+        {
             flash.addFlashAttribute("success", "Stock guardado exitosamente");
+            log.info("Se ha editado correctamente el stock de producto {}, tienda {} y cantidad {}",
+                    productoId, tiendaId, stock);
+        }
 
         return "redirect:/stock";
     }
