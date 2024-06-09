@@ -37,6 +37,13 @@ public class ProductoServiceImpl implements IProductoService
     }
 
     @Override
+    @Transactional
+    public void deleteById(Long id)
+    {
+        productoCrud.deleteById(id);
+    }
+
+    @Override
     public List<TipoProducto> findAllTipoProductos() {
         return (List<TipoProducto>) tipoProductoCrud.findAll();
     }

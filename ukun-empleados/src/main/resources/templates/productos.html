@@ -16,6 +16,7 @@
                 <th class="col-2">Tipo</th>
                 <th class="col-2">Precio</th>
                 <th class="col-2"></th>
+                <th class="col-1"></th>
             </tr>
             </thead>
             <tbody class="table-group-divider">
@@ -28,6 +29,12 @@
                 <td th:text="${producto.tipo.nombre}"></td>
                 <td class="precio" th:text="${producto.precio}"></td>
                 <td class="text-center"><a class="btn btn-primary" th:href="@{/admin/productos/editar/{id}(id=${producto.id})}">Editar</a></td>
+                <td class="text-center">
+                    <a class="btn btn-danger"
+                       th:href="@{/admin/productos/eliminar/{idProducto}(idProducto=${producto.id})}">
+                        <i class="bi bi-trash-fill"></i>
+                    </a>
+                </td>
             </tr>
             </tbody>
         </table>

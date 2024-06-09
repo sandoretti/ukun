@@ -31,4 +31,10 @@ public interface IProductoService
      * @param producto Producto a guardar
      */
     public void save(Producto producto);
+
+    /**
+     * Elimina un producto dado su id de la base de datos
+     * @param id Identificador del producto
+     */
+    public void deleteById(Long id);
 }

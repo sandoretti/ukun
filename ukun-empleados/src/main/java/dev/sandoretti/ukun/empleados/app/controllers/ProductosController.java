@@ -6,6 +6,7 @@ import dev.sandoretti.ukun.empleados.app.service.IProductoService;
 import dev.sandoretti.ukun.empleados.app.service.IUploadFileService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -54,8 +55,8 @@ public class ProductosController extends AbsController
         return "guardarProducto";
     }
 
-    @GetMapping("/editar/{id}")
-    public String editar(@PathVariable Long id,
+    @GetMapping("/editar/{idProducto}")
+    public String editar(@PathVariable(name = "idProducto") Long id,
                          Model model,
                          RedirectAttributes flash)
     {
@@ -100,7 +101,7 @@ public class ProductosController extends AbsController
             {
                 // Eliminamos la foto de la carpeta uploads
                 if (!uploadFileService.delete(pathFoto))
-                    log.info("Se ha eliminado la foto: ".concat(pathFoto));
+                    log.info("Se ha eliminado la foto: {}", pathFoto);
             }
 
             // Cargamos la nueva foto en la carpeta
@@ -122,10 +123,52 @@ public class ProductosController extends AbsController
 
         // Mandamos un mensaje de exito
         flash.addFlashAttribute("success", "Producto ".concat(mensajeFlash).concat(" con exito"));
+        log.info("Se ha ".concat(mensajeFlash).concat(" el producto: {}"), producto);
 
         // Volvemos a la pantalla de productos
         return "redirect:/admin/productos";
+    }
 
+    @GetMapping("/eliminar/{idProducto}")
+    public String eliminar(@PathVariable(name = "idProducto") Long idProducto,
+                           RedirectAttributes flash)
+    {
+        // Obtenenmos el producto a partir del id
+        Producto producto = productoService.findById(idProducto);
 
+        // Si el producto es nulo, no exite dentro de la base de datos
+        if (producto == null)
+        {
+            // Devolvemos un mensaje de error
+            flash.addFlashAttribute("error", "No existe el producto.");
+
+            // Volvemos a la pantalla de productos
+            return "redirect:/admin/productos";
+        }
+
+        try
+        {
+            // Eliminamos el producto a partir de su id
+            productoService.deleteById(idProducto);
+
+            // Eliminamos la ruta de la foto vinculada al producto de la carpeta uploads
+            uploadFileService.delete(producto.getPathFoto());
+
+            // Mandamos un mensaje de exito
+            flash.addFlashAttribute("success", "Producto eliminado con exito.");
+            log.info("Se ha eliminado el producto: {}", producto);
+        }
+        // Si se ha detectado un error porque el producto depende de otras tablas
+        catch (DataIntegrityViolationException e)
+        {
+            // Mandamos un error por los logs
+            log.error("El producto depende de otras tablas.");
+
+            // Mandamos un mensaje de error a la vista
+            flash.addFlashAttribute("error", "El producto no puede ser eliminado, este depende de otros.");
+        }
+
+        // Volvemos a la pantalla de productos
+        return "redirect:/admin/productos";
     }
 }
