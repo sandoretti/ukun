@@ -33,7 +33,7 @@ public class StockServiceImpl implements IStockService
     @Transactional
     public void delete(Long idProducto, Long idTienda)
     {
-        StockProductoId stockProductoId = new StockProductoId(idProducto, idTienda);
+        StockProductoId stockProductoId = new StockProductoId(idTienda, idProducto);
         stockProductoCrud.deleteById(stockProductoId);
     }
 
