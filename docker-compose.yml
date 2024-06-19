@@ -2,51 +2,25 @@ services:
 
   # configuramos el contenedor de la base de datos
   db:
-    # utilizamos la imagen de postgres para el contenedor como base de datos
     image: postgres:14
-
-    # reiniciamos el contenedor siempre que se detenga
     restart: always
-
-    # configuramos la memoria compartida
     shm_size: 128mb
-
-    # configuramos las variables de entorno para la base de datos
     environment:
-      # contraseña de la base de datos
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-
-      # usuario de la base de datos
       - POSTGRES_USER=${POSTGRES_USER}
-
-      # nombre de la base de datos
       - POSTGRES_DB=${POSTGRES_DB}
-
-    # configuramos los volúmenes para la base de datos
     volumes:
-      # inicializamos las tablas de la base de datos
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-
-      # almacenamos los datos de la base de datos en un volumen
       - db_data:/var/lib/postgresql/data
-    
     ports:
       - "5432:5432"
-    
-    depends_on:
-      - traefik
 
   # configuramos el contenedor del cliente
   ukun-clientes:
     build: ./ukun-clientes
     ports:
       - "8081:8081"
-    labels:
-      # Enrutamos las peticiones que lleguen a la raíz del dominio al contenedor del cliente
-      - "traefik.http.routers.ukun-clientes.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.ukun-clientes.entrypoints=web"
     environment:
-      #Configuramos la base de datos
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
@@ -54,19 +28,13 @@ services:
       - vol_resources:/opt/resources
     depends_on:
       - db
-      - traefik
-  
+
   # configuramos el contenedor del empleado
   ukun-empleados:
     build: ./ukun-empleados
     ports:
       - "8082:8082"
-    labels:
-      # Enrutamos las peticiones que lleguen a la raíz del dominio al contenedor del empleado
-      - "traefik.http.routers.ukun-empleados.rule=PathPrefix(`/empleados`)"
-      - "traefik.http.routers.ukun-empleados.entrypoints=web"
     environment:
-      #Configuramos la base de datos
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
@@ -74,24 +42,19 @@ services:
       - vol_resources:/opt/resources
     depends_on:
       - db
-      - traefik
 
-  traefik:
-    image: traefik:v3.0
-    command: 
-      - "--api.insecure=true"
-      - "--providers.docker"
-      - "--entrypoints.web.address=:80"
+  # configuramos el contenedor del servidor web
+  nginx:
+    build: ./nginx
     ports:
       - "80:80"
-      - "8080:8080"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
+    depends_on:
+      - ukun-clientes
+      - ukun-empleados
 
 volumes:
   db_data:
   vol_resources:
-    # Pegar el contenido de la carpeta resources en el contenedor
     driver: local
     driver_opts:
       o: bind

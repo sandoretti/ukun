@@ -17,7 +17,7 @@ services:
 
   # configuramos el contenedor del cliente
   ukun-clientes:
-    build: ./ukun-clientes
+    image: sandoretti/ukun-clientes
     ports:
       - "8081:8081"
     environment:
@@ -31,7 +31,7 @@ services:
 
   # configuramos el contenedor del empleado
   ukun-empleados:
-    build: ./ukun-empleados
+    image: sandoretti/ukun-empleados
     ports:
       - "8082:8082"
     environment:
@@ -44,7 +44,7 @@ services:
       - db
 
   nginx:
-    build: ./nginx
+    image: sandoretti/ukun-nginx
     ports:
       - "80:80"
     depends_on:
