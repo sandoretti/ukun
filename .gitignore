@@ -1,0 +1,22 @@
+# Secretos locales — ver .env.example para la plantilla versionada.
+.env
+.env.*
+!.env.example
+
+# Maven (los módulos ya lo listan en su propio .gitignore; esto cubre módulos futuros)
+target/
+
+# Node / frontend
+node_modules/
+dist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Claude Code: las skills y CLAUDE.md sí se versionan; los ajustes locales no
+.claude/settings.local.json
+
+# Tilt
+tilt_modules/
