@@ -12,6 +12,18 @@ The target: a single Spring Boot API monolith (REST, no Thymeleaf) + a React fro
 
 The two Maven modules below are independent Spring Boot apps (no parent multi-module POM, no shared code — entities/DAOs like `Producto`, `Tienda`, `StockProducto`, `Cuenta` are duplicated in both, each mapped to the same underlying tables).
 
+## Progress tracking
+
+The roadmap's **execution state** lives in GitHub issues + milestones, not in a checklist file — one milestone per release, one issue per parallelizable item, labels `pista:P1…P5` matching the tracks in `docs/09-trabajo-con-agentes-ia.md` §1, plus `sinc` (blocking sync points) and `revision-humana` (concurrency/money/identity/schema — never merged unreviewed).
+
+```bash
+./scripts/roadmap-status.sh          # progress per release + open issues per track
+./scripts/roadmap-status.sh v0.3     # open and closed issues of one release
+./scripts/roadmap-status.sh --next   # the release currently in flight
+```
+
+`docs/04-roadmap.md` stays the source of truth for *what* and *in what order*; issues only carry state and link back to the RF/ADR/skill they depend on. If the two disagree, the doc wins — fix the issue. Close issues from commits (`closes #42`) so the milestone bar stays current.
+
 ## Commands
 
 Each app is built/run independently with its Maven wrapper from its own directory.

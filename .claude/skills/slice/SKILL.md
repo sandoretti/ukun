@@ -58,6 +58,18 @@ Formato fijo, en un bloque copiable. Ejemplo real de `/slice v0.3 catálogo back
 >
 > **Terminado cuando.** El endpoint responde según el contrato · hay un `*IT` con Testcontainers que cubre filtro + orden + paginación · el test de contador de sentencias demuestra que no hay N+1 · `ApplicationModules.verify()` sigue en verde.
 
+## Paso 4 — Enlaza el issue
+
+Cada ítem paralelizable del roadmap tiene su issue en GitHub (milestone = release, label `pista:*`). Localízalo y **cierra el encargo con su número**, para que el trabajo se pueda cerrar con `closes #N` y la barra del milestone se mantenga sola:
+
+```bash
+./scripts/roadmap-status.sh v0.3     # issues abiertos de ese release
+```
+
+Si la slice que te piden **no** tiene issue, no lo inventes en silencio: o es más pequeña que un ítem del roadmap (hereda el issue del ítem padre) o es trabajo que el roadmap no contempla, y entonces aplica el Paso 1 — para y pregunta.
+
+Si el issue lleva la label `revision-humana` (concurrencia, dinero, identidad, esquema), el encargo debe decirlo en el apartado "Terminado cuando": no se mergea sin que lo revise una persona (`docs/09-trabajo-con-agentes-ia.md` §5).
+
 ## Reglas al generar
 
 1. **Cita fuentes, no las parafrasees.** "RF-01" y "defecto #22" son punteros estables; "el producto tiene que estar disponible" es una invitación a que el agente lo interprete a su manera.

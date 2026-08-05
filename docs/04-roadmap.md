@@ -2,11 +2,35 @@
 
 > **Fuente de verdad de:** qué entra en cada release, el grafo de dependencias entre trabajos y los puntos de sincronización.
 > **Léelo si:** quieres saber qué toca ahora, si puedes adelantar trabajo, o cómo repartir tareas entre sesiones.
-> **No decide:** cómo se implementa nada (skills), ni el detalle del esquema (`10-modelo-de-datos.md`), ni el contrato de errores (`12-error-contract.md`).
+> **No decide:** cómo se implementa nada (skills), ni el detalle del esquema (`10-modelo-de-datos.md`), ni el contrato de errores (`12-error-contract.md`), ni **en qué estado está cada tarea** (issues de GitHub, ver abajo).
 
 Sustituye a `REFACTOR-PLAN.md`. Organizado como **línea temporal de versiones**, no como fases estancas: cada release tiene una salida verificable. Dentro de cada release se indica qué trabajo es paralelizable entre sí.
 
 Decisiones que ya han fijado esta línea temporal (ver `adr/`): frontend en **react-bootstrap** (migración mecánica del markup, no rediseño desde cero), autenticación con **BFF en el gateway**, datos actuales **desechables**, Tilt sobre **docker-compose**.
+
+## Seguimiento de la ejecución
+
+Este documento describe **qué hay que hacer y en qué orden**. El **estado** de cada tarea vive en los issues de GitHub, no aquí — un checklist en este fichero sería una segunda copia del plan que se desincroniza sola.
+
+```bash
+./scripts/roadmap-status.sh          # avance por release + abiertos por pista
+./scripts/roadmap-status.sh v0.3     # issues abiertos y cerrados de un release
+./scripts/roadmap-status.sh --next   # el release en curso
+```
+
+Correspondencia entre este documento y el tracker:
+
+| Aquí | En GitHub |
+|---|---|
+| release (`v0.1`…`v1.1+`) | **milestone**, con la fecha de su hito como vencimiento |
+| ítem paralelizable de un release | **issue** |
+| pista (P1…P5) | label `pista:P1-backend-core`…`pista:P5-calidad` |
+| hito `SINC-n` | issue con label `sinc` — bloquea lo que viene detrás |
+| lo que `09-trabajo-con-agentes-ia.md` §5 no delega sin supervisión | label `revision-humana` |
+
+Los issues **no repiten** las decisiones: cada uno enlaza el RF, el ADR y la skill de los que depende, y `/slice <release> <slice>` genera el encargo completo a partir de esas fuentes. Si un issue y este documento discrepan, manda este documento; corrige el issue.
+
+Cerrar issues desde los commits (`closes #42`) mantiene la barra de progreso del milestone al día sin trabajo manual.
 
 ## Punto de partida: no hay nada corriendo
 
