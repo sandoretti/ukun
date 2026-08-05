@@ -1,0 +1,36 @@
+---
+name: testing
+description: Convenciones de este repo para escribir tests — nomenclatura, AssertJ como única librería de aserciones, object mothers, Testcontainers singleton, mocks solo en fronteras, y el reparto entre surefire/failsafe/Vitest/Playwright. Usar al escribir o revisar cualquier test, backend o frontend, en cualquiera de los servicios nuevos.
+---
+
+# Convenciones de testing en este repo
+
+Este documento resume `docs/13-testing.md` — léelo entero si vas a diseñar la estrategia de test de una feature nueva; esta skill es el recordatorio rápido al escribir un test concreto. La **estrategia** (qué se prueba y con qué herramienta) vive en `docs/03-analisis-y-patrones.md` §3, no aquí.
+
+## Backend
+
+- `*Test` unitario (surefire) — `*IT` integración con Testcontainers (failsafe). No mezclar.
+- `@DisplayName` y nombres de método **en inglés** (ADR-0018): `shouldRejectOrderWhenAnyLineLacksStock`, no `testCreateOrder2`.
+- **AssertJ y solo AssertJ.** Nunca `assertEquals` de JUnit ni Hamcrest.
+- *Given/when/then* en tres bloques separados por línea en blanco, sin comentarios que los etiqueten.
+- Un hecho por test; agrupa aserciones del mismo hecho con `satisfies`/`assertSoftly`, no las esparzas en `assertThat` sueltos sin relación.
+- Datos de prueba con **object mothers** + builders (`ProductMother.sofa()`). Prohibidos los fixtures compartidos mutables y los `@Sql` con literales dispersos.
+- Mocks **solo en fronteras**: `AccountsPort`, `FileStoragePort`, `Clock`. Nunca un repositorio JPA en un test que verifica SQL o transacciones — eso va contra Testcontainers.
+- `Clock` inyectado en producción, `Clock.fixed(...)` en test.
+- Testcontainers **singleton reutilizado** vía `AbstractIntegrationTest` + `@ServiceConnection`; limpieza por truncado ordenado, nunca `@DirtiesContext`. Nunca H2, ni como dependencia de test.
+- Prohibidos: `Thread.sleep` (usa Awaitility), `@SpringBootTest` cuando basta `@WebMvcTest`/`@DataJpaTest`, aserciones sobre el texto literal de un log.
+- Test de conteo de sentencias (Hibernate `Statistics`/`datasource-proxy`) para todo listado que deba estar libre de N+1 (`03-analisis-y-patrones.md` §2) y para el cruce `inventory`→`catalog` (`docs/14-modules.md` §3).
+
+## Frontend
+
+- Vitest + React Testing Library.
+- `getByRole`/`getByLabelText` sobre `getByTestId`; `userEvent` sobre `fireEvent`.
+- MSW con los **mismos** handlers que el modo dev — nunca un segundo juego de mocks para test.
+- Un test por estado de la trilogía carga/vacío/error de `shared/ui/`.
+- Test de paridad de claves `es/*.json` ↔ `en/*.json`, y de que todo `code` de `docs/12-error-contract.md` tiene entrada en `errors.json` de ambos idiomas (ADR-0019).
+
+## CI
+
+`surefire` y Vitest en cada push · `failsafe` (Testcontainers) y Playwright (los tres recorridos de `03` §3) antes de merge · Jacoco informativo en todo el backend, **umbral obligatorio solo en `orders` e `inventory`** · sin umbral global de cobertura.
+
+Detalle completo, ejemplos de código y la tabla de reparto por fase: `docs/13-testing.md`.
