@@ -1,0 +1,39 @@
+# Override de docker-compose.yml para uso con Tilt (docs/06-entorno-local-tilt.md).
+# docker-compose.yml no se toca: `docker compose up --build` sigue funcionando igual
+# que antes de este fichero existir. Este override solo añade lo que hace falta para
+# un ciclo de desarrollo rápido: healthcheck de la base de datos, orden de arranque
+# correcto, puertos de depuración remota, y las imágenes Dockerfile.dev.
+services:
+  db:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - ./scripts/postgres-init-databases.sh:/docker-entrypoint-initdb.d/00-databases.sh:ro
+
+  ukun-clientes:
+    build:
+      context: ./ukun-clientes
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5005:5005"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  ukun-empleados:
+    build:
+      context: ./ukun-empleados
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5006:5005"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    depends_on:
+      - ukun-clientes
+      - ukun-empleados
