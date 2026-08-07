@@ -1,0 +1,382 @@
+openapi: 3.1.0
+
+info:
+  title: Ukun Auth — contrato interno
+  version: 1.0.0
+  summary: Endpoints internos de gestión de cuentas de ukun-auth.
+  description: |
+    Contrato **interno** del servicio de identidad. Solo cubre `/internal/accounts`: las tres
+    operaciones que `ukun-api` invoca para orquestar la saga de alta
+    (`docs/08-identidad-y-seguridad.md` §3).
+
+    ### Lo que este documento no describe, a propósito
+
+    **Los endpoints OAuth2/OIDC del Authorization Server no se documentan aquí**: `/oauth2/authorize`,
+    `/oauth2/token`, el JWKS y `/.well-known/openid-configuration` son estándar, los publica Spring
+    Authorization Server y los describe su propio documento de descubrimiento. Copiarlos a un YAML
+    escrito a mano crea un contrato que se desincroniza solo, sin ganar nada.
+
+    ### Quién llama a esto
+
+    **El navegador nunca.** Estas tres operaciones son servicio-a-servicio: las llama `ukun-api`
+    con `client_credentials` y scope `accounts:write`, dentro de la red interna. No se enrutan desde
+    `ukun-gateway` ni existe un camino desde el SPA hasta aquí.
+
+    ### Por qué es un servicio aparte
+
+    `ukun-auth` es deliberadamente anémico —`account`, `account_role`, `registration_request`— y
+    tiene su propia base (ADR-0004). La separación es por seguridad (superficie de credenciales,
+    base propia), no por escala; ADR-0017 §4 descarta explícitamente absorberlo como módulo de
+    `ukun-api`. `name` y `lastName` **no** viven aquí: son datos de perfil y se quedan en `ukun-api`,
+    para que editar el perfil siga siendo una única transacción local.
+
+    ### Convenciones
+
+    Mismas que `ukun-api.yaml`: inglés, `camelCase`, instantes ISO-8601, y errores como
+    `ProblemDetail` (RFC 9457) con el **mismo registro cerrado** de `code`s
+    (`docs/12-error-contract.md`) — el registro es único y compartido entre los dos servicios para
+    que React no tenga que distinguir de cuál vino el error.
+  contact:
+    name: Equipo Ukun
+    url: https://github.com/sandoretti/ukun
+  license:
+    name: Propietario
+    url: https://github.com/sandoretti/ukun
+
+servers:
+  - url: http://ukun-auth:9000
+    description: Red interna de contenedores (`tilt up`); no alcanzable desde el navegador.
+
+tags:
+  - name: accounts
+    description: |
+      Alta, activación y liberación de cuentas. Módulo `accounts` de `ukun-auth` (ADR-0017 §4).
+
+paths:
+  /internal/accounts:
+    post:
+      tags: [accounts]
+      operationId: createAccount
+      summary: Reservar una cuenta
+      description: |
+        Paso 2 de la saga de alta (`docs/08-identidad-y-seguridad.md` §3). Crea la cuenta
+        **deshabilitada** (`enabled: false`) como reserva del correo, antes de que `ukun-api` escriba
+        nada en su propia base.
+
+        El orden importa: la unicidad del correo es la única regla que `ukun-api` no puede validar
+        localmente, así que se falla aquí primero y se evita un cliente huérfano. Y una cuenta
+        deshabilitada sin cliente asociado es basura inerte —no permite iniciar sesión— que un job
+        diario de reconciliación borra a las 24 horas. El sistema es correcto aunque la compensación
+        con `:release` falle: no depende de ella.
+
+        **Idempotencia real**, no de mejor esfuerzo: la tabla `registration_request(idempotency_key
+        PK, account_id, created_at)` guarda la asociación, así que reintentar con la misma
+        `Idempotency-Key` devuelve `200` con el **mismo** `accountId`. Con una clave distinta sobre
+        un correo ya reservado, `409`: no se "roba" una cuenta reservada por otro intento.
+
+        Sustituye a los validadores del legacy, que hacen `exists...` seguido de `save` con una
+        carrera real entre ambos.
+      security:
+        - internalOAuth2: [accounts:write]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: |
+            Identificador de registro emitido por `ukun-api` (`registrationId`). Reintentar el mismo
+            alta con la misma clave es seguro.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+      responses:
+        '201':
+          description: Cuenta reservada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountRef'
+        '200':
+          description: |
+            Reintento con una `Idempotency-Key` ya vista: el **mismo** `accountId`, sin crear nada
+            nuevo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountRef'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: |
+            `EMAIL_ALREADY_EXISTS` — el correo ya está en uso por otra cuenta. `ukun-api` lo propaga
+            al cliente tal cual, y el frontend lo pinta bajo el campo del correo.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /internal/accounts/{accountId}:activate:
+    post:
+      tags: [accounts]
+      operationId: activateAccount
+      summary: Activar una cuenta reservada
+      description: |
+        Paso 4 de la saga: **el punto de commit real** del alta. Hasta aquí la cuenta no permite
+        iniciar sesión.
+
+        Es idempotente: activar una cuenta ya activa responde `204` igual. `ukun-api` reintenta con
+        backoff (tres veces) y, si aun así falla, responde `202` a quien se dio de alta; repetir el
+        mismo alta con la misma `Idempotency-Key` reactiva la cuenta sin duplicar nada.
+      security:
+        - internalOAuth2: [accounts:write]
+      parameters:
+        - $ref: '#/components/parameters/AccountIdParam'
+      responses:
+        '204':
+          description: Cuenta activa.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /internal/accounts/{accountId}:release:
+    post:
+      tags: [accounts]
+      operationId: releaseAccount
+      summary: Liberar una cuenta reservada
+      description: |
+        Compensación del paso 3: `ukun-api` la invoca de mejor esfuerzo cuando su transacción local
+        falla después de haber reservado la cuenta.
+
+        No es la garantía de que no queden cuentas huérfanas —de eso se encarga el job diario de
+        reconciliación—, sino la vía rápida para liberar el correo enseguida en el caso habitual. Que
+        esta llamada falle no compromete la corrección del sistema.
+      security:
+        - internalOAuth2: [accounts:write]
+      parameters:
+        - $ref: '#/components/parameters/AccountIdParam'
+      responses:
+        '204':
+          description: Cuenta liberada, o ya inexistente.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+
+  securitySchemes:
+    internalOAuth2:
+      type: oauth2
+      description: |
+        Credenciales de cliente entre servicios. Solo `ukun-api` tiene un `RegisteredClient` con el
+        scope `accounts:write`; el navegador no participa en este flujo (skill `spring-auth`,
+        regla 5).
+      flows:
+        clientCredentials:
+          tokenUrl: http://ukun-auth:9000/oauth2/token
+          scopes:
+            accounts:write: Crear, activar y liberar cuentas.
+
+  parameters:
+    AccountIdParam:
+      name: accountId
+      in: path
+      required: true
+      description: Identificador devuelto por `POST /internal/accounts`.
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: '`VALIDATION_FAILED` o `MALFORMED_REQUEST`.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthenticated:
+      description: '`UNAUTHENTICATED` — falta el token de cliente o no es válido.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: '`FORBIDDEN` — el cliente no tiene el scope `accounts:write`.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: '`RESOURCE_NOT_FOUND` — no existe esa cuenta (`resource`, `id`).'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: '`INTERNAL_ERROR` — fallback genérico, sin detalle al cliente.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+
+    Role:
+      type: string
+      enum: [CUSTOMER, EMPLOYEE, ADMIN]
+      description: |
+        Valores de la tabla `account_role` y del claim `roles` del token (RF-12, ADR-0006,
+        ADR-0018). `ADMIN` acompaña siempre a `EMPLOYEE`; cliente y empleado son mutuamente
+        excluyentes.
+
+    CreateAccountRequest:
+      type: object
+      description: |
+        Solo credenciales y roles. **No hay nombre, apellido ni ningún dato de perfil**: eso vive en
+        `ukun-api` (ADR-0004), y meterlo aquí obligaría a escribir en dos bases cada vez que alguien
+        edita su perfil.
+      required: [email, password, roles, enabled]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: |
+            Único en todo el sistema. La columna es `CITEXT`, así que la unicidad no distingue
+            mayúsculas sin depender de que cada consulta se acuerde de normalizar.
+        password:
+          type: string
+          format: password
+          minLength: 12
+          writeOnly: true
+          description: |
+            En claro solo en tránsito por la red interna; se hashea con BCrypt/Argon2 antes de
+            persistirse y **nunca** se devuelve ni se escribe en un log
+            (`docs/11-observabilidad-y-logging.md` §4). No existe el límite de 16 caracteres en texto
+            plano del legacy, ni ningún máximo artificial.
+        roles:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Role'
+        enabled:
+          type: boolean
+          description: |
+            La saga la crea con `false` (reserva). Una cuenta deshabilitada no permite iniciar
+            sesión, así que una reserva abandonada es inerte hasta que la reconciliación la borre.
+
+    AccountRef:
+      type: object
+      required: [accountId]
+      properties:
+        accountId:
+          type: string
+          format: uuid
+          description: |
+            `ukun-api` lo guarda como `customer.account_id` / `employee.account_id`: un valor opaco
+            **sin clave foránea**, porque cruza base de datos y no se puede expresar como FK real
+            (`docs/08-identidad-y-seguridad.md` §1).
+
+    ValidationError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    ErrorCode:
+      type: string
+      description: |
+        Registro **cerrado** de `docs/12-error-contract.md` §2. Idéntico al de `ukun-api.yaml`: el
+        registro es único y compartido entre los dos servicios para que el frontend no tenga que
+        saber de cuál vino el error. Este servicio solo emite unos pocos de estos valores, pero el
+        `enum` se mantiene completo a propósito.
+      enum:
+        - VALIDATION_FAILED
+        - MALFORMED_REQUEST
+        - UNAUTHENTICATED
+        - FORBIDDEN
+        - RESOURCE_NOT_FOUND
+        - CHECKOUT_EXPIRED
+        - INSUFFICIENT_STOCK
+        - PRODUCT_IN_USE
+        - VERSION_CONFLICT
+        - IDEMPOTENCY_IN_PROGRESS
+        - IDEMPOTENCY_MISMATCH
+        - EMPTY_CART
+        - EMAIL_ALREADY_EXISTS
+        - REFERENTIAL_INTEGRITY
+        - INTERNAL_ERROR
+
+    ProblemDetail:
+      type: object
+      description: |
+        Error según RFC 9457, servido como `application/problem+json`. Forma idéntica a la de
+        `ukun-api.yaml`.
+
+        `code` es el único campo estable sobre el que decide el frontend; `title` y `detail` van en
+        inglés fijo, para operador y logs, y no se muestran en pantalla (ADR-0019). En este servicio,
+        además, `detail` nunca revela si un fallo de inicio de sesión fue por correo inexistente o
+        por contraseña incorrecta: eso convertiría el endpoint en un oráculo de enumeración de
+        cuentas (`docs/08-identidad-y-seguridad.md` §8).
+      required: [type, title, status, code, traceId]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: 'Derivado del `code`: `https://ukun.dev/errors/<code-en-kebab-case>`.'
+          examples:
+            - 'https://ukun.dev/errors/email-already-exists'
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        traceId:
+          type: string
+        errors:
+          type: array
+          description: Extensión de `VALIDATION_FAILED`.
+          items:
+            $ref: '#/components/schemas/ValidationError'
+        resource:
+          type: string
+          description: Extensión de `RESOURCE_NOT_FOUND`.
+        id:
+          type: string
+          description: Extensión de `RESOURCE_NOT_FOUND`.
+        key:
+          type: string
+          format: uuid
+          description: Extensión de `IDEMPOTENCY_IN_PROGRESS` y `IDEMPOTENCY_MISMATCH`.

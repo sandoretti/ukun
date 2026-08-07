@@ -1,0 +1,1950 @@
+openapi: 3.1.0
+
+info:
+  title: Ukun API
+  version: 1.0.0
+  summary: Contrato REST del monolito de dominio (ukun-api).
+  description: |
+    Contrato del monolito de dominio de Ukun: catálogo, tiendas, inventario, carrito,
+    checkout, pedidos, perfil de cliente y back-office de empleados.
+
+    **Este documento es la fuente de verdad del contrato.** Está escrito a mano, design-first,
+    antes de que exista implementación (`docs/04-roadmap.md` v0.1). springdoc genera
+    `/v3/api-docs` en tiempo de ejecución únicamente para que CI lo compare contra este fichero
+    (check de deriva, `docs/03-analisis-y-patrones.md` §3); springdoc **no** es la fuente de verdad.
+
+    ### Convenciones transversales
+
+    - **Idioma**: rutas, campos y `code`s de error en inglés; campos JSON en `camelCase`
+      (ADR-0018). El backend **nunca** emite texto de usuario: todo lo que se ve en pantalla vive
+      en `apps/ukun-web` indexado por `code` (ADR-0019).
+    - **Dinero**: siempre `string` decimal (schema `Money`), nunca `number`. El backend serializa
+      `BigDecimal` sin formatear y React formatea con `Intl.NumberFormat` (ADR-0019, defecto #5).
+    - **Instantes**: `format: date-time` (ISO-8601 sobre `TIMESTAMPTZ`, `docs/10-modelo-de-datos.md` §1).
+    - **Errores**: `application/problem+json` (RFC 9457) con el schema `ProblemDetail` y un `code`
+      del registro cerrado de `docs/12-error-contract.md`.
+    - **Ninguna mutación cuelga de un `GET`** (defecto #3, `docs/02-requisitos.md` §4).
+    - **Ningún schema contiene una contraseña en una respuesta, ni un PAN, ni un CVV.** La tarjeta
+      es siempre `{last4, brand, expMonth, expYear}` (`docs/08-identidad-y-seguridad.md` §5, PCI-DSS).
+
+    ### Paginación
+
+    Los listados abiertos (`/api/products`, `/api/orders`, el stock de una tienda, los empleados)
+    devuelven una envoltura **propia y estable** — `{items, page, size, totalElements, totalPages}` —
+    y no el serializado por defecto de `Page<T>` de Spring Data. Es lo que el frontend tipa con
+    `openapi-typescript`, y no debe cambiar si mañana cambia la serialización de Spring: la
+    implementación tendrá que mapear explícitamente `Page<T>` a esta forma.
+
+    Los datos de referencia cerrados (`/api/products/types`, `/api/stores`) se devuelven como array
+    plano: son pocas filas, el SPA las cachea enteras y paginarlas solo añadiría ceremonia.
+
+    ### Autorización
+
+    El navegador nunca ve un JWT: habla con `ukun-gateway` mediante una cookie de sesión `HttpOnly`
+    y es el gateway quien releva el `Bearer` hacia este servicio (BFF, ADR-0003). El esquema
+    `bearerAuth` describe la frontera real de `ukun-api`, que valida el token él mismo como resource
+    server. Los roles exigidos (`CUSTOMER`, `EMPLOYEE`, `ADMIN`) son *claims*, no scopes, así que se
+    declaran en la descripción de cada operación (`docs/08-identidad-y-seguridad.md` §4).
+
+    Un identificador que llega en una petición **identifica** un recurso; nunca **autoriza** el
+    acceso a él. La pertenencia se resuelve siempre server-side desde `account_id`.
+  contact:
+    name: Equipo Ukun
+    url: https://github.com/sandoretti/ukun
+  license:
+    name: Propietario
+    url: https://github.com/sandoretti/ukun
+
+servers:
+  - url: http://localhost:8080
+    description: ukun-gateway en local (`tilt up`) — el único origen que ve el navegador.
+  - url: http://localhost:8081
+    description: ukun-api directamente, sin gateway (depuración; exige un JWT propio).
+
+tags:
+  - name: catalog
+    description: Catálogo de productos y sus tipos. Módulo `catalog` — no conoce el inventario.
+  - name: inventory
+    description: Disponibilidad y gestión de stock por tienda. Módulo `inventory`.
+  - name: stores
+    description: Tiendas físicas y la tienda online. Módulo `stores`.
+  - name: cart
+    description: Líneas del carrito del cliente autenticado. Módulo `cart`.
+  - name: checkout
+    description: Intento de checkout y confirmación idempotente del pedido. Módulo `orders`.
+  - name: orders
+    description: Historial de pedidos del cliente. Módulo `orders`.
+  - name: profile
+    description: Identidad en curso y perfil del cliente. Módulos `identity` y `customers`.
+  - name: signup
+    description: Alta pública de cliente, orquestada por el API contra `ukun-auth`.
+  - name: staff
+    description: Back-office de empleados. Módulo `staff`.
+
+paths:
+  /api/products:
+    get:
+      tags: [catalog]
+      operationId: listProducts
+      summary: Listar el catálogo, paginado y filtrado
+      description: |
+        RF-01. Filtro opcional por nombre (subcadena, insensible a mayúsculas **y a acentos** —
+        `unaccent(lower(...))`, defecto #22), por tipo y por rango de precio. Orden por precio, con
+        `id` como último criterio de desempate para que la paginación sea estable (defecto #23: hay
+        un empate real a `399.99` en los datos demo).
+
+        **Esta respuesta no lleva disponibilidad.** El catálogo y el stock son dos lecturas
+        separadas porque `catalog` no puede depender de `inventory` (ADR-0017 §3). El frontend pide
+        `GET /api/availability` en paralelo y compone en pantalla. Efecto colateral buscado: el
+        catálogo es cacheable con un TTL largo y la disponibilidad no.
+
+        Solo devuelve productos activos: la descatalogación es lógica (`product.is_active`,
+        ADR-0013).
+      security: []
+      parameters:
+        - name: name
+          in: query
+          required: false
+          description: Subcadena a buscar en el nombre del producto, sin distinguir acentos.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+          example: sofa
+        - name: typeId
+          in: query
+          required: false
+          description: Identificador de un tipo de `GET /api/products/types`.
+          schema:
+            type: integer
+            format: int64
+        - name: priceMin
+          in: query
+          required: false
+          description: Precio mínimo, inclusive.
+          schema:
+            $ref: '#/components/schemas/Money'
+        - name: priceMax
+          in: query
+          required: false
+          description: Precio máximo, inclusive.
+          schema:
+            $ref: '#/components/schemas/Money'
+        - name: sort
+          in: query
+          required: false
+          description: |
+            Criterio de orden. `id` se añade siempre como último criterio, sea cual sea el valor.
+          schema:
+            $ref: '#/components/schemas/ProductSort'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Página de productos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/products/types:
+    get:
+      tags: [catalog]
+      operationId: listProductTypes
+      summary: Listar los tipos de producto
+      description: |
+        RF-01. Alimenta el filtro por tipo del catálogo. Array plano: es un conjunto cerrado de
+        pocas filas que el SPA cachea entero.
+      security: []
+      responses:
+        '200':
+          description: Tipos de producto, ordenados por nombre.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/products/suggest:
+    get:
+      tags: [catalog]
+      operationId: suggestProducts
+      summary: Sugerencias de producto para el autocompletar
+      description: |
+        Typeahead de la barra de búsqueda. Devuelve un array plano y mínimo, **sin envoltura de
+        paginación**: al no llevar `totalElements` se ahorra la consulta de `COUNT` en cada
+        pulsación de tecla, que es lo que hace caro un autocompletar servido desde el listado
+        paginado normal.
+
+        Misma normalización de acentos que `GET /api/products`. Para el listado real de resultados,
+        con filtros y paginación, se usa `GET /api/products`.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Texto tecleado por el usuario.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+          example: sof
+        - name: limit
+          in: query
+          required: false
+          description: Número máximo de sugerencias.
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 10
+            default: 8
+      responses:
+        '200':
+          description: Sugerencias, como mucho `limit`.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductSuggestion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/products/by-sku/{sku}:
+    get:
+      tags: [catalog]
+      operationId: getProductBySku
+      summary: Ficha de producto por SKU
+      description: |
+        Resuelve un producto por su identificador de negocio (ADR-0015). Es el flujo de RF-09: el
+        empleado teclea un SKU y lo resuelve antes de dar de alta la línea de stock con
+        `POST /api/stores/{storeId}/stock`.
+
+        Se prefiere una ruta propia a un filtro `?sku=` sobre el listado: el SKU es único, así que
+        el resultado es un recurso o un 404, no una página de cero o un elementos.
+      security: []
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          description: SKU del producto.
+          schema:
+            $ref: '#/components/schemas/Sku'
+      responses:
+        '200':
+          description: El producto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/products/{id}:
+    get:
+      tags: [catalog]
+      operationId: getProduct
+      summary: Ficha de un producto
+      description: RF-01. Nombre, precio, descripción, foto, tipo y SKU.
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: El producto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/availability:
+    get:
+      tags: [inventory]
+      operationId: getAvailability
+      summary: Disponibilidad en lote de un conjunto de productos en una tienda
+      description: |
+        RF-01, consulta Q2 de `docs/10-modelo-de-datos.md`. Endpoint **separado** del catálogo por el
+        ciclo `catalog`↔`inventory` roto en ADR-0017 §3; el frontend lanza esta petición en paralelo
+        a `GET /api/products` y compone en pantalla.
+
+        Un producto está disponible si y solo si su stock en esa tienda es mayor que cero. **Un
+        producto sin fila de stock cuenta como no disponible, no como desconocido** (RF-01): la
+        respuesta trae una entrada por **cada** identificador pedido, con `available: false`, nunca
+        una entrada ausente. Así el frontend no tiene que distinguir "no hay dato" de "no hay stock".
+
+        No expone la cantidad exacta: el número de unidades solo se revela al propio cliente en su
+        carrito y en el intento de checkout.
+      security: []
+      parameters:
+        - name: store
+          in: query
+          required: true
+          description: Tienda sobre la que se consulta (la online, o la favorita del cliente).
+          schema:
+            type: integer
+            format: int64
+        - name: products
+          in: query
+          required: true
+          description: Identificadores de producto, separados por comas.
+          style: form
+          explode: false
+          schema:
+            type: array
+            minItems: 1
+            maxItems: 100
+            items:
+              type: integer
+              format: int64
+          example: [14, 15, 22]
+      responses:
+        '200':
+          description: Disponibilidad, una entrada por identificador pedido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/stores:
+    get:
+      tags: [stores]
+      operationId: listStores
+      summary: Listar las tiendas
+      description: |
+        RF-02. Listado público con dirección y teléfono. Array plano: son pocas filas de dato de
+        referencia. Incluye la tienda online (`isOnline: true`), que es exactamente una
+        (índice único parcial `ux_store_online`, `docs/10-modelo-de-datos.md` §2) y es la única
+        contra la que se hacen pedidos (RF-04).
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Filtro opcional por nombre o ciudad.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+      responses:
+        '200':
+          description: Tiendas, ordenadas por nombre.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Store'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/cart:
+    get:
+      tags: [cart]
+      operationId: getCart
+      summary: Ver el carrito
+      description: |
+        RF-03. Devuelve el carrito completo del cliente en curso, resuelto desde `account_id`
+        (nunca desde un identificador de la petición).
+
+        Cada línea informa de `available`, las unidades que hay en la tienda online. El legacy no
+        valida disponibilidad hasta confirmar el pedido, lo que permite meter 999 unidades de un
+        producto con stock 3; aquí el carrito informa desde el principio (RF-03, "no trasladar").
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: |
+            El carrito. Un carrito vacío es una lista de líneas vacía y un total de cero, no un 404.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/cart/items/{productId}:
+    put:
+      tags: [cart]
+      operationId: putCartItem
+      summary: Añadir un producto al carrito o cambiar su cantidad
+      description: |
+        RF-03. Hay **una sola línea por `(cliente, producto)`**, así que la operación es un upsert
+        idempotente sobre `productId`: añadir y editar son lo mismo. Devuelve el carrito completo
+        para que el frontend no tenga que recalcular el total ni encadenar una segunda petición.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
+      responses:
+        '200':
+          description: El carrito ya actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [cart]
+      operationId: deleteCartItem
+      summary: Eliminar una línea del carrito
+      description: RF-03.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Línea eliminada.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/checkout/attempts:
+    post:
+      tags: [checkout]
+      operationId: createCheckoutAttempt
+      summary: Abrir un intento de checkout
+      description: |
+        ADR-0016. **El servidor emite la clave de idempotencia**, no el navegador: este endpoint
+        devuelve un `attemptId` que el cliente reenvía como cabecera `Idempotency-Key` al confirmar
+        con `POST /api/orders`. Así se elimina la clase de bug "la clave se regeneró en un
+        re-render", que el servidor no podría detectar.
+
+        El intento congela el precio unitario de cada línea, calcula el total y devuelve
+        disponibilidad **informativa** por línea (lectura simple, sin bloqueo). No reserva stock:
+        se descartó explícitamente una reserva con TTL por el coste de su maquinaria (ADR-0016), así
+        que `409 INSUFFICIENT_STOCK` sigue siendo posible al confirmar — pero pasa a ser el caso raro
+        de una colisión real, no la primera noticia que tiene el cliente.
+
+        El intento caduca a los 30 minutos (`expiresAt`).
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Intento abierto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutAttempt'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          description: |
+            `EMPTY_CART` — el carrito está vacío. El legacy permite generar un pedido con total 0 y
+            sin líneas; es un bug, no un requisito (RF-04, "no trasladar").
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/orders:
+    get:
+      tags: [orders]
+      operationId: listOrders
+      summary: Historial de pedidos del cliente
+      description: |
+        RF-04, consulta Q3. Más reciente primero, con sus líneas.
+
+        Los datos de envío y de pago son **instantáneas inmutables** tomadas al confirmar
+        (ADR-0011): editar el perfil no reescribe ningún pedido pasado. El nombre del producto
+        también está congelado en la línea, así que un pedido sigue siendo legible aunque el
+        producto se renombre o se descatalogue. Ese es el peor bug de comportamiento del legacy
+        (defecto #19), y es lo que este contrato no reproduce.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from
+          in: query
+          required: false
+          description: Fecha inicial, inclusive.
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          description: Fecha final, inclusive.
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Página de pedidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [checkout]
+      operationId: placeOrder
+      summary: Confirmar el pedido del intento de checkout
+      description: |
+        RF-04 + ADR-0016. **No lleva cuerpo**: el intento abierto con
+        `POST /api/checkout/attempts` *es* la petición, y la cabecera `Idempotency-Key` (que vale el
+        `attemptId`) la identifica. El `request_hash` de la tabla `idempotency_key` se calcula en
+        servidor sobre el intento y el carrito, así que `IDEMPOTENCY_MISMATCH` significa "la misma
+        clave contra otro estado de carrito".
+
+        El pedido se sirve **solo contra el stock de la tienda online**, nunca contra la tienda
+        favorita del cliente (RF-04 — es una regla de negocio real, no un descuido). Si falta stock
+        en cualquier línea se rechaza el pedido entero: no hay pedidos parciales ni backorder. El
+        descuento usa bloqueo pesimista ordenado por `id` de línea de stock (ADR-0008, ADR-0015).
+
+        Semántica de idempotencia, completa en ADR-0016:
+
+        | Situación | Respuesta |
+        |---|---|
+        | clave nunca vista | `201` con el pedido creado |
+        | clave ya completada, mismo `request_hash` | `200` con la **misma** respuesta, sin repetir el efecto |
+        | clave en curso (petición concurrente) | `409 IDEMPOTENCY_IN_PROGRESS` |
+        | clave existente con otro `request_hash` | `422 IDEMPOTENCY_MISMATCH` |
+        | intento inexistente o caducado | `410 CHECKOUT_EXPIRED` — el front reabre el checkout |
+
+        Deshabilitar el botón en el frontend es defensa en profundidad, no la garantía: no cubre el
+        reintento de red tras un timeout, ni un F5 en la pantalla de confirmación, ni el botón
+        "atrás". Lo que los cubre es esta clave, validada en servidor.
+
+        El CVV **no** viaja en esta petición ni se persiste jamás
+        (`docs/08-identidad-y-seguridad.md` §5, PCI-DSS).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: El `attemptId` devuelto por `POST /api/checkout/attempts`.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Pedido creado. El carrito queda vacío.
+          headers:
+            Location:
+              description: URI del pedido creado.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '200':
+          description: |
+            Reintento con una clave ya completada: la respuesta original, sin repetir el efecto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: |
+            `INSUFFICIENT_STOCK` — falta stock en alguna línea; las extensiones señalan la línea
+            concreta (`stockLineId`, `productId`, `sku`, `available`, `requested`).
+
+            `IDEMPOTENCY_IN_PROGRESS` — hay otra petición en vuelo con la misma clave (`key`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '410':
+          description: |
+            `CHECKOUT_EXPIRED` — el intento no existe o su `expiresAt` ya pasó (`attemptId`,
+            `expiredAt`). El frontend debe reabrir con `POST /api/checkout/attempts`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          description: |
+            `IDEMPOTENCY_MISMATCH` — la clave ya se usó contra otro estado de carrito (`key`).
+
+            `EMPTY_CART` — el carrito está vacío (RF-04).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/me:
+    get:
+      tags: [profile]
+      operationId: getCurrentUser
+      summary: Identidad y roles del usuario en curso
+      description: |
+        Sonda de sesión que el SPA llama tras el login para saber quién es y qué puede ver
+        (`docs/01-arquitectura.md` §2). Sirve para cliente y para empleado, a diferencia de
+        `GET /api/me/profile`, que es el perfil de un cliente.
+
+        `locale` es la preferencia de idioma persistida y viaja entre dispositivos; para un empleado
+        se devuelve el valor por defecto (ADR-0019).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Identidad en curso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/me/profile:
+    get:
+      tags: [profile]
+      operationId: getMyProfile
+      summary: Ver el perfil del cliente
+      description: |
+        RF-05. Datos de cuenta, dirección, tarjeta enmascarada, tienda favorita e idioma preferido.
+
+        `email` es de solo lectura aquí: la credencial vive en `ukun-auth` y esta es una proyección
+        de lectura que se refresca desde el claim del token en cada petición autenticada
+        (`docs/08-identidad-y-seguridad.md` §2). `name` y `lastName`, en cambio, **sí** son datos de
+        perfil de este servicio (ADR-0004), y por eso editar el perfil es una única transacción local.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: El perfil.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [profile]
+      operationId: updateMyProfile
+      summary: Editar el perfil del cliente
+      description: |
+        RF-05. Nombre, apellido, dirección, tarjeta, tienda favorita e idioma. Si no cambia ningún
+        campo se responde `200` sin persistir nada.
+
+        `locale` viaja en la petición **y** en la respuesta: es el único punto en el que la decisión
+        de i18n toca al backend (ADR-0019).
+
+        Ni el correo ni la contraseña se editan aquí — son credenciales y viven en `ukun-auth`. Eso
+        también cierra el bug del legacy por el que editar el perfil sin tocar el correo podía fallar
+        con "correo ya existe" (RF-06, "no trasladar").
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: El perfil ya actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/signup:
+    post:
+      tags: [signup]
+      operationId: signup
+      summary: Alta de cliente
+      description: |
+        RF-06. Público, sin token. **Lo orquesta este servicio, no `ukun-auth`**
+        (`docs/08-identidad-y-seguridad.md` §3): el alta cruza las dos bases y se resuelve como una
+        saga de dos pasos —reserva de la cuenta deshabilitada, transacción local, activación—, no
+        con transacciones distribuidas.
+
+        La unicidad del correo es la única regla que este servicio no puede validar localmente, así
+        que la cuenta se crea *antes* que el cliente: fallar ahí evita un cliente huérfano, y una
+        cuenta deshabilitada sin cliente es basura inerte que no permite login y que un job diario
+        recoge.
+
+        La tarjeta se registra ya enmascarada: `{last4, brand, expMonth, expYear}`. **Ni el PAN ni
+        el CVV se envían ni se almacenan nunca** (PCI-DSS). La contraseña viaja aquí y en ningún
+        otro sitio, nunca en una respuesta.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: |
+            Cliente creado y cuenta activada. El siguiente paso del frontend es el login.
+        '202':
+          description: |
+            Cliente creado, pero la activación de la cuenta no ha podido confirmarse todavía. Repetir
+            el mismo alta (mismo correo) la reactiva; no se ha duplicado nada.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: |
+            `EMAIL_ALREADY_EXISTS` — propagado desde `ukun-auth`. El frontend lo pinta bajo el campo
+            del correo.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/stores/{storeId}/stock:
+    get:
+      tags: [inventory]
+      operationId: listStoreStock
+      summary: Listar el stock de una tienda
+      description: |
+        RF-09, consulta Q5. Con `status=STOCKED` (defecto) devuelve las líneas de stock existentes;
+        con `status=NOT_STOCKED`, el catálogo de productos que **aún no tienen** fila de stock en esa
+        tienda — la pantalla de "alta de nuevo stock". En ese segundo caso `lineId`, `quantity` y
+        `version` van a `null`, porque la fila todavía no existe.
+
+        El anti-join se escribe como `NOT EXISTS`, nunca como `NOT IN` sobre una subconsulta
+        (defecto #21).
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreIdParam'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/StockStatus'
+        - name: sku
+          in: query
+          required: false
+          description: Filtro por SKU exacto — la clave de búsqueda del empleado (ADR-0015).
+          schema:
+            $ref: '#/components/schemas/Sku'
+        - name: q
+          in: query
+          required: false
+          description: |
+            Filtro por nombre de producto, para cuando el empleado no se sabe el SKU de memoria.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Página de líneas de stock.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockLinePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ForeignStore'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [inventory]
+      operationId: createStockLine
+      summary: Dar de alta una línea de stock por SKU
+      description: |
+        RF-09. El empleado da de alta **por SKU**, no por identificador numérico interno
+        (ADR-0015). Crea la fila que aún no existía; para cambiar la cantidad de una fila existente
+        se usa `PUT /api/stores/{storeId}/stock/{lineId}`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStockLineRequest'
+      responses:
+        '201':
+          description: Línea de stock creada.
+          headers:
+            Location:
+              description: URI de la línea creada.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockLine'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ForeignStore'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            `REFERENTIAL_INTEGRITY` — ese producto ya tiene una línea de stock en esta tienda
+            (restricción `ux_store_stock`). Se edita la existente, no se crea otra.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/stores/{storeId}/stock/{lineId}:
+    put:
+      tags: [inventory]
+      operationId: updateStockLine
+      summary: Cambiar la cantidad de una línea de stock
+      description: |
+        RF-09. La línea de stock tiene identidad propia y URL directa desde ADR-0015 —no es un par
+        de parámetros de consulta—, lo que hace estructuralmente más difícil el antipatrón del
+        legacy de comparar a mano un identificador de tienda recibido por parámetro.
+
+        Concurrencia **optimista** (`version`, ADR-0008): dos empleados editando la misma línea a la
+        vez no se pisan en silencio, el segundo recibe `409 VERSION_CONFLICT` y vuelve a leer.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreIdParam'
+        - $ref: '#/components/parameters/LineIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStockLineRequest'
+      responses:
+        '200':
+          description: Línea actualizada, con la `version` nueva.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockLine'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ForeignStore'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            `VERSION_CONFLICT` — otro empleado modificó la línea entre la lectura y esta escritura
+            (`resource`, `id`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [inventory]
+      operationId: deleteStockLine
+      summary: Eliminar una línea de stock
+      description: |
+        RF-09. Borra el registro; **no es lo mismo que poner la cantidad a cero**, que dejaría la
+        fila con stock 0 y el producto seguiría apareciendo como gestionado en esta tienda.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StoreIdParam'
+        - $ref: '#/components/parameters/LineIdParam'
+      responses:
+        '204':
+          description: Línea eliminada.
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/ForeignStore'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/employees:
+    get:
+      tags: [staff]
+      operationId: listEmployees
+      summary: Listar los empleados de la tienda del admin
+      description: |
+        RF-11. Solo `ADMIN`. La tienda **no** se recibe: se resuelve server-side desde el
+        `account_id` del admin que ejecuta.
+
+        El correo es una proyección de lectura y puede estar desactualizado hasta que ese empleado
+        vuelva a iniciar sesión — consecuencia asumida y documentada de la frontera de identidad
+        (`docs/08-identidad-y-seguridad.md` §2), aceptable para el volumen de una tienda.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Filtro por nombre, apellido o correo.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+        - name: isAdmin
+          in: query
+          required: false
+          description: Filtrar por el flag de administrador (RF-12).
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: Página de empleados de la tienda del admin.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [staff]
+      operationId: createEmployee
+      summary: Dar de alta un empleado
+      description: |
+        RF-11. Solo `ADMIN`. Reutiliza exactamente la misma saga que `POST /api/signup`, cambiando
+        los roles a `EMPLOYEE` (más `ADMIN` si procede).
+
+        **El cuerpo no lleva `storeId`**: la tienda del empleado nuevo es siempre la del admin que lo
+        crea, resuelta server-side (`docs/08-identidad-y-seguridad.md` §3, RF-11). Aceptarlo del
+        cuerpo convertiría un dato de autorización en un parámetro que el cliente controla.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmployeeRequest'
+      responses:
+        '201':
+          description: Empleado creado y cuenta activada.
+          headers:
+            Location:
+              description: URI del empleado creado.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+        '202':
+          description: |
+            Empleado creado, activación de la cuenta pendiente de confirmar. Repetir el mismo alta la
+            reactiva.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: '`EMAIL_ALREADY_EXISTS` — propagado desde `ukun-auth`.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Access token emitido por `ukun-auth` y validado por este servicio contra su JWKS.
+
+        Desde el navegador **nadie envía este token**: el SPA mantiene una cookie de sesión
+        `HttpOnly` contra `ukun-gateway`, y es el gateway quien releva el `Bearer` (ADR-0003). El
+        esquema se declara porque describe la frontera real de `ukun-api`, que es la autoridad final
+        de autorización y nunca confía en cabeceras inyectadas por el gateway.
+
+        Los roles (`CUSTOMER`, `EMPLOYEE`, `ADMIN`) viajan como claim `roles`, no como scopes; qué
+        rol exige cada operación está en su descripción.
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Página, empezando en cero.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      description: Tamaño de página.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+    StoreIdParam:
+      name: storeId
+      in: path
+      required: true
+      description: |
+        Tienda del recurso. **Identifica, no autoriza.** El servicio resuelve la tienda del empleado
+        desde su `account_id` y compara: un `storeId` ajeno, aunque se fuerce a mano, es un `403
+        FORBIDDEN` registrado con el evento `auth.authorization.denied`
+        (`docs/08-identidad-y-seguridad.md` §4). Nunca se acepta un identificador de la petición como
+        prueba de pertenencia.
+      schema:
+        type: integer
+        format: int64
+    LineIdParam:
+      name: lineId
+      in: path
+      required: true
+      description: Identidad propia de la línea de stock (ADR-0015).
+      schema:
+        type: integer
+        format: int64
+
+  responses:
+    BadRequest:
+      description: |
+        `VALIDATION_FAILED` — con la extensión `errors[]`, que el frontend mapea campo a campo del
+        formulario. `MALFORMED_REQUEST` — el cuerpo no es JSON legible.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthenticated:
+      description: '`UNAUTHENTICATED` — falta el token o no es válido.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: '`FORBIDDEN` — autenticado, pero sin el rol o la propiedad que exige el recurso.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ForeignStore:
+      description: |
+        `FORBIDDEN` — sin rol de empleado, o intento de operar sobre una tienda que no es la suya.
+        El `storeId` de la ruta identifica el recurso; la tienda real sale de `account_id`.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: '`RESOURCE_NOT_FOUND` — con las extensiones `resource` e `id`.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalError:
+      description: '`INTERNAL_ERROR` — fallback genérico, sin detalle al cliente.'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+
+    Money:
+      type: string
+      pattern: '^\d{1,8}(\.\d{1,2})?$'
+      description: |
+        Importe decimal exacto, serializado como texto. **Nunca `number`/`format: float`**: el
+        legacy mapea `DECIMAL(10,2)` a `Float` en Java y pierde precisión de verdad (defecto #5).
+        El backend serializa `BigDecimal` sin formatear; el formato con separadores y símbolo de
+        moneda lo pone React con `Intl.NumberFormat` (ADR-0019).
+      examples:
+        - '399.99'
+
+    Sku:
+      type: string
+      pattern: '^[A-Z0-9-]{3,32}$'
+      description: |
+        Identificador de negocio del producto (ADR-0015). Lo introduce quien da de alta el producto;
+        no lo genera la base de datos.
+      examples:
+        - 'ABC-123'
+
+    Locale:
+      type: string
+      enum: [es, en]
+      description: Idioma preferido, persistido en el perfil y compartido entre dispositivos (ADR-0019).
+
+    Role:
+      type: string
+      enum: [CUSTOMER, EMPLOYEE, ADMIN]
+      description: |
+        Roles de negocio (RF-12, ADR-0006). `ADMIN` es un flag sobre empleado, no un nivel
+        jerárquico. Cliente y empleado son mutuamente excluyentes.
+
+    ProductSort:
+      type: string
+      enum: [PRICE_ASC, PRICE_DESC]
+      default: PRICE_ASC
+      description: |
+        Se declara como enum cerrado en vez del `sort=campo,dirección` de Spring Data para que el
+        tipo generado del frontend sea estable y no dependa de la serialización de Spring.
+
+    StockStatus:
+      type: string
+      enum: [STOCKED, NOT_STOCKED]
+      default: STOCKED
+      description: |
+        `STOCKED`: líneas de stock existentes en la tienda. `NOT_STOCKED`: productos del catálogo que
+        todavía no tienen fila de stock ahí (RF-09, alta de nuevo stock).
+
+    OrderStatus:
+      type: string
+      enum: [CONFIRMED]
+      description: |
+        El campo se reserva desde v0.1 aunque hoy solo tenga un valor: el contrato se congela en
+        SINC-1 y el frontend genera tipos de aquí, así que reservarlo ahora cuesta tres líneas y
+        evita romper el contrato en v1.1 (`docs/10-modelo-de-datos.md` §3). `CANCELLED` y los estados
+        de logística llegan con la pasarela de pago real.
+
+    Address:
+      type: object
+      description: Dirección postal. Un solo país por ahora, así que no lleva campo de país.
+      required: [street, city, province, postalCode]
+      properties:
+        street:
+          type: string
+          minLength: 1
+          maxLength: 255
+        city:
+          type: string
+          minLength: 1
+          maxLength: 255
+        province:
+          type: string
+          minLength: 1
+          maxLength: 255
+        postalCode:
+          type: string
+          pattern: '^[0-9]{5}$'
+          description: Código postal español, cinco dígitos exactos.
+
+    Card:
+      type: object
+      description: |
+        Medio de pago **enmascarado**. No existe ningún campo para el número completo (PAN) ni para
+        el CVV, ni en peticiones ni en respuestas: almacenar el CVV está prohibido por PCI-DSS bajo
+        cualquier circunstancia, incluso cifrado (`docs/08-identidad-y-seguridad.md` §5).
+
+        La caducidad son mes y año, no una fecha: una tarjeta caduca en un mes completo, y guardar
+        `'2025-12-01'` significa literalmente "caducó el 1 de diciembre" cuando el negocio quiere
+        decir "válida durante todo diciembre" (`docs/10-modelo-de-datos.md` §2).
+      required: [last4, brand, expMonth, expYear]
+      properties:
+        last4:
+          type: string
+          pattern: '^[0-9]{4}$'
+        brand:
+          type: string
+          enum: [VISA, MASTERCARD, AMEX, OTHER]
+        expMonth:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 12
+        expYear:
+          type: integer
+          format: int32
+          minimum: 2024
+          maximum: 2100
+
+    ProductType:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+
+    ProductSummary:
+      type: object
+      required: [id, sku, name, price, typeId, typeName, imageUrl]
+      properties:
+        id:
+          type: integer
+          format: int64
+        sku:
+          $ref: '#/components/schemas/Sku'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        price:
+          $ref: '#/components/schemas/Money'
+        typeId:
+          type: integer
+          format: int64
+        typeName:
+          type: string
+        imageUrl:
+          type: [string, 'null']
+          format: uri-reference
+          description: |
+            URL servible de la foto, compuesta por el servidor desde la clave de almacenamiento; la
+            foto es opcional (RF-10), así que puede ser `null`. El frontend nunca construye esta URL
+            a partir de un identificador.
+
+    ProductDetail:
+      allOf:
+        - $ref: '#/components/schemas/ProductSummary'
+        - type: object
+          required: [description]
+          properties:
+            description:
+              type: [string, 'null']
+
+    ProductSuggestion:
+      type: object
+      description: Forma reducida para el autocompletar; no lleva tipo ni descripción.
+      required: [id, sku, name, price, imageUrl]
+      properties:
+        id:
+          type: integer
+          format: int64
+        sku:
+          $ref: '#/components/schemas/Sku'
+        name:
+          type: string
+        price:
+          $ref: '#/components/schemas/Money'
+        imageUrl:
+          type: [string, 'null']
+          format: uri-reference
+
+    Store:
+      type: object
+      required: [id, name, isOnline, phone, address]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        isOnline:
+          type: boolean
+          description: |
+            Exactamente una tienda lo tiene a `true`; es un invariante de la base, no una convención
+            (`ux_store_online`). Es la única tienda contra la que se sirven pedidos (RF-04).
+        phone:
+          type: string
+          maxLength: 20
+          description: Teléfono en formato E.164.
+        address:
+          $ref: '#/components/schemas/Address'
+
+    AvailabilityItem:
+      type: object
+      required: [productId, available]
+      properties:
+        productId:
+          type: integer
+          format: int64
+        available:
+          type: boolean
+          description: |
+            `true` si y solo si hay stock mayor que cero en esa tienda. Un producto sin fila de stock
+            es `false`, nunca una entrada ausente (RF-01).
+
+    AvailabilityResponse:
+      type: object
+      required: [storeId, items]
+      properties:
+        storeId:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityItem'
+
+    CartLine:
+      type: object
+      required: [productId, sku, productName, unitPrice, quantity, lineTotal, available]
+      properties:
+        productId:
+          type: integer
+          format: int64
+        sku:
+          $ref: '#/components/schemas/Sku'
+        productName:
+          type: string
+        unitPrice:
+          $ref: '#/components/schemas/Money'
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Nunca cero ni negativa (`CHECK (quantity > 0)`, `docs/10-modelo-de-datos.md` §2).
+        lineTotal:
+          $ref: '#/components/schemas/Money'
+        available:
+          type: integer
+          format: int32
+          minimum: 0
+          description: |
+            Unidades disponibles en la tienda online. Informativo: no reserva nada y puede cambiar
+            antes de confirmar el pedido.
+
+    Cart:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartLine'
+        total:
+          $ref: '#/components/schemas/Money'
+
+    UpdateCartItemRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Cantidad total de la línea, no un incremento.
+
+    CheckoutAttemptLine:
+      type: object
+      required: [sku, productName, unitPrice, quantity, available]
+      properties:
+        sku:
+          $ref: '#/components/schemas/Sku'
+        productName:
+          type: string
+        unitPrice:
+          $ref: '#/components/schemas/Money'
+          description: Precio congelado al abrir el intento.
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+        available:
+          type: integer
+          format: int32
+          minimum: 0
+
+    CheckoutAttempt:
+      type: object
+      required: [attemptId, lines, total, expiresAt]
+      properties:
+        attemptId:
+          type: string
+          format: uuid
+          description: |
+            Se reenvía tal cual como cabecera `Idempotency-Key` en `POST /api/orders`. Lo emite el
+            servidor: el navegador nunca inventa esta clave (ADR-0016).
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CheckoutAttemptLine'
+        total:
+          $ref: '#/components/schemas/Money'
+        expiresAt:
+          type: string
+          format: date-time
+
+    OrderLine:
+      type: object
+      description: |
+        Línea inmutable del pedido. `productName` y `unitPrice` son instantáneas tomadas al confirmar
+        (ADR-0011): renombrar o descatalogar el producto, o cambiarle el precio, no altera ningún
+        pedido pasado.
+      required: [productId, productName, unitPrice, quantity, totalPrice]
+      properties:
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        unitPrice:
+          $ref: '#/components/schemas/Money'
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+        totalPrice:
+          $ref: '#/components/schemas/Money'
+          description: Siempre igual a `unitPrice * quantity`; la base lo garantiza con un `CHECK`.
+
+    OrderResponse:
+      type: object
+      required: [id, placedAt, status, total, shippingAddress, payment, lines]
+      properties:
+        id:
+          type: integer
+          format: int64
+        placedAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        total:
+          $ref: '#/components/schemas/Money'
+        shippingAddress:
+          $ref: '#/components/schemas/Address'
+        payment:
+          $ref: '#/components/schemas/Card'
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderLine'
+
+    CurrentUser:
+      type: object
+      required: [accountId, email, roles, locale]
+      properties:
+        accountId:
+          type: string
+          format: uuid
+          description: Identificador de la cuenta en `ukun-auth`; opaco para este servicio.
+        email:
+          type: string
+          format: email
+        roles:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Role'
+        locale:
+          $ref: '#/components/schemas/Locale'
+
+    CustomerProfile:
+      type: object
+      required: [name, lastName, email, locale, address, card, favoriteStoreId]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          readOnly: true
+          description: Proyección de lectura; se cambia en `ukun-auth`, no aquí.
+        locale:
+          $ref: '#/components/schemas/Locale'
+        address:
+          $ref: '#/components/schemas/Address'
+        card:
+          $ref: '#/components/schemas/Card'
+        favoriteStoreId:
+          type: [integer, 'null']
+          format: int64
+          description: |
+            Referencia por identificador, no por objeto anidado: el módulo `customers` no navega a la
+            entidad de `stores` (ADR-0017 §2). El frontend resuelve el nombre con `GET /api/stores`.
+
+    UpdateProfileRequest:
+      type: object
+      required: [name, lastName, locale, address, card]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        locale:
+          $ref: '#/components/schemas/Locale'
+        address:
+          $ref: '#/components/schemas/Address'
+        card:
+          $ref: '#/components/schemas/Card'
+        favoriteStoreId:
+          type: [integer, 'null']
+          format: int64
+
+    SignupRequest:
+      type: object
+      required: [email, password, name, lastName, address, card]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Único en todo el sistema, compartido con empleados, normalizado a minúsculas.
+        password:
+          type: string
+          format: password
+          minLength: 12
+          writeOnly: true
+          description: |
+            Longitud mínima real en vez de reglas de composición arbitrarias, y **sin máximo
+            artificial** — alineado con NIST SP 800-63B (`docs/08-identidad-y-seguridad.md` §8). Se
+            hashea en `ukun-auth` (BCrypt/Argon2); nunca se almacena ni se devuelve en claro, y nunca
+            aparece en un log.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        address:
+          $ref: '#/components/schemas/Address'
+        card:
+          $ref: '#/components/schemas/Card'
+        favoriteStoreId:
+          type: [integer, 'null']
+          format: int64
+
+    StockLine:
+      type: object
+      description: |
+        Línea de stock de un producto en una tienda. Con `status=NOT_STOCKED`, `lineId`, `quantity` y
+        `version` son `null` porque la fila todavía no existe: es un producto candidato a darse de
+        alta con `POST /api/stores/{storeId}/stock`.
+      required: [lineId, productId, sku, productName, quantity, version]
+      properties:
+        lineId:
+          type: [integer, 'null']
+          format: int64
+        productId:
+          type: integer
+          format: int64
+        sku:
+          $ref: '#/components/schemas/Sku'
+        productName:
+          type: string
+        quantity:
+          type: [integer, 'null']
+          format: int32
+          minimum: 0
+        version:
+          type: [integer, 'null']
+          format: int64
+          description: Se reenvía en el `PUT` para detectar escrituras concurrentes (ADR-0008).
+
+    CreateStockLineRequest:
+      type: object
+      required: [sku, quantity]
+      properties:
+        sku:
+          $ref: '#/components/schemas/Sku'
+        quantity:
+          type: integer
+          format: int32
+          minimum: 0
+
+    UpdateStockLineRequest:
+      type: object
+      required: [quantity, version]
+      properties:
+        quantity:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Cero es un valor válido; para quitar la fila se usa `DELETE`.
+        version:
+          type: integer
+          format: int64
+          description: La `version` leída. Si no coincide con la almacenada, `409 VERSION_CONFLICT`.
+
+    Employee:
+      type: object
+      required: [id, name, lastName, email, jobTitle, isAdmin, storeId]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        jobTitle:
+          type: string
+          maxLength: 50
+        isAdmin:
+          type: boolean
+        storeId:
+          type: integer
+          format: int64
+
+    CreateEmployeeRequest:
+      type: object
+      description: |
+        **Sin `storeId`**: la tienda del empleado nuevo es siempre la del admin que ejecuta el alta
+        (`docs/08-identidad-y-seguridad.md` §3, RF-11).
+      required: [email, password, name, lastName, jobTitle, isAdmin]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          format: password
+          minLength: 12
+          writeOnly: true
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        jobTitle:
+          type: string
+          minLength: 1
+          maxLength: 50
+        isAdmin:
+          type: boolean
+          default: false
+
+    PageMeta:
+      type: object
+      description: |
+        Envoltura de paginación propia y estable. **No** es el serializado por defecto de `Page<T>`
+        de Spring Data: el frontend tipa esta forma con `openapi-typescript`, y no debe romperse si
+        cambia la serialización de Spring. La implementación mapea `Page<T>` a esto explícitamente.
+      required: [page, size, totalElements, totalPages]
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int32
+          minimum: 0
+
+    ProductPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductSummary'
+
+    OrderPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderResponse'
+
+    StockLinePage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/StockLine'
+
+    EmployeePage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Employee'
+
+    ValidationError:
+      type: object
+      description: Un error de campo, para pintarlo junto al campo del formulario que lo provocó.
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    ErrorCode:
+      type: string
+      description: |
+        Registro **cerrado** de `docs/12-error-contract.md` §2, idéntico en `ukun-api.yaml` y en
+        `ukun-auth.yaml` para que el frontend no tenga que saber de qué servicio vino el error.
+
+        Están los quince aunque varios no se emitan hasta v0.6/v0.7: el frontend genera de aquí el
+        lookup de `errors.json` y un test de paridad falla si a algún `code` le falta traducción.
+        Añadir uno nuevo tiene su propio proceso (§4 de ese documento) y **empieza por el registro**,
+        no por este fichero.
+      enum:
+        - VALIDATION_FAILED
+        - MALFORMED_REQUEST
+        - UNAUTHENTICATED
+        - FORBIDDEN
+        - RESOURCE_NOT_FOUND
+        - CHECKOUT_EXPIRED
+        - INSUFFICIENT_STOCK
+        - PRODUCT_IN_USE
+        - VERSION_CONFLICT
+        - IDEMPOTENCY_IN_PROGRESS
+        - IDEMPOTENCY_MISMATCH
+        - EMPTY_CART
+        - EMAIL_ALREADY_EXISTS
+        - REFERENTIAL_INTEGRITY
+        - INTERNAL_ERROR
+
+    ProblemDetail:
+      type: object
+      description: |
+        Error según RFC 9457, servido como `application/problem+json`.
+
+        **`code` es lo único sobre lo que el frontend decide qué pintar.** `title` y `detail` están
+        siempre en inglés fijo, dirigidos al operador y a los logs, y **nunca se muestran en
+        pantalla**: el texto de usuario sale de `t('errors:CODE', {...})` en los dos idiomas
+        soportados (ADR-0019). `detail` no lleva traza de pila, ni SQL, ni nombres de tabla.
+
+        El resto de campos son extensiones específicas de cada `code`, y son lo que el frontend
+        interpola en el mensaje traducido.
+      required: [type, title, status, code, traceId]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: |
+            Se deriva mecánicamente del `code`: `https://ukun.dev/errors/<code-en-kebab-case>`.
+          examples:
+            - 'https://ukun.dev/errors/insufficient-stock'
+        title:
+          type: string
+          description: Resumen en inglés fijo, para operador. No se muestra en pantalla.
+        status:
+          type: integer
+          format: int32
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+          description: Una línea describiendo el hecho, en inglés fijo. No se muestra en pantalla.
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        traceId:
+          type: string
+          description: Correlaciona con los logs (`docs/11-observabilidad-y-logging.md`).
+        errors:
+          type: array
+          description: Extensión de `VALIDATION_FAILED`.
+          items:
+            $ref: '#/components/schemas/ValidationError'
+        resource:
+          type: string
+          description: Extensión de `RESOURCE_NOT_FOUND` y `VERSION_CONFLICT`.
+        id:
+          type: string
+          description: Extensión de `RESOURCE_NOT_FOUND` y `VERSION_CONFLICT`.
+        stockLineId:
+          type: integer
+          format: int64
+          description: Extensión de `INSUFFICIENT_STOCK`.
+        productId:
+          type: integer
+          format: int64
+          description: Extensión de `INSUFFICIENT_STOCK`.
+        sku:
+          type: string
+          description: Extensión de `INSUFFICIENT_STOCK`.
+        available:
+          type: integer
+          format: int32
+          description: Extensión de `INSUFFICIENT_STOCK`.
+        requested:
+          type: integer
+          format: int32
+          description: Extensión de `INSUFFICIENT_STOCK`.
+        key:
+          type: string
+          format: uuid
+          description: Extensión de `IDEMPOTENCY_IN_PROGRESS` y `IDEMPOTENCY_MISMATCH`.
+        attemptId:
+          type: string
+          format: uuid
+          description: Extensión de `CHECKOUT_EXPIRED`.
+        expiredAt:
+          type: string
+          format: date-time
+          description: Extensión de `CHECKOUT_EXPIRED`.
+        inOrders:
+          type: integer
+          format: int64
+          description: Extensión de `PRODUCT_IN_USE`.
+        inStock:
+          type: integer
+          format: int64
+          description: Extensión de `PRODUCT_IN_USE`.
+        inCarts:
+          type: integer
+          format: int64
+          description: Extensión de `PRODUCT_IN_USE`.
