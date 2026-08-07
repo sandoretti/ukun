@@ -1,0 +1,8 @@
+FROM node:22-alpine
+WORKDIR /app
+
+# Permitir que el contenedor arranque aunque package.json todavía no exista
+COPY . /app/
+EXPOSE 5173
+
+CMD ["sh", "-c", "if [ -f package.json ]; then npm run dev -- --host; else echo 'No package.json found. Sleeping...' && sleep infinity; fi"]

@@ -1,0 +1,11 @@
+FROM eclipse-temurin:25-jre-jammy
+WORKDIR /opt/app
+
+RUN mkdir -p /opt/app/classes /opt/app/deps
+COPY target/dependency/ /opt/app/deps/
+COPY target/classes/    /opt/app/classes/
+
+EXPOSE 9000 5005
+ENV JAVA_TOOL_OPTIONS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+
+ENTRYPOINT ["java", "-cp", "/opt/app/classes:/opt/app/deps/*", "dev.sandoretti.ukun.auth.UkunAuthApplication"]
