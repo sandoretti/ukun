@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: ukun-auth
+
+server:
+  port: 9000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
