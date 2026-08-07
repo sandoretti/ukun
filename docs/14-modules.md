@@ -95,6 +95,8 @@ class ModulithTest {
 
 `verify()` falla el build si: un módulo importa una clase interna de otro sin pasar por su API pública, o si aparece un ciclo de dependencias entre módulos. `Documenter` genera el diagrama de módulos en cada ejecución — **sustituye** a mantener un diagrama de paquetes a mano en `01-arquitectura.md`; ese documento enlaza aquí en vez de duplicar el grafo.
 
+**Lo que `verify()` no cubre mientras los módulos están vacíos**, comprobado al implementarlo en v0.2: como su análisis parte de las dependencias **reales entre tipos**, con paquetes que solo contienen `package-info.java` no tiene nada que rechazar — pasa en verde igual con un ciclo declarado en `allowedDependencies` que sin él. Por eso `ModulithTest` lleva además una aserción del **grafo declarado** contra la tabla de ADR-0017 §1 (`module.getAllowedDependencies(modules)`, comparado como mapa módulo→dependencias) y otra de que `shared` es el único módulo abierto. Esa aserción sí falla hoy: un nombre mal escrito revienta con `Invalid explicit module dependency in catalog! No module found with name 'storagee'`. Cuando los módulos tengan código, ambas capas se complementan — una vigila lo declarado, la otra lo que el código hace de verdad.
+
 ## 5. Qué hacer cuando `verify()` falla por un ciclo
 
 El caso ya resuelto es `catalog` ↔ `inventory` (ADR-0017 §3): se rompe eligiendo un sentido de dependencia (`inventory → catalog`) y separando en dos endpoints lo que antes hubiera sido una sola respuesta. La regla general, para el próximo ciclo que aparezca:
@@ -105,7 +107,9 @@ El caso ya resuelto es `catalog` ↔ `inventory` (ADR-0017 §3): se rompe eligie
 
 ## 6. Actuator de módulos
 
-`management.endpoint.modulith.enabled=true` solo en el perfil `dev` (mismo criterio que springdoc/Swagger UI, `06-entorno-local-tilt.md`) — expone la estructura de módulos y sus dependencias en `/actuator/modulith`, útil para depurar un `verify()` que falla sin tener que leer el mensaje de excepción completo.
+`management.endpoints.web.exposure.include: health,modulith` solo en el perfil `dev` (mismo criterio que springdoc/Swagger UI, `06-entorno-local-tilt.md`) — expone la estructura de módulos y sus dependencias en `/actuator/modulith`, útil para depurar un `verify()` que falla sin tener que leer el mensaje de excepción completo. Requiere la dependencia `spring-modulith-actuator` en alcance `runtime`.
+
+La exposición es lo único que hace falta; sin el perfil `dev`, la ruta devuelve 404. **No** uses `management.endpoint.modulith.enabled` — esa propiedad ya no existe en Spring Boot 4 (se sustituyó por `management.endpoint.<id>.access`, verificado contra los metadatos de configuración de `spring-boot-actuator` 4.1.0), y como Boot ignora en silencio una propiedad desconocida, escribirla da la falsa impresión de estar controlando algo.
 
 ## 7. Lo que Modulith no hace aquí
 

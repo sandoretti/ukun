@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Domain API monolith. Skeleton only in v0.1: a @SpringBootApplication plus Actuator, no
-  business endpoint (docs/04-roadmap.md, v0.2 is where the real skeleton and the Liquibase
-  baseline land).
+  Domain API monolith. As of v0.2 (docs/04-roadmap.md) this carries the ten Spring Modulith
+  application modules of ADR-0017 §1, declared empty, plus the ModulithTest that verifies their
+  dependency graph on every build. Business code lands from v0.3 onwards.
 
   No <version> is declared for any dependency or plugin: everything comes from ../../pom.xml.
-  No JPA and no Security yet — without a datasource the context would not start, and an
-  unconfigured Security would stop /actuator/health from answering 200, which is this slice's
-  acceptance criterion.
+  No JPA and no Security yet — the Liquibase baseline of ukun_app is a separate slice; without a
+  datasource the context would not start, and an unconfigured Security would stop
+  /actuator/health from answering 200.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -42,6 +42,20 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
 
+        <!-- Application modules (ADR-0017, docs/14-modules.md). Versions come from the
+             spring-modulith-bom imported in ../../pom.xml — never declare one here.
+             starter-core carries the @ApplicationModule annotation; the actuator serves
+             /actuator/modulith, exposed only under the dev profile (docs/14 §6). -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-actuator</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -72,6 +86,18 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- ApplicationModules.verify() and the Documenter that replaces a hand-drawn package
+             diagram in docs/01-arquitectura.md. -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-docs</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
