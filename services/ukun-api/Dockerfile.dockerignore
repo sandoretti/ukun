@@ -1,0 +1,44 @@
+# Ignore list for services/ukun-api/Dockerfile. BuildKit reads <dockerfile>.dockerignore in
+# preference to a .dockerignore at the context root, which is how each service keeps its own
+# list even though they all share the repository root as build context.
+
+# Build output — the image compiles from source, it never copies a locally built jar.
+**/target/
+
+# Git metadata. In a worktree .git is a file, not a directory; both patterns are covered.
+.git
+.git/
+.gitignore
+.gitattributes
+
+# Secrets. .env.example is the versioned template and is not needed in the image either.
+.env
+.env.*
+
+# Everything outside the new services.
+ukun-clientes/
+ukun-empleados/
+nginx/
+database/
+resources/
+scripts/
+docs/
+apps/
+.claude/
+tilt_modules/
+Tiltfile
+compose*.yaml
+docker-compose*.yml
+*.md
+
+# The other services' sources. Their POMs are still needed for the reactor and are copied
+# explicitly by the Dockerfile, so only src/ is excluded here.
+services/ukun-auth/src/
+services/ukun-gateway/src/
+
+# Frontend and IDE noise.
+node_modules/
+dist/
+.idea/
+.vscode/
+*.iml
