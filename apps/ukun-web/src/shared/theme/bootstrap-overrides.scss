@@ -1,0 +1,14 @@
+$primary: #456e0f;
+$primary-hover: #365a08;
+$accent: #5d9d0b;
+$primary-bg: #E9F5D8;
+
+// Overrides de Bootstrap
+$theme-colors: (
+  "primary": $primary,
+  "secondary": $accent,
+);
+
+$component-active-bg: $primary;
+
+@import "bootstrap/scss/bootstrap";
