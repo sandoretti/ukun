@@ -62,7 +62,7 @@ Por qué es correcto sin transacciones distribuidas:
 
 Esto sustituye a los `ClienteValidator`/`EmpleadoValidator` del legacy (que hacen `existsByCuenta_Correo` con su propia race condition entre el `exists` y el `save`): la unicidad pasa a ser el `409 EMAIL_ALREADY_EXISTS` de `ukun-auth`, mapeado por el API a un `ProblemDetail` con `errors: [{field: "email", code: "EMAIL_ALREADY_EXISTS"}]` que el frontend pinta bajo el campo.
 
-El alta de empleado (`POST /api/employees`, solo admin) reutiliza exactamente la misma saga (`AccountRegistrationService`), cambiando `roles: ["EMPLOYEE"]` (+`"ADMIN"` si aplica) y tomando `storeId` del admin que la ejecuta, nunca del cuerpo de la petición.
+El alta de empleado (`POST /api/admin/employees`, solo admin — ADR-0020) reutiliza exactamente la misma saga (`AccountRegistrationService`), cambiando `roles: ["EMPLOYEE"]` (+`"ADMIN"` si aplica) y tomando `storeId` del admin que la ejecuta, nunca del cuerpo de la petición.
 
 ## 4. Autenticación en el navegador: BFF en el gateway
 
