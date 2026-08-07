@@ -44,6 +44,10 @@ Aplica a `ukun-api` y a `ukun-auth`; el registro es único y compartido entre lo
 | `CHECKOUT_EXPIRED` | 410 | `attemptId`, `expiredAt` | checkout — ADR-0016 | v0.1 (contrato) / v0.6 (implementación) |
 | `INSUFFICIENT_STOCK` | 409 | `stockLineId`, `productId`, `sku`, `available`, `requested` | checkout — ADR-0008, ADR-0015 | v0.1 (contrato) / v0.6 (implementación) |
 | `PRODUCT_IN_USE` | 409 | `inOrders`, `inStock`, `inCarts` | `DeleteProductUseCase` (RF-10) | v0.7 |
+| `PRODUCT_TYPE_IN_USE` | 409 | `inProducts` | `DeleteProductTypeUseCase` (RF-13) | v0.7 |
+| `DUPLICATE_VALUE` | 409 | `resource`, `field` | violación de un `UNIQUE` de negocio comprobada antes de escribir: `product.sku`, `product_type.name` (RF-10, RF-13) | v0.7 |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | `allowed` | subida de imagen de producto: el contenido real del fichero no es JPEG/PNG/WebP (`08-identidad-y-seguridad.md` §9) | v0.7 |
+| `PAYLOAD_TOO_LARGE` | 413 | `maxBytes` | subida de imagen de producto por encima del límite, rechazada por el gateway o por `MaxUploadSizeExceededException` | v0.7 |
 | `VERSION_CONFLICT` | 409 | `resource`, `id` | `OptimisticLockingFailureException` (edición manual de stock, ADR-0008) | v0.7 |
 | `IDEMPOTENCY_IN_PROGRESS` | 409 | `key` | checkout — ADR-0016 | v0.1 (contrato) / v0.6 (implementación) |
 | `IDEMPOTENCY_MISMATCH` | 422 | `key` | checkout — ADR-0016, misma key con payload distinto | v0.1 (contrato) / v0.6 (implementación) |
@@ -53,6 +57,12 @@ Aplica a `ukun-api` y a `ukun-auth`; el registro es único y compartido entre lo
 | `INTERNAL_ERROR` | 500 | — | fallback genérico, sin detalle al cliente | v0.3 |
 
 La columna *Release* dice cuándo el `code` **se emite por primera vez**; todos están en el OpenAPI congelado en SINC-1 desde v0.1, porque el frontend genera de ahí el `enum` con el que hace el lookup.
+
+### Tres fronteras que es fácil confundir
+
+- **`DUPLICATE_VALUE` frente a `REFERENTIAL_INTEGRITY`**: el segundo es la red de seguridad para una violación de **clave ajena** (`SQLState 23503`) que se cuela sin comprobación previa; el primero es una violación de **unicidad** (`23505`) de un dato de negocio que el caso de uso comprueba *antes* de escribir para poder decir qué campo choca. No son el mismo error con distinto nombre: uno dice "esto está referenciado", el otro "esto ya existe".
+- **`DUPLICATE_VALUE` frente a `EMAIL_ALREADY_EXISTS`**: el correo tiene `code` propio porque su unicidad la impone **otro servicio** (`ukun-auth`) y llega propagada a través de la saga de alta, no de una comprobación local. Ambos se pintan igual en pantalla —bajo el campo del formulario—, pero su origen es distinto y el registro lo refleja.
+- **`PAYLOAD_TOO_LARGE` puede no nacer en `ukun-api`.** Un fichero por encima del límite lo corta el gateway antes de que llegue al servicio, así que ese `ProblemDetail` lo emite el gateway; es el único `code` de esta tabla con dos emisores posibles, y los dos deben producir exactamente la misma forma de respuesta (skill `spring-gateway`). Que el límite del gateway y el de `spring.servlet.multipart.max-file-size` valgan lo mismo es lo que evita reproducir el defecto #17.
 
 `type` sigue el patrón `https://ukun.dev/errors/<kebab-case-del-code>` (p. ej. `INSUFFICIENT_STOCK` → `https://ukun.dev/errors/insufficient-stock`); no hace falta declararlo fila a fila, se deriva mecánicamente del `code`.
 
