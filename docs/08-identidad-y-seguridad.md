@@ -96,8 +96,10 @@ Por qué BFF y no token en el SPA: elimina el token del alcance de cualquier XSS
 
 | Capa | Responsabilidad | Ejemplo |
 |---|---|---|
-| Gateway | Autenticación + filtro grueso de rutas. Defensa en profundidad, no la única barrera | `/api/admin/**` exige `ROLE_ADMIN`; `/api/me/**` exige sesión; `/api/products` público |
+| Gateway | Autenticación + filtro grueso de rutas. Defensa en profundidad, no la única barrera | `/api/admin/**` exige `ROLE_ADMIN`; `/api/me/**` exige sesión; `/api/products` y `/media/**` públicos |
 | `ukun-api` | **Autoridad final.** Valida el JWT él mismo como resource server (JWKS de `ukun-auth`), nunca confía en cabeceras inyectadas por el gateway | `@PreAuthorize("hasRole('ADMIN')")` en el CRUD de productos |
+
+Que la primera fila sea una sola regla y no una lista de rutas es lo que decide **ADR-0020**: toda operación solo-`admin` —y solo ella— cuelga de `/api/admin/**` (CRUD de productos RF-10, de tipos RF-13, y gestión de empleados RF-11). La gestión de stock de RF-09 se queda fuera del prefijo a propósito: es de cualquier empleado, no de admin, y su autorización es de recurso (la tienda), que es justo lo que la tercera capa resuelve y ninguna regla de ruta puede.
 | Dominio | Autorización *a nivel de recurso*, imposible de expresar en una anotación | "esta línea de `store_stock` pertenece a mi tienda"; "este pedido es mío" |
 
 La tercera capa es la que el legacy tiene mal repartida: `StockController` compara IDs de tienda a mano sobre un `tiendaId` que llega como parámetro de la petición. En el nuevo diseño la ruta **sí** lleva la tienda —`PUT /api/stores/{storeId}/stock/{lineId}` (RF-09, ADR-0015, ADR-0018)— y lo que cambia es quién decide si vale:
@@ -148,12 +150,14 @@ Checklist de revisión, no declaración de intenciones — cada fila es un mecan
 
 ## 9. Endurecimiento de subida de ficheros (RF-10, imágenes de producto)
 
+**Una sola operación multipart en todo el sistema**: `PUT /api/admin/products/{id}/image`, con `DELETE` en la misma ruta para quitarla. La imagen es un sub-recurso propio, no un campo del alta ni de la edición del producto (RF-10) — así el resto del contrato es JSON puro y esta es la única superficie que hay que endurecer.
+
 El legacy tiene un límite de tamaño en Spring (10MB) que nginx anula en la práctica al no declarar `client_max_body_size` (defecto #17) — no repetir eso es condición necesaria pero no suficiente:
 
-- **Validación de tipo por contenido real, no por extensión ni `Content-Type` declarado**: un `.jpg` con cabecera de fichero ejecutable no se detecta mirando el nombre. Se verifican los primeros bytes (magic number) contra los formatos permitidos (JPEG, PNG, WebP) antes de aceptar el fichero.
-- **Límite de tamaño coherente en las dos capas** que lo tocan: el del gateway y `spring.servlet.multipart.max-file-size` llevan el mismo valor — el defecto #17 es exactamente que uno decía 10MB y el otro no decía nada.
-- **Nombre de fichero generado por el servidor** (UUID + extensión derivada del tipo real detectado), nunca el nombre que envía el cliente — cierra path traversal vía nombre de fichero (`../../etc/passwd.jpg`) sin necesidad de sanearlo a mano.
-- **Servido desde una ruta que no ejecuta nada**: el directorio de subida no debe ser alcanzable como raíz de ejecución de la aplicación ni permitir subir un fichero con extensión ejecutable por el servidor web que lo sirve.
+- **Validación de tipo por contenido real, no por extensión ni `Content-Type` declarado**: un `.jpg` con cabecera de fichero ejecutable no se detecta mirando el nombre. Se verifican los primeros bytes (magic number) contra los formatos permitidos (JPEG, PNG, WebP) antes de aceptar el fichero. Si no coincide → `415 UNSUPPORTED_MEDIA_TYPE` con la extensión `allowed` (`12-error-contract.md`).
+- **Límite de tamaño coherente en las dos capas** que lo tocan: **5 MB**, el mismo valor en el gateway y en `spring.servlet.multipart.max-file-size` — el defecto #17 es exactamente que uno decía 10MB y el otro no decía nada. Superarlo → `413 PAYLOAD_TOO_LARGE` con `maxBytes`, y es el único `code` del registro que pueden emitir dos servicios distintos (el gateway corta antes de que la petición llegue al API), así que los dos deben producir la misma forma de `ProblemDetail`.
+- **Nombre de fichero generado por el servidor** (UUID + extensión derivada del tipo real detectado), nunca el nombre que envía el cliente — cierra path traversal vía nombre de fichero (`../../etc/passwd.jpg`) sin necesidad de sanearlo a mano. La clave de almacenamiento (`product.image_key`) no se expone: el API compone y devuelve una `imageUrl` servible.
+- **Servido desde una ruta que no ejecuta nada**: las imágenes se sirven bajo `/media/**` (ruta pública en el gateway, adaptador de `FileStoragePort`), un prefijo que no es raíz de ejecución de ninguna aplicación y que no sirve ningún fichero que no haya escrito el propio adaptador. Esa ruta **no** está en el OpenAPI: es contenido estático, no una operación del contrato.
 
 ## 10. Escaneo de dependencias
 

@@ -108,7 +108,7 @@ gantt
     v0.3 Catálogo/tiendas REST (solo lectura)     :b3, after b1, 8d
     v0.4 Resource server + perfil                 :b4, 2026-09-14, 6d
     v0.6 Carrito + agregado Order + idempotencia  :crit, b5, 2026-10-12, 12d
-    v0.7 Stock + admin productos + upload + RRHH  :b6, after b5, 12d
+    v0.7 Stock + admin productos/tipos + upload + RRHH :b6, after b5, 12d
 
     section P2 Backend Identidad
     v0.4 ukun-auth + Authorization Server         :crit, a1, 2026-09-07, 7d
@@ -147,13 +147,13 @@ Paralelizable:
 
 - (a) POM agregador + JDK 25 + **Dockerfiles de producción** de los tres servicios Java (jar en capas, usuario no root, `HEALTHCHECK`, `ENTRYPOINT` con nombre de jar fijo, caché de BuildKit para `~/.m2` — `06-entorno-local-tilt.md`).
 - (b) `Tiltfile` + `compose.yaml` de los servicios nuevos, con live update.
-- (c) **Inventario de endpoints** recorriendo los 12 controllers legacy → `docs/02-requisitos.md` → `ukun-api.yaml`/`ukun-auth.yaml`, **en inglés desde el primer borrador** (ADR-0018): `/api/products`, `/api/product-types`, `/api/stores`, `/api/availability` (endpoint separado de `/api/products`, consecuencia del ciclo `catalog`↔`inventory` resuelto en ADR-0017 §3), `/api/checkout/attempts` + los cuatro `code`s de error asociados (ADR-0016, `docs/12-error-contract.md`), `/api/cart`, `/api/orders`, `/api/me/profile` (con el campo `locale`, ADR-0019), `/api/signup` (público, lo orquesta el API — `08-identidad-y-seguridad.md` §3), `/api/stores/{storeId}/stock/{lineId}`, `/api/employees`.
+- (c) **Inventario de endpoints** recorriendo los 12 controllers legacy → `docs/02-requisitos.md` → `ukun-api.yaml`/`ukun-auth.yaml`, **en inglés desde el primer borrador** (ADR-0018): `/api/products`, `/api/product-types`, `/api/stores`, `/api/availability` (endpoint separado de `/api/products`, consecuencia del ciclo `catalog`↔`inventory` resuelto en ADR-0017 §3), `/api/checkout/attempts` + los cuatro `code`s de error asociados (ADR-0016, `docs/12-error-contract.md`), `/api/cart`, `/api/orders`, `/api/me/profile` (con el campo `locale`, ADR-0019), `/api/signup` (público, lo orquesta el API — `08-identidad-y-seguridad.md` §3), `/api/stores/{storeId}/stock/{lineId}`, y toda la superficie solo-`admin` bajo **`/api/admin/**`** (ADR-0020): CRUD de productos con descatalogación y subida de imagen (RF-10), CRUD de tipos de producto (RF-13) y gestión de empleados (`/api/admin/employees`, RF-11 — antes se planificó como `/api/employees`).
   Los **dos** contratos entran en este mismo ítem, con la superficie repartida según la frontera de servicios de ADR-0003/ADR-0004: `ukun-api.yaml` todo lo anterior; `ukun-auth.yaml` únicamente el contrato interno `/internal/accounts` + `:activate`/`:release` (`client_credentials`, scope `accounts:write`, nunca lo llama el navegador). Los endpoints OAuth2/OIDC del Authorization Server no se documentan a mano — son estándar y los publica su propio `/.well-known/openid-configuration`.
 - (d) `.env` fuera de git.
 - (e) Scaffolding de `apps/ukun-web` (Vite 8, React 19, router, tema react-bootstrap unificado, esqueleto de i18n con react-i18next — ADR-0019).
 - (f) **Colección Bruno** versionada en `docs/api/bruno/` + springdoc/Swagger UI en `ukun-api` (`06-entorno-local-tilt.md`).
 
-Sincronización obligatoria al final: **SINC-1 (2026-08-11), OpenAPI v1 congelado**. Antes de esa fecha deben estar cerrados los cuatro cambios de contrato que fuerzan ADR-0016/ADR-0017/ADR-0019: el endpoint de intento de checkout, la separación `/api/products`/`/api/availability`, la ruta de línea de stock, y el campo `locale` en `/api/me`. A partir de SINC-1, P3 avanza contra mocks sin depender de nadie.
+Sincronización obligatoria al final: **SINC-1 (2026-08-11), OpenAPI v1 congelado**. Antes de esa fecha deben estar cerrados los cinco cambios de contrato que fuerzan ADR-0016/ADR-0017/ADR-0019/ADR-0020: el endpoint de intento de checkout, la separación `/api/products`/`/api/availability`, la ruta de línea de stock, el campo `locale` en `/api/me`, y el prefijo `/api/admin/**` con la superficie de RF-10 y RF-13 completa. A partir de SINC-1, P3 avanza contra mocks sin depender de nadie.
 
 ### v0.2 — Esqueleto y esquema
 *Salida: `ukun-api` arranca contra un `ukun_app` completo y versionado.*
@@ -195,7 +195,7 @@ Aquí vive el trabajo de dominio serio: agregado `Order` con sus invariantes, bl
 ### v0.7 — Back-office completo
 *Salida: paridad funcional con `ukun-empleados` — se borran `ukun-empleados/`, `nginx/`, `database/` y los composes legacy del repo.*
 
-Paralelizable: **stock** · **CRUD de productos + subida de imagen** · **gestión de empleados**. Los tres son independientes entre sí.
+Paralelizable: **stock** · **CRUD de productos + tipos de producto + subida de imagen** · **gestión de empleados**. Los tres son independientes entre sí; dentro del segundo, el CRUD de tipos (RF-13) va **antes** que el de productos, porque dar de alta un producto exige elegir un tipo y es la primera pantalla que necesita el admin en una base recién creada.
 
 Aquí entran también la tabla `audit_log` en uso (`11-observabilidad-y-logging.md`, ADR-0014) y el `FileStoragePort` con su adaptador de filesystem (ADR-0017).
 

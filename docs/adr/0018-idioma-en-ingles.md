@@ -56,7 +56,9 @@ Esto es lo que abarata la decisión hasta hacerla obvia: el único coste real qu
 
 ### El contrato REST tampoco tiene fase transitoria
 
-`docs/api/openapi/ukun-api.yaml` nace en inglés desde v0.1 (`/api/products`, `/api/product-types`, `/api/stores`, `/api/availability`, `/api/cart`, `/api/checkout/attempts`, `/api/orders`, `/api/me/profile`, `/api/stores/{storeId}/stock/{lineId}`, `/api/employees`), con campos JSON en `camelCase` (`name`, `price`, `unitPrice`, `productName`, `placedAt`). No hay ningún consumidor legacy del contrato nuevo que obligue a una transición.
+`docs/api/openapi/ukun-api.yaml` nace en inglés desde v0.1 (`/api/products`, `/api/product-types`, `/api/stores`, `/api/availability`, `/api/cart`, `/api/checkout/attempts`, `/api/orders`, `/api/me/profile`, `/api/stores/{storeId}/stock/{lineId}`, y toda la superficie de back-office bajo `/api/admin/**` — ADR-0020), con campos JSON en `camelCase` (`name`, `price`, `unitPrice`, `productName`, `placedAt`). No hay ningún consumidor legacy del contrato nuevo que obligue a una transición.
+
+**En los dos YAML el inglés incluye la prosa, no solo los identificadores**: `info`, `summary`, `description`, las descripciones de `tags`, de parámetros, de respuestas y de schemas. La primera versión del contrato se escribió con rutas y campos en inglés pero descripciones en español, tratándolo como si fuera documentación; no lo es. Un fichero OpenAPI es artefacto de producto —lo renderiza Swagger UI, de él salen los tipos de TypeScript y la colección Bruno, y CI lo diffea contra lo que genera springdoc a partir de anotaciones Java que ya están en inglés—, así que le aplica la misma regla que al resto de lo ejecutable. La frontera sigue siendo la de este ADR: `docs/`, ADRs y skills en español; todo lo que se despliega o se consume, en inglés.
 
 ## Consecuencias
 - Un único idioma de dominio en todo lo ejecutable: Java, esquema de las bases nuevas y contrato REST. Cero ambigüedad de "¿esto se llama como en la tabla o como en el negocio?".
@@ -67,4 +69,5 @@ Esto es lo que abarata la decisión hasta hacerla obvia: el único coste real qu
 ## Alternativas descartadas
 - **Mantener español en el dominio, inglés solo en infraestructura** (decisión previa, ahora revertida): sigue siendo un argumento válido en abstracto, pero deja sin resolver la incoherencia entre `ukun_auth.account` y `ukun_app.producto`, y no dice nada sobre el idioma del código Java.
 - **Inglés también en `docs/`/ADRs/skills**: se descarta por alcance — tres veces el volumen de traducción para documentación que no forma parte del producto ni la ve un usuario final.
+- **Descripciones del OpenAPI en español** (era el estado del primer borrador): deja el único artefacto que se renderiza a un consumidor —Swagger UI— hablando dos idiomas a la vez, y obliga a traducir mentalmente cada `description` al escribir el `@Operation` de Java que CI va a diffear contra ella.
 - **Renombrado escalonado con vistas de compatibilidad**: era la única alternativa mientras el legacy siguiera leyendo el esquema. Con el legacy fuera (ADR-0007) el problema no existe: no hay lector al que mantener contento.
