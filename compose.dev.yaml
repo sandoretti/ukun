@@ -13,6 +13,10 @@ services:
     build:
       context: ./services/ukun-api
       dockerfile: Dockerfile.dev
+    # Without this, the dev-only tooling declared in application.yaml (Swagger UI,
+    # /actuator/modulith) stays off under `tilt up`, which is the one environment it exists for.
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
     ports:
       - "5005:5005"
     depends_on:

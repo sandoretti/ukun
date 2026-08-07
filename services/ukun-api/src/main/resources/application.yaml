@@ -35,3 +35,11 @@ springdoc:
     path: /swagger-ui.html
   api-docs:
     enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # /actuator/modulith prints the module structure and its dependencies, which is far easier
+        # to read than the exception of a failing verify(). Development only (docs/14-modules.md §6).
+        include: health,modulith
