@@ -67,14 +67,23 @@ CREATE INDEX ix_audit_log_actor    ON audit_log (actor_account_id, occurred_at D
 | `product.updated` | INFO | api | `productId`, `changedFields` | ✅ |
 | `product.deleted` | **WARN** | api | `productId`, `name`, `adminId` | ✅ |
 | `product.deletion.rejected` | INFO | api | `productId`, `inOrders`, `inStock`, `inCarts` | — |
+| `product.discontinued` | INFO | api | `productId`, `sku`, `adminId` | ✅ |
+| `product.reactivated` | INFO | api | `productId`, `sku`, `adminId` | ✅ |
 | `product.image.replaced` | INFO | api | `productId`, `previousKey`, `newKey` | — |
+| `product.image.removed` | INFO | api | `productId`, `previousKey`, `adminId` | — |
+| `product_type.created` | INFO | api | `productTypeId`, `name`, `adminId` | ✅ |
+| `product_type.updated` | INFO | api | `productTypeId`, `previousName`, `newName`, `adminId` | ✅ |
+| `product_type.deleted` | **WARN** | api | `productTypeId`, `name`, `adminId` | ✅ |
+| `product_type.deletion.rejected` | INFO | api | `productTypeId`, `inProducts` | — |
 | `employee.created` | INFO | api | `employeeId`, `accountId`, `storeId`, `isAdmin`, `adminId` | ✅ |
 | `profile.updated` | INFO | api | `customerId`, `changedFields` (nombres, no valores) | ✅ |
 | `profile.email.changed` | INFO | auth + api | `accountId` | ✅ |
 | `profile.password.changed` | INFO | auth | `accountId` | — |
 | `favorite_store.changed` | INFO | api | `customerId`, `previousStoreId`, `newStoreId` | — |
 
-Dos niveles que sorprenden y por qué: `stock.deleted` y `product.deleted` son **WARN**, no INFO. RF-09 distingue explícitamente "eliminar la fila de stock" de "poner el stock a 0" — es una acción destructiva y difícil de deshacer sin conocer el valor previo, y merece destacarse en el log en vez de diluirse entre los INFO.
+`product_type.updated` es el único evento que registra el valor **anterior y el nuevo** de un texto libre: renombrar un tipo cambia lo que ve todo el catálogo público (RF-13) y sin el nombre previo la línea de log no permite reconstruir qué pasó. Frente a `profile.updated`, que registra solo *qué campos* cambiaron y nunca sus valores, la diferencia es que un nombre de tipo no es dato personal.
+
+Tres niveles que sorprenden y por qué: `stock.deleted`, `product.deleted` y `product_type.deleted` son **WARN**, no INFO. RF-09 distingue explícitamente "eliminar la fila de stock" de "poner el stock a 0" — es una acción destructiva y difícil de deshacer sin conocer el valor previo, y merece destacarse en el log en vez de diluirse entre los INFO.
 
 ### Lo que NO se loguea, por ruido
 

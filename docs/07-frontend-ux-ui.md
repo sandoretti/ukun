@@ -54,6 +54,8 @@ apps/ukun-web/src/
 └── types/api.d.ts  # generado por openapi-typescript — NUNCA editar a mano
 ```
 
+`features/backoffice` cubre las pantallas de empleado y de admin: stock (RF-09), CRUD de productos con su imagen (RF-10), CRUD de tipos de producto (RF-13) y empleados (RF-11). Todo lo que sea solo de admin habla contra `/api/admin/**` (ADR-0020) y cuelga de la rama `/admin/*` del router, así que la decisión de pintar o no la entrada al back-office se toma en un sitio, con los roles que devuelve `GET /api/me` — no hay una lista de rutas privilegiadas repartida por los componentes.
+
 Nombres de carpeta y de módulo en inglés (ADR-0018), alineados con los módulos de Spring Modulith del backend (ADR-0017) donde aplica — `catalog`, `cart`, `orders`, `inventory` son el mismo concepto a ambos lados de la API. Las carpetas de `features/` no se importan entre sí directamente — si `orders` necesita algo de `cart`, ese algo sube a `shared/`. Es la misma regla que ArchUnit/Spring Modulith hace cumplir en el backend (`03-analisis-y-patrones.md`, ADR-0017), aplicada al frontend.
 
 ## Datos del servidor: TanStack Query, no `useEffect` + `fetch`

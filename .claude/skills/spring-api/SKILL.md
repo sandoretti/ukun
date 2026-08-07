@@ -53,10 +53,15 @@ Los paquetes de módulo **no se importan entre sí** salvo a través de la API p
 
 `product.sku` (`NOT NULL UNIQUE` + `CHECK` de formato desde el baseline) es el identificador de negocio que usa el empleado, no el `id` numérico interno. `store_stock` tiene PK subrogada (`id BIGSERIAL`) + `UNIQUE (product_id, store_id)` — la entidad no lleva `@EmbeddedId`. Cada línea de stock se direcciona por su propia URL: `PUT /api/stores/{storeId}/stock/{lineId}`.
 
+## Imagen de producto (RF-10)
+
+`PUT /api/admin/products/{id}/image` es la **única operación multipart del servicio**; todo lo demás es JSON. La imagen es un sub-recurso propio, no un campo del `POST`/`PUT` del producto, para que la validación de campos y la de fichero no compartan handler. Reemplazar la imagen (borrar la vieja del almacenamiento + escribir la nueva + actualizar `product.image_key`) es **una unidad con compensación** en el caso de uso, nunca pasos sueltos en el controller — el legacy borra la foto vieja antes de guardar y la pierde si el guardado falla (`docs/03-analisis-y-patrones.md` §3). El fichero se valida por su contenido real, no por la extensión, y la clave la genera el servidor: reglas completas y los `code`s `415`/`413` en `docs/08-identidad-y-seguridad.md` §9.
+
 ## Concurrencia (ver ADR-0008, ADR-0015)
 
 - Descuento de stock en checkout → `@Lock(PESSIMISTIC_WRITE)` con `ORDER BY id` antes de bloquear (columna `id` propia de `store_stock`).
 - Edición manual de stock por un empleado → `@Version` (optimista), `409 VERSION_CONFLICT` si hay conflicto.
+- Edición de producto o de tipo de producto por un admin → **último que escribe gana**, sin `@Version`. Es una decisión, no un olvido: el razonamiento y cuándo revisarla están en `docs/10-modelo-de-datos.md` §2. No añadas `@Version` a `Product` "por coherencia".
 - `CHECK (quantity >= 0)` en el changelog de Liquibase como red de seguridad final.
 
 ## Idempotencia del checkout (ver ADR-0016)
@@ -67,6 +72,7 @@ Los paquetes de módulo **no se importan entre sí** salvo a través de la API p
 
 - El servicio valida el JWT él mismo como resource server (JWKS de `ukun-auth`) — nunca confía en cabeceras inyectadas por el gateway.
 - `@PreAuthorize` para autorización por rol.
+- **Toda operación solo-`admin` va bajo `/api/admin/**`, y nada más va ahí** (ADR-0020): CRUD de productos (RF-10), CRUD de tipos de producto (RF-13) y gestión de empleados (RF-11). Un `@PreAuthorize("hasRole('ADMIN')")` en un `@RequestMapping` que no empiece por `/api/admin` es un error de sitio, no una variante de estilo. El stock (RF-09) **no** va ahí: es de cualquier empleado y su autorización es de recurso, no de rol.
 - **Autorización de recurso**: el `{storeId}` de la ruta *identifica* el recurso; **no autoriza nada**. El servicio resuelve la tienda del empleado por `account_id` y compara — si no coinciden, `403`. Lo mismo con "este pedido es mío". Nunca se acepta un identificador de la petición como prueba de pertenencia (el legacy compara `tiendaId` recibido por query param a mano y da eso por bueno — ese es el antipatrón). Ver `docs/08-identidad-y-seguridad.md` §4.
 
 ## Documentación del contrato

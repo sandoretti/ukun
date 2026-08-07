@@ -11,7 +11,7 @@ Cada documento arranca con un bloque de cuatro líneas (*fuente de verdad de · 
 | Documento | Para qué sirve |
 |---|---|
 | [`01-arquitectura.md`](./01-arquitectura.md) | Diagramas: sistema legacy, sistema objetivo, ER, secuencias de login y de checkout |
-| [`02-requisitos.md`](./02-requisitos.md) | Qué debe hacer el sistema (RF-01…RF-12), matriz de permisos, requisitos no funcionales |
+| [`02-requisitos.md`](./02-requisitos.md) | Qué debe hacer el sistema (RF-01…RF-13), matriz de permisos, requisitos no funcionales |
 | [`03-analisis-y-patrones.md`](./03-analisis-y-patrones.md) | Catálogo numerado de defectos del legacy (#1–#23), los patrones que los resuelven, reglas ArchUnit, y lo descartado por sobreingeniería |
 | [`04-roadmap.md`](./04-roadmap.md) | Línea temporal de releases (v0.1→v2.0), qué es paralelizable y qué depende de qué |
 | [`05-stack-y-versiones.md`](./05-stack-y-versiones.md) | Versión de cada tecnología y política de actualización |

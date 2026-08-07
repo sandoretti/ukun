@@ -20,8 +20,9 @@ Este documento completa `01-arquitectura.md` (que da la forma del ER objetivo) c
 | Q5 | stock de mi tienda / productos **sin** fila de stock en mi tienda | RF-09 | media |
 | Q6 | resolver `customer`/`employee` por `account_id` | `08-identidad-y-seguridad.md` §4 | **en cada petición autenticada** |
 | Q7 | "¿este producto está referenciado?" antes de borrarlo | RF-10 | baja |
+| Q8 | "¿este tipo tiene productos?" antes de borrarlo | RF-13 | baja |
 
-Todo lo que sigue está justificado por una de estas siete o por un invariante que el legacy ya rompe. Lo que no encaja en ninguna se descarta explícitamente, con su motivo.
+Todo lo que sigue está justificado por una de estas ocho o por un invariante que el legacy ya rompe. Lo que no encaja en ninguna se descarta explícitamente, con su motivo.
 
 ## 1. Convenciones transversales
 
@@ -54,6 +55,7 @@ Todo lo que sigue está justificado por una de estas siete o por un invariante q
 | `customer.name`/`last_name`, `employee.*` | `VARCHAR(100) NOT NULL` + no-vacío | `08-identidad-y-seguridad.md` §2: el perfil se queda en `ukun_app` |
 | `customer.locale` | `CHAR(2) NOT NULL DEFAULT 'es' CHECK (locale IN ('es','en'))` | ADR-0019: preferencia de idioma persistida en el perfil, con navegador como respaldo solo para anónimos |
 | `product.is_active` | `BOOLEAN NOT NULL DEFAULT true` | descatalogación lógica, ver §6 y ADR-0013 |
+| `product_type.name` | además del `UNIQUE` de arriba, es **editable** | RF-13: renombrar un tipo es una operación de negocio, y no arrastra nada — la instantánea del pedido es `order_line.product_name`, no el tipo (§5) |
 | `product.image_key` | `VARCHAR(255)` nullable | RF-10: la foto es opcional. Va con `FileStoragePort` (ADR-0017) |
 | `employee.is_admin` | `BOOLEAN NOT NULL DEFAULT false` | RF-12: el único rol real dentro de empleado |
 
@@ -83,6 +85,20 @@ CREATE TABLE card (
 | `CHECK` de coherencia provincia↔código postal | los propios datos semilla del legacy ya son incoherentes (`'Madrid'` con CP `29990`); validarlo exige una tabla de prefijos que mantener, sin requisito de negocio detrás |
 | Tabla de referencia para `employee.job_title` | cero comportamiento depende del valor |
 | Cifrado a nivel de columna (`pgcrypto`) para datos de tarjeta | no hay nada sensible que cifrar — resuelve el problema equivocado |
+| `product.version` (concurrencia optimista en la edición de producto, RF-10) | ver abajo |
+| `product_type.is_active` (descatalogación lógica de tipos) | RF-13 no la pide y `product` es el único caso donde el borrado duro es imposible en la práctica (un producto vendido no se borra nunca). Un tipo sin productos sí se borra de verdad, y uno con productos es dato en uso: dos estados, no tres |
+
+#### Por qué `product` no lleva `version` y `store_stock` sí
+
+El requisito no funcional de `02-requisitos.md` §4 pide una estrategia de concurrencia **explícita**, no que siempre sea optimista. Para la edición de producto la estrategia es *último que escribe gana*, decidida y anotada aquí:
+
+| | `store_stock` | `product` |
+|---|---|---|
+| Quién escribe | cualquier empleado, uno por tienda, sobre el mismo dato a la vez | un `admin`, sobre un catálogo global |
+| Qué se pierde en una escritura perdida | unidades de inventario: el número queda mal y **nadie lo nota** hasta que el checkout vende de más | un nombre o un precio: se ve en pantalla al recargar y se vuelve a escribir |
+| Estrategia | optimista (`version`) + pesimista en el descuento de checkout (ADR-0008) | último que escribe gana |
+
+Añadir `version` a `product` costaría una columna y un campo en cada formulario de edición para protegerse de una carrera que exige dos admins editando el mismo producto en la misma ventana de segundos, con un daño visible y reversible. Si algún día hay más de un admin trabajando a la vez de forma habitual, es un changeset de una línea (`addColumn` + `@Version`) — pero entonces habrá un motivo, que hoy no existe.
 
 ## 3. Estado del pedido
 
@@ -129,7 +145,7 @@ No cambia la intención (cubrir toda FK consultada), solo la lista. Y revela cu�
 | `ix_store_stock_store ON store_stock (store_id, product_id)` | **Q5** — `WHERE store_id = ?` (stock de mi tienda) | con la PK subrogada de ADR-0015, la `UNIQUE (product_id, store_id)` es inservible aquí porque `store_id` no es líder. Dos columnas para que sirva también al join hacia `product` y a la comprobación de FK al borrar una tienda |
 | `ix_cart_item_product ON cart_item (product_id)`, `ix_order_line_product ON order_line (product_id)` | **Q7** — RF-10 | son las FKs realmente sin índice (la segunda columna de cada PK compuesta) |
 | `ix_employee_store ON employee (store_id)` | RF-11 — listar empleados de mi tienda | FK sin índice + comprobación al borrar una tienda |
-| `ix_product_type ON product (product_type_id)` | Q1 (filtro por tipo) + FK hacia `product_type` | con 24 filas el planificador lo ignorará (seq scan), pero el argumento de integridad referencial vale con cualquier cardinalidad |
+| `ix_product_type ON product (product_type_id)` | Q1 (filtro por tipo), **Q8** (RF-13) y FK hacia `product_type` | con 24 filas el planificador lo ignorará para Q1 (seq scan), pero Q8 es un `countByProductTypeId` de igualdad exacta y la comprobación referencial de cada `DELETE FROM product_type` lo recorre igual: el índice ya está y sirve las tres cosas. **RF-13 no añade ningún índice nuevo** |
 | `ux_store_online`, `ux_product_type_name`, `ux_store_name`, `ux_store_stock`, `ux_product_sku` | ver §2 | son constraints, no optimizaciones |
 | `ux_idempotency_customer_key UNIQUE ON idempotency_key (customer_id, key)` | ADR-0016 | igualdad en ambas columnas, es la única consulta de la tabla |
 
@@ -242,19 +258,22 @@ El `init.sql` legacy no tiene **ni una sola** cláusula `ON DELETE` → todas su
 | `employee.store_id → store` | `RESTRICT` | no se cierra una tienda con gente dentro |
 | `customer.favorite_store_id → store` | `SET NULL` | la columna ya es nullable y RF-05/RF-06 la tratan como opcional |
 | `customer.address_id`, `customer.card_id`, `store.address_id` | `RESTRICT` | el borrado siempre va en la dirección contraria |
-| `product.product_type_id → product_type` | `RESTRICT` | no hay UI para borrar tipos; `RESTRICT` deja el fallo explícito si algún día la hay |
+| `product.product_type_id → product_type` | `RESTRICT` | **RF-13**: ahora sí hay UI para borrar tipos, y esta es la garantía de que un tipo con productos no desaparece. La versión anterior de esta tabla decía "si algún día la hay" — ese día es RF-13 |
 
-### Dónde se hace cumplir RF-10: en dos sitios, con papeles distintos
+### Dónde se hacen cumplir RF-10 y RF-13: en dos sitios, con papeles distintos
 
 - La **FK `RESTRICT` es la garantía**: no depende de que el servicio se acuerde, sobrevive a un `DELETE` manual desde `psql` y cierra la carrera entre comprobación y borrado.
 - La **comprobación en el caso de uso es la experiencia**. RF-10 pide "un mensaje claro" — claro significa decir cuál es la referencia, y una violación de FK solo da un `SQLState 23503`. `DeleteProductUseCase` cuenta primero (`countByProductId` sobre `order_line`, `store_stock`, `cart_item`, todos con índice — ver §4) y lanza `ProductInUseException` → `409 PRODUCT_IN_USE` (`docs/12-error-contract.md`) con `{inOrders, inStock, inCarts}`.
+- **Lo mismo, un nivel más arriba, para los tipos (RF-13)**: `DeleteProductTypeUseCase` hace `countByProductTypeId` (un solo conteo, servido por `ix_product_type`) y lanza `ProductTypeInUseException` → `409 PRODUCT_TYPE_IN_USE` con `{inProducts}`. El conteo **no** filtra por `is_active`: un tipo con solo productos descatalogados sigue siendo un tipo en uso, porque la FK también lo es.
 - Un `@ExceptionHandler(DataIntegrityViolationException.class)` traduce a `409 REFERENTIAL_INTEGRITY` cualquier `23503` que se cuele — red de seguridad, no ruta principal.
+- La unicidad de `product.sku` y de `product_type.name` sigue el mismo reparto: `ux_product_sku`/`ux_product_type_name` son la garantía, el caso de uso comprueba antes para poder decir **qué campo** choca (`409 DUPLICATE_VALUE` con `{resource, field}`), y el `23505` que se cuele cae en el mismo handler genérico.
 
 ### Borrado lógico: uno solo, y no por auditoría
 
 - **`product`: sí.** `is_active BOOLEAN NOT NULL DEFAULT true`. Con `RESTRICT`, un producto que se ha vendido alguna vez no se puede borrar nunca, así que RF-10 en la práctica significa "casi nada es borrable". La salida real de negocio es *descatalogar*: desaparece del catálogo (RF-01 filtra `WHERE is_active`) y de las pantallas de stock (RF-09), y el historial queda íntegro. El `DELETE` duro se reserva para productos nunca referenciados.
 - **`customer`/`employee`: no.** "Borrar" una cuenta es `account.enabled = false` en `ukun-auth`, columna que ya existe por diseño; un segundo flag en `ukun_app` sería una segunda fuente de verdad para lo mismo.
 - **`customer_order`: nunca se borra**, ni lógica ni físicamente. Cancelar es un `status` (§3), no un borrado.
+- **`product_type`: no.** RF-13 le da borrado real, y es viable justo porque un tipo *sin* productos no está referenciado por nada: no hay ningún caso en que el borrado sea imposible para siempre, que es lo único que justificaba el borrado lógico en `product`. Con productos, se rechaza y se reasignan.
 - **`store`**: sin requisito de borrado, sin decisión hasta que lo haya.
 
 ## 7. Convenciones de nomenclatura
