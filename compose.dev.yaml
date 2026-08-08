@@ -18,7 +18,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
     ports:
-      - "5005:5005"
+      - "${JDWP_API_PORT:-5005}:5005"
     depends_on:
       db:
         condition: service_healthy
@@ -28,7 +28,7 @@ services:
       context: ./services/ukun-auth
       dockerfile: Dockerfile.dev
     ports:
-      - "5006:5005"
+      - "${JDWP_AUTH_PORT:-5006}:5005"
     depends_on:
       db:
         condition: service_healthy
@@ -38,7 +38,7 @@ services:
       context: ./services/ukun-gateway
       dockerfile: Dockerfile.dev
     ports:
-      - "5007:5005"
+      - "${JDWP_GATEWAY_PORT:-5007}:5005"
     depends_on:
       ukun-api:
         condition: service_started

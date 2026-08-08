@@ -8,13 +8,16 @@ Tilt orquesta el stack de desarrollo vía `docker_compose()` (ADR-0005), con rei
 
 ## Qué compone el stack
 
-| Recurso | Qué es | Puerto | Desde |
-|---|---|:-:|:-:|
-| `db` | Postgres 17 con las dos bases: `ukun_app` y `ukun_auth` | 5432 | v0.1 |
-| `ukun-api` | monolito de dominio (resource server) | 8081 · JDWP 5005 | v0.2 |
-| `ukun-auth` | Authorization Server | 9000 · JDWP 5006 | v0.4 |
-| `ukun-gateway` | BFF + único punto de entrada | 8080 · JDWP 5007 | v0.5 |
-| `ukun-web` | SPA con Vite en modo dev (HMR) | 5173 | v0.1 |
+| Recurso | Qué es | Puerto | Variable | Desde |
+|---|---|:-:|:-:|:-:|
+| `db` | Postgres 17 con las dos bases: `ukun_app` y `ukun_auth` | 5432 | `DB_PORT` | v0.1 |
+| `ukun-api` | monolito de dominio (resource server) | 8081 · JDWP 5005 | `API_PORT` · `JDWP_API_PORT` | v0.2 |
+| `ukun-auth` | Authorization Server | 9000 · JDWP 5006 | `AUTH_PORT` · `JDWP_AUTH_PORT` | v0.4 |
+| `ukun-gateway` | BFF + único punto de entrada | 8080 · JDWP 5007 | `GATEWAY_PORT` · `JDWP_GATEWAY_PORT` | v0.5 |
+| `ukun-web` | SPA con Vite en modo dev (HMR) | 5173 | `WEB_PORT` | v0.1 |
+
+La columna **Puerto** es el valor por defecto: son los que se usan si no defines nada, que es el
+caso normal de un checkout único. Solo se tocan al levantar dos stacks a la vez (ver más abajo).
 
 Los monolitos legacy (`ukun-clientes`, `ukun-empleados`, `nginx`) **no forman parte de este stack**: no están en servicio y no se levantan. Sus `docker-compose*.yml` siguen en el repo como referencia hasta que se borran (`04-roadmap.md` v0.7).
 
@@ -62,7 +65,32 @@ Cada servicio Java expone su puerto JDWP (ver tabla de arriba) — conéctate de
 
 ## Resetear la base de datos
 
-Botón **`db-reset`** en la UI de Tilt (etiqueta `ops`, es manual — no se ejecuta solo). Borra el volumen de Postgres; el siguiente arranque recrea el esquema con el baseline de Liquibase y los datos demo en unos segundos. Úsalo sin miedo cuando quieras partir de datos limpios.
+Botón **`db-reset`** en la UI de Tilt (etiqueta `ops`, es manual — no se ejecuta solo). Borra el volumen de Postgres; el siguiente arranque recrea el esquema con el baseline de Liquibase y los datos demo en unos segundos. Úsalo sin miedo cuando quieras partir de datos limpios. Borra el volumen **del proyecto activo**, así que desde un worktree no toca la base del checkout principal.
+
+## Varios worktrees a la vez
+
+Dos stacks simultáneos colisionan en los puertos del host y, peor, en el nombre del proyecto de compose: con el mismo nombre, el segundo `tilt up` no levanta un stack nuevo, sino que **reutiliza los contenedores del primero**.
+
+Lo resuelve un `.env.ports` por worktree, que genera la skill `worktree` con un desplazamiento de +100 por worktree activo:
+
+```bash
+COMPOSE_PROJECT_NAME=ukun-catalog-api
+API_PORT=8181
+DB_PORT=5532
+TILT_PORT=10450
+# …el resto de variables de la tabla de arriba
+```
+
+El `Tiltfile` lo carga si existe, así que `tilt up` a secas ya hace lo correcto desde un worktree. Sin ese fichero no se lee nada y valen los puertos por defecto: un checkout único no necesita configurar nada.
+
+**`TILT_PORT` es la excepción**: el servidor HTTP de Tilt arranca antes de que se evalúe el `Tiltfile`, así que ahí llega tarde y tiene que estar exportado en el shell:
+
+```bash
+set -a; . ./.env.ports; set +a
+tilt up
+```
+
+Que es exactamente lo que hace el script de arranque que la skill deja en `.claude/session/tilt.sh`. Si lanzas `tilt up` a mano sin ese `source`, el stack sale con los puertos correctos pero la UI intentará abrirse en el 10350 del stack principal.
 
 ## Imágenes de producción
 
