@@ -392,7 +392,7 @@ class ProductCatalogIT extends AbstractIntegrationTest {
                 .jsonPath("$.paths['/api/products'].get.operationId")
                 .isEqualTo("listProducts")
                 .jsonPath("$.paths['/api/products'].get.parameters[*].name")
-                .value(names -> assertThat((List<String>) names)
+                .value((List<String> names) -> assertThat(names)
                         .containsExactlyInAnyOrder("name", "typeId", "priceMin", "priceMax", "sort", "page", "size"));
     }
 
