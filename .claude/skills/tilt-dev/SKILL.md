@@ -25,14 +25,22 @@ docker_build(
     dockerfile = '<carpeta-del-servicio>/Dockerfile.dev',
     live_update = [
         fall_back_on(['<carpeta>/pom.xml']),   # cambio de dependencias -> rebuild completo
-        sync('<carpeta>/target/classes', '/app/classes'),
-        sync('<carpeta>/target/dependency', '/app/deps'),
+        sync('<carpeta>/target/classes', '/opt/app/classes'),
+        sync('<carpeta>/target/dependency', '/opt/app/deps'),
         restart_container(),
     ],
 )
 ```
 
-La compilación (`mvn compile dependency:copy-dependencies`) ocurre en un `local_resource` o contenedor de build que produce `target/classes`/`target/dependency`, que es lo que el `sync` copia. **No se usa `spring-boot-devtools`** — motivo en `docs/06-entorno-local-tilt.md` y `docs/03-analisis-y-patrones.md` (su `RestartClassLoader` da fallos sutiles con proxies de Hibernate).
+El destino es **`/opt/app`**, que es donde los `Dockerfile.dev` colocan la aplicación — no `/app`. Equivocarse aquí no rompe nada de forma visible: el `sync` sigue funcionando y lo que deja de pasar es que los cambios se reflejen.
+
+La compilación (`mvn compile dependency:copy-dependencies`) ocurre en un `local_resource` que produce `target/classes`/`target/dependency`, que es lo que el `sync` copia. **No se usa `spring-boot-devtools`** — motivo en `docs/06-entorno-local-tilt.md` y `docs/03-analisis-y-patrones.md` (su `RestartClassLoader` da fallos sutiles con proxies de Hibernate).
+
+### El contenedor de build va como el usuario del host
+
+`mvn_build_cmd` compila dentro de un contenedor con el repo montado, y lleva `--user "$(id -u):$(id -g)"`. **No lo quites.** Sin eso, contra un daemon rootful (el de systemd, o un runner de CI) los `target/` quedan propiedad de root y el siguiente `./mvnw clean` del host falla con `Failed to delete .../target/dependency/*.jar`. Docker Desktop enmascara el fallo porque mapea el montaje al usuario del host, así que aparecería en CI y no en local.
+
+Como consecuencia, la caché de Maven es un bind mount de `~/.m2` del host y no un volumen con nombre: Docker crea el volumen como `root:root` y un contenedor no-root no puede escribir en él. Van juntos — si revives el volumen, revives el problema.
 
 ## Al añadir un servicio Java nuevo (`ukun-api`, `ukun-auth`, `ukun-gateway`)
 
