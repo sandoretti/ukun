@@ -18,17 +18,21 @@ Derivada de los 12 controllers y 11 entidades del legacy (`ukun-clientes`/`ukun-
 | Módulo | Tablas que posee | RF / casos de uso | `allowedDependencies` |
 |---|---|---|---|
 | `shared` | — | `UkunException` + jerarquía, `@RestControllerAdvice`, `Clock`, tipos comunes | módulo abierto (`type = OPEN`) |
-| `catalog` | `product`, `product_type` | RF-01 (listar, ficha), RF-10 (CRUD admin, imagen) | `storage` |
+| `catalog` | `product`, `product_type` | RF-01 (listar, ficha), RF-10 (CRUD admin, imagen) | `storage`, `shared` |
 | `stores` | `store`, `address` de tienda | RF-02, resolución de la tienda online (`is_online`) | — |
 | `storage` | — | `FileStoragePort` + adaptador (filesystem hoy, S3/MinIO en v1.1) | — |
 | `identity` | — | `AccountsPort` + adaptador HTTP a `ukun-auth`; principal del JWT | — |
-| `inventory` | `store_stock` | RF-09 (upsert/borrado por empleado, optimista), descuento en checkout (pesimista) | `catalog`, `stores` |
-| `customers` | `customer`, `address`, `card` de perfil | RF-05, RF-06 (lado datos + saga) | `stores`, `identity` |
-| `staff` | `employee` | RF-11 (alta y listado por tienda) | `stores`, `identity` |
-| `cart` | `cart_item` | RF-03 | `catalog`, `inventory`, `customers` |
-| `orders` | `customer_order`, `order_line`, `idempotency_key`, intento de checkout | RF-04 + ADR-0016 | `cart`, `inventory`, `customers`, `catalog` |
+| `inventory` | `store_stock` | RF-09 (upsert/borrado por empleado, optimista), descuento en checkout (pesimista) | `catalog`, `stores`, `shared` |
+| `customers` | `customer`, `address`, `card` de perfil | RF-05, RF-06 (lado datos + saga) | `stores`, `identity`, `shared` |
+| `staff` | `employee` | RF-11 (alta y listado por tienda) | `stores`, `identity`, `shared` |
+| `cart` | `cart_item` | RF-03 | `catalog`, `inventory`, `customers`, `shared` |
+| `orders` | `customer_order`, `order_line`, `idempotency_key`, intento de checkout | RF-04 + ADR-0016 | `cart`, `inventory`, `customers`, `catalog`, `shared` |
 
-Grafo acíclico, orden topológico: `shared` → (`catalog`, `stores`, `storage`, `identity`) → (`inventory`, `customers`, `staff`) → `cart` → `orders`. `orders` es el único módulo con cuatro dependencias declaradas, y debe serlo: es el orquestador del checkout, el caso de uso que toca más agregados a la vez.
+Grafo acíclico, orden topológico: `shared` → (`catalog`, `stores`, `storage`, `identity`) → (`inventory`, `customers`, `staff`) → `cart` → `orders`. `orders` es el único módulo con cuatro dependencias de dominio declaradas, y debe serlo: es el orquestador del checkout, el caso de uso que toca más agregados a la vez.
+
+**Por qué `shared` aparece en la columna pese a ser abierto.** La primera redacción de este ADR daba por hecho que un módulo `type = OPEN` está fuera de la comprobación y que nadie tiene que declararlo. **No es así**, comprobado contra Modulith 2.1.0 al escribir el primer módulo con código (v0.3, `catalog`): `OPEN` levanta la *encapsulación* de los subpaquetes del módulo destino —se puede importar `shared.web.PageResponse` sin publicarlo como `NamedInterface`—, pero `allowedDependencies` es una lista **cerrada**, y cualquier destino fuera de ella es una violación, `shared` incluido. El primer `import` de `PageResponse` desde `catalog` rompía `verify()` con *«Module 'catalog' depends on module 'shared'… Allowed targets: storage»*.
+
+Son dos mecanismos independientes, y conviene no confundirlos: uno decide **qué se ve** de un módulo, el otro **a quién se puede llamar**. `stores`, `storage` e `identity` no declaran lista —es decir, la tienen sin restringir— y por eso su columna sigue vacía: no necesitan nombrar a `shared` ni a nadie.
 
 **Qué NO es módulo, y por qué:** `address` y `card` no son un módulo propio — son datos sin comportamiento propio que pertenecen a `customers` y a `stores` (y en el pedido dejan de ser tablas referenciadas para pasar a columnas embebidas por ADR-0011). Convertirlos en módulo `addresses` sería una tabla compartida disfrazada de frontera de dominio. `identity` y `storage` son, al contrario, módulos **sin ninguna tabla**: existen únicamente para encapsular un puerto (`AccountsPort`, `FileStoragePort`), que es exactamente la frontera externa real que `03-analisis-y-patrones.md` §3 ya había identificado como los "dos puertos, y solo dos" de este dominio.
 

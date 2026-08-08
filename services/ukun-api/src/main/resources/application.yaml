@@ -29,6 +29,14 @@ spring:
       ddl-auto: validate
     open-in-view: false
 
+ukun:
+  catalog:
+    # Public prefix product images are served from. `product.image_key` is a storage key and is never
+    # exposed (docs/08-identidad-y-seguridad.md §9): the API composes a servable URL from it. /media/**
+    # is a public route of the gateway serving static content, deliberately not an operation of the
+    # OpenAPI contract.
+    media-base-path: /media/products/
+
 server:
   port: 8081
 

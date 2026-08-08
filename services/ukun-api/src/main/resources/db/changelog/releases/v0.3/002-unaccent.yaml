@@ -1,0 +1,31 @@
+# v0.3 — the `unaccent` extension, discovered while implementing GET /api/products.
+#
+# The baseline is complete but not clairvoyant (skill `liquibase`): it creates `citext`, which
+# docs/10-modelo-de-datos.md §2 required for the email projections, and nothing else. `unaccent`
+# is a change the *feature* discovered, which is exactly the case that earns a folder under
+# releases/ — and the baseline is not edited, because an applied changeset is immutable (rule 1).
+#
+# Why the extension is needed: defect #22, docs/03-analisis-y-patrones.md §1. Searching "sofa"
+# must find "Sofá de cuero" and "cafe" must find "Mesa de café" — the seed catalogue is full of
+# accents, so a plain LIKE silently returns nothing for half of what a customer types. The query
+# applies unaccent(lower(...)) on both sides.
+#
+# Raw `sql`, and it is one of the three cases the skill authorises: there is no change type for
+# CREATE EXTENSION. Same shape the baseline uses for citext, rollback included.
+#
+# No index comes with it, on purpose: unaccent() is STABLE rather than IMMUTABLE, so it cannot be
+# indexed without wrapping it in a function of our own, and docs/10 §4 sets a written activation
+# threshold (~5,000 rows, or the p95 of /api/products leaving its target) instead of adding one
+# just in case. Today the table holds a hundred rows.
+databaseChangeLog:
+
+  - changeSet:
+      id: 002-01-extension-unaccent
+      author: sandoretti
+      comment: unaccent extension, required by the catalogue name search (defect #22, docs/03 §1)
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS unaccent
+      rollback:
+        - sql:
+            sql: DROP EXTENSION IF EXISTS unaccent

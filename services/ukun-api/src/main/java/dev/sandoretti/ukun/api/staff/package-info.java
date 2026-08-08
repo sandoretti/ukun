@@ -6,6 +6,6 @@
  * (ADR-0017 §1).
  */
 @org.springframework.modulith.ApplicationModule(
-        allowedDependencies = {"stores", "identity"}
+        allowedDependencies = {"stores", "identity", "shared"}
 )
 package dev.sandoretti.ukun.api.staff;

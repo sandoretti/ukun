@@ -5,6 +5,6 @@
  * in batch, and resolves its owner through {@code customers} (ADR-0017 §1 and §2).
  */
 @org.springframework.modulith.ApplicationModule(
-        allowedDependencies = {"catalog", "inventory", "customers"}
+        allowedDependencies = {"catalog", "inventory", "customers", "shared"}
 )
 package dev.sandoretti.ukun.api.cart;

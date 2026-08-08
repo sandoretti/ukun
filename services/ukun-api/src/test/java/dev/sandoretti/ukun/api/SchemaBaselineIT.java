@@ -130,8 +130,12 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
 
     private static final String CHANGE_LOG = "classpath:db/changelog/db.changelog-master.yaml";
 
-    /** The nineteen changesets of {@code baseline/001-esquema-inicial.yaml}. */
-    private static final int EXPECTED_CHANGESETS = 19;
+    /**
+     * The nineteen changesets of {@code baseline/001-esquema-inicial.yaml} plus the one of
+     * {@code releases/v0.3/002-unaccent.yaml}, which carries no context and therefore applies here
+     * too. Schema is schema, whichever context is active — only data is filtered.
+     */
+    private static final int EXPECTED_CHANGESETS = 20;
 
     @Autowired
     private JdbcTemplate jdbc;
@@ -303,7 +307,7 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
      *
      * <p>It also has to be told the context: a {@code SpringLiquibase} built by hand defaults to
      * running everything, which would apply the demo changesets through the back door and push the
-     * count past nineteen — the very drift this test exists to catch.
+     * count past the expected one — the very drift this test exists to catch.
      */
     @Test
     @DisplayName("re-running the changelog against an up-to-date database applies nothing")

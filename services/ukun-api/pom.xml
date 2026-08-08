@@ -35,6 +35,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- Bean Validation. starter-web does not carry it since Boot 3, and every query parameter
+             of the catalog listing declares its bounds (docs/api/openapi/ukun-api.yaml). Without
+             it the annotations compile and are silently never enforced. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
 
         <!-- Persistence. Liquibase owns the schema of ukun_app (skill `liquibase`, rule 3):
              Hibernate never creates it, `ddl-auto: validate` only checks it. data-jpa lands
