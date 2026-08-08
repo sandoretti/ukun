@@ -1,0 +1,13 @@
+account_id,name,last_name,email,job_title,is_admin,store_id
+7f0b72e5-3d81-4fcd-8314-49746fd92424,Salvador,Otón,salvador.oton@ukun.com,Gerente,true,(SELECT id FROM store WHERE name = 'Ukun Online')
+7aa0572f-0500-4f88-9456-8d1bba447a9b,Laura,Martínez,laura.martinez@ukun.com,Vendedor,false,(SELECT id FROM store WHERE name = 'Ukun Online')
+ae64b655-cde4-45b3-a867-ad60700bf521,Carlos,López,carlos.lopez@ukun.com,Vendedor,false,(SELECT id FROM store WHERE name = 'Ukun Online')
+80fe7045-0a2e-4cd2-9f02-d996c6bc9cc4,Joel,Sandoval,joel.sandoval@ukun.com,Gerente,true,(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares')
+29f8c753-174f-43da-b204-413b0db89418,Daniel,García,daniel.garcia@ukun.com,Vendedor,false,(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares')
+8e2a8b15-8717-4ce5-83e0-137fc10bb081,Antonio,Ruiz,antonio.ruiz@ukun.com,Vendedor,false,(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares')
+5b1699d4-03d3-4520-98f0-f7206045dfc7,Miguel,Virtus,miguel.virtus@ukun.com,Gerente,true,(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz')
+e1467cb8-c2aa-41a7-906f-4f52b755eba8,Álvaro,Mazo,alvaro.mazo@ukun.com,Vendedor,false,(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz')
+0fc6a2dc-aae9-4a22-aaea-38ca5d690362,Juan,Martín,juan.martin@ukun.com,Vendedor,false,(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz')
+ec253a9c-df95-4df6-96af-91677ad987f8,Javier,Castillo,javier.castillo@ukun.com,Gerente,true,(SELECT id FROM store WHERE name = 'Ukun Barcelona')
+646bc329-05a3-4cd2-95d2-05b109d54ff9,Marcos,Rincón,marcos.rincon@ukun.com,Vendedor,false,(SELECT id FROM store WHERE name = 'Ukun Barcelona')
+1058b6c6-4925-4b76-834c-9fe7b6b021ad,David,Pérez,david.perez@ukun.com,Vendedor,false,(SELECT id FROM store WHERE name = 'Ukun Barcelona')

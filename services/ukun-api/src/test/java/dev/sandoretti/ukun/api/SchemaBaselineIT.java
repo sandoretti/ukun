@@ -36,9 +36,13 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * <p>It keeps its own container instead of extending an {@code AbstractIntegrationTest}: that class
  * belongs to the Testcontainers/ArchUnit slice (issue #11) and does not exist yet. When it lands,
  * this test folds onto it and the two annotations below go away.
+ *
+ * <p>The context is pinned to {@code prod} so this class keeps measuring what its name says: the
+ * baseline, and only the baseline. It is also the half of the demo-data slice that proves the seed
+ * data does not leak — see {@link #demoDataNeverReachesAProductionContext()}.
  */
 @Testcontainers
-@SpringBootTest
+@SpringBootTest(properties = "spring.liquibase.contexts=prod")
 class SchemaBaselineIT {
 
     @Container
@@ -280,9 +284,30 @@ class SchemaBaselineIT {
     }
 
     /**
+     * The counterpart of {@code DemoDataIT}: under the {@code prod} context the changelog creates
+     * the schema and stops there. Without an explicit {@code spring.liquibase.contexts} Liquibase
+     * runs every changeset regardless of its context, so the natural failure mode of the demo slice
+     * is a production database quietly seeded with demo customers — not a missing seed.
+     */
+    @Test
+    @DisplayName("the demo data never reaches a production context")
+    void demoDataNeverReachesAProductionContext() {
+        assertThat(countOf("product_type")).isZero();
+        assertThat(countOf("product")).isZero();
+        assertThat(countOf("store")).isZero();
+        assertThat(countOf("store_stock")).isZero();
+        assertThat(countOf("customer")).isZero();
+        assertThat(countOf("employee")).isZero();
+    }
+
+    /**
      * The second run goes through a datasource of its own. {@link SpringLiquibase} closes the
      * datasource it migrated unless told otherwise, so reusing the context's pool here would leave
      * every later test in this class without a connection.
+     *
+     * <p>It also has to be told the context: a {@code SpringLiquibase} built by hand defaults to
+     * running everything, which would apply the demo changesets through the back door and push the
+     * count past nineteen — the very drift this test exists to catch.
      */
     @Test
     @DisplayName("re-running the changelog against an up-to-date database applies nothing")
@@ -293,12 +318,17 @@ class SchemaBaselineIT {
         secondRun.setDataSource(new SimpleDriverDataSource(
                 new Driver(), POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()));
         secondRun.setChangeLog(CHANGE_LOG);
+        secondRun.setContexts("prod");
         secondRun.setResourceLoader(new DefaultResourceLoader());
         secondRun.afterPropertiesSet();
 
         assertThat(jdbc.queryForObject("SELECT count(*) FROM databasechangelog", Integer.class))
                 .isEqualTo(before)
                 .isEqualTo(EXPECTED_CHANGESETS);
+    }
+
+    private long countOf(String table) {
+        return jdbc.queryForObject("SELECT count(*) FROM " + table, Long.class);
     }
 
     /** Ordered truncation rather than {@code @DirtiesContext}, per the `testing` skill. */

@@ -1,0 +1,331 @@
+# Demo data of ukun_app. Every changeset here carries `context: demo` (skill `liquibase`, rule 2),
+# so it never runs when the active profile asks for `prod`.
+#
+# It replaces the INSERTs of the legacy database/init.sql, which only ever executed on a virgin
+# volume and therefore was no change history at all. What is reproduced is the *data* those INSERTs
+# described; their decisions are corrected here, not copied:
+#
+#   * no PAN and no CVV — `card` only stores last4, brand and expiry (docs/08 §5, PCI-DSS)
+#   * phones in E.164, because the legacy VARCHAR(9) had no room for the prefix (docs/10 §2)
+#   * a SKU per product, which the legacy schema has no column for (ADR-0015)
+#   * no password anywhere: ukun_app has no credential column. The demo accounts, hashed with
+#     BCrypt, belong to ukun-auth (ADR-0007, docs/06)
+#
+# ---------------------------------------------------------------------------------------------
+# Two things a reviewer should check first
+#
+# 1. THE ACCOUNT UUIDS BELOW ARE A CONTRACT BETWEEN TWO DATABASES. `customer.account_id` and
+#    `employee.account_id` are UUIDs with no foreign key, because they point into ukun_auth
+#    (docs/08 §1). This file is where they are decided; the account seeding of ukun-auth (v0.4,
+#    track P2) has to insert exactly these same values or every demo login resolves to nobody.
+#    ADR-0006 also applies: no UUID may appear both as a customer and as an employee. The database
+#    enforces uniqueness within each table, never across them — that part is the data's job.
+#
+# 2. Foreign keys are resolved by BUSINESS KEY, never by literal id: every primary key is an
+#    identity column and nothing here may assume which number it got. Hence `valueComputed` on
+#    `insert` and `type: COMPUTED` columns in the CSVs. `address` is the exception that needs
+#    explaining — it has no unique constraint, and 'Calle Mayor, 1' is used twice in the legacy
+#    data (the Madrid store and a customer living in Alcalá de Henares), so addresses are looked
+#    up by the (street, city) pair, which is unique among the six.
+#
+# Native change types throughout: the `liquibase` skill reserves raw `sql` for the three cases the
+# OSS engine cannot express (CHECK, partial index, CREATE EXTENSION), and seed data is not one of
+# them. `loadData` needs `usePreparedStatements: false` wherever a COMPUTED column appears —
+# a prepared statement would bind the subquery as a string literal.
+#
+# Rollbacks are explicit because neither `insert` nor `loadData` generates one. A rollback that
+# empties the table wholesale is safe here precisely because these changesets only ever exist in a
+# demo database.
+databaseChangeLog:
+
+  # Ten types, ten products each. The six from the legacy plus four that widen the catalogue
+  # without leaving the business: Estanterías, Iluminación, Mesillas de noche and Sillones y
+  # butacas. The size is deliberate — the pagination, the type filter and the price sort of v0.3
+  # (docs/04-roadmap.md) prove nothing against a handful of rows.
+  - changeSet:
+      id: demo-01-product-types
+      author: sandoretti
+      context: demo
+      comment: the ten catalogue types (RF-13)
+      changes:
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Mesas}}]}
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Sillas}}]}
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Camas}}]}
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Escritorios}}]}
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Sofás}}]}
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Decoración}}]}
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Estanterías}}]}
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Iluminación}}]}
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Mesillas de noche}}]}
+        - insert: {tableName: product_type, columns: [{column: {name: name, value: Sillones y butacas}}]}
+      rollback:
+        - delete: {tableName: product_type}
+
+  # Four store addresses and two customer addresses. Two postal codes are corrected on the way in:
+  # the legacy gives the Madrid store '29990' (which is Málaga) and the Barcelona one '56123'
+  # (which does not exist). Both pass ck_address_postal_code, so nothing would have failed — they
+  # would simply have looked broken on screen.
+  - changeSet:
+      id: demo-02-addresses
+      author: sandoretti
+      context: demo
+      comment: addresses of the four stores and the two customers (docs/10 §2)
+      changes:
+        - insert:
+            tableName: address
+            columns:
+              - column: {name: street, value: 'Calle Mayor, 1'}
+              - column: {name: city, value: Madrid}
+              - column: {name: province, value: Madrid}
+              - column: {name: postal_code, value: '28013'}
+        - insert:
+            tableName: address
+            columns:
+              - column: {name: street, value: 'Vía Complutense, 1'}
+              - column: {name: city, value: Alcalá de Henares}
+              - column: {name: province, value: Madrid}
+              - column: {name: postal_code, value: '28801'}
+        - insert:
+            tableName: address
+            columns:
+              - column: {name: street, value: 'Avenida de la Constitución, 12'}
+              - column: {name: city, value: Torrejón de Ardoz}
+              - column: {name: province, value: Madrid}
+              - column: {name: postal_code, value: '28103'}
+        - insert:
+            tableName: address
+            columns:
+              - column: {name: street, value: 'Avenida Diagonal, 4'}
+              - column: {name: city, value: Barcelona}
+              - column: {name: province, value: Barcelona}
+              - column: {name: postal_code, value: '08019'}
+        # Customer addresses. The first shares its street with the Madrid store and differs only
+        # in the city — the reason lookups below use the (street, city) pair.
+        - insert:
+            tableName: address
+            columns:
+              - column: {name: street, value: 'Calle Mayor, 1'}
+              - column: {name: city, value: Alcalá de Henares}
+              - column: {name: province, value: Madrid}
+              - column: {name: postal_code, value: '28803'}
+        - insert:
+            tableName: address
+            columns:
+              - column: {name: street, value: 'Avenida de la Constitución, 1'}
+              - column: {name: city, value: Torrejón de Ardoz}
+              - column: {name: province, value: Madrid}
+              - column: {name: postal_code, value: '28103'}
+      rollback:
+        - delete: {tableName: address}
+
+  # Exactly one store has is_online = true, and it is Ukun Online. That is not a convention here:
+  # ux_store_online (a partial unique index) rejects the second one. It is the invariant legacy
+  # defect #6 relied on while resolving the row by name inside a bean constructor.
+  # Phones are E.164 (+34...), which ck_store_phone requires and the legacy VARCHAR(9) could not
+  # hold.
+  - changeSet:
+      id: demo-03-stores
+      author: sandoretti
+      context: demo
+      comment: the four stores, only Ukun Online flagged is_online (docs/10 §2)
+      changes:
+        - insert:
+            tableName: store
+            columns:
+              - column: {name: name, value: Ukun Online}
+              - column: {name: phone, value: '+34912345670'}
+              - column: {name: is_online, valueBoolean: true}
+              - column:
+                  name: address_id
+                  valueComputed: "(SELECT id FROM address WHERE street = 'Calle Mayor, 1' AND city = 'Madrid')"
+        - insert:
+            tableName: store
+            columns:
+              - column: {name: name, value: Ukun Alcalá de Henares}
+              - column: {name: phone, value: '+34912345678'}
+              - column: {name: is_online, valueBoolean: false}
+              - column:
+                  name: address_id
+                  valueComputed: "(SELECT id FROM address WHERE street = 'Vía Complutense, 1' AND city = 'Alcalá de Henares')"
+        - insert:
+            tableName: store
+            columns:
+              - column: {name: name, value: Ukun Torrejón de Ardoz}
+              - column: {name: phone, value: '+34912345679'}
+              - column: {name: is_online, valueBoolean: false}
+              - column:
+                  name: address_id
+                  valueComputed: "(SELECT id FROM address WHERE street = 'Avenida de la Constitución, 12' AND city = 'Torrejón de Ardoz')"
+        - insert:
+            tableName: store
+            columns:
+              - column: {name: name, value: Ukun Barcelona}
+              - column: {name: phone, value: '+34934567890'}
+              - column: {name: is_online, valueBoolean: false}
+              - column:
+                  name: address_id
+                  valueComputed: "(SELECT id FROM address WHERE street = 'Avenida Diagonal, 4' AND city = 'Barcelona')"
+      rollback:
+        - delete: {tableName: store}
+
+  # 100 products, ten per type. The 24 that come from the legacy keep their original name, price,
+  # description and image; the other 76 are new.
+  # `sku` does not exist in the legacy schema (ADR-0015): it is derived from the name — accents
+  # stripped, uppercased, hyphenated — so it satisfies ck_product_sku and stays readable.
+  # `image_key` is a storage key, not a path (docs/08 §5): the API composes the servable URL. Every
+  # value points at a file that really exists under resources/uploads/, so the 24 images are reused
+  # across the products of their type.
+  - changeSet:
+      id: demo-04-products
+      author: sandoretti
+      context: demo
+      comment: 100 products, ten per type, with SKU and a real image key (ADR-0015)
+      changes:
+        - loadData:
+            tableName: product
+            file: data/products.csv
+            relativeToChangelogFile: true
+            usePreparedStatements: false
+            encoding: UTF-8
+            columns:
+              - column: {name: sku, type: STRING}
+              - column: {name: name, type: STRING}
+              - column: {name: description, type: STRING}
+              - column: {name: price, type: NUMERIC}
+              - column: {name: product_type_id, type: COMPUTED}
+              - column: {name: image_key, type: STRING}
+      rollback:
+        - delete: {tableName: product}
+
+  # Coverage decreases from the online store outwards, and the gaps are the point: RF-01 tells two
+  # situations apart — a product that is out of stock (a row with quantity = 0) and one that is not
+  # sold there at all (no row). Both have to exist in the data or the availability endpoint of v0.3
+  # gets written against a case that never occurs.
+  #
+  #   Ukun Online             90 rows — every product except the tenth of each type, which is not
+  #                                     sold online at all. The ninth of each type is out of stock.
+  #   Ukun Alcalá de Henares  70 rows — the first seven of each type
+  #   Ukun Torrejón de Ardoz  60 rows — the first six of each type
+  #   Ukun Barcelona          50 rows — the first five of each type
+  #
+  # So ten products are never available online and another ten exist at zero. Quantities fall with
+  # the price of the product and with the size of the store.
+  - changeSet:
+      id: demo-05-store-stock
+      author: sandoretti
+      context: demo
+      comment: 270 stock lines with deliberate gaps, covering both branches of RF-01
+      changes:
+        - loadData:
+            tableName: store_stock
+            file: data/store-stock.csv
+            relativeToChangelogFile: true
+            usePreparedStatements: false
+            encoding: UTF-8
+            columns:
+              - column: {name: product_id, type: COMPUTED}
+              - column: {name: store_id, type: COMPUTED}
+              - column: {name: quantity, type: NUMERIC}
+      rollback:
+        - delete: {tableName: store_stock}
+
+  # The legacy stores the full card number and the CVV in plaintext; storing the CVV is a hard
+  # PCI-DSS violation and the fix is that neither column exists (docs/08 §5). '1234567890123456'
+  # becomes last4 '3456' and nothing else. The expiry is also moved forward: the legacy card
+  # expired in 2025, which today would make every demo checkout fail for the wrong reason.
+  - changeSet:
+      id: demo-06-cards
+      author: sandoretti
+      context: demo
+      comment: payment methods of the two customers, masked — no PAN, no CVV (docs/08 §5)
+      changes:
+        - insert:
+            tableName: card
+            columns:
+              - column: {name: last4, value: '3456'}
+              - column: {name: brand, value: VISA}
+              - column: {name: exp_month, valueNumeric: 12}
+              - column: {name: exp_year, valueNumeric: 2030}
+        - insert:
+            tableName: card
+            columns:
+              - column: {name: last4, value: '4567'}
+              - column: {name: brand, value: MASTERCARD}
+              - column: {name: exp_month, valueNumeric: 11}
+              - column: {name: exp_year, valueNumeric: 2031}
+      rollback:
+        - delete: {tableName: card}
+
+  # The two account_id values here, and the twelve in data/employees.csv, are the contract with
+  # ukun_auth described at the top of this file. They are literal on purpose: a gen_random_uuid()
+  # would produce a different account on every db-reset and nothing in ukun-auth could match it.
+  # `email` is a read projection, not the source of truth — it is CITEXT and deliberately not
+  # unique (docs/10 §2, docs/08 §2). `locale` is 'es' (ADR-0019).
+  # These customers deliberately have no orders: no cart_item, no customer_order, no order_line,
+  # no idempotency_key. Those tables are populated by the checkout of v0.6, not by seed data.
+  - changeSet:
+      id: demo-07-customers
+      author: sandoretti
+      context: demo
+      comment: two customers with a literal account_id and no order history (docs/08 §1, ADR-0006)
+      changes:
+        - insert:
+            tableName: customer
+            columns:
+              - column: {name: account_id, value: 229b3f0d-771d-4052-b5d6-bc35276e17af}
+              - column: {name: name, value: Joel}
+              - column: {name: last_name, value: Sandoval}
+              - column: {name: email, value: joel.sandoval@email.com}
+              - column: {name: locale, value: es}
+              - column:
+                  name: address_id
+                  valueComputed: "(SELECT id FROM address WHERE street = 'Calle Mayor, 1' AND city = 'Alcalá de Henares')"
+              - column: {name: card_id, valueComputed: "(SELECT id FROM card WHERE last4 = '3456')"}
+              - column:
+                  name: favorite_store_id
+                  valueComputed: "(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares')"
+        - insert:
+            tableName: customer
+            columns:
+              - column: {name: account_id, value: 32eea2ae-79d5-4fe5-9efd-2a123d8daded}
+              - column: {name: name, value: Carmen}
+              - column: {name: last_name, value: Amoretti}
+              - column: {name: email, value: carmen.amoretti@email.com}
+              - column: {name: locale, value: es}
+              - column:
+                  name: address_id
+                  valueComputed: "(SELECT id FROM address WHERE street = 'Avenida de la Constitución, 1' AND city = 'Torrejón de Ardoz')"
+              - column: {name: card_id, valueComputed: "(SELECT id FROM card WHERE last4 = '4567')"}
+              - column:
+                  name: favorite_store_id
+                  valueComputed: "(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz')"
+      rollback:
+        - delete: {tableName: customer}
+
+  # Twelve employees, three per store, the four managers flagged is_admin (RF-12). `job_title` is
+  # a label and nothing depends on its value — the only real role inside employee is that flag
+  # (docs/10 §2).
+  # Note that joel.sandoval@ukun.com (employee) and joel.sandoval@email.com (customer) are two
+  # different accounts with two different UUIDs, which is what ADR-0006 requires.
+  - changeSet:
+      id: demo-08-employees
+      author: sandoretti
+      context: demo
+      comment: twelve employees, four of them admin, three per store (RF-12)
+      changes:
+        - loadData:
+            tableName: employee
+            file: data/employees.csv
+            relativeToChangelogFile: true
+            usePreparedStatements: false
+            encoding: UTF-8
+            columns:
+              - column: {name: account_id, type: UUID}
+              - column: {name: name, type: STRING}
+              - column: {name: last_name, type: STRING}
+              - column: {name: email, type: STRING}
+              - column: {name: job_title, type: STRING}
+              - column: {name: is_admin, type: BOOLEAN}
+              - column: {name: store_id, type: COMPUTED}
+      rollback:
+        - delete: {tableName: employee}

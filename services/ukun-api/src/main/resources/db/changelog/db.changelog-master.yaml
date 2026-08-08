@@ -10,3 +10,6 @@ databaseChangeLog:
   - include:
       file: baseline/001-esquema-inicial.yaml
       relativeToChangelogFile: true
+  - include:
+      file: demo/001-datos-demo.yaml
+      relativeToChangelogFile: true
