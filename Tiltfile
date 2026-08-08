@@ -12,8 +12,22 @@ dc_resource('db', labels=['data'])
 def mvn_build_cmd(module):
     return (
         'docker run --rm ' +
+        # Sin --user el contenedor compila como root sobre el bind mount del repo, y contra un
+        # daemon rootful (systemd, un runner de CI) deja services/*/target propiedad de root:
+        # el siguiente ./mvnw clean del host muere con "Failed to delete target/dependency/*.jar".
+        # Docker Desktop lo enmascara porque mapea el montaje al usuario del host, así que el
+        # fallo aparecería directamente en CI. Mismo principio que los Dockerfiles de producción
+        # (docs/06-entorno-local-tilt.md, "usuario no root").
+        '--user "$(id -u):$(id -g)" ' +
         '-v "$(pwd)":/opt/app ' +
-        '-v ukun_m2:/root/.m2 ' +
+        # La caché de Maven es el ~/.m2 del host y no un volumen con nombre: Docker crea el
+        # volumen como root:root y un contenedor no-root no puede escribir en él. De paso, las
+        # compilaciones de Tilt y las del host comparten caché en vez de duplicar descargas.
+        # HOME hace falta porque el uid del host no existe en /etc/passwd de la imagen, así que
+        # ni el wrapper de Maven ni la JVM sabrían dónde está el home sin decírselo.
+        '-e HOME=/var/maven ' +
+        '-e MAVEN_OPTS=-Duser.home=/var/maven ' +
+        '-v "$HOME/.m2":/var/maven/.m2 ' +
         '-w /opt/app ' +
         'eclipse-temurin:25-jdk-jammy ' +
         './mvnw -q -T1C -DskipTests compile dependency:copy-dependencies -pl {module} -am'
