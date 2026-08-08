@@ -23,6 +23,10 @@ Es el único punto de entrada del sistema desde el navegador, sustituyendo a `ng
 8. **Cookie de sesión con `SameSite=Lax` y `Secure`** en cualquier entorno servido por HTTPS (todos salvo `tilt up` local), además del `HttpOnly` ya fijado en ADR-0003.
 9. **Propaga `traceparent`** hacia `ukun-api`/`ukun-auth` (Micrometer Tracing, desde v0.5) — es el único servicio que ve la petición completa del navegador, sin su span la saga de signup no se puede correlacionar. Ver `docs/11-observabilidad-y-logging.md` §5.
 
+## Skills externas de apoyo
+
+`java-springboot` y `springboot-patterns` (ver `.claude/skills/README.md`) están escritas para un servicio Spring MVC con dominio propio, no para un BFF reactivo: sus ejemplos de controller, repositorio y capa de servicio **no aplican aquí** — ver "Qué no construir aquí". Lo único directamente aprovechable es su aviso de no leer `X-Forwarded-For` sin un proxy de confianza configurado, que es exactamente la clase de política transversal que sí vive en este servicio. Su `RateLimitFilter` con Bucket4j queda para v1.0 (regla de `docs/04-roadmap.md`), no se adelanta.
+
 ## Qué no construir aquí
 
 Lógica de negocio de ningún tipo. Este servicio enruta, autentica y aplica políticas transversales (CORS ya no aplica al ser mismo origen, rate limiting en v1.0) — cualquier regla de dominio (disponibilidad de stock, cálculo de totales, autorización sobre un recurso concreto) vive en `ukun-api`.

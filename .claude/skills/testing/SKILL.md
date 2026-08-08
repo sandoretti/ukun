@@ -30,6 +30,15 @@ Este documento resume `docs/13-testing.md` — léelo entero si vas a diseñar l
 - Un test por estado de la trilogía carga/vacío/error de `shared/ui/`.
 - Test de paridad de claves `es/*.json` ↔ `en/*.json`, y de que todo `code` de `docs/12-error-contract.md` tiene entrada en `errors.json` de ambos idiomas (ADR-0019).
 
+## Skill externa de apoyo: `spring-boot-test-patterns`
+
+Instalada desde skills.sh (ver `.claude/skills/README.md`). Su tabla de qué slice usar por capa, los objetivos de tiempo por tipo de test, el rechazo de `@DirtiesContext` y el aviso sobre `@TestPropertySource` coinciden con lo de arriba y son útiles. **Pero asume Spring Boot 3.x**, así que dos cosas suyas ni siquiera compilan aquí:
+
+- `@MockBean` → **eliminado en Spring Boot 4**. Usa `@MockitoBean`/`@MockitoSpyBean` (`org.springframework.test.context.bean.override.mockito`).
+- `org.testcontainers:junit-jupiter:1.19.0` con `<version>` a mano → Testcontainers 2.x lo gestiona `spring-boot-dependencies`, y el paquete es `org.testcontainers.postgresql`.
+
+Y tres donde este repo ya decidió lo contrario: `@Testcontainers`/`@Container` (aquí el ciclo de vida es del inicializador estático de `AbstractIntegrationTest`), `@ServiceConnection` por encima de `@DynamicPropertySource` (aquí al revés, porque hacen falta dos bases en un contenedor), y `postgres:16-alpine` (aquí 17). Tabla completa en `.claude/skills/README.md`.
+
 ## CI
 
 `surefire` y Vitest en cada push · `failsafe` (Testcontainers) y Playwright (los tres recorridos de `03` §3) antes de merge · Jacoco informativo en todo el backend, **umbral obligatorio solo en `orders` e `inventory`** · sin umbral global de cobertura.

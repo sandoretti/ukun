@@ -54,3 +54,7 @@ Los datos actuales son desechables (ADR-0007): no hay migración de `cuenta` leg
 ## Testing y verificación de módulos
 
 `ApplicationModules.verify()` (`docs/14-modules.md`) desde el skeleton. Convenciones de test (AssertJ, object mothers, Testcontainers singleton): skill `testing` y `docs/13-testing.md`.
+
+## Skills externas de apoyo
+
+`java-springboot` y `springboot-patterns` (ver `.claude/skills/README.md`) valen como repaso general de Spring Boot, pero **esta skill y `docs/08-identidad-y-seguridad.md` mandan sobre ellas**. En concreto: ninguna de las dos conoce la saga de signup en dos pasos (regla 4), la frontera de qué datos viven aquí y cuáles en `ukun-api` (ADR-0004), ni la prohibición de meter `storeId` en un claim (regla 8). Su consejo genérico de "usa BCrypt" sí coincide con la regla 1. Conflictos completos en `.claude/skills/README.md`.
