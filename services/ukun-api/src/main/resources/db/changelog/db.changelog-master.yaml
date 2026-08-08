@@ -1,0 +1,12 @@
+# Changelog master of ukun_app. Each service with its own database owns its own master
+# (skill `liquibase`, rule 6): there is nothing shared with ukun-auth, they are different
+# databases with different change histories.
+#
+# Order is the execution order and never changes. `baseline/` is the complete schema, applied
+# once to an empty database; `releases/vX.Y/` only appears if implementing a feature *discovers*
+# a change (docs/10-modelo-de-datos.md §8); `demo/` carries `context: demo` data and never runs
+# in production.
+databaseChangeLog:
+  - include:
+      file: baseline/001-esquema-inicial.yaml
+      relativeToChangelogFile: true
