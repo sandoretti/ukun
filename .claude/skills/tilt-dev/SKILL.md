@@ -49,6 +49,8 @@ Como consecuencia, la caché de Maven es un bind mount de `~/.m2` del host y no 
 3. Etiqueta el recurso (`labels=['backend']`) para que aparezca agrupado en la UI.
 4. Expón su puerto de debug JDWP en `compose.dev.yaml` (`ukun-api` 5005, `ukun-auth` 5006, `ukun-gateway` 5007 — tabla completa en `docs/06-entorno-local-tilt.md`).
 
+Todo puerto publicado va **parametrizado con su valor actual como default**, nunca literal — `"${JDWP_API_PORT:-5005}:5005"`. Solo el lado host: el lado contenedor se queda fijo, porque la comunicación interna (`db:5432`, `ukun-api:8081`) no se mueve entre worktrees. Un literal nuevo rompe el aislamiento del apartado de abajo sin que nadie se entere hasta que dos stacks chocan.
+
 ## Al añadir `apps/ukun-web`
 
 El `live_update` **no lleva `restart_container()`** — Vite hace HMR real sobre los ficheros sincronizados (~150ms). Sí lleva un `run('npm ci', trigger=['package.json'])` para cuando cambian dependencias.
@@ -80,4 +82,10 @@ Mismo patrón que `db-reset`: un `local_resource` (o un `link` de recurso, si Ti
 
 ## Dos stacks a la vez (worktrees en paralelo)
 
-Si hay dos worktrees activos, el segundo necesita puertos distintos o los contenedores colisionan. Lo resuelve la skill `worktree`, que genera un `.env.ports` por worktree; el `Tiltfile` lee esas variables en vez de puertos literales.
+Si hay dos worktrees activos, el segundo necesita puertos distintos o los contenedores colisionan. Lo resuelve la skill `worktree`, que genera un `.env.ports` por worktree; el `Tiltfile` lo carga si existe y compone con él tanto los puertos como el `project_name`.
+
+Tres cosas que hay que respetar al tocar esta parte:
+
+- **Tilt no tiene builtin de `dotenv`** (probado en 0.37.6: `undefined: dotenv`). El `Tiltfile` parsea el fichero a mano y llama a `os.putenv`, que sí llega a tiempo a la interpolación de `${VAR}` de los ficheros de compose.
+- **El `project_name` no puede ser literal.** Con el mismo nombre, el segundo `tilt up` reutiliza los contenedores del primero en vez de levantar un stack nuevo. Y como el volumen real es `<proyecto>_db_data`, un `db-reset` con el nombre fijo borra la base del otro stack — era el caso antes de parametrizarlo.
+- **`TILT_PORT` no se resuelve desde el `Tiltfile`**: el servidor HTTP arranca antes de evaluarlo. Va exportado en el shell.

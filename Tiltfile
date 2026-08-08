@@ -3,7 +3,29 @@
 # Entorno de desarrollo local de Ukun. Ver docs/06-entorno-local-tilt.md para el manual
 # de uso y docs/adr/0005-tilt-sobre-docker-compose.md para por qué está montado así.
 
-docker_compose(['compose.yaml', 'compose.dev.yaml'], project_name='ukun')
+# Puertos y nombre de proyecto por worktree. `.env.ports` lo genera la skill `worktree` para
+# que dos stacks convivan (desplazamiento +100 por worktree); si no existe, los ficheros de
+# compose caen a sus valores base y el comportamiento es el de un checkout único.
+#
+# Se parsea a mano porque Tilt no tiene builtin de dotenv: `os.putenv` sí llega a tiempo a la
+# interpolación de ${VAR} de los ficheros de compose, que es lo que se necesita aquí.
+#
+# TILT_PORT es la excepción y no se puede resolver desde aquí: el servidor HTTP de Tilt arranca
+# ANTES de evaluar este fichero, así que tiene que venir ya exportado del shell. Por eso el
+# script de arranque de la skill hace `set -a; . ./.env.ports; set +a` antes de `tilt up`.
+def load_env_file(path):
+    for line in str(read_file(path)).splitlines():
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            key, value = line.split('=', 1)
+            os.putenv(key.strip(), value.strip().strip('"').strip("'"))
+
+if os.path.exists('.env.ports'):
+    load_env_file('.env.ports')
+
+project_name = os.getenv('COMPOSE_PROJECT_NAME', 'ukun')
+
+docker_compose(['compose.yaml', 'compose.dev.yaml'], project_name=project_name)
 
 dc_resource('db', labels=['data'])
 
@@ -110,13 +132,15 @@ dc_resource('ukun-web', labels=['frontend'])
 # ---------------------------------------------------------------------------
 # Operaciones manuales y recursos UI.
 
+# El nombre del proyecto va compuesto, no literal: el volumen real es <proyecto>_db_data, así que
+# con `-p ukun` fijo este recurso borraba la base del checkout principal al lanzarlo desde un worktree.
 local_resource(
     name='db-reset',
     cmd=(
-        'docker compose -p ukun -f compose.yaml -f compose.dev.yaml stop db && ' +
-        'docker compose -p ukun -f compose.yaml -f compose.dev.yaml rm -f db && ' +
-        'docker volume rm ukun_db_data'
-    ),
+        'docker compose -p {p} -f compose.yaml -f compose.dev.yaml stop db && ' +
+        'docker compose -p {p} -f compose.yaml -f compose.dev.yaml rm -f db && ' +
+        'docker volume rm {p}_db_data'
+    ).format(p=project_name),
     trigger_mode=TRIGGER_MODE_MANUAL,
     auto_init=False,
     labels=['ops'],
@@ -124,7 +148,11 @@ local_resource(
 
 local_resource(
     name='swagger-ui',
-    cmd='echo "Abriendo Swagger UI..." && (xdg-open "http://localhost:8081/swagger-ui.html" || open "http://localhost:8081/swagger-ui.html" || true)',
+    cmd=(
+        'echo "Abriendo Swagger UI..." && ' +
+        '(xdg-open "http://localhost:{port}/swagger-ui.html" || ' +
+        'open "http://localhost:{port}/swagger-ui.html" || true)'
+    ).format(port=os.getenv('API_PORT', '8081')),
     trigger_mode=TRIGGER_MODE_MANUAL,
     auto_init=False,
     labels=['ops'],

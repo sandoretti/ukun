@@ -18,5 +18,10 @@ dist/
 # Claude Code: las skills y CLAUDE.md sí se versionan; los ajustes locales no
 .claude/settings.local.json
 
+# Estado local de cada worktree (skill `worktree`): el encargo de la slice y los
+# scripts de arranque de sus pestañas de Konsole. Se regeneran, no se comparten.
+.claude/ENCARGO.md
+.claude/session/
+
 # Tilt
 tilt_modules/

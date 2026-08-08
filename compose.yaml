@@ -10,7 +10,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
 
   ukun-api:
     image: ukun/api:dev
@@ -18,7 +18,7 @@ services:
       context: ./services/ukun-api
       dockerfile: Dockerfile
     ports:
-      - "8081:8081"
+      - "${API_PORT:-8081}:8081"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
@@ -32,7 +32,7 @@ services:
       context: ./services/ukun-auth
       dockerfile: Dockerfile
     ports:
-      - "9000:9000"
+      - "${AUTH_PORT:-9000}:9000"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/ukun_auth
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
@@ -46,7 +46,7 @@ services:
       context: ./services/ukun-gateway
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "${GATEWAY_PORT:-8080}:8080"
     depends_on:
       - ukun-api
       - ukun-auth
@@ -57,7 +57,7 @@ services:
       context: ./apps/ukun-web
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
+      - "${WEB_PORT:-5173}:5173"
 
 volumes:
   db_data:
