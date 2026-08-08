@@ -18,6 +18,7 @@ Este documento resume `docs/13-testing.md` — léelo entero si vas a diseñar l
 - Mocks **solo en fronteras**: `AccountsPort`, `FileStoragePort`, `Clock`. Nunca un repositorio JPA en un test que verifica SQL o transacciones — eso va contra Testcontainers.
 - `Clock` inyectado en producción, `Clock.fixed(...)` en test.
 - Testcontainers **singleton reutilizado** vía `AbstractIntegrationTest` + `@ServiceConnection`; limpieza por truncado ordenado, nunca `@DirtiesContext`. Nunca H2, ni como dependencia de test.
+- Si dos clases necesitan **estados de base incompatibles** (contexto `prod` vs `demo` de Liquibase), una base por estado **dentro del mismo contenedor**, elegida con `@DynamicPropertySource` — `@ServiceConnection` no permite cambiar de base. Nunca un contenedor por clase, y nunca dejar que el orden de ejecución decida qué ve cada test.
 - Prohibidos: `Thread.sleep` (usa Awaitility), `@SpringBootTest` cuando basta `@WebMvcTest`/`@DataJpaTest`, aserciones sobre el texto literal de un log.
 - Test de conteo de sentencias (Hibernate `Statistics`/`datasource-proxy`) para todo listado que deba estar libre de N+1 (`03-analisis-y-patrones.md` §2) y para el cruce `inventory`→`catalog` (`docs/14-modules.md` §3).
 

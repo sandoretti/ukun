@@ -43,7 +43,9 @@ Se mockean únicamente los puertos que cruzan un límite externo real: `Accounts
 `Clock` se inyecta en producción (nunca `LocalDateTime.now()`/`Instant.now()` sueltos en código de dominio) y se fija con `Clock.fixed(...)` en test — necesario para el TTL de 30 minutos del intento de checkout (ADR-0016) y para cualquier lógica de expiración.
 
 ### Testcontainers
-Contenedor Postgres **singleton, reutilizado entre clases** vía una `AbstractIntegrationTest` con `@ServiceConnection` (Boot 4, dos líneas de configuración) — nunca un contenedor por clase de test, que multiplica el tiempo de build sin ganar aislamiento real. Limpieza de datos entre tests por truncado ordenado de tablas (respetando FK), nunca `@DirtiesContext` (recrea el contexto de Spring entero por test, coste desproporcionado).
+Contenedor Postgres **singleton, reutilizado entre clases** vía una `AbstractIntegrationTest` con `@ServiceConnection` (Boot 4, dos líneas de configuración) — nunca un contenedor por clase de test, que multiplica el tiempo de build sin ganar aislamiento real.
+
+Excepción cuando dos clases necesitan **estados de base incompatibles** — hoy, el contexto `prod` de Liquibase (esquema a secas) y el `demo` (esquema más datos sembrados). Ahí el singleton se mantiene y lo que cambia es el mecanismo: una base por estado dentro del mismo contenedor, elegida con `@DynamicPropertySource`, porque `@ServiceConnection` fija la base del contenedor y no admite otra. Lo que **no** es aceptable es resolverlo con un contenedor por clase, ni dejar que el orden de ejecución decida qué afirma cada test. Limpieza de datos entre tests por truncado ordenado de tablas (respetando FK), nunca `@DirtiesContext` (recrea el contexto de Spring entero por test, coste desproporcionado).
 
 Nunca H2, tampoco como dependencia transitoria de test — `03-analisis-y-patrones.md` §3 ya explica por qué (claves compuestas con `@MapsId`, `Specification` dinámicas y `SELECT ... FOR UPDATE` no se comportan igual).
 
