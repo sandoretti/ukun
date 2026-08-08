@@ -8,11 +8,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 /**
  * The demo dataset applied to an empty database, which is the criterion issue #10 states: under the
@@ -26,19 +24,19 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * account UUID is shared between a customer and an employee: ADR-0006 makes the two roles mutually
  * exclusive, and the database enforces uniqueness inside each table but never across them.
  *
- * <p>It keeps its own container for the same reason as {@link SchemaBaselineIT}: the shared
- * {@code AbstractIntegrationTest} belongs to issue #11 and does not exist yet.
- *
- * <p>Nothing is truncated here. Unlike {@code SchemaBaselineIT} this class writes no rows — the
- * seed data is exactly what it reads.
+ * <p>Nothing is truncated here. Unlike {@link SchemaBaselineIT} this class writes no rows — the
+ * seed data is exactly what it reads. That is also why it can share the seeded database of
+ * {@link AbstractIntegrationTest} with {@link StackValidationIT}: both only read, and both need
+ * the same twenty-seven changesets applied, so whichever context boots first migrates and the
+ * other finds nothing left to do.
  */
-@Testcontainers
 @SpringBootTest(properties = "spring.liquibase.contexts=demo")
-class DemoDataIT {
+class DemoDataIT extends AbstractIntegrationTest {
 
-    @Container
-    @ServiceConnection
-    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        useDatabase(registry, SEEDED_DATABASE);
+    }
 
     /** Ten types of ten products each: enough for the pagination and type filter of v0.3. */
     private static final List<String> EXPECTED_TYPES = List.of(

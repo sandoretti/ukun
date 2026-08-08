@@ -129,6 +129,14 @@
             <artifactId>spring-modulith-docs</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- The seven rules of docs/03-analisis-y-patrones.md §3 that Modulith does not cover:
+             it knows nothing about @Data on an entity, Double for money, or an entity handed to
+             log.*(...). See ADR-0017, "Qué reemplaza y qué no". -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

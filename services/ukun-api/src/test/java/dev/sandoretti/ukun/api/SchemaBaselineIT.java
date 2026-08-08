@@ -13,14 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.postgresql.Driver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 /**
  * The ukun_app baseline applied to an empty database, which is the criterion issue #9 states and the
@@ -33,21 +31,19 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * because the legacy broke them: the shared address of defect #19, the single online store of defect
  * #6, and the orders with total 0 that RF-04 documents.
  *
- * <p>It keeps its own container instead of extending an {@code AbstractIntegrationTest}: that class
- * belongs to the Testcontainers/ArchUnit slice (issue #11) and does not exist yet. When it lands,
- * this test folds onto it and the two annotations below go away.
- *
  * <p>The context is pinned to {@code prod} so this class keeps measuring what its name says: the
  * baseline, and only the baseline. It is also the half of the demo-data slice that proves the seed
- * data does not leak — see {@link #demoDataNeverReachesAProductionContext()}.
+ * data does not leak — see {@link #demoDataNeverReachesAProductionContext()}. That is why it takes
+ * the schema-only database of {@link AbstractIntegrationTest} rather than the seeded one: no demo
+ * changeset ever runs against it, whichever order the classes of this suite execute in.
  */
-@Testcontainers
 @SpringBootTest(properties = "spring.liquibase.contexts=prod")
-class SchemaBaselineIT {
+class SchemaBaselineIT extends AbstractIntegrationTest {
 
-    @Container
-    @ServiceConnection
-    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        useDatabase(registry, SCHEMA_ONLY_DATABASE);
+    }
 
     /** docs/10-modelo-de-datos.md §8. Thirteen, and the baseline creates all of them at once. */
     private static final List<String> EXPECTED_TABLES = List.of(
@@ -315,8 +311,8 @@ class SchemaBaselineIT {
         Integer before = jdbc.queryForObject("SELECT count(*) FROM databasechangelog", Integer.class);
 
         SpringLiquibase secondRun = new SpringLiquibase();
-        secondRun.setDataSource(new SimpleDriverDataSource(
-                new Driver(), POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()));
+        secondRun.setDataSource(
+                new SimpleDriverDataSource(new Driver(), jdbcUrlOf(SCHEMA_ONLY_DATABASE), username(), password()));
         secondRun.setChangeLog(CHANGE_LOG);
         secondRun.setContexts("prod");
         secondRun.setResourceLoader(new DefaultResourceLoader());

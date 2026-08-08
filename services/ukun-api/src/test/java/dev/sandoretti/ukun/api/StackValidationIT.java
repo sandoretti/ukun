@@ -6,12 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
  * Day-one stack validation required by docs/05-stack-y-versiones.md (Lombok row): prove that
@@ -25,19 +23,23 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * <p>If Lombok ever stops working here, docs/05 has already decided the outcome: drop Lombok in
  * favour of records and explicit accessors — do not work around it.
  */
-@Testcontainers
 @ActiveProfiles("dev")
 @AutoConfigureRestTestClient
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class StackValidationIT {
+class StackValidationIT extends AbstractIntegrationTest {
 
     /**
-     * {@code @ServiceConnection} became mandatory here the moment the ukun_app baseline added JPA and
-     * Liquibase: with a datasource on the classpath and no URL, the context no longer starts at all.
+     * A datasource became mandatory here the moment the ukun_app baseline added JPA and Liquibase:
+     * with one on the classpath and no URL, the context no longer starts at all.
+     *
+     * <p>It is the seeded database because the {@code dev} profile this class needs for springdoc
+     * also sets {@code spring.liquibase.contexts=demo} in {@code application.yaml} — the two travel
+     * together, so it shares a database with {@link DemoDataIT} rather than migrating a third one.
      */
-    @Container
-    @ServiceConnection
-    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
+    @DynamicPropertySource
+    static void database(DynamicPropertyRegistry registry) {
+        useDatabase(registry, SEEDED_DATABASE);
+    }
 
     @Autowired
     private ProbeMapper mapper;
@@ -70,8 +72,8 @@ class StackValidationIT {
 
     @Test
     void testcontainersStartsPostgres() {
-        assertThat(POSTGRES.isRunning()).isTrue();
-        assertThat(POSTGRES.getJdbcUrl()).startsWith("jdbc:postgresql://");
+        assertThat(postgres().isRunning()).isTrue();
+        assertThat(jdbcUrlOf(SEEDED_DATABASE)).startsWith("jdbc:postgresql://");
     }
 
     @Test
