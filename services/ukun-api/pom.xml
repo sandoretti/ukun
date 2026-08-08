@@ -5,9 +5,10 @@
   dependency graph on every build. Business code lands from v0.3 onwards.
 
   No <version> is declared for any dependency or plugin: everything comes from ../../pom.xml.
-  No JPA and no Security yet — the Liquibase baseline of ukun_app is a separate slice; without a
-  datasource the context would not start, and an unconfigured Security would stop
-  /actuator/health from answering 200.
+  As of the ukun_app baseline it also carries JPA + Liquibase + the Postgres driver, so the
+  context now needs a datasource to start. Still no Security: unconfigured, it would stop
+  /actuator/health from answering 200. There are no entities yet either — JPA is wiring for
+  v0.3, and `ddl-auto: validate` keeps schema authorship with Liquibase.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -33,6 +34,27 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Persistence. Liquibase owns the schema of ukun_app (skill `liquibase`, rule 3):
+             Hibernate never creates it, `ddl-auto: validate` only checks it. data-jpa lands
+             here rather than plain starter-jdbc so v0.3 can add its first entity without
+             touching this file again — there are no entities yet. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <!-- Boot 4 split autoconfiguration into one module per technology: liquibase-core alone
+             brings the engine but not the auto-configuration, so the changelog would never run.
+             This artifact carries both. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-liquibase</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Swagger UI for manual exploration only. The versioned contract in
@@ -76,6 +98,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-resttestclient</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- @ServiceConnection: points the context's datasource at the container without a
+             @DynamicPropertySource block (docs/13-testing.md). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

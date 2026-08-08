@@ -2,6 +2,28 @@ spring:
   application:
     name: ukun-api
 
+  # Credentials come from the environment (compose.yaml injects SPRING_DATASOURCE_*); there is no
+  # default here on purpose, so a misconfigured deployment fails at startup instead of silently
+  # pointing somewhere else.
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  # Liquibase owns the schema of ukun_app. No DDL in Postgres startup scripts: those only create
+  # empty databases (skill `liquibase`, rule 3) — that is exactly what the legacy database/init.sql
+  # got wrong, since it only ever runs on a virgin volume and is therefore no change history.
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  jpa:
+    hibernate:
+      # `validate`, never `create`/`update`: Hibernate checks the schema Liquibase created and
+      # never authors it. There are no entities yet, so today it validates nothing — the setting
+      # is here so the first entity of v0.3 is checked against the baseline from its first run.
+      ddl-auto: validate
+    open-in-view: false
+
 server:
   port: 8081
 

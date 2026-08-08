@@ -1,0 +1,829 @@
+# Complete baseline of ukun_app (docs/10-modelo-de-datos.md §8, skill `liquibase`).
+#
+# It is complete, not incremental: there is no legacy reader to break and no data to preserve
+# (ADR-0007), so every type, CHECK, UNIQUE, index and ON DELETE lands in its final shape here.
+# There is no renameTable/renameColumn anywhere and never will be — the schema is born in
+# English (ADR-0018).
+#
+# Source of every decision below is docs/10-modelo-de-datos.md: §1 cross-cutting conventions,
+# §2 types and constraints column by column, §3 order status, §4 indexes (each one justified by
+# the query that motivates it), §5 the order snapshots, §6 the ON DELETE policy, §7 naming.
+#
+# ---------------------------------------------------------------------------------------------
+# Why the changesets are grouped the way they are
+#
+# Native YAML change types are used for everything the engine actually supports, and the file is
+# grouped to mirror the document a human reviews it against: tables (§2), unique constraints
+# (§2), CHECKs (§1 and §2), foreign keys (§6), indexes (§4).
+#
+# Raw `sql` appears in exactly three places, and only because liquibase-core (OSS) cannot express
+# them — verified against 5.0.3, not assumed:
+#
+#   * CHECK constraints. `AddCheckConstraintChange` is Liquibase Pro. The `checkConstraint`
+#     attribute of `constraints:` does exist in OSS, but it never reaches CreateTableStatement:
+#     the changeset validates, applies, reports success — and the constraint is simply absent
+#     from the database. A silently dropped CHECK is precisely the entity-promises-more-than-the-
+#     database divergence that rule 5 of the `liquibase` skill exists to prevent, so it is not an
+#     option here: this schema is largely made of CHECKs.
+#   * The partial unique index `ux_store_online`. CreateIndexChange has no `where` attribute, and
+#     without the WHERE the index would mean "no two stores may share is_online" — which forbids
+#     a second offline store. Wrong semantics, not a missing optimisation.
+#   * CREATE EXTENSION.
+#
+# Everything else — tables, primary keys, NOT NULL, defaults, identity columns, unique
+# constraints, foreign keys with ON DELETE, and indexes including DESC ordering — is native, and
+# gets its rollback generated automatically.
+databaseChangeLog:
+
+  # CITEXT is needed in ukun_app too, not only in ukun_auth: customer.email and employee.email
+  # are case-insensitive read projections (docs/10 §2, docs/08 §2). It moves the normalisation
+  # guarantee into the type, so no derived `findByEmail` can silently skip lower().
+  - changeSet:
+      id: 001-01-extension-citext
+      author: sandoretti
+      comment: CITEXT extension, required by the email projections (docs/10 §2)
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS citext
+      rollback:
+        - sql:
+            sql: DROP EXTENSION IF EXISTS citext
+
+  # Profile/store address. No created_at/updated_at: docs/10 §1 puts the timestamp pair only on
+  # the six mutable master tables, and `address` is not one of them.
+  # There is deliberately no `country` column (docs/10 §2, "descartado explícitamente").
+  - changeSet:
+      id: 001-02-table-address
+      author: sandoretti
+      comment: address — postal address of a profile or a store (docs/10 §2)
+      changes:
+        - createTable:
+            tableName: address
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_address}
+              - column: {name: street, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: city, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: province, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: postal_code, type: CHAR(5), constraints: {nullable: false}}
+
+  # Masked payment method. There is no column for the full number (PAN) and none for the CVV:
+  # storing the CVV is forbidden by PCI-DSS under any circumstance (docs/08 §5) — that is the
+  # legacy `tarjeta` defect, and the fix is that the column does not exist.
+  # Expiry is a month and a year, not a DATE: a card is valid for a whole month, and the legacy
+  # `'2025-12-01'` literally reads "expired on 1 December" (docs/10 §2).
+  - changeSet:
+      id: 001-03-table-card
+      author: sandoretti
+      comment: card — masked payment method, no PAN and no CVV (docs/10 §2, docs/08 §5)
+      changes:
+        - createTable:
+            tableName: card
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_card}
+              - column: {name: last4, type: CHAR(4), constraints: {nullable: false}}
+              - column: {name: brand, type: VARCHAR(20), constraints: {nullable: false}}
+              - column: {name: exp_month, type: SMALLINT, constraints: {nullable: false}}
+              - column: {name: exp_year, type: SMALLINT, constraints: {nullable: false}}
+
+  # `name` is unique because the legacy seeds itself with
+  # `(SELECT id FROM tipo_producto WHERE nombre = 'Mesas')` — assuming uniqueness the database
+  # never enforced (docs/10 §2). It is editable: renaming a type is a business operation (RF-13)
+  # and drags nothing behind it, because the order snapshot is order_line.product_name (§5).
+  # No is_active: RF-13 gives types a real DELETE, so there is no case where deletion is
+  # impossible forever — which is the only thing that justified soft deletion on `product` (§6).
+  - changeSet:
+      id: 001-04-table-product-type
+      author: sandoretti
+      comment: product_type — RF-13, name unique and editable (docs/10 §2, §6)
+      changes:
+        - createTable:
+            tableName: product_type
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_product_type}
+              - column: {name: name, type: VARCHAR(255), constraints: {nullable: false}}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+
+  # `phone` is VARCHAR(20) with a strict E.164 CHECK: the legacy VARCHAR(9) only fits a bare
+  # number, with no prefix and no separators (docs/10 §2).
+  # `is_online` gets its uniqueness invariant from the partial unique index in the last changeset
+  # of this file — that is what turns "there is exactly one online store" into a database
+  # invariant instead of a convention, and it is the invariant legacy defect #6 depended on by
+  # looking the row up by name in a bean constructor.
+  - changeSet:
+      id: 001-05-table-store
+      author: sandoretti
+      comment: store — E.164 phone, unique name, address by FK (docs/10 §2)
+      changes:
+        - createTable:
+            tableName: store
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_store}
+              - column: {name: name, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: phone, type: VARCHAR(20), constraints: {nullable: false}}
+              - column:
+                  name: is_online
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints: {nullable: false}
+              - column: {name: address_id, type: BIGINT, constraints: {nullable: false}}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+
+  # `sku` is NOT NULL from the baseline, not nullable-then-hardened: the only reason to defer it
+  # would have been an outside INSERT that omits the column, and that INSERT was ukun-empleados,
+  # which does not run (ADR-0015).
+  # `price` is DECIMAL(10,2) — the legacy SQL type was already right; its defect (#5) is purely
+  # on the Java side (Float). The CHECK is the safety net (docs/10 §2).
+  # `is_active` is the only soft deletion in this schema (ADR-0013): with RESTRICT on every
+  # inbound FK, a product that has ever been sold can never be deleted, so the real business
+  # exit is discontinuing it.
+  # `description` is NOT NULL: both write operations of the contract require it
+  # (CreateProductRequest / UpdateProductRequest, minLength 1). docs/10 §2 does not cover this
+  # column — see the PR notes.
+  - changeSet:
+      id: 001-06-table-product
+      author: sandoretti
+      comment: product — SKU as business key, DECIMAL price, soft deletion via is_active (ADR-0015, ADR-0013)
+      changes:
+        - createTable:
+            tableName: product
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_product}
+              - column: {name: sku, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: name, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: description, type: TEXT, constraints: {nullable: false}}
+              - column: {name: price, type: 'DECIMAL(10,2)', constraints: {nullable: false}}
+              - column: {name: product_type_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: image_key, type: VARCHAR(255)}
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints: {nullable: false}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+
+  # `account_id` is a UUID with NO foreign key: it crosses into ukun_auth's database and cannot
+  # be expressed as a real FK (docs/08 §1). Its unique index (created below) is both the hottest
+  # query in the system — once per authenticated request, Q6 — and the only way to enforce
+  # ADR-0006 (customer and employee mutually exclusive) in the database.
+  # `email` is CITEXT NOT NULL and deliberately NOT UNIQUE: it is a read projection, not the
+  # source of truth. A UNIQUE here would be a second authority on uniqueness that can diverge
+  # from the lazy refresh (docs/10 §2, docs/08 §2).
+  # address_id and card_id are NOT NULL: RF-06 demands both at signup and RF-04 needs them at
+  # checkout. favorite_store_id is nullable and optional (RF-05/RF-06).
+  - changeSet:
+      id: 001-07-table-customer
+      author: sandoretti
+      comment: customer — account_id UUID without FK, email as projection, locale (docs/08 §1, ADR-0019)
+      changes:
+        - createTable:
+            tableName: customer
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_customer}
+              - column: {name: account_id, type: UUID, constraints: {nullable: false}}
+              - column: {name: name, type: VARCHAR(100), constraints: {nullable: false}}
+              - column: {name: last_name, type: VARCHAR(100), constraints: {nullable: false}}
+              - column: {name: email, type: CITEXT, constraints: {nullable: false}}
+              - column:
+                  name: locale
+                  type: CHAR(2)
+                  defaultValue: es
+                  constraints: {nullable: false}
+              - column: {name: address_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: card_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: favorite_store_id, type: BIGINT}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+
+  # Same account_id rule as customer. `job_title` is a label and nothing depends on its value:
+  # the only real role inside employee is the is_admin flag (RF-12, docs/10 §2).
+  # No `locale` column: the contract returns the default value for employees (ADR-0019,
+  # ukun-api.yaml, getCurrentUser).
+  - changeSet:
+      id: 001-08-table-employee
+      author: sandoretti
+      comment: employee — is_admin as the only real role, store by FK (RF-12, docs/10 §6)
+      changes:
+        - createTable:
+            tableName: employee
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_employee}
+              - column: {name: account_id, type: UUID, constraints: {nullable: false}}
+              - column: {name: name, type: VARCHAR(100), constraints: {nullable: false}}
+              - column: {name: last_name, type: VARCHAR(100), constraints: {nullable: false}}
+              - column: {name: email, type: CITEXT, constraints: {nullable: false}}
+              - column: {name: job_title, type: VARCHAR(50), constraints: {nullable: false}}
+              - column:
+                  name: is_admin
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints: {nullable: false}
+              - column: {name: store_id, type: BIGINT, constraints: {nullable: false}}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+
+  # Surrogate PK plus UNIQUE (product_id, store_id), not the legacy composite key (ADR-0015):
+  # a stock line gets its own identity and its own URL, and the uniqueness invariant survives.
+  # `version` is the optimistic lock of manual editing (ADR-0008); the pessimistic ordered lock
+  # of checkout lives in the same table and is simplified by the surrogate id.
+  # `quantity` is NOT NULL, and its CHECK (quantity >= 0) is the final safety net of checkout:
+  # the legacy entity declares @NotNull @Min(0) while its database guarantees neither.
+  - changeSet:
+      id: 001-09-table-store-stock
+      author: sandoretti
+      comment: store_stock — surrogate PK, version for optimistic locking (ADR-0015, ADR-0008)
+      changes:
+        - createTable:
+            tableName: store_stock
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_store_stock}
+              - column: {name: product_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: store_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: quantity, type: INTEGER, constraints: {nullable: false}}
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValueNumeric: 0
+                  constraints: {nullable: false}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+
+  # Composite PK, so customer_id is already the leading column of an index and needs no other
+  # (docs/10 §4). No timestamps: the cart is ephemeral state (docs/10 §1).
+  - changeSet:
+      id: 001-10-table-cart-item
+      author: sandoretti
+      comment: cart_item — ephemeral, composite PK (docs/10 §1, §4)
+      changes:
+        - createTable:
+            tableName: cart_item
+            columns:
+              - column:
+                  name: customer_id
+                  type: BIGINT
+                  constraints: {nullable: false, primaryKey: true, primaryKeyName: pk_cart_item}
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints: {nullable: false, primaryKey: true, primaryKeyName: pk_cart_item}
+              - column: {name: quantity, type: INTEGER, constraints: {nullable: false}}
+
+  # The shipping address and the payment method are EMBEDDED COLUMNS, never FKs to address/card
+  # (ADR-0011, docs/10 §5). This is legacy defect #19: `Pedido(Cliente)` copies the *reference*,
+  # so editing your profile rewrites the shipping address of every order you ever placed. With
+  # embedded columns the immutability is structural — there is no row another feature could
+  # update — and the "I cannot change my card because orders reference it" problem disappears
+  # with the FK.
+  # `status` is VARCHAR + CHECK, never a native enum (ADR-0012): adding a value later is one
+  # dropCheckConstraint + addCheckConstraint in a single reversible changeset.
+  # No created_at/updated_at: an order's timestamp is `placed_at` (docs/10 §1).
+  - changeSet:
+      id: 001-11-table-customer-order
+      author: sandoretti
+      comment: customer_order — embedded shipping/payment snapshots (ADR-0011, ADR-0012)
+      changes:
+        - createTable:
+            tableName: customer_order
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_customer_order}
+              - column: {name: customer_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: placed_at, type: TIMESTAMPTZ, constraints: {nullable: false}}
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: CONFIRMED
+                  constraints: {nullable: false}
+              - column: {name: total, type: 'DECIMAL(10,2)', constraints: {nullable: false}}
+              - column: {name: shipping_street, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: shipping_city, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: shipping_province, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: shipping_postal_code, type: CHAR(5), constraints: {nullable: false}}
+              - column: {name: payment_last4, type: CHAR(4), constraints: {nullable: false}}
+              - column: {name: payment_brand, type: VARCHAR(20), constraints: {nullable: false}}
+              - column: {name: payment_exp_month, type: SMALLINT, constraints: {nullable: false}}
+              - column: {name: payment_exp_year, type: SMALLINT, constraints: {nullable: false}}
+
+  # `product_name` is the third field with the snapshot problem: RF-04 freezes the line price but
+  # not the product name, so renaming a product (RF-10 allows it) would rewrite what every past
+  # order displays (docs/10 §5).
+  # No timestamps: the line's timestamp is the order's (docs/10 §1).
+  - changeSet:
+      id: 001-12-table-order-line
+      author: sandoretti
+      comment: order_line — product_name snapshot, composite PK (docs/10 §5)
+      changes:
+        - createTable:
+            tableName: order_line
+            columns:
+              - column:
+                  name: order_id
+                  type: BIGINT
+                  constraints: {nullable: false, primaryKey: true, primaryKeyName: pk_order_line}
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints: {nullable: false, primaryKey: true, primaryKeyName: pk_order_line}
+              - column: {name: product_name, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: unit_price, type: 'DECIMAL(10,2)', constraints: {nullable: false}}
+              - column: {name: quantity, type: INTEGER, constraints: {nullable: false}}
+              - column: {name: total_price, type: 'DECIMAL(10,2)', constraints: {nullable: false}}
+
+  # Idempotency of checkout (ADR-0016). The server issues the attempt id; the client replays it
+  # as Idempotency-Key. `status` distinguishes IN_PROGRESS (concurrent request -> 409) from
+  # COMPLETED (replay -> the stored response, without repeating the effect).
+  - changeSet:
+      id: 001-13-table-idempotency-key
+      author: sandoretti
+      comment: idempotency_key — checkout attempt, replay semantics (ADR-0016)
+      changes:
+        - createTable:
+            tableName: idempotency_key
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_idempotency_key}
+              - column: {name: key, type: UUID, constraints: {nullable: false}}
+              - column: {name: customer_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: order_id, type: BIGINT}
+              - column: {name: status, type: VARCHAR(20), constraints: {nullable: false}}
+              - column: {name: request_hash, type: VARCHAR(64), constraints: {nullable: false}}
+              - column: {name: response_status, type: SMALLINT}
+              - column: {name: response_body, type: JSONB}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+
+  # Audit trail (ADR-0014, docs/11 §2). Created here because docs/10 §8 lists it in the v0.2
+  # baseline; it starts being *written to* in v0.7, which is what docs/11 §2 means by "v0.7".
+  # `actor_account_id` is a UUID with no FK for the same reason as customer.account_id: it lives
+  # in the other database. `resource_id` is text so one column serves numeric ids and UUIDs.
+  # `details` is JSONB and carries field *names*, never their values, for anything PII or PCI
+  # (docs/11 §4). `trace_id` is the bridge to the full log of that request.
+  - changeSet:
+      id: 001-14-table-audit-log
+      author: sandoretti
+      comment: audit_log — trail written in the same transaction as the change it audits (ADR-0014, docs/11 §2)
+      changes:
+        - createTable:
+            tableName: audit_log
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints: {primaryKey: true, primaryKeyName: pk_audit_log}
+              - column:
+                  name: occurred_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column: {name: actor_account_id, type: UUID, constraints: {nullable: false}}
+              - column: {name: actor_role, type: VARCHAR(20), constraints: {nullable: false}}
+              - column: {name: action, type: VARCHAR(50), constraints: {nullable: false}}
+              - column: {name: resource_type, type: VARCHAR(30), constraints: {nullable: false}}
+              - column: {name: resource_id, type: VARCHAR(64), constraints: {nullable: false}}
+              - column: {name: details, type: JSONB}
+              - column: {name: trace_id, type: VARCHAR(32)}
+
+  # The five uniqueness invariants of docs/10 §2. They are constraints, not optimisations — the
+  # index each one creates is a consequence, which is why they are not repeated in the index
+  # changeset further down.
+  - changeSet:
+      id: 001-15-unique-constraints
+      author: sandoretti
+      comment: uniqueness invariants of docs/10 §2 (SKU, type name, store name, stock line)
+      changes:
+        - addUniqueConstraint:
+            tableName: product_type
+            columnNames: name
+            constraintName: ux_product_type_name
+        - addUniqueConstraint:
+            tableName: store
+            columnNames: name
+            constraintName: ux_store_name
+        - addUniqueConstraint:
+            tableName: product
+            columnNames: sku
+            constraintName: ux_product_sku
+        # ADR-0015: the surrogate PK gives a stock line its own identity without losing the
+        # uniqueness the legacy composite key provided for free.
+        - addUniqueConstraint:
+            tableName: store_stock
+            columnNames: product_id, store_id
+            constraintName: ux_store_stock
+        - addUniqueConstraint:
+            tableName: idempotency_key
+            columnNames: customer_id, key
+            constraintName: ux_idempotency_customer_key
+
+  # Raw SQL, and the reason is at the top of this file: AddCheckConstraintChange is Liquibase
+  # Pro, and the OSS `checkConstraint` attribute is accepted and then silently discarded — the
+  # changeset would report success while the constraint never existed.
+  #
+  # Grouped in one changeset and ordered by table so it reads next to docs/10 §2, which is
+  # itself a table of CHECKs. Highlights:
+  #   * every mandatory text has length(btrim(...)) > 0 (docs/10 §1): the legacy promises
+  #     @NotBlank in the entity while its database happily accepts ''.
+  #   * ck_customer_order_total makes the legacy bug of creating orders with total 0 impossible
+  #     to reintroduce (RF-04).
+  #   * ck_order_line_total buys an aggregate invariant for one line of DDL.
+  #   * ck_store_stock_quantity is the final safety net of checkout (ADR-0008).
+  - changeSet:
+      id: 001-16-check-constraints
+      author: sandoretti
+      comment: the CHECK constraints of docs/10 §1 and §2 — no OSS change type can express them
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE address
+                  ADD CONSTRAINT ck_address_street      CHECK (length(btrim(street)) > 0),
+                  ADD CONSTRAINT ck_address_city        CHECK (length(btrim(city)) > 0),
+                  ADD CONSTRAINT ck_address_province    CHECK (length(btrim(province)) > 0),
+                  ADD CONSTRAINT ck_address_postal_code CHECK (postal_code ~ '^[0-9]{5}$');
+              ALTER TABLE card
+                  ADD CONSTRAINT ck_card_last4     CHECK (last4 ~ '^[0-9]{4}$'),
+                  ADD CONSTRAINT ck_card_brand     CHECK (brand IN ('VISA', 'MASTERCARD', 'AMEX', 'OTHER')),
+                  ADD CONSTRAINT ck_card_exp_month CHECK (exp_month BETWEEN 1 AND 12),
+                  ADD CONSTRAINT ck_card_exp_year  CHECK (exp_year BETWEEN 2024 AND 2100);
+              ALTER TABLE product_type
+                  ADD CONSTRAINT ck_product_type_name CHECK (length(btrim(name)) > 0);
+              ALTER TABLE store
+                  ADD CONSTRAINT ck_store_name  CHECK (length(btrim(name)) > 0),
+                  ADD CONSTRAINT ck_store_phone CHECK (phone ~ '^\+[1-9][0-9]{1,14}$');
+              ALTER TABLE product
+                  ADD CONSTRAINT ck_product_sku         CHECK (sku ~ '^[A-Z0-9-]{3,32}$'),
+                  ADD CONSTRAINT ck_product_name        CHECK (length(btrim(name)) > 0),
+                  ADD CONSTRAINT ck_product_description CHECK (length(btrim(description)) > 0),
+                  ADD CONSTRAINT ck_product_price       CHECK (price >= 0);
+              ALTER TABLE customer
+                  ADD CONSTRAINT ck_customer_name      CHECK (length(btrim(name)) > 0),
+                  ADD CONSTRAINT ck_customer_last_name CHECK (length(btrim(last_name)) > 0),
+                  ADD CONSTRAINT ck_customer_email     CHECK (length(btrim(email)) > 0),
+                  ADD CONSTRAINT ck_customer_locale    CHECK (locale IN ('es', 'en'));
+              ALTER TABLE employee
+                  ADD CONSTRAINT ck_employee_name      CHECK (length(btrim(name)) > 0),
+                  ADD CONSTRAINT ck_employee_last_name CHECK (length(btrim(last_name)) > 0),
+                  ADD CONSTRAINT ck_employee_email     CHECK (length(btrim(email)) > 0),
+                  ADD CONSTRAINT ck_employee_job_title CHECK (length(btrim(job_title)) > 0);
+              ALTER TABLE store_stock
+                  ADD CONSTRAINT ck_store_stock_quantity CHECK (quantity >= 0);
+              ALTER TABLE cart_item
+                  ADD CONSTRAINT ck_cart_item_quantity CHECK (quantity > 0);
+              ALTER TABLE customer_order
+                  ADD CONSTRAINT ck_customer_order_status CHECK (status IN ('CONFIRMED', 'CANCELLED')),
+                  ADD CONSTRAINT ck_customer_order_total  CHECK (total > 0),
+                  ADD CONSTRAINT ck_customer_order_shipping_street      CHECK (length(btrim(shipping_street)) > 0),
+                  ADD CONSTRAINT ck_customer_order_shipping_city        CHECK (length(btrim(shipping_city)) > 0),
+                  ADD CONSTRAINT ck_customer_order_shipping_province    CHECK (length(btrim(shipping_province)) > 0),
+                  ADD CONSTRAINT ck_customer_order_shipping_postal_code CHECK (shipping_postal_code ~ '^[0-9]{5}$'),
+                  ADD CONSTRAINT ck_customer_order_payment_last4     CHECK (payment_last4 ~ '^[0-9]{4}$'),
+                  ADD CONSTRAINT ck_customer_order_payment_brand     CHECK (payment_brand IN ('VISA', 'MASTERCARD', 'AMEX', 'OTHER')),
+                  ADD CONSTRAINT ck_customer_order_payment_exp_month CHECK (payment_exp_month BETWEEN 1 AND 12),
+                  ADD CONSTRAINT ck_customer_order_payment_exp_year  CHECK (payment_exp_year BETWEEN 2024 AND 2100);
+              ALTER TABLE order_line
+                  ADD CONSTRAINT ck_order_line_product_name CHECK (length(btrim(product_name)) > 0),
+                  ADD CONSTRAINT ck_order_line_unit_price   CHECK (unit_price >= 0),
+                  ADD CONSTRAINT ck_order_line_quantity     CHECK (quantity > 0),
+                  ADD CONSTRAINT ck_order_line_total_price  CHECK (total_price >= 0),
+                  ADD CONSTRAINT ck_order_line_total        CHECK (total_price = unit_price * quantity);
+              ALTER TABLE idempotency_key
+                  ADD CONSTRAINT ck_idempotency_key_status CHECK (status IN ('IN_PROGRESS', 'COMPLETED'));
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE address DROP CONSTRAINT ck_address_street, DROP CONSTRAINT ck_address_city,
+                  DROP CONSTRAINT ck_address_province, DROP CONSTRAINT ck_address_postal_code;
+              ALTER TABLE card DROP CONSTRAINT ck_card_last4, DROP CONSTRAINT ck_card_brand,
+                  DROP CONSTRAINT ck_card_exp_month, DROP CONSTRAINT ck_card_exp_year;
+              ALTER TABLE product_type DROP CONSTRAINT ck_product_type_name;
+              ALTER TABLE store DROP CONSTRAINT ck_store_name, DROP CONSTRAINT ck_store_phone;
+              ALTER TABLE product DROP CONSTRAINT ck_product_sku, DROP CONSTRAINT ck_product_name,
+                  DROP CONSTRAINT ck_product_description, DROP CONSTRAINT ck_product_price;
+              ALTER TABLE customer DROP CONSTRAINT ck_customer_name, DROP CONSTRAINT ck_customer_last_name,
+                  DROP CONSTRAINT ck_customer_email, DROP CONSTRAINT ck_customer_locale;
+              ALTER TABLE employee DROP CONSTRAINT ck_employee_name, DROP CONSTRAINT ck_employee_last_name,
+                  DROP CONSTRAINT ck_employee_email, DROP CONSTRAINT ck_employee_job_title;
+              ALTER TABLE store_stock DROP CONSTRAINT ck_store_stock_quantity;
+              ALTER TABLE cart_item DROP CONSTRAINT ck_cart_item_quantity;
+              ALTER TABLE customer_order DROP CONSTRAINT ck_customer_order_status,
+                  DROP CONSTRAINT ck_customer_order_total,
+                  DROP CONSTRAINT ck_customer_order_shipping_street,
+                  DROP CONSTRAINT ck_customer_order_shipping_city,
+                  DROP CONSTRAINT ck_customer_order_shipping_province,
+                  DROP CONSTRAINT ck_customer_order_shipping_postal_code,
+                  DROP CONSTRAINT ck_customer_order_payment_last4,
+                  DROP CONSTRAINT ck_customer_order_payment_brand,
+                  DROP CONSTRAINT ck_customer_order_payment_exp_month,
+                  DROP CONSTRAINT ck_customer_order_payment_exp_year;
+              ALTER TABLE order_line DROP CONSTRAINT ck_order_line_product_name,
+                  DROP CONSTRAINT ck_order_line_unit_price, DROP CONSTRAINT ck_order_line_quantity,
+                  DROP CONSTRAINT ck_order_line_total_price, DROP CONSTRAINT ck_order_line_total;
+              ALTER TABLE idempotency_key DROP CONSTRAINT ck_idempotency_key_status;
+
+  # docs/10 §6, one row of that table per change below. The legacy init.sql has not a single
+  # ON DELETE clause, so all of its FKs are NO ACTION — right for most of them, by accident.
+  # Here every one is declared, because a default policy is a policy nobody decided.
+  # CASCADE only where the child is not history: the cart, an order's own lines (matching
+  # orphanRemoval = true in Java), a store's stock. SET NULL for the optional favourite store.
+  # RESTRICT everywhere else — deleting a customer must not delete the sale (RF-10, RF-13).
+  - changeSet:
+      id: 001-17-foreign-keys
+      author: sandoretti
+      comment: the ON DELETE policy of docs/10 §6, declared FK by FK
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_store_address
+            baseTableName: store
+            baseColumnNames: address_id
+            referencedTableName: address
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_product_product_type
+            baseTableName: product
+            baseColumnNames: product_type_id
+            referencedTableName: product_type
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_customer_address
+            baseTableName: customer
+            baseColumnNames: address_id
+            referencedTableName: address
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_customer_card
+            baseTableName: customer
+            baseColumnNames: card_id
+            referencedTableName: card
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_customer_favorite_store
+            baseTableName: customer
+            baseColumnNames: favorite_store_id
+            referencedTableName: store
+            referencedColumnNames: id
+            onDelete: SET NULL
+        - addForeignKeyConstraint:
+            constraintName: fk_employee_store
+            baseTableName: employee
+            baseColumnNames: store_id
+            referencedTableName: store
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_store_stock_product
+            baseTableName: store_stock
+            baseColumnNames: product_id
+            referencedTableName: product
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_store_stock_store
+            baseTableName: store_stock
+            baseColumnNames: store_id
+            referencedTableName: store
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_cart_item_customer
+            baseTableName: cart_item
+            baseColumnNames: customer_id
+            referencedTableName: customer
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_cart_item_product
+            baseTableName: cart_item
+            baseColumnNames: product_id
+            referencedTableName: product
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_customer_order_customer
+            baseTableName: customer_order
+            baseColumnNames: customer_id
+            referencedTableName: customer
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_order_line_order
+            baseTableName: order_line
+            baseColumnNames: order_id
+            referencedTableName: customer_order
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_order_line_product
+            baseTableName: order_line
+            baseColumnNames: product_id
+            referencedTableName: product
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        # ADR-0016 writes these two without an ON DELETE clause; RESTRICT here so no FK is left
+        # with an undecided default (docs/10 §6) — see the PR notes.
+        - addForeignKeyConstraint:
+            constraintName: fk_idempotency_key_customer
+            baseTableName: idempotency_key
+            baseColumnNames: customer_id
+            referencedTableName: customer
+            referencedColumnNames: id
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            constraintName: fk_idempotency_key_order
+            baseTableName: idempotency_key
+            baseColumnNames: order_id
+            referencedTableName: customer_order
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+  # docs/10 §4, and not one index more. That section also lists what stays out and why — in
+  # particular *any* index for name search, which has a written activation threshold (~5,000
+  # rows, or the p95 of /api/products leaving its target) instead of being added "just in case".
+  - changeSet:
+      id: 001-18-indexes
+      author: sandoretti
+      comment: the indexes of docs/10 §4, each one justified by its query — and no others
+      changes:
+        # Q6, docs/08 §4: storeId is deliberately kept out of the token, so the API resolves the
+        # customer/employee by account_id on every authenticated request. UNIQUE not only for
+        # speed — it is the only way to enforce ADR-0006 (mutually exclusive) in the database.
+        - createIndex:
+            tableName: customer
+            indexName: ux_customer_account_id
+            unique: true
+            columns:
+              - column: {name: account_id}
+        - createIndex:
+            tableName: employee
+            indexName: ux_employee_account_id
+            unique: true
+            columns:
+              - column: {name: account_id}
+        # Q3: equality first, ordering second, so the index delivers rows already sorted and the
+        # planner drops the sort node. It replaces the plain FK index — the leading column
+        # already covers the referential check.
+        - createIndex:
+            tableName: customer_order
+            indexName: ix_customer_order_customer_placed
+            columns:
+              - column: {name: customer_id}
+              - column: {name: placed_at, descending: true}
+        # Q5: with the surrogate PK of ADR-0015 the UNIQUE (product_id, store_id) is useless
+        # here because store_id is not leading. Two columns so it also serves the join towards
+        # product and the FK check when a store is deleted.
+        - createIndex:
+            tableName: store_stock
+            indexName: ix_store_stock_store
+            columns:
+              - column: {name: store_id}
+              - column: {name: product_id}
+        # Q7 (RF-10): the genuinely unindexed FKs — the *second* column of each composite PK.
+        - createIndex:
+            tableName: cart_item
+            indexName: ix_cart_item_product
+            columns:
+              - column: {name: product_id}
+        - createIndex:
+            tableName: order_line
+            indexName: ix_order_line_product
+            columns:
+              - column: {name: product_id}
+        # RF-11, plus the FK check when deleting a store.
+        - createIndex:
+            tableName: employee
+            indexName: ix_employee_store
+            columns:
+              - column: {name: store_id}
+        # Named after docs/10 §4 verbatim: it is ON product (product_type_id), serving Q1's type
+        # filter, Q8 (RF-13's countByProductTypeId) and the FK check of every DELETE on
+        # product_type.
+        - createIndex:
+            tableName: product
+            indexName: ix_product_type
+            columns:
+              - column: {name: product_type_id}
+        # docs/11 §2: "everything that happened to this product" as an indexed SELECT, with no
+        # external aggregator.
+        - createIndex:
+            tableName: audit_log
+            indexName: ix_audit_log_resource
+            columns:
+              - column: {name: resource_type}
+              - column: {name: resource_id}
+              - column: {name: occurred_at, descending: true}
+        - createIndex:
+            tableName: audit_log
+            indexName: ix_audit_log_actor
+            columns:
+              - column: {name: actor_account_id}
+              - column: {name: occurred_at, descending: true}
+
+  # Raw SQL, and the last of the three exceptions listed at the top: CreateIndexChange has no
+  # `where` attribute, so a partial index cannot be expressed natively. The WHERE is the whole
+  # point — without it the index would read "no two stores may share is_online", which forbids a
+  # second *offline* store. With it, "there is exactly one online store" becomes an invariant of
+  # the database rather than a convention (docs/10 §2). It is the invariant legacy defect #6
+  # depended on while resolving the row by name inside a bean constructor.
+  - changeSet:
+      id: 001-19-partial-index-store-online
+      author: sandoretti
+      comment: ux_store_online — partial unique index, not expressible as a native change type
+      changes:
+        - sql:
+            sql: CREATE UNIQUE INDEX ux_store_online ON store (is_online) WHERE is_online
+      rollback:
+        - sql:
+            sql: DROP INDEX ux_store_online
