@@ -6,6 +6,7 @@ import dev.sandoretti.ukun.api.catalog.application.ProductSummaryResponse;
 import dev.sandoretti.ukun.api.shared.web.PageResponse;
 import dev.sandoretti.ukun.api.shared.web.PaginationParams;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>Both parameter objects are bound from the query string and validated. Their bounds are the
  * contract's, and the {@code 400} they produce comes back as a {@code ProblemDetail} with
  * {@code code: VALIDATION_FAILED} and one {@code errors[]} entry per offending field.
+ *
+ * <p>{@code @ParameterObject} is not decoration: without it springdoc documents the two objects as
+ * two opaque query parameters called {@code filters} and {@code pagination}, so the
+ * {@code /v3/api-docs} that CI diffs against the frozen contract stops matching it — while the
+ * endpoint keeps working, which is exactly what makes that drift silent.
  */
 @RestController
 @RequestMapping("/api/products")
@@ -34,7 +40,7 @@ class ProductController {
 
     @GetMapping
     PageResponse<ProductSummaryResponse> listProducts(
-            @Valid ProductFilters filters, @Valid PaginationParams pagination) {
+            @Valid @ParameterObject ProductFilters filters, @Valid @ParameterObject PaginationParams pagination) {
 
         return products.list(filters, pagination);
     }

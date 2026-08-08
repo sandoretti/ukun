@@ -38,7 +38,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 @AutoConfigureRestTestClient
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {"spring.liquibase.contexts=prod", "spring.jpa.properties.hibernate.generate_statistics=true"})
+        properties = {
+            "spring.liquibase.contexts=prod",
+            "spring.jpa.properties.hibernate.generate_statistics=true",
+            "springdoc.api-docs.enabled=true"
+        })
 class ProductCatalogIT extends AbstractIntegrationTest {
 
     @DynamicPropertySource
@@ -362,6 +366,34 @@ class ProductCatalogIT extends AbstractIntegrationTest {
                 .isEqualTo("VALIDATION_FAILED")
                 .jsonPath("$.errors[0].field")
                 .isEqualTo("priceMin");
+    }
+
+    /**
+     * The generated document has to describe the same seven query parameters the frozen contract
+     * declares. It did not: binding the filters as objects made springdoc publish two opaque
+     * parameters named {@code filters} and {@code pagination}, while the endpoint kept answering
+     * correctly — a drift nothing would have caught until CI diffed the two documents, or until the
+     * frontend generated its client from the wrong one.
+     *
+     * <p>The class turns {@code springdoc.api-docs} on for this, rather than activating the
+     * {@code dev} profile: the profile would also switch Liquibase to the {@code demo} context and
+     * seed a hundred products into the database every other test here counts.
+     */
+    @Test
+    @DisplayName("the generated OpenAPI declares the query parameters of the contract")
+    void publishesTheContractParameters() {
+        restTestClient
+                .get()
+                .uri("/v3/api-docs")
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .jsonPath("$.paths['/api/products'].get.operationId")
+                .isEqualTo("listProducts")
+                .jsonPath("$.paths['/api/products'].get.parameters[*].name")
+                .value(names -> assertThat((List<String>) names)
+                        .containsExactlyInAnyOrder("name", "typeId", "priceMin", "priceMax", "sort", "page", "size"));
     }
 
     private ProductPage pageOf(String uri) {
