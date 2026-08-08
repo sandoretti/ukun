@@ -1,0 +1,271 @@
+product_id,store_id,quantity
+(SELECT id FROM product WHERE sku = 'MESA-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Online'),39
+(SELECT id FROM product WHERE sku = 'MESA-CRISTAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),38
+(SELECT id FROM product WHERE sku = 'MESA-COMEDOR-EXTENDIBLE'),(SELECT id FROM store WHERE name = 'Ukun Online'),27
+(SELECT id FROM product WHERE sku = 'MESA-AUXILIAR-METAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),66
+(SELECT id FROM product WHERE sku = 'MESA-NORDICA-ROBLE'),(SELECT id FROM store WHERE name = 'Ukun Online'),35
+(SELECT id FROM product WHERE sku = 'MESA-PLEGABLE-COCINA'),(SELECT id FROM store WHERE name = 'Ukun Online'),64
+(SELECT id FROM product WHERE sku = 'MESA-CENTRO-CRISTAL-TEMPLADO'),(SELECT id FROM store WHERE name = 'Ukun Online'),33
+(SELECT id FROM product WHERE sku = 'MESA-ALTA-BAR'),(SELECT id FROM store WHERE name = 'Ukun Online'),32
+(SELECT id FROM product WHERE sku = 'MESA-COMEDOR-REDONDA'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'SILLA-PLASTICO'),(SELECT id FROM store WHERE name = 'Ukun Online'),69
+(SELECT id FROM product WHERE sku = 'SILLA-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Online'),68
+(SELECT id FROM product WHERE sku = 'SILLA-ERGONOMICA-OFICINA'),(SELECT id FROM store WHERE name = 'Ukun Online'),37
+(SELECT id FROM product WHERE sku = 'SILLA-COMEDOR-TAPIZADA'),(SELECT id FROM store WHERE name = 'Ukun Online'),66
+(SELECT id FROM product WHERE sku = 'SILLA-NORDICA-HAYA'),(SELECT id FROM store WHERE name = 'Ukun Online'),65
+(SELECT id FROM product WHERE sku = 'SILLA-PLEGABLE-EXTERIOR'),(SELECT id FROM store WHERE name = 'Ukun Online'),64
+(SELECT id FROM product WHERE sku = 'SILLA-ESCRITORIO-REPOSABRAZOS'),(SELECT id FROM store WHERE name = 'Ukun Online'),33
+(SELECT id FROM product WHERE sku = 'TABURETE-ALTO-BAR'),(SELECT id FROM store WHERE name = 'Ukun Online'),62
+(SELECT id FROM product WHERE sku = 'SILLA-TERCIOPELO'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'CAMA-INDIVIDUAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),29
+(SELECT id FROM product WHERE sku = 'CAMA-MATRIMONIO'),(SELECT id FROM store WHERE name = 'Ukun Online'),28
+(SELECT id FROM product WHERE sku = 'CAMA-DIA'),(SELECT id FROM store WHERE name = 'Ukun Online'),27
+(SELECT id FROM product WHERE sku = 'LITERA-INFANTIL'),(SELECT id FROM store WHERE name = 'Ukun Online'),26
+(SELECT id FROM product WHERE sku = 'CAMA-CANAPE-ABATIBLE'),(SELECT id FROM store WHERE name = 'Ukun Online'),15
+(SELECT id FROM product WHERE sku = 'CAMA-NIDO-JUVENIL'),(SELECT id FROM store WHERE name = 'Ukun Online'),24
+(SELECT id FROM product WHERE sku = 'CAMA-CABECERO-TAPIZADO'),(SELECT id FROM store WHERE name = 'Ukun Online'),13
+(SELECT id FROM product WHERE sku = 'SOMIER-LAMINAS'),(SELECT id FROM store WHERE name = 'Ukun Online'),32
+(SELECT id FROM product WHERE sku = 'CAMA-PLEGABLE-INVITADOS'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-CRISTAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),39
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Online'),28
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-COMPACTO'),(SELECT id FROM store WHERE name = 'Ukun Online'),37
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ESTANTERIA'),(SELECT id FROM store WHERE name = 'Ukun Online'),26
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ELEVABLE-PIE'),(SELECT id FROM store WHERE name = 'Ukun Online'),25
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ESQUINERO'),(SELECT id FROM store WHERE name = 'Ukun Online'),34
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-CAJONERA'),(SELECT id FROM store WHERE name = 'Ukun Online'),33
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-INFANTIL-REGULABLE'),(SELECT id FROM store WHERE name = 'Ukun Online'),32
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-INDUSTRIAL-METAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'SOFA-CUERO'),(SELECT id FROM store WHERE name = 'Ukun Online'),29
+(SELECT id FROM product WHERE sku = 'SOFA-TELA'),(SELECT id FROM store WHERE name = 'Ukun Online'),28
+(SELECT id FROM product WHERE sku = 'SOFA-CAMA'),(SELECT id FROM store WHERE name = 'Ukun Online'),17
+(SELECT id FROM product WHERE sku = 'SOFA-SECCIONAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),16
+(SELECT id FROM product WHERE sku = 'SOFA-CHAISE-LONGUE'),(SELECT id FROM store WHERE name = 'Ukun Online'),15
+(SELECT id FROM product WHERE sku = 'SOFA-DOS-PLAZAS'),(SELECT id FROM store WHERE name = 'Ukun Online'),24
+(SELECT id FROM product WHERE sku = 'SOFA-MODULAR-CUATRO-PLAZAS'),(SELECT id FROM store WHERE name = 'Ukun Online'),13
+(SELECT id FROM product WHERE sku = 'SOFA-RINCONERA-ARCON'),(SELECT id FROM store WHERE name = 'Ukun Online'),12
+(SELECT id FROM product WHERE sku = 'SOFA-TERCIOPELO'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'CUADRO-ABSTRACTO'),(SELECT id FROM store WHERE name = 'Ukun Online'),69
+(SELECT id FROM product WHERE sku = 'RELOJ-PARED'),(SELECT id FROM store WHERE name = 'Ukun Online'),68
+(SELECT id FROM product WHERE sku = 'JARRON-CERAMICA'),(SELECT id FROM store WHERE name = 'Ukun Online'),67
+(SELECT id FROM product WHERE sku = 'ESPEJO-REDONDO-PARED'),(SELECT id FROM store WHERE name = 'Ukun Online'),66
+(SELECT id FROM product WHERE sku = 'SET-TRES-CUADROS-BOTANICOS'),(SELECT id FROM store WHERE name = 'Ukun Online'),65
+(SELECT id FROM product WHERE sku = 'RELOJ-PARED-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),64
+(SELECT id FROM product WHERE sku = 'JARRON-ALTO-GRES'),(SELECT id FROM store WHERE name = 'Ukun Online'),63
+(SELECT id FROM product WHERE sku = 'CUADRO-PAISAJE-ENMARCADO'),(SELECT id FROM store WHERE name = 'Ukun Online'),62
+(SELECT id FROM product WHERE sku = 'PORTAVELAS-CRISTAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-CINCO-BALDAS'),(SELECT id FROM store WHERE name = 'Ukun Online'),39
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-PARED-FLOTANTE'),(SELECT id FROM store WHERE name = 'Ukun Online'),68
+(SELECT id FROM product WHERE sku = 'LIBRERIA-MADERA-MACIZA'),(SELECT id FROM store WHERE name = 'Ukun Online'),27
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-INDUSTRIAL-METAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),36
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-MODULAR-CUBOS'),(SELECT id FROM store WHERE name = 'Ukun Online'),35
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-ESQUINERA'),(SELECT id FROM store WHERE name = 'Ukun Online'),64
+(SELECT id FROM product WHERE sku = 'LIBRERIA-PUERTAS-CORREDERAS'),(SELECT id FROM store WHERE name = 'Ukun Online'),23
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-ESCALONADA'),(SELECT id FROM store WHERE name = 'Ukun Online'),32
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-LIBROS-INFANTIL'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'LAMPARA-PIE'),(SELECT id FROM store WHERE name = 'Ukun Online'),69
+(SELECT id FROM product WHERE sku = 'LAMPARA-MESA-CERAMICA'),(SELECT id FROM store WHERE name = 'Ukun Online'),68
+(SELECT id FROM product WHERE sku = 'LAMPARA-TECHO-MIMBRE'),(SELECT id FROM store WHERE name = 'Ukun Online'),67
+(SELECT id FROM product WHERE sku = 'APLIQUE-PARED-LED'),(SELECT id FROM store WHERE name = 'Ukun Online'),66
+(SELECT id FROM product WHERE sku = 'LAMPARA-ESCRITORIO-ARTICULADA'),(SELECT id FROM store WHERE name = 'Ukun Online'),65
+(SELECT id FROM product WHERE sku = 'LAMPARA-COLGANTE-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),64
+(SELECT id FROM product WHERE sku = 'PLAFON-LED-TECHO'),(SELECT id FROM store WHERE name = 'Ukun Online'),63
+(SELECT id FROM product WHERE sku = 'LAMPARA-PIE-ESTANTE'),(SELECT id FROM store WHERE name = 'Ukun Online'),32
+(SELECT id FROM product WHERE sku = 'GUIRNALDA-LUCES-CALIDAS'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Online'),69
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-FLOTANTE'),(SELECT id FROM store WHERE name = 'Ukun Online'),68
+(SELECT id FROM product WHERE sku = 'MESILLA-DOS-CAJONES'),(SELECT id FROM store WHERE name = 'Ukun Online'),67
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Online'),66
+(SELECT id FROM product WHERE sku = 'MESILLA-NORDICA-TRES-CAJONES'),(SELECT id FROM store WHERE name = 'Ukun Online'),35
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-CARGA-USB'),(SELECT id FROM store WHERE name = 'Ukun Online'),34
+(SELECT id FROM product WHERE sku = 'MESILLA-AUXILIAR-REDONDA'),(SELECT id FROM store WHERE name = 'Ukun Online'),63
+(SELECT id FROM product WHERE sku = 'MESILLA-LACADA-BLANCA'),(SELECT id FROM store WHERE name = 'Ukun Online'),62
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-INFANTIL'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'BUTACA-TERCIOPELO'),(SELECT id FROM store WHERE name = 'Ukun Online'),39
+(SELECT id FROM product WHERE sku = 'SILLON-OREJERO-CLASICO'),(SELECT id FROM store WHERE name = 'Ukun Online'),28
+(SELECT id FROM product WHERE sku = 'SILLON-RELAX-RECLINABLE'),(SELECT id FROM store WHERE name = 'Ukun Online'),27
+(SELECT id FROM product WHERE sku = 'BUTACA-NORDICA-TELA'),(SELECT id FROM store WHERE name = 'Ukun Online'),36
+(SELECT id FROM product WHERE sku = 'SILLON-CUERO-VINTAGE'),(SELECT id FROM store WHERE name = 'Ukun Online'),15
+(SELECT id FROM product WHERE sku = 'BUTACA-REPOSAPIES'),(SELECT id FROM store WHERE name = 'Ukun Online'),24
+(SELECT id FROM product WHERE sku = 'SILLON-GIRATORIO-SALON'),(SELECT id FROM store WHERE name = 'Ukun Online'),23
+(SELECT id FROM product WHERE sku = 'BUTACA-LECTURA-BRAZOS-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Online'),32
+(SELECT id FROM product WHERE sku = 'SILLON-BALANCIN'),(SELECT id FROM store WHERE name = 'Ukun Online'),0
+(SELECT id FROM product WHERE sku = 'MESA-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),29
+(SELECT id FROM product WHERE sku = 'MESA-CRISTAL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),28
+(SELECT id FROM product WHERE sku = 'MESA-COMEDOR-EXTENDIBLE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),20
+(SELECT id FROM product WHERE sku = 'MESA-AUXILIAR-METAL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),46
+(SELECT id FROM product WHERE sku = 'MESA-NORDICA-ROBLE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),25
+(SELECT id FROM product WHERE sku = 'MESA-PLEGABLE-COCINA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),44
+(SELECT id FROM product WHERE sku = 'MESA-CENTRO-CRISTAL-TEMPLADO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),23
+(SELECT id FROM product WHERE sku = 'SILLA-PLASTICO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),49
+(SELECT id FROM product WHERE sku = 'SILLA-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),48
+(SELECT id FROM product WHERE sku = 'SILLA-ERGONOMICA-OFICINA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),27
+(SELECT id FROM product WHERE sku = 'SILLA-COMEDOR-TAPIZADA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),46
+(SELECT id FROM product WHERE sku = 'SILLA-NORDICA-HAYA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),45
+(SELECT id FROM product WHERE sku = 'SILLA-PLEGABLE-EXTERIOR'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),44
+(SELECT id FROM product WHERE sku = 'SILLA-ESCRITORIO-REPOSABRAZOS'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),23
+(SELECT id FROM product WHERE sku = 'CAMA-INDIVIDUAL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),22
+(SELECT id FROM product WHERE sku = 'CAMA-MATRIMONIO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),21
+(SELECT id FROM product WHERE sku = 'CAMA-DIA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),20
+(SELECT id FROM product WHERE sku = 'LITERA-INFANTIL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),19
+(SELECT id FROM product WHERE sku = 'CAMA-CANAPE-ABATIBLE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),11
+(SELECT id FROM product WHERE sku = 'CAMA-NIDO-JUVENIL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),17
+(SELECT id FROM product WHERE sku = 'CAMA-CABECERO-TAPIZADO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),9
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-CRISTAL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),29
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),21
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-COMPACTO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),27
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ESTANTERIA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),19
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ELEVABLE-PIE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),18
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ESQUINERO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),24
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-CAJONERA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),23
+(SELECT id FROM product WHERE sku = 'SOFA-CUERO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),22
+(SELECT id FROM product WHERE sku = 'SOFA-TELA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),21
+(SELECT id FROM product WHERE sku = 'SOFA-CAMA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),13
+(SELECT id FROM product WHERE sku = 'SOFA-SECCIONAL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),12
+(SELECT id FROM product WHERE sku = 'SOFA-CHAISE-LONGUE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),11
+(SELECT id FROM product WHERE sku = 'SOFA-DOS-PLAZAS'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),17
+(SELECT id FROM product WHERE sku = 'SOFA-MODULAR-CUATRO-PLAZAS'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),9
+(SELECT id FROM product WHERE sku = 'CUADRO-ABSTRACTO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),49
+(SELECT id FROM product WHERE sku = 'RELOJ-PARED'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),48
+(SELECT id FROM product WHERE sku = 'JARRON-CERAMICA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),47
+(SELECT id FROM product WHERE sku = 'ESPEJO-REDONDO-PARED'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),46
+(SELECT id FROM product WHERE sku = 'SET-TRES-CUADROS-BOTANICOS'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),45
+(SELECT id FROM product WHERE sku = 'RELOJ-PARED-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),44
+(SELECT id FROM product WHERE sku = 'JARRON-ALTO-GRES'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),43
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-CINCO-BALDAS'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),29
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-PARED-FLOTANTE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),48
+(SELECT id FROM product WHERE sku = 'LIBRERIA-MADERA-MACIZA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),20
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-INDUSTRIAL-METAL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),26
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-MODULAR-CUBOS'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),25
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-ESQUINERA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),44
+(SELECT id FROM product WHERE sku = 'LIBRERIA-PUERTAS-CORREDERAS'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),16
+(SELECT id FROM product WHERE sku = 'LAMPARA-PIE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),49
+(SELECT id FROM product WHERE sku = 'LAMPARA-MESA-CERAMICA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),48
+(SELECT id FROM product WHERE sku = 'LAMPARA-TECHO-MIMBRE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),47
+(SELECT id FROM product WHERE sku = 'APLIQUE-PARED-LED'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),46
+(SELECT id FROM product WHERE sku = 'LAMPARA-ESCRITORIO-ARTICULADA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),45
+(SELECT id FROM product WHERE sku = 'LAMPARA-COLGANTE-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),44
+(SELECT id FROM product WHERE sku = 'PLAFON-LED-TECHO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),43
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),49
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-FLOTANTE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),48
+(SELECT id FROM product WHERE sku = 'MESILLA-DOS-CAJONES'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),47
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),46
+(SELECT id FROM product WHERE sku = 'MESILLA-NORDICA-TRES-CAJONES'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),25
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-CARGA-USB'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),24
+(SELECT id FROM product WHERE sku = 'MESILLA-AUXILIAR-REDONDA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),43
+(SELECT id FROM product WHERE sku = 'BUTACA-TERCIOPELO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),29
+(SELECT id FROM product WHERE sku = 'SILLON-OREJERO-CLASICO'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),21
+(SELECT id FROM product WHERE sku = 'SILLON-RELAX-RECLINABLE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),20
+(SELECT id FROM product WHERE sku = 'BUTACA-NORDICA-TELA'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),26
+(SELECT id FROM product WHERE sku = 'SILLON-CUERO-VINTAGE'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),11
+(SELECT id FROM product WHERE sku = 'BUTACA-REPOSAPIES'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),17
+(SELECT id FROM product WHERE sku = 'SILLON-GIRATORIO-SALON'),(SELECT id FROM store WHERE name = 'Ukun Alcalá de Henares'),16
+(SELECT id FROM product WHERE sku = 'MESA-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),25
+(SELECT id FROM product WHERE sku = 'MESA-CRISTAL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),24
+(SELECT id FROM product WHERE sku = 'MESA-COMEDOR-EXTENDIBLE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),17
+(SELECT id FROM product WHERE sku = 'MESA-AUXILIAR-METAL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),38
+(SELECT id FROM product WHERE sku = 'MESA-NORDICA-ROBLE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),21
+(SELECT id FROM product WHERE sku = 'MESA-PLEGABLE-COCINA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),36
+(SELECT id FROM product WHERE sku = 'SILLA-PLASTICO'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),41
+(SELECT id FROM product WHERE sku = 'SILLA-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),40
+(SELECT id FROM product WHERE sku = 'SILLA-ERGONOMICA-OFICINA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),23
+(SELECT id FROM product WHERE sku = 'SILLA-COMEDOR-TAPIZADA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),38
+(SELECT id FROM product WHERE sku = 'SILLA-NORDICA-HAYA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),37
+(SELECT id FROM product WHERE sku = 'SILLA-PLEGABLE-EXTERIOR'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),36
+(SELECT id FROM product WHERE sku = 'CAMA-INDIVIDUAL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),19
+(SELECT id FROM product WHERE sku = 'CAMA-MATRIMONIO'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),18
+(SELECT id FROM product WHERE sku = 'CAMA-DIA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),17
+(SELECT id FROM product WHERE sku = 'LITERA-INFANTIL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),16
+(SELECT id FROM product WHERE sku = 'CAMA-CANAPE-ABATIBLE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),10
+(SELECT id FROM product WHERE sku = 'CAMA-NIDO-JUVENIL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),14
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-CRISTAL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),25
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),18
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-COMPACTO'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),23
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ESTANTERIA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),16
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ELEVABLE-PIE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),15
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ESQUINERO'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),20
+(SELECT id FROM product WHERE sku = 'SOFA-CUERO'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),19
+(SELECT id FROM product WHERE sku = 'SOFA-TELA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),18
+(SELECT id FROM product WHERE sku = 'SOFA-CAMA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),12
+(SELECT id FROM product WHERE sku = 'SOFA-SECCIONAL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),11
+(SELECT id FROM product WHERE sku = 'SOFA-CHAISE-LONGUE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),10
+(SELECT id FROM product WHERE sku = 'SOFA-DOS-PLAZAS'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),14
+(SELECT id FROM product WHERE sku = 'CUADRO-ABSTRACTO'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),41
+(SELECT id FROM product WHERE sku = 'RELOJ-PARED'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),40
+(SELECT id FROM product WHERE sku = 'JARRON-CERAMICA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),39
+(SELECT id FROM product WHERE sku = 'ESPEJO-REDONDO-PARED'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),38
+(SELECT id FROM product WHERE sku = 'SET-TRES-CUADROS-BOTANICOS'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),37
+(SELECT id FROM product WHERE sku = 'RELOJ-PARED-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),36
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-CINCO-BALDAS'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),25
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-PARED-FLOTANTE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),40
+(SELECT id FROM product WHERE sku = 'LIBRERIA-MADERA-MACIZA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),17
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-INDUSTRIAL-METAL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),22
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-MODULAR-CUBOS'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),21
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-ESQUINERA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),36
+(SELECT id FROM product WHERE sku = 'LAMPARA-PIE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),41
+(SELECT id FROM product WHERE sku = 'LAMPARA-MESA-CERAMICA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),40
+(SELECT id FROM product WHERE sku = 'LAMPARA-TECHO-MIMBRE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),39
+(SELECT id FROM product WHERE sku = 'APLIQUE-PARED-LED'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),38
+(SELECT id FROM product WHERE sku = 'LAMPARA-ESCRITORIO-ARTICULADA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),37
+(SELECT id FROM product WHERE sku = 'LAMPARA-COLGANTE-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),36
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),41
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-FLOTANTE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),40
+(SELECT id FROM product WHERE sku = 'MESILLA-DOS-CAJONES'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),39
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),38
+(SELECT id FROM product WHERE sku = 'MESILLA-NORDICA-TRES-CAJONES'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),21
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-CARGA-USB'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),20
+(SELECT id FROM product WHERE sku = 'BUTACA-TERCIOPELO'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),25
+(SELECT id FROM product WHERE sku = 'SILLON-OREJERO-CLASICO'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),18
+(SELECT id FROM product WHERE sku = 'SILLON-RELAX-RECLINABLE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),17
+(SELECT id FROM product WHERE sku = 'BUTACA-NORDICA-TELA'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),22
+(SELECT id FROM product WHERE sku = 'SILLON-CUERO-VINTAGE'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),10
+(SELECT id FROM product WHERE sku = 'BUTACA-REPOSAPIES'),(SELECT id FROM store WHERE name = 'Ukun Torrejón de Ardoz'),14
+(SELECT id FROM product WHERE sku = 'MESA-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),21
+(SELECT id FROM product WHERE sku = 'MESA-CRISTAL'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),20
+(SELECT id FROM product WHERE sku = 'MESA-COMEDOR-EXTENDIBLE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),15
+(SELECT id FROM product WHERE sku = 'MESA-AUXILIAR-METAL'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),30
+(SELECT id FROM product WHERE sku = 'MESA-NORDICA-ROBLE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),17
+(SELECT id FROM product WHERE sku = 'SILLA-PLASTICO'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),33
+(SELECT id FROM product WHERE sku = 'SILLA-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),32
+(SELECT id FROM product WHERE sku = 'SILLA-ERGONOMICA-OFICINA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),19
+(SELECT id FROM product WHERE sku = 'SILLA-COMEDOR-TAPIZADA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),30
+(SELECT id FROM product WHERE sku = 'SILLA-NORDICA-HAYA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),29
+(SELECT id FROM product WHERE sku = 'CAMA-INDIVIDUAL'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),17
+(SELECT id FROM product WHERE sku = 'CAMA-MATRIMONIO'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),16
+(SELECT id FROM product WHERE sku = 'CAMA-DIA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),15
+(SELECT id FROM product WHERE sku = 'LITERA-INFANTIL'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),14
+(SELECT id FROM product WHERE sku = 'CAMA-CANAPE-ABATIBLE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),9
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-CRISTAL'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),21
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),16
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-COMPACTO'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),19
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ESTANTERIA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),14
+(SELECT id FROM product WHERE sku = 'ESCRITORIO-ELEVABLE-PIE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),13
+(SELECT id FROM product WHERE sku = 'SOFA-CUERO'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),17
+(SELECT id FROM product WHERE sku = 'SOFA-TELA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),16
+(SELECT id FROM product WHERE sku = 'SOFA-CAMA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),11
+(SELECT id FROM product WHERE sku = 'SOFA-SECCIONAL'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),10
+(SELECT id FROM product WHERE sku = 'SOFA-CHAISE-LONGUE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),9
+(SELECT id FROM product WHERE sku = 'CUADRO-ABSTRACTO'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),33
+(SELECT id FROM product WHERE sku = 'RELOJ-PARED'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),32
+(SELECT id FROM product WHERE sku = 'JARRON-CERAMICA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),31
+(SELECT id FROM product WHERE sku = 'ESPEJO-REDONDO-PARED'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),30
+(SELECT id FROM product WHERE sku = 'SET-TRES-CUADROS-BOTANICOS'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),29
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-CINCO-BALDAS'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),21
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-PARED-FLOTANTE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),32
+(SELECT id FROM product WHERE sku = 'LIBRERIA-MADERA-MACIZA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),15
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-INDUSTRIAL-METAL'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),18
+(SELECT id FROM product WHERE sku = 'ESTANTERIA-MODULAR-CUBOS'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),17
+(SELECT id FROM product WHERE sku = 'LAMPARA-PIE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),33
+(SELECT id FROM product WHERE sku = 'LAMPARA-MESA-CERAMICA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),32
+(SELECT id FROM product WHERE sku = 'LAMPARA-TECHO-MIMBRE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),31
+(SELECT id FROM product WHERE sku = 'APLIQUE-PARED-LED'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),30
+(SELECT id FROM product WHERE sku = 'LAMPARA-ESCRITORIO-ARTICULADA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),29
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-MADERA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),33
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-FLOTANTE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),32
+(SELECT id FROM product WHERE sku = 'MESILLA-DOS-CAJONES'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),31
+(SELECT id FROM product WHERE sku = 'MESILLA-NOCHE-INDUSTRIAL'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),30
+(SELECT id FROM product WHERE sku = 'MESILLA-NORDICA-TRES-CAJONES'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),17
+(SELECT id FROM product WHERE sku = 'BUTACA-TERCIOPELO'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),21
+(SELECT id FROM product WHERE sku = 'SILLON-OREJERO-CLASICO'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),16
+(SELECT id FROM product WHERE sku = 'SILLON-RELAX-RECLINABLE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),15
+(SELECT id FROM product WHERE sku = 'BUTACA-NORDICA-TELA'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),18
+(SELECT id FROM product WHERE sku = 'SILLON-CUERO-VINTAGE'),(SELECT id FROM store WHERE name = 'Ukun Barcelona'),9
