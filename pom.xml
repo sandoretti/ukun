@@ -199,6 +199,11 @@
                     <compilerArgs>
                         <arg>-Amapstruct.unmappedTargetPolicy=ERROR</arg>
                         <arg>-Amapstruct.defaultComponentModel=spring</arg>
+                        <!-- Without this, a mapper that declares `uses = …` gets its collaborators
+                             through @Autowired fields. Constructor injection is what the skill
+                             `java-springboot` asks for and what makes the generated mapper testable
+                             with a plain `new`; it also keeps the collaborator final. -->
+                        <arg>-Amapstruct.defaultInjectionStrategy=constructor</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

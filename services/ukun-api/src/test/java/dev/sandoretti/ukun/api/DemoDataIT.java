@@ -27,7 +27,7 @@ import org.springframework.test.context.DynamicPropertySource;
  * <p>Nothing is truncated here. Unlike {@link SchemaBaselineIT} this class writes no rows — the
  * seed data is exactly what it reads. That is also why it can share the seeded database of
  * {@link AbstractIntegrationTest} with {@link StackValidationIT}: both only read, and both need
- * the same twenty-seven changesets applied, so whichever context boots first migrates and the
+ * the same twenty-eight changesets applied, so whichever context boots first migrates and the
  * other finds nothing left to do.
  */
 @SpringBootTest(properties = "spring.liquibase.contexts=demo")
@@ -58,8 +58,8 @@ class DemoDataIT extends AbstractIntegrationTest {
             "Ukun Torrejón de Ardoz", 60L,
             "Ukun Barcelona", 50L);
 
-    /** The nineteen of the baseline plus the eight of the demo changelog. */
-    private static final int EXPECTED_CHANGESETS = 27;
+    /** The nineteen of the baseline, the one of the v0.3 release folder, and the eight demo ones. */
+    private static final int EXPECTED_CHANGESETS = 28;
 
     @Autowired
     private JdbcTemplate jdbc;

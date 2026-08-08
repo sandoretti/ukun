@@ -17,15 +17,21 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * last test of <em>each</em> class — the very thing that turns a shared container into one per
  * class. Ryuk removes it when the JVM exits.
  *
- * <h2>Why two databases and not one</h2>
+ * <h2>Why three databases and not one</h2>
  *
- * The three integration tests need mutually exclusive Liquibase states in the same instance.
- * {@link SchemaBaselineIT} runs under {@code contexts=prod} and asserts nineteen changesets and no
- * demo row anywhere; {@link DemoDataIT} runs under {@code demo} and asserts twenty-seven with the
- * catalogue seeded. Sharing one database would make the order in which the classes happen to run
- * decide which of the two fails — and {@code demoDataNeverReachesAProductionContext()} would stop
- * meaning anything at all. So the container holds one database per Liquibase context:
- * {@link #SCHEMA_ONLY_DATABASE} and {@link #SEEDED_DATABASE}, created on first use.
+ * The integration tests need mutually exclusive states in the same instance. {@link SchemaBaselineIT}
+ * runs under {@code contexts=prod} and asserts the schema changesets and no demo row anywhere;
+ * {@link DemoDataIT} runs under {@code demo} and asserts the seeded catalogue. Sharing one database
+ * would make the order in which the classes happen to run decide which of the two fails — and
+ * {@code demoDataNeverReachesAProductionContext()} would stop meaning anything at all. So the
+ * container holds one database per state, created on first use.
+ *
+ * <p>{@link #CATALOG_DATABASE} is the third, and it exists for a different reason than the other two:
+ * a test that exercises a domain query <em>writes</em> its own rows with an object mother, which is
+ * what the {@code testing} skill asks for so the case under test is built explicitly instead of
+ * being fished out of the seed data. Those rows must not be visible to
+ * {@code demoDataNeverReachesAProductionContext()}, and the seed data must not be visible to a test
+ * that counts its own products. It is migrated under {@code prod}: schema, no data.
  *
  * <p>Consequence worth stating: this is why the datasource is wired with
  * {@code @DynamicPropertySource} instead of the {@code @ServiceConnection} that {@code docs/13} §1
@@ -44,13 +50,16 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * }
  * }</pre>
  */
-abstract class AbstractIntegrationTest {
+public abstract class AbstractIntegrationTest {
 
     /** Schema only: what the {@code prod} Liquibase context produces. */
     protected static final String SCHEMA_ONLY_DATABASE = "ukun_app_schema";
 
     /** Schema plus the demo catalogue: what the {@code demo} context produces. */
     protected static final String SEEDED_DATABASE = "ukun_app_demo";
+
+    /** Schema only, for the tests that seed their own rows with an object mother. */
+    protected static final String CATALOG_DATABASE = "ukun_app_catalog";
 
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 

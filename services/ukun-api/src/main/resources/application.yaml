@@ -28,6 +28,21 @@ spring:
       # is here so the first entity of v0.3 is checked against the baseline from its first run.
       ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate:
+        # Safety net, never the plan A (docs/03-analisis-y-patrones.md §2, reading ladder): a lazy
+        # association that escapes its @EntityGraph is loaded for the whole batch instead of one row
+        # at a time, so an overlooked N+1 costs a handful of queries rather than one per row. The
+        # first three rungs — projection, @EntityGraph, fetch join — are still the ones that decide.
+        default_batch_fetch_size: 50
+
+ukun:
+  catalog:
+    # Public prefix product images are served from. `product.image_key` is a storage key and is never
+    # exposed (docs/08-identidad-y-seguridad.md §9): the API composes a servable URL from it. /media/**
+    # is a public route of the gateway serving static content, deliberately not an operation of the
+    # OpenAPI contract.
+    media-base-path: /media/products/
 
 server:
   port: 8081

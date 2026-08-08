@@ -13,10 +13,20 @@ Cada módulo es un paquete de nivel superior bajo el paquete raíz de la aplicac
 ```java
 // dev.sandoretti.ukun.api.inventory.package-info
 @org.springframework.modulith.ApplicationModule(
-    allowedDependencies = { "catalog", "stores" }
+    allowedDependencies = { "catalog", "stores", "shared" }
 )
 package dev.sandoretti.ukun.api.inventory;
 ```
+
+**`shared` se declara aunque sea un módulo abierto.** Es la trampa más fácil de este fichero, y se descubrió con el primer módulo que tuvo código (v0.3): `type = OPEN` y `allowedDependencies` son dos mecanismos distintos. El primero decide **qué se ve** —los subpaquetes de un módulo abierto son importables sin publicarlos como `NamedInterface`—; el segundo decide **a quién se puede llamar**, y declarar una lista la vuelve **cerrada**: cualquier destino que no esté en ella es una violación, incluido un módulo abierto. El síntoma es exactamente este:
+
+```
+Module 'catalog' depends on module 'shared' via
+  …catalog.application.ProductQueryService -> …shared.web.PageResponse.
+  Allowed targets: storage.
+```
+
+Un módulo que **no** declara lista (`stores`, `storage`, `identity`) la tiene sin restringir y no necesita nombrar a nadie. Verificado contra Modulith 2.1.0; ver ADR-0017 §1.
 
 Estructura interna de un módulo, coherente con lo que ya prescribe la skill `spring-api`:
 

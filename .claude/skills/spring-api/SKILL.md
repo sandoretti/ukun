@@ -14,15 +14,17 @@ Por feature, no por capa técnica global — y cada paquete de nivel superior es
 | Módulo | Tablas que posee | `allowedDependencies` |
 |---|---|---|
 | `shared` | — | módulo abierto (`type = OPEN`) |
-| `catalog` | `product`, `product_type` | `storage` |
+| `catalog` | `product`, `product_type` | `storage`, `shared` |
 | `stores` | `store`, `address` de tienda | — |
 | `storage` | — (`FileStoragePort`) | — |
 | `identity` | — (`AccountsPort`) | — |
-| `inventory` | `store_stock` | `catalog`, `stores` |
-| `customers` | `customer`, `address`, `card` de perfil | `stores`, `identity` |
-| `staff` | `employee` | `stores`, `identity` |
-| `cart` | `cart_item` | `catalog`, `inventory`, `customers` |
-| `orders` | `customer_order`, `order_line`, `idempotency_key` | `cart`, `inventory`, `customers`, `catalog` |
+| `inventory` | `store_stock` | `catalog`, `stores`, `shared` |
+| `customers` | `customer`, `address`, `card` de perfil | `stores`, `identity`, `shared` |
+| `staff` | `employee` | `stores`, `identity`, `shared` |
+| `cart` | `cart_item` | `catalog`, `inventory`, `customers`, `shared` |
+| `orders` | `customer_order`, `order_line`, `idempotency_key` | `cart`, `inventory`, `customers`, `catalog`, `shared` |
+
+`shared` se declara **aunque sea abierto**: `type = OPEN` levanta la encapsulación de sus subpaquetes, pero una `allowedDependencies` declarada es una lista *cerrada* y todo destino fuera de ella es una violación. Los tres módulos sin lista no necesitan declarar nada. Detalle en `docs/14-modules.md` §1.
 
 Cada módulo, por dentro:
 ```

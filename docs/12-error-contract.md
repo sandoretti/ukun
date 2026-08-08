@@ -40,7 +40,9 @@ Aplica a `ukun-api` y a `ukun-auth`; el registro es único y compartido entre lo
 | `MALFORMED_REQUEST` | 400 | — | `HttpMessageNotReadableException` | v0.3 |
 | `UNAUTHENTICATED` | 401 | — | resource server (JWT ausente/inválido) | v0.4 |
 | `FORBIDDEN` | 403 | — | `@PreAuthorize` / autorización de recurso | v0.4 |
-| `RESOURCE_NOT_FOUND` | 404 | `resource`, `id` | `orElseThrow` en servicio | v0.3 |
+| `RESOURCE_NOT_FOUND` | 404 | `resource`, `id` | `orElseThrow` en servicio; también la ruta que no existe (`NoResourceFoundException`), sin extensiones | v0.3 |
+| `METHOD_NOT_ALLOWED` | 405 | `allowed` (métodos aceptados) | `HttpRequestMethodNotSupportedException` | v0.3 |
+| `NOT_ACCEPTABLE` | 406 | `allowed` (tipos que el servicio produce) | `HttpMediaTypeNotAcceptableException` | v0.3 |
 | `CHECKOUT_EXPIRED` | 410 | `attemptId`, `expiredAt` | checkout — ADR-0016 | v0.1 (contrato) / v0.6 (implementación) |
 | `INSUFFICIENT_STOCK` | 409 | `stockLineId`, `productId`, `sku`, `available`, `requested` | checkout — ADR-0008, ADR-0015 | v0.1 (contrato) / v0.6 (implementación) |
 | `PRODUCT_IN_USE` | 409 | `inOrders`, `inStock`, `inCarts` | `DeleteProductUseCase` (RF-10) | v0.7 |
@@ -57,6 +59,14 @@ Aplica a `ukun-api` y a `ukun-auth`; el registro es único y compartido entre lo
 | `INTERNAL_ERROR` | 500 | — | fallback genérico, sin detalle al cliente | v0.3 |
 
 La columna *Release* dice cuándo el `code` **se emite por primera vez**; todos están en el OpenAPI congelado en SINC-1 desde v0.1, porque el frontend genera de ahí el `enum` con el que hace el lookup.
+
+### Los dos `code` de protocolo, y por qué existen
+
+`METHOD_NOT_ALLOWED` y `NOT_ACCEPTABLE` no los lanza ningún caso de uso: los produce Spring MVC antes de llegar al controller. Entraron en v0.3 al descubrir que sin ellos **no había forma de responderlos sin mentir**. El `@RestControllerAdvice` empezó siendo un `@ExceptionHandler(Exception.class)` y eso se tragaba la veintena de excepciones que Spring ya clasifica: `GET /api/ruta-que-no-existe` devolvía `500 INTERNAL_ERROR` en vez de `404`, y un `POST` sobre un endpoint de solo lectura, `500` en vez de `405`. Medido, no supuesto.
+
+El arreglo es que el advice extienda `ResponseEntityExceptionHandler` —que resuelve el status correcto— y selle `code` y `traceId` en el único punto por el que pasan todas sus respuestas. Eso deja dos status sin `code` en el registro, y un `ProblemDetail` sin `code` no es una respuesta de este contrato. De ahí las dos filas.
+
+Ninguno de los dos lo puede provocar el SPA, que solo llama a rutas y verbos generados del propio OpenAPI; los ve quien usa la API a mano o un cliente desactualizado. Se traducen igual que el resto, por `code`.
 
 ### Tres fronteras que es fácil confundir
 

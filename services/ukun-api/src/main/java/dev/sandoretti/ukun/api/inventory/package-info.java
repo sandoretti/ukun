@@ -7,6 +7,6 @@
  * {@code CatalogApi}, never once per row (ADR-0017 §2 and §3, docs/14-modules.md §3).
  */
 @org.springframework.modulith.ApplicationModule(
-        allowedDependencies = {"catalog", "stores"}
+        allowedDependencies = {"catalog", "stores", "shared"}
 )
 package dev.sandoretti.ukun.api.inventory;

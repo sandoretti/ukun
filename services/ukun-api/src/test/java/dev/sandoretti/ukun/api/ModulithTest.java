@@ -26,18 +26,24 @@ class ModulithTest {
     /**
      * ADR-0017 §1, transcribed. Topological order: shared -> (catalog, stores, storage, identity) ->
      * (inventory, customers, staff) -> cart -> orders.
+     *
+     * <p>Every module that declares a list names {@code shared} in it. That is not redundancy against
+     * {@code shared} being open: {@code type = OPEN} lifts the encapsulation of its subpackages, but a
+     * declared {@code allowedDependencies} is a <em>closed</em> list and anything outside it is a
+     * violation. {@code stores}, {@code storage} and {@code identity} declare no list at all — an
+     * unrestricted one — which is why they stay empty here.
      */
     private static final Map<String, Set<String>> EXPECTED_GRAPH = Map.of(
             "shared", Set.of(),
-            "catalog", Set.of("storage"),
+            "catalog", Set.of("storage", "shared"),
             "stores", Set.of(),
             "storage", Set.of(),
             "identity", Set.of(),
-            "inventory", Set.of("catalog", "stores"),
-            "customers", Set.of("stores", "identity"),
-            "staff", Set.of("stores", "identity"),
-            "cart", Set.of("catalog", "inventory", "customers"),
-            "orders", Set.of("cart", "inventory", "customers", "catalog"));
+            "inventory", Set.of("catalog", "stores", "shared"),
+            "customers", Set.of("stores", "identity", "shared"),
+            "staff", Set.of("stores", "identity", "shared"),
+            "cart", Set.of("catalog", "inventory", "customers", "shared"),
+            "orders", Set.of("cart", "inventory", "customers", "catalog", "shared"));
 
     @Test
     @DisplayName("no module reaches into another one's internals")

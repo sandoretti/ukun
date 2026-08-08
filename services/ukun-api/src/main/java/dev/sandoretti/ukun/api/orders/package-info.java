@@ -7,6 +7,6 @@
  * touches the most aggregates in a single transaction (ADR-0017 §1).
  */
 @org.springframework.modulith.ApplicationModule(
-        allowedDependencies = {"cart", "inventory", "customers", "catalog"}
+        allowedDependencies = {"cart", "inventory", "customers", "catalog", "shared"}
 )
 package dev.sandoretti.ukun.api.orders;
