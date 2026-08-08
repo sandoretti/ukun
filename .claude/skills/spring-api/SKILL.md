@@ -87,6 +87,10 @@ Ninguna entidad se pasa como argumento a `log.*(...)` (regla ArchUnit, ver `docs
 
 Testcontainers + Postgres real para todo lo de persistencia (nunca H2 — las claves compuestas, las `Specification` dinámicas y `SELECT FOR UPDATE` no se comportan igual). `@WebMvcTest` con `SecurityMockMvcRequestPostProcessors.jwt()` para slices de autorización. WireMock como doble de `AccountsPort` en los tests de la saga de signup. Awaitility para el test de concurrencia de sobreventa. `ApplicationModules.verify()` desde el skeleton (ADR-0017). Convenciones completas de nomenclatura, AssertJ, object mothers y Testcontainers singleton: skill `testing` y `docs/13-testing.md` — no se repiten aquí.
 
+## Skills externas de apoyo
+
+`java-springboot` y `springboot-patterns` (instaladas desde skills.sh, ver `.claude/skills/README.md`) sirven de repaso general de Spring Boot. **Esta skill manda sobre las dos**: son genéricas y se escribieron sin conocer Spring Boot 4.1, Spring Modulith ni el registro cerrado de `code`s de error. Dos choques que ya están identificados y no hay que redescubrir — `springboot-patterns` propone un `ApiError` propio donde aquí va `ProblemDetail` (regla 5), y factorías estáticas `Response.from(...)` donde aquí va MapStruct (regla 3, y ADR-0009 ya revirtió esa decisión una vez). Tabla completa de conflictos en `.claude/skills/README.md`.
+
 ## Sobreingeniería a evitar aquí
 
 No arquitectura hexagonal completa, no CQRS, no microservicios de dominio dentro de este monolito modular, no un `@Aspect` genérico de auditoría, no Hibernate Envers, no `@ApplicationModuleListener`/eventos asíncronos entre módulos (Spring Modulith se adopta por sus fronteras verificadas, no por su mecanismo de eventos — ver ADR-0017). Ver la tabla completa de "qué no hacer" en `docs/03-analisis-y-patrones.md`.
