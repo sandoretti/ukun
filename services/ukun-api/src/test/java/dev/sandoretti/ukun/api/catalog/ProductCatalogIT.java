@@ -309,6 +309,45 @@ class ProductCatalogIT extends AbstractIntegrationTest {
                 .isEqualTo("size");
     }
 
+    /**
+     * A route that does not exist must be a {@code 404}, and this test exists because it was not: a
+     * catch-all {@code @ExceptionHandler(Exception.class)} used to swallow the exceptions Spring MVC
+     * already classifies and answer {@code 500 INTERNAL_ERROR}. Every route scan became a logged
+     * stack trace and an alert.
+     */
+    @Test
+    @DisplayName("an unknown route is a 404, not a 500")
+    void reportsAnUnknownRouteAsNotFound() {
+        restTestClient
+                .get()
+                .uri("/api/does-not-exist")
+                .exchange()
+                .expectStatus()
+                .isNotFound()
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("RESOURCE_NOT_FOUND")
+                .jsonPath("$.traceId")
+                .isNotEmpty();
+    }
+
+    /** Same defect, the other half: a write verb on a read-only endpoint is a {@code 405}. */
+    @Test
+    @DisplayName("a method the endpoint does not support is a 405, not a 500")
+    void reportsAnUnsupportedMethodAsMethodNotAllowed() {
+        restTestClient
+                .post()
+                .uri(CATALOG)
+                .exchange()
+                .expectStatus()
+                .isEqualTo(405)
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("METHOD_NOT_ALLOWED")
+                .jsonPath("$.traceId")
+                .isNotEmpty();
+    }
+
     @Test
     @DisplayName("a filter of the wrong type is reported as a field error, never as a 500")
     void rejectsAFilterOfTheWrongType() {

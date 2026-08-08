@@ -1,1 +1,10 @@
-{"VALIDATION_FAILED": "Validation failed", "INSUFFICIENT_STOCK": "Only {{available}} units of {{sku}} left"}
+{
+  "VALIDATION_FAILED": "Validation failed",
+  "MALFORMED_REQUEST": "We could not read the request",
+  "RESOURCE_NOT_FOUND": "We could not find what you are looking for",
+  "METHOD_NOT_ALLOWED": "That operation is not allowed on this resource",
+  "NOT_ACCEPTABLE": "The requested format is not available",
+  "REFERENTIAL_INTEGRITY": "This cannot be done: other data depends on it",
+  "INTERNAL_ERROR": "Something went wrong on our side. Please try again",
+  "INSUFFICIENT_STOCK": "Only {{available}} units of {{sku}} left"
+}
