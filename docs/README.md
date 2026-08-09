@@ -48,7 +48,7 @@ Para no buscar la misma decisión en tres sitios:
 
 Las convenciones específicas de cada tecnología viven como **skills de proyecto** en `.claude/skills/`, no repetidas aquí — invócalas con `/spring-api`, `/react-web`, `/testing`, etc. Esta carpeta `docs/` es el "qué y por qué"; las skills son el "cómo se escribe en este repo".
 
-Junto a ellas hay tres skills **externas** de Spring instaladas desde skills.sh, que son material de apoyo genérico y no deciden nada: ante cualquier discrepancia mandan las skills propias, `docs/` y los ADR. El catálogo, la regla de precedencia y los conflictos ya identificados están en [`.claude/skills/README.md`](../.claude/skills/README.md).
+Junto a ellas hay siete skills **externas** instaladas desde skills.sh —tres de Spring para las pistas de backend, cuatro de React para la de frontend—, que son material de apoyo genérico y no deciden nada: ante cualquier discrepancia mandan las skills propias, `docs/` y los ADR. El catálogo, la regla de precedencia, los conflictos ya identificados y el motivo de las que se evaluaron y se descartaron están en [`.claude/skills/README.md`](../.claude/skills/README.md).
 
 Para repartir trabajo entre sesiones: `/slice` genera el encargo de una tarea con su contrato, sus límites y su criterio de terminado; `/worktree` aísla dos sesiones simultáneas. El razonamiento detrás de ambas está en `09-trabajo-con-agentes-ia.md`.
 

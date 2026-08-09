@@ -1,6 +1,6 @@
 # Frontend: React, UX/UI y buenas prácticas
 
-> **Fuente de verdad de:** tema y paleta, estructura de `apps/ukun-web`, datos de servidor, formularios, iconografía, i18n en pantalla y accesibilidad.
+> **Fuente de verdad de:** tema y paleta, estructura de `apps/ukun-web`, diseño de los componentes base, datos de servidor y query keys, formularios, iconografía, i18n en pantalla y accesibilidad.
 > **Léelo si:** vas a tocar cualquier cosa de `apps/ukun-web`.
 > **No decide:** el contrato que consume (`docs/api/openapi/`), ni los `code`s de error (`12-error-contract.md`), ni cómo se escribe un test (`13-testing.md`).
 > **Idioma:** identificadores y props en inglés (ADR-0018); el texto de pantalla siempre vía `t()` (ADR-0019).
@@ -58,9 +58,38 @@ apps/ukun-web/src/
 
 Nombres de carpeta y de módulo en inglés (ADR-0018), alineados con los módulos de Spring Modulith del backend (ADR-0017) donde aplica — `catalog`, `cart`, `orders`, `inventory` son el mismo concepto a ambos lados de la API. Las carpetas de `features/` no se importan entre sí directamente — si `orders` necesita algo de `cart`, ese algo sube a `shared/`. Es la misma regla que ArchUnit/Spring Modulith hace cumplir en el backend (`03-analisis-y-patrones.md`, ADR-0017), aplicada al frontend.
 
+## Cómo se diseña un componente base de `shared/ui/`
+
+Los 6-8 componentes base de arriba son la pieza que más se va a reutilizar y la que más caro sale rehacer, así que su API se decide con tres invariantes:
+
+- **Variantes explícitas, no props booleanas acumuladas.** Un `<Button danger primary small outline>` con cinco booleanos permite dieciséis combinaciones sin sentido y obliga a leer el cuerpo del componente para saber cuáles son legales. Se sustituye por variantes con nombre (`variant="danger"`) o, cuando el comportamiento difiere de verdad y no solo el aspecto, por componentes distintos. Cada booleano nuevo que se le añade a un componente base es una señal de que hacía falta componer, no parametrizar.
+- **`children` antes que props `renderX`.** Un componente que recibe `renderHeader`, `renderFooter` y `renderActions` está reimplementando la composición que JSX ya da gratis. Para lo compuesto de verdad (una tarjeta con cabecera, cuerpo y pie), compound components con contexto interno — que es como react-bootstrap expone `Card.Header`, y conviene no pelearse con esa forma.
+- **`ref` es una prop normal.** React 19 la pasa directamente; en código nuestro no se escribe `forwardRef`. react-bootstrap 2.x sí lo usa por dentro, y eso ni se toca ni se envuelve para "arreglarlo".
+
+Y una frontera que no se cruza: **el estado de servidor nunca sube a un contexto**. Para eso está TanStack Query (sección siguiente). El contexto queda para estado de UI —tema, idioma, sesión, apertura de un modal—, que es poco y cambia despacio. Un provider que cachea respuestas del API reimplementa peor algo que ya está resuelto.
+
 ## Datos del servidor: TanStack Query, no `useEffect` + `fetch`
 
 Todo dato que viene del API pasa por un hook de TanStack Query (`useQuery`/`useMutation`), nunca por un `fetch` suelto en un `useEffect`. Esto da de fábrica: caché, revalidación, estados `isLoading`/`isError` consistentes, y reintentos — que es exactamente lo que hoy no existe en ningún sitio (el JS actual, `scripts.js`, no hace ni una llamada AJAX; toda la interacción es navegación de servidor).
+
+**Las query keys salen de una factoría por feature, nunca de un array literal escrito dentro de un componente.** Vive en `features/<x>/api/`, y su jerarquía va de entidad a lista/detalle a filtros:
+
+```ts
+export const productKeys = {
+  all: ['products'] as const,
+  lists: () => [...productKeys.all, 'list'] as const,
+  list: (filters: ProductFilters) => [...productKeys.lists(), filters] as const,
+  detail: (sku: string) => [...productKeys.all, 'detail', sku] as const,
+};
+```
+
+La jerarquía es lo que hace que invalidar sea dirigido: tras editar un producto se invalida `productKeys.detail(sku)` y, si hace falta, `productKeys.lists()` — no un `invalidateQueries()` sin argumentos que tire la caché entera. Escribir la misma key a mano en dos ficheros es el bug de caché clásico, y aparece en cuanto conviven varias features escribiendo sobre los mismos datos (v0.6: carrito y pedidos sobre el mismo producto). Se fija ahora, con `shared/api/` todavía vacío, porque después cuesta mucho más.
+
+En listados paginados, `placeholderData` con la página anterior mientras carga la siguiente — la alternativa es que la tabla desaparezca y reaparezca en cada cambio de página.
+
+## El estado de una pantalla de listado vive en la URL
+
+Filtros, orden y página van en query params, no en un `useState` local. Es lo que hace que un resultado de catálogo se pueda enlazar y compartir, que el botón atrás del navegador haga lo que el usuario espera, y que recargar no devuelva al estado inicial. Aplica desde la primera pantalla de listado (catálogo, v0.3) y a todas las que vengan después: stock y pedidos del back-office tienen el mismo problema.
 
 ## Formularios: react-hook-form + zod
 
@@ -73,6 +102,19 @@ Cada formulario define su esquema `zod` una vez; ese esquema valida en el client
 ## Accesibilidad
 
 No es una pasada final: react-bootstrap ya resuelve buena parte (roles ARIA en modales, dropdowns, tabs), pero cada componente base de `shared/ui/` se revisa explícitamente por: foco visible, orden de tabulación, labels asociados a inputs (el signup actual tiene un formulario largo sin agrupar campos relacionados — se corrige agrupando con `fieldset`/`legend`), y contraste de color suficiente en la paleta elegida. La pasada de a11y de v1.0 (`04-roadmap.md`) es una auditoría con axe/Lighthouse sobre lo ya construido, no el único punto donde se piensa en esto.
+
+La lista concreta que se comprueba en cada componente, para que "revisar accesibilidad" tenga un contenido verificable y no sea una intención:
+
+- **Semántica antes que ARIA.** `<button>` para acciones, `<a>`/`<Link>` para navegación; nunca un `<div onClick>`. Un rol ARIA es lo que se pone cuando no existe el elemento adecuado, no lo primero que se prueba.
+- **Foco.** `:focus-visible` en vez de `:focus`, para no pintar el anillo al hacer clic con el ratón. Nunca `outline: none` sin un sustituto visible en su lugar.
+- **Botones de solo icono llevan `aria-label`**; los iconos decorativos, `aria-hidden="true"` (lo que ya hace `<Icon>`).
+- **Lo que cambia solo se anuncia**: toasts y validación asíncrona en una región `aria-live="polite"`. Si el usuario no está mirando ese punto de la pantalla, el cambio no existe.
+- **Formularios**: `autocomplete` y `name` con sentido, el `type` correcto (`email`, `tel`, `url`), nunca bloquear el pegado, label que sea zona clicable del control, y al enviar con errores el foco va al primero, con el mensaje inline junto a su campo.
+- **Movimiento**: se respeta `prefers-reduced-motion`, y se anima `transform`/`opacity`, nunca `transition: all`.
+- **Contenido largo**: todo contenedor de texto decide qué hace cuando el contenido no cabe (truncar, recortar a N líneas, partir palabra). Un nombre de producto de 120 caracteres no debe romper la tarjeta.
+- **Números**: cifras tabulares en columnas de precio y cantidad, para que comparen alineadas.
+
+Esa lista es también el guión de la skill externa `web-design-guidelines` (ver `.claude/skills/README.md`), que sirve para revisar una pantalla ya escrita — con la salvedad de que sus ejemplos vienen en clases de Tailwind y aquí se traducen al tema.
 
 ## Iconografía: Material Symbols autohospedado
 
