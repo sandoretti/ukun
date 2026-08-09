@@ -25,5 +25,10 @@ dist-ssr
 
 # Build output
 *.tsbuildinfo
-vite.config.js
-vite.config.d.ts
+# `tsc -b` ya no emite aquí el vite.config compilado (tsconfig.node.json lo manda a
+# node_modules/.tmp): dejarlo caer al lado del .ts hacía que Vite cargara el .js obsoleto.
+
+# El .env.development del frontend no lleva secretos: solo fija los defaults de desarrollo
+# (MSW encendido, API en el mismo origen). La regla `.env.*` del raíz existe por las credenciales
+# de Postgres y aquí no aplica.
+!.env.development

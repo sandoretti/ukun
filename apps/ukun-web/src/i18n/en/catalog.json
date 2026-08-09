@@ -1,0 +1,53 @@
+{
+  "title": "Catalogue",
+  "empty": "No products match your search",
+  "results_one": "{{count}} product",
+  "results_other": "{{count}} products",
+  "filters": {
+    "title": "Filters",
+    "open": "Filters",
+    "close": "Close the filters",
+    "type": "Type",
+    "allTypes": "All types",
+    "price": "Price",
+    "priceMin": "Minimum price",
+    "priceMax": "Maximum price",
+    "priceFrom": "From",
+    "priceTo": "To",
+    "activeCount_one": "{{count}} active filter",
+    "activeCount_other": "{{count}} active filters",
+    "active": "Active filters",
+    "remove": "Remove the {{label}} filter",
+    "clearAll": "Clear all"
+  },
+  "chips": {
+    "name": "“{{value}}”",
+    "type": "Type: {{value}}",
+    "priceMin": "From {{value}}",
+    "priceMax": "To {{value}}"
+  },
+  "sort": {
+    "label": "Sort by",
+    "PRICE_ASC": "Price: low to high",
+    "PRICE_DESC": "Price: high to low"
+  },
+  "product": {
+    "noImage": "No photo"
+  },
+  "availability": {
+    "available": "In stock",
+    "unavailable": "Out of stock online",
+    "unknown": "We could not check availability. The catalogue is shown anyway."
+  },
+  "loadMore": {
+    "action": "Show more products",
+    "progress": "Showing {{loaded}} of {{total}} products",
+    "failed": "We could not load more products. Try again."
+  },
+  "pagination": {
+    "label": "Catalogue pagination",
+    "status": "Page {{page}} of {{totalPages}}",
+    "previous": "Previous",
+    "next": "Next"
+  }
+}

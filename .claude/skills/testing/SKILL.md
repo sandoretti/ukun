@@ -26,7 +26,8 @@ Este documento resume `docs/13-testing.md` — léelo entero si vas a diseñar l
 
 - Vitest + React Testing Library.
 - `getByRole`/`getByLabelText` sobre `getByTestId`; `userEvent` sobre `fireEvent`.
-- MSW con los **mismos** handlers que el modo dev — nunca un segundo juego de mocks para test.
+- MSW **solo dentro de Vitest**, en `src/test/msw/`, y en la frontera HTTP — nunca mockeando axios ni el hook de TanStack Query, y nunca registrando un service worker: el navegador habla siempre con el API real (skill `react-web`).
+- `server.listen({ onUnhandledRequest: 'error' })` — una petición sin handler es un fallo del test.
 - Un test por estado de la trilogía carga/vacío/error de `shared/ui/`.
 - Test de paridad de claves `es/*.json` ↔ `en/*.json`, y de que todo `code` de `docs/12-error-contract.md` tiene entrada en `errors.json` de ambos idiomas (ADR-0019).
 

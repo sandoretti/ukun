@@ -1,1 +1,23 @@
-{"loading": "Loading...", "empty": "No results found", "error": "An error occurred", "title": "Ukun"}
+{
+  "title": "Ukun",
+  "loading": "Loading...",
+  "empty": "No results found",
+  "error": "An error occurred",
+  "nav": {
+    "catalog": "Catalogue",
+    "toggle": "Open the navigation menu"
+  },
+  "search": {
+    "label": "Search products",
+    "placeholder": "Sofa, table, bunk bed…",
+    "submit": "Search",
+    "hint": "Press Enter to see every result",
+    "status_one": "{{count}} suggestion",
+    "status_other": "{{count}} suggestions"
+  },
+  "language": {
+    "label": "Language",
+    "es": "Spanish",
+    "en": "English"
+  }
+}

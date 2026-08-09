@@ -43,7 +43,7 @@ Fijadas en `apps/ukun-web/package.json` el 2026-08-09, con instalación limpia v
 | react-hook-form + zod | **7.85.0** + **zod 4.4.3** (`@hookform/resolvers` 5.7.1) | Formularios + validación; zod también valida las respuestas del API en el cliente si hace falta. El salto a zod 4 se hizo sin coste porque todavía no hay ningún esquema escrito. |
 | TypeScript | **5.9.3** — *no* 6 ni 7 | **Es el techo que impone el ecosistema, no una elección conservadora.** `openapi-typescript` 7.13 declara peer `typescript@^5.x`, y `typescript-eslint` 8.66 declara `>=4.8.4 <6.1.0`. Mientras `openapi-typescript` no soporte TS 6, subir rompe la generación de `types/api.d.ts`, que es una regla dura (`07-frontend-ux-ui.md`). Revisar en cada release. |
 | openapi-typescript | **7.13.0** | Genera `types/api.d.ts` desde `docs/api/openapi/ukun-api.yaml` — nunca se escriben tipos de API a mano. Es quien fija el techo de TypeScript. |
-| MSW (Mock Service Worker) | **2.15.0** | Mocks de API para que el frontend avance sin depender del backend real (ver `04-roadmap.md`). |
+| MSW (Mock Service Worker) | **2.15.0** | **Solo dependencia de test** (`msw/node` en Vitest, ver `13-testing.md` §2). No se registra service worker: el navegador habla siempre con el API real (`07-frontend-ux-ui.md`). |
 | axios | **1.19.0** | Cliente HTTP, ver ADR-0010 — interceptores para `XSRF-TOKEN` y traducción de `ProblemDetail`. |
 | react-router | **7.18.2** | Enrutado del SPA. Node 20+, React 19+, ESM-only — coherente con el resto del stack de este documento. |
 | material-symbols | **0.45.10** | Iconografía, ver `07-frontend-ux-ui.md`. Fuente variable autohospedada, nunca CDN. |

@@ -53,7 +53,7 @@ Están instaladas con `--copy`, no con symlink: son ficheros versionados, revisa
 
 - Exige el **MCP de Stitch** (`list_tools`, `[prefix]:get_screen`, `scripts/fetch-stitch.sh`) para bajarse los diseños de un proyecto de Stitch. Aquí no hay ni proyecto ni MCP: la skill no llega a terminar su primera fase.
 - Extrae tokens de un `tailwind.config` y obliga a **clases Tailwind con variantes `dark:`** en todos los componentes. ADR-0002 elige react-bootstrap y descarta Tailwind explícitamente.
-- Impone `src/components/` + `src/hooks/` + `src/data/mockData.ts`. Aquí la estructura es `features/` + `shared/ui/` (`docs/07-frontend-ux-ui.md`) y los datos de desarrollo son handlers de MSW generados del OpenAPI, no un fichero de mocks escrito a mano.
+- Impone `src/components/` + `src/hooks/` + `src/data/mockData.ts`. Aquí la estructura es `features/` + `shared/ui/` (`docs/07-frontend-ux-ui.md`) y los datos de desarrollo salen del API real que levanta Tilt, no de un fichero de mocks en el bundle.
 
 Lo que se buscaba de ella —cómo se diseña un componente React reutilizable— lo cubre `vercel-composition-patterns` sin ninguna de esas ataduras.
 
