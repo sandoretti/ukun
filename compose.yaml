@@ -25,6 +25,13 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      # Las fotos de producto, que el módulo `storage` sirve bajo /media/products/** (ADR-0017,
+      # docs/08 §9). Es el bind mount que docs/01-arquitectura.md ya dibuja, y desaparece en v1.1
+      # cuando el adaptador pase a almacenamiento de objetos.
+      #
+      # `:ro` porque hoy solo se lee: la subida de RF-10 llega en v0.7 y es quien tiene que quitarlo.
+      - ./resources/uploads:/opt/resources/uploads:ro
     depends_on:
       - db
 

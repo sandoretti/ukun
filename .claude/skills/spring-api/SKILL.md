@@ -16,7 +16,7 @@ Por feature, no por capa técnica global — y cada paquete de nivel superior es
 | `shared` | — | módulo abierto (`type = OPEN`) |
 | `catalog` | `product`, `product_type` | `storage`, `shared` |
 | `stores` | `store`, `address` de tienda | — |
-| `storage` | — (`FileStoragePort`) | — |
+| `storage` | — (`FileStoragePort` + `/media/products/**`) | — |
 | `identity` | — (`AccountsPort`) | — |
 | `inventory` | `store_stock` | `catalog`, `stores`, `shared` |
 | `customers` | `customer`, `address`, `card` de perfil | `stores`, `identity`, `shared` |
@@ -57,7 +57,9 @@ Los paquetes de módulo **no se importan entre sí** salvo a través de la API p
 
 ## Imagen de producto (RF-10)
 
-`PUT /api/admin/products/{id}/image` es la **única operación multipart del servicio**; todo lo demás es JSON. La imagen es un sub-recurso propio, no un campo del `POST`/`PUT` del producto, para que la validación de campos y la de fichero no compartan handler. Reemplazar la imagen (borrar la vieja del almacenamiento + escribir la nueva + actualizar `product.image_key`) es **una unidad con compensación** en el caso de uso, nunca pasos sueltos en el controller — el legacy borra la foto vieja antes de guardar y la pierde si el guardado falla (`docs/03-analisis-y-patrones.md` §3). El fichero se valida por su contenido real, no por la extensión, y la clave la genera el servidor: reglas completas y los `code`s `415`/`413` en `docs/08-identidad-y-seguridad.md` §9.
+**Servirla ya funciona desde v0.3**: el módulo `storage` expone `GET /media/products/{key}` sobre el directorio de `ukun.storage.local-root` (bind mount en `compose.yaml`). Esa ruta no está en el OpenAPI —lleva `@Hidden`— y su `404` va sin `ProblemDetail`, que es la única excepción al registro de errores y está razonada en `docs/08-identidad-y-seguridad.md` §9. La `key` llega de la URL, así que el adaptador la valida como un único segmento de ruta *y* comprueba que el fichero resuelto sigue bajo la raíz real: no toques esas dos comprobaciones sin leer §9 antes.
+
+Lo que sigue es la **subida**, que es trabajo de v0.7. `PUT /api/admin/products/{id}/image` es la **única operación multipart del servicio**; todo lo demás es JSON. La imagen es un sub-recurso propio, no un campo del `POST`/`PUT` del producto, para que la validación de campos y la de fichero no compartan handler. Reemplazar la imagen (borrar la vieja del almacenamiento + escribir la nueva + actualizar `product.image_key`) es **una unidad con compensación** en el caso de uso, nunca pasos sueltos en el controller — el legacy borra la foto vieja antes de guardar y la pierde si el guardado falla (`docs/03-analisis-y-patrones.md` §3). El fichero se valida por su contenido real, no por la extensión, y la clave la genera el servidor: reglas completas y los `code`s `415`/`413` en `docs/08-identidad-y-seguridad.md` §9.
 
 ## Concurrencia (ver ADR-0008, ADR-0015)
 
