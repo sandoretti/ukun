@@ -30,21 +30,29 @@ Versiones verificadas por búsqueda web en agosto de 2026, no de memoria — est
 
 | Pieza | Versión de referencia | Notas |
 |---|---|---|
+Fijadas en `apps/ukun-web/package.json` el 2026-08-09, con instalación limpia verificada: build, tests, lint y `npm audit` en cero.
+
+| Pieza | Versión de referencia | Notas |
+|---|---|---|
 | React | **19.2.8** | |
-| Vite | **8.0.9** | Usa Rolldown (bundler en Rust) por defecto. |
-| `@vitejs/plugin-react` | **6.x** | Usa Oxc para el React Refresh transform; ya no depende de Babel. |
-| react-bootstrap | última 2.x compatible con Bootstrap 5.3 | Continuidad con el Bootstrap 5.3 ya usado hoy vía CDN — ver decisión en `adr/0002-frontend-react-bootstrap.md`. |
-| Node.js | **24 LTS** | Runtime de build (Vite, scripts); no se despliega Node en producción, el build es estático. |
-| TanStack Query | última 5.x | Cache y sincronización de datos del servidor — evita reinventar loading/error/retry a mano en cada pantalla. |
-| react-hook-form + zod | últimas estables | Formularios + validación; zod también valida las respuestas del API en el cliente si hace falta. |
-| openapi-typescript | última estable | Genera `types/api.d.ts` desde `docs/api/openapi/ukun-api.yaml` — nunca se escriben tipos de API a mano. |
-| MSW (Mock Service Worker) | última estable | Mocks de API para que el frontend avance sin depender del backend real (ver `04-roadmap.md`). |
-| axios | última estable | Cliente HTTP, ver ADR-0010 — interceptores para `XSRF-TOKEN` y traducción de `ProblemDetail`. |
-| react-router | **7.x** | Enrutado del SPA. Node 22+, Vite 7+, React 19+, ESM-only — coherente con el resto del stack de este documento. |
-| material-symbols | última estable | Iconografía, ver `07-frontend-ux-ui.md`. Fuente variable autohospedada, nunca CDN. |
-| sass | última estable | Overrides del tema sobre las variables de Bootstrap 5.3 (`07-frontend-ux-ui.md`). |
-| Vitest + React Testing Library | última estable, alineada con la versión de Vite del proyecto | Testing de componentes y hooks (`03-analisis-y-patrones.md`, `07-frontend-ux-ui.md`) — capa que Playwright no cubre de forma barata. |
-| react-i18next + i18next-browser-languagedetector | **17.x** (verificado por búsqueda web en agosto de 2026 — confirmar el patch vigente antes de fijarlo en el `package.json`) | i18n del frontend, ver ADR-0019. Namespaces por feature, `errors.json` indexado por el `code` de `docs/12-error-contract.md`. |
+| Vite | **8.2.1** | Usa Rolldown (bundler en Rust) por defecto. |
+| `@vitejs/plugin-react` | **6.0.5** | Usa Oxc para el React Refresh transform; ya no depende de Babel. |
+| react-bootstrap | **2.10.10** sobre Bootstrap **5.3.8** | Continuidad con el Bootstrap 5.3 ya usado hoy vía CDN — ver decisión en `adr/0002-frontend-react-bootstrap.md`. |
+| Node.js | **24 LTS** (24.19.0, npm 11) | Runtime de build (Vite, scripts); no se despliega Node en producción, el build es estático. Fijado en `apps/ukun-web/.node-version`, en `engines` del `package.json` y en `Dockerfile.dev`. Node 20 ya no vale: `jsdom` 30 pide `^22.22.2 \|\| ^24.15.0`. |
+| TanStack Query | **5.101.4** | Cache y sincronización de datos del servidor — evita reinventar loading/error/retry a mano en cada pantalla. |
+| react-hook-form + zod | **7.85.0** + **zod 4.4.3** (`@hookform/resolvers` 5.7.1) | Formularios + validación; zod también valida las respuestas del API en el cliente si hace falta. El salto a zod 4 se hizo sin coste porque todavía no hay ningún esquema escrito. |
+| TypeScript | **5.9.3** — *no* 6 ni 7 | **Es el techo que impone el ecosistema, no una elección conservadora.** `openapi-typescript` 7.13 declara peer `typescript@^5.x`, y `typescript-eslint` 8.66 declara `>=4.8.4 <6.1.0`. Mientras `openapi-typescript` no soporte TS 6, subir rompe la generación de `types/api.d.ts`, que es una regla dura (`07-frontend-ux-ui.md`). Revisar en cada release. |
+| openapi-typescript | **7.13.0** | Genera `types/api.d.ts` desde `docs/api/openapi/ukun-api.yaml` — nunca se escriben tipos de API a mano. Es quien fija el techo de TypeScript. |
+| MSW (Mock Service Worker) | **2.15.0** | Mocks de API para que el frontend avance sin depender del backend real (ver `04-roadmap.md`). |
+| axios | **1.19.0** | Cliente HTTP, ver ADR-0010 — interceptores para `XSRF-TOKEN` y traducción de `ProblemDetail`. |
+| react-router | **7.18.2** | Enrutado del SPA. Node 20+, React 19+, ESM-only — coherente con el resto del stack de este documento. |
+| material-symbols | **0.45.10** | Iconografía, ver `07-frontend-ux-ui.md`. Fuente variable autohospedada, nunca CDN. |
+| sass | **1.102.0** | Overrides del tema sobre las variables de Bootstrap 5.3 (`07-frontend-ux-ui.md`). `@import` está deprecado y desaparece en sass 3: el tema usa `@use "bootstrap/scss/bootstrap" with (...)`. |
+| Vitest + React Testing Library | **4.1.10** + **16.3.2** (jsdom 30) | Testing de componentes y hooks (`03-analisis-y-patrones.md`, `07-frontend-ux-ui.md`) — capa que Playwright no cubre de forma barata. |
+| ESLint | **10.8.1** (`typescript-eslint` 8.66, `eslint-plugin-react-hooks` 7.1) | Incluye la regla `i18next/no-literal-string` que rompe el build ante un literal en JSX (ADR-0019). |
+| react-i18next + i18next-browser-languagedetector | **17.0.11** + **8.2.1**, sobre i18next **26.3.6** | i18n del frontend, ver ADR-0019. Namespaces por feature, `errors.json` indexado por el `code` de `docs/12-error-contract.md`. react-i18next 17 exige i18next ≥ 26.2. |
+
+Un `override` de `js-yaml` a `^4.3.1` en el `package.json` cierra CVE-2026-59870, que llega de forma transitiva por `openapi-typescript` → `@redocly/openapi-core`. Se quita en cuanto Redocly publique una versión que ya no arrastre la vulnerable.
 
 ## Build
 

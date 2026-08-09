@@ -1,14 +1,15 @@
+// Tokens del tema (docs/07-frontend-ux-ui.md). Ratios de contraste sobre blanco:
+// $primary 6.02:1 (AA) · $primary-hover 8.01:1 (AAA) · $accent 3.34:1 (solo decorativo).
 $primary: #456e0f;
 $primary-hover: #365a08;
 $accent: #5d9d0b;
 $primary-bg: #E9F5D8;
 
-// Overrides de Bootstrap
-$theme-colors: (
-  "primary": $primary,
-  "secondary": $accent,
+// Bootstrap deriva $theme-colors de $primary/$secondary, así que configurarlos
+// basta y evita reescribir el mapa entero.
+// `@use ... with` en vez de `@import`: sass 1.80+ deprecó @import y lo elimina en 3.0.
+@use "bootstrap/scss/bootstrap" with (
+  $primary: #456e0f,
+  $secondary: #5d9d0b,
+  $component-active-bg: #456e0f
 );
-
-$component-active-bg: $primary;
-
-@import "bootstrap/scss/bootstrap";

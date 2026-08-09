@@ -24,7 +24,7 @@ for (const openapiPath of openapiPaths) {
         const expressPath = apiPath.replace(/\{([^}]+)\}/g, ':$1');
         for (const method of Object.keys(methods)) {
           if (['get', 'post', 'put', 'delete', 'patch'].includes(method)) {
-            handlers += `  http.${method}(\`\${import.meta.env.VITE_API_URL || ''}${expressPath}\`, ({ request, params }) => {\n`;
+            handlers += `  http.${method}(\`\${import.meta.env.VITE_API_URL || ''}${expressPath}\`, () => {\n`;
             handlers += `    // TODO: Implement mock for ${method.toUpperCase()} ${apiPath}\n`;
             handlers += `    return HttpResponse.json({});\n`;
             handlers += `  }),\n`;

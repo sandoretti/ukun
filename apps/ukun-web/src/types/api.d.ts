@@ -1327,13 +1327,13 @@ export interface components {
          * @description The **closed** registry from `docs/12-error-contract.md` §2, identical in `ukun-api.yaml` and
          *     `ukun-auth.yaml` so the frontend never has to know which service an error came from.
          *
-         *     All nineteen are here even though several are not emitted until v0.6/v0.7: the frontend
+         *     All twenty-one are here even though several are not emitted until v0.6/v0.7: the frontend
          *     generates the `errors.json` lookup from this enum and a parity test fails if any `code` is
          *     missing a translation. Adding a new one has its own process (§4 of that document) and
          *     **starts at the registry**, not at this file.
          * @enum {string}
          */
-        ErrorCode: "VALIDATION_FAILED" | "MALFORMED_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "RESOURCE_NOT_FOUND" | "CHECKOUT_EXPIRED" | "INSUFFICIENT_STOCK" | "PRODUCT_IN_USE" | "PRODUCT_TYPE_IN_USE" | "DUPLICATE_VALUE" | "VERSION_CONFLICT" | "IDEMPOTENCY_IN_PROGRESS" | "IDEMPOTENCY_MISMATCH" | "EMPTY_CART" | "EMAIL_ALREADY_EXISTS" | "REFERENTIAL_INTEGRITY" | "UNSUPPORTED_MEDIA_TYPE" | "PAYLOAD_TOO_LARGE" | "INTERNAL_ERROR";
+        ErrorCode: "VALIDATION_FAILED" | "MALFORMED_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "RESOURCE_NOT_FOUND" | "METHOD_NOT_ALLOWED" | "NOT_ACCEPTABLE" | "CHECKOUT_EXPIRED" | "INSUFFICIENT_STOCK" | "PRODUCT_IN_USE" | "PRODUCT_TYPE_IN_USE" | "DUPLICATE_VALUE" | "VERSION_CONFLICT" | "IDEMPOTENCY_IN_PROGRESS" | "IDEMPOTENCY_MISMATCH" | "EMPTY_CART" | "EMAIL_ALREADY_EXISTS" | "REFERENTIAL_INTEGRITY" | "UNSUPPORTED_MEDIA_TYPE" | "PAYLOAD_TOO_LARGE" | "INTERNAL_ERROR";
         /**
          * @description An error per RFC 9457, served as `application/problem+json`.
          *
