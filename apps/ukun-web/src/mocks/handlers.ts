@@ -113,11 +113,11 @@ export const handlers = [
     // TODO: Implement mock for DELETE /api/admin/products/{id}
     return HttpResponse.json({});
   }),
-  http.post(`${import.meta.env.VITE_API_URL || ''}/api/admin/products/:id:discontinue`, () => {
+  http.post(`${import.meta.env.VITE_API_URL || ''}/api/admin/products/:id\\:discontinue`, () => {
     // TODO: Implement mock for POST /api/admin/products/{id}:discontinue
     return HttpResponse.json({});
   }),
-  http.post(`${import.meta.env.VITE_API_URL || ''}/api/admin/products/:id:reactivate`, () => {
+  http.post(`${import.meta.env.VITE_API_URL || ''}/api/admin/products/:id\\:reactivate`, () => {
     // TODO: Implement mock for POST /api/admin/products/{id}:reactivate
     return HttpResponse.json({});
   }),
@@ -161,11 +161,11 @@ export const handlers = [
     // TODO: Implement mock for POST /internal/accounts
     return HttpResponse.json({});
   }),
-  http.post(`${import.meta.env.VITE_API_URL || ''}/internal/accounts/:accountId:activate`, () => {
+  http.post(`${import.meta.env.VITE_API_URL || ''}/internal/accounts/:accountId\\:activate`, () => {
     // TODO: Implement mock for POST /internal/accounts/{accountId}:activate
     return HttpResponse.json({});
   }),
-  http.post(`${import.meta.env.VITE_API_URL || ''}/internal/accounts/:accountId:release`, () => {
+  http.post(`${import.meta.env.VITE_API_URL || ''}/internal/accounts/:accountId\\:release`, () => {
     // TODO: Implement mock for POST /internal/accounts/{accountId}:release
     return HttpResponse.json({});
   }),
