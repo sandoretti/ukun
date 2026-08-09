@@ -31,6 +31,41 @@ spring:
       ddl-auto: validate
     open-in-view: false
 
+  security:
+    oauth2:
+      authorizationserver:
+        # The `iss` claim, and the base of every URL in /.well-known/openid-configuration.
+        #
+        # It has to be configurable because two parties resolve this service by different names and
+        # both have to agree with what the token says: the browser reaches the Authorization Server
+        # through the gateway on localhost, while ukun-api validates `iss` from inside the container
+        # network. Get these out of step and issue #24 rejects every token with an error that points
+        # at the resource server rather than here.
+        #
+        # The default is the single-checkout value of docs/06-entorno-local-tilt.md; compose sets
+        # UKUN_AUTH_ISSUER wherever that is not the truth.
+        issuer: ${UKUN_AUTH_ISSUER:http://localhost:9000}
+
+# The two OAuth2 clients. Only their secrets come from the environment — a client id is not a
+# secret, and pretending it is only makes the configuration harder to read (docs/11 §4).
+#
+# There is no default for either secret on purpose: a service that starts with a well-known client
+# secret is worse than one that refuses to start.
+ukun:
+  oauth2:
+    gateway:
+      client-id: ukun-gateway
+      secret: ${UKUN_OAUTH2_GATEWAY_SECRET}
+      # Where ukun-gateway's oauth2Login receives the authorization code (v0.5). Registered now so
+      # that slice does not have to come back and change this service.
+      redirect-uris:
+        - ${UKUN_GATEWAY_BASE_URL:http://localhost:8080}/login/oauth2/code/ukun
+      post-logout-redirect-uris:
+        - ${UKUN_GATEWAY_BASE_URL:http://localhost:8080}/
+    api:
+      client-id: ukun-api
+      secret: ${UKUN_OAUTH2_API_SECRET}
+
 server:
   port: 9000
 

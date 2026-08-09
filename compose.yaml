@@ -48,6 +48,16 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/ukun_auth
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      # El `iss` del token. Es localhost y no ukun-auth:9000 porque el navegador tiene que poder
+      # seguir la redirección a /oauth2/authorize, y quien valida `iss` compara literalmente con
+      # esta cadena: si aquí pusiera el nombre interno del contenedor, el login del navegador
+      # apuntaría a un host que no existe fuera de la red de Docker.
+      - UKUN_AUTH_ISSUER=${UKUN_AUTH_ISSUER:-http://localhost:${AUTH_PORT:-9000}}
+      - UKUN_GATEWAY_BASE_URL=${UKUN_GATEWAY_BASE_URL:-http://localhost:${GATEWAY_PORT:-8080}}
+      # Sin valor por defecto: .env los define (ver .env.example) y sin ellos el servicio no arranca,
+      # que es justo lo que se quiere frente a un secreto de cliente conocido.
+      - UKUN_OAUTH2_GATEWAY_SECRET=${UKUN_OAUTH2_GATEWAY_SECRET}
+      - UKUN_OAUTH2_API_SECRET=${UKUN_OAUTH2_API_SECRET}
     depends_on:
       - db
 
