@@ -3,6 +3,7 @@ package dev.sandoretti.ukun.api.shared.persistence;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
 
 /**
  * Accent-insensitive substring matching, the shape defect #22 requires
@@ -32,18 +33,45 @@ public final class TextSearch {
     private TextSearch() {}
 
     /**
-     * {@code field LIKE '%term%'}, with both sides folded to lower case and stripped of accents.
+     * {@code field LIKE ?}, with both sides folded to lower case and stripped of accents.
      *
      * <p>The folding happens in SQL on both sides rather than normalising the term in Java with
      * {@code java.text.Normalizer}: the two do not have to agree on every character, and the side
      * that decides what matches is the database's folding table, not ours.
+     *
+     * <p><strong>{@code value()} and not {@code literal()}, and the difference is not cosmetic.</strong>
+     * {@code CriteriaBuilder.literal()} renders the term <em>into the SQL text</em> in Hibernate 6 and
+     * 7 — {@code like unaccent(lower('%sofa%'))} — and no setting changes that
+     * ({@code hibernate.criteria.literal_handling_mode=BIND} was tried and makes no difference).
+     * {@link HibernateCriteriaBuilder#value} goes through {@code criteria.value_handling_mode}, whose
+     * default is {@code BIND}, and comes out as a real JDBC parameter.
+     *
+     * <p>Two reasons, in order of how much they actually bite:
+     *
+     * <ul>
+     *   <li><strong>One SQL string per distinct search term.</strong> Inlined, every keystroke on the
+     *       typeahead mints a statement the database has never seen: Hibernate's plan cache and
+     *       Postgres' prepared-statement cache both key on the text, so an anonymous endpoint anyone
+     *       can call becomes an unbounded source of cache misses and plan churn. Bound, there is one
+     *       statement for every search there will ever be.
+     *   <li><strong>Injection, which the inlined version happened to survive.</strong> Hibernate doubles
+     *       the single quotes when it inlines, so {@code ' OR 1=1 --} came back as zero rows and not as
+     *       a leak — verified before this change. But the safety was Hibernate's rendering doing the
+     *       right thing, one layer below anything this codebase asserts. A bound parameter never enters
+     *       the SQL text at all, which is a property rather than a behaviour.
+     * </ul>
+     *
+     * <p>The cast is to Hibernate's own builder because {@code value()} is not in the Jakarta
+     * Persistence API. Nothing is lost by it: this method already calls {@code unaccent()}, a Postgres
+     * extension, so the query is not portable in the first place.
      */
     public static Predicate containsIgnoringAccents(
             CriteriaBuilder builder, Expression<String> field, String term) {
 
-        String pattern = "%" + escapeWildcards(term) + "%";
+        Expression<String> pattern =
+                ((HibernateCriteriaBuilder) builder).value("%" + escapeWildcards(term) + "%");
 
-        return builder.like(normalised(builder, field), normalised(builder, builder.literal(pattern)), LIKE_ESCAPE);
+        return builder.like(normalised(builder, field), normalised(builder, pattern), LIKE_ESCAPE);
     }
 
     private static Expression<String> normalised(CriteriaBuilder builder, Expression<String> value) {

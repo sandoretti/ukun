@@ -1,6 +1,8 @@
 package dev.sandoretti.ukun.api.stores;
 
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 
 import dev.sandoretti.ukun.api.stores.application.StoreResponse;
 import java.util.List;
@@ -165,6 +167,34 @@ class StoreCatalogIT extends StoresIntegrationTest {
                 .expectBody()
                 .jsonPath("$.code")
                 .isEqualTo("VALIDATION_FAILED");
+    }
+
+    /**
+     * The search term is a bind parameter, not text spliced into the statement. Asserted on the SQL
+     * itself rather than on the result, because the result is the same either way — that is exactly
+     * what makes the inlined version hard to notice.
+     *
+     * <p>It guards {@code TextSearch}, so it covers {@code /api/products} and its typeahead too: the
+     * three of them go through the same helper, and the typeahead is the one that fires on every
+     * keystroke.
+     *
+     * <p>Two things would break it. Going back to {@code CriteriaBuilder.literal()} puts the term in
+     * the SQL text, which mints one statement per distinct search and defeats both the plan cache and
+     * the prepared-statement cache. And the injection attempt below survives today only because
+     * Hibernate doubles quotes as it renders — a layer below anything this codebase controls. A bound
+     * parameter makes both a property of the query instead of a behaviour of the renderer.
+     */
+    @Test
+    @DisplayName("the search term is bound as a parameter and never reaches the SQL text")
+    void bindsTheSearchTermInsteadOfInliningIt() {
+        Statistics statistics = freshStatistics();
+
+        assertThat(storesOf(STORES + "?q={q}", "' OR 1=1 --")).isEmpty();
+
+        assertThat(statistics.getQueries())
+                .singleElement(as(STRING))
+                .contains("like unaccent(lower(?))")
+                .doesNotContain("OR 1=1");
     }
 
     /**
