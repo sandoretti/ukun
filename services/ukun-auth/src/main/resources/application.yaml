@@ -2,6 +2,35 @@ spring:
   application:
     name: ukun-auth
 
+  # Credentials come from the environment (compose.yaml injects SPRING_DATASOURCE_*); there is no
+  # default here on purpose, so a misconfigured deployment fails at startup instead of silently
+  # pointing somewhere else. This is a different database from ukun-api's: ukun_auth, created empty
+  # by scripts/postgres-init-databases.sh (ADR-0004).
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  # Liquibase owns the schema of ukun_auth, and owns it alone: each service with a database of its
+  # own keeps its own master changelog (skill `liquibase`, rule 6). There is nothing shared with
+  # ukun_app — different databases, different change histories.
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    # Never leave this unset, even while no demo changeset exists yet. With no contexts configured
+    # Liquibase runs *every* changeset, so the day issue #23 adds the seeded demo accounts the
+    # default failure mode would not be "the demo data is missing", it would be "production seeds
+    # itself with accounts whose password is public knowledge". Schema changesets carry no context
+    # and therefore always apply, whichever value is active here.
+    contexts: prod
+
+  jpa:
+    hibernate:
+      # `validate`, never `create`/`update`: Hibernate checks the schema Liquibase created and never
+      # authors it. That includes the Authorization Server's own tables, which are transcribed into
+      # the baseline rather than left to any auto-initialiser.
+      ddl-auto: validate
+    open-in-view: false
+
 server:
   port: 9000
 
@@ -9,8 +38,29 @@ management:
   endpoints:
     web:
       exposure:
+        # Only health for now. Anything else is opt-in per release, never by default.
         include: health
   endpoint:
     health:
       probes:
         enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  # compose.dev.yaml sets SPRING_PROFILES_ACTIVE=dev, so `tilt up` gets the demo accounts with no
+  # extra wiring. The changeset that seeds them is issue #23; the context is declared here first so
+  # that slice only has to add the file.
+  liquibase:
+    contexts: demo
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # /actuator/modulith prints the module structure and its dependencies, which is far easier
+        # to read than the exception of a failing verify(). Development only (docs/14-modules.md §6).
+        include: health,modulith

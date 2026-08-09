@@ -45,6 +45,10 @@ spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-
 # pero no la autoconfiguración, y el changelog no se ejecutaría. Este artefacto trae las dos
 # (skill `liquibase`, regla 8).
 spring-boot-liquibase = { module = "org.springframework.boot:spring-boot-liquibase" }
+# El Authorization Server de ukun-auth. Boot 4 publica también el nombre heredado
+# `spring-boot-starter-oauth2-authorization-server`, que resuelve al mismo árbol salvo por una capa
+# de alias: se usa este, que sigue la partición por tecnología del resto de Boot 4.
+spring-boot-starter-security-oauth2-authorization-server = { module = "org.springframework.boot:spring-boot-starter-security-oauth2-authorization-server" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 # Boot 4 partió los starters de test: TestRestTemplate ya no está en starter-test y RestTestClient
 # es el reemplazo, en su propio módulo.
