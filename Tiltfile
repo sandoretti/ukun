@@ -45,7 +45,9 @@ dc_resource('db', labels=['data'])
 # de empaquetar un jar. Los ficheros de build entran en `deps` además de src/ — con Maven un cambio
 # en el POM raíz no disparaba nada, que era un agujero latente.
 def gradle_build_cmd(module):
-    return './gradlew -q :{module}:classes :{module}:copyDeps'.format(module=module)
+    # flock serializa las llamadas concurrentes de Tilt al daemon de Gradle para
+    # evitar cuelgues por colisión de locks o de la configuration cache.
+    return 'flock .tilt-gradle.lock ./gradlew -q :{module}:classes :{module}:copyDeps'.format(module=module)
 
 # Cambiar cualquiera de estos invalida el classpath de los tres servicios, no solo de uno.
 BUILD_FILES = [

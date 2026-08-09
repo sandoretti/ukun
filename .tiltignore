@@ -1,0 +1,5 @@
+# Ignorar cachés y builds de Gradle para que Tilt no entre en bucle infinito
+# cuando Gradle escribe en sus carpetas internas (especialmente en buildSrc).
+**/.gradle
+**/.kotlin
+buildSrc/build
