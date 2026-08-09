@@ -3,52 +3,19 @@ package dev.sandoretti.ukun.api.catalog;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
-import dev.sandoretti.ukun.api.AbstractIntegrationTest;
-import dev.sandoretti.ukun.api.catalog.domain.ProductType;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import java.util.ArrayList;
 import java.util.List;
-import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * {@code GET /api/products} against a real Postgres (RF-01, {@code listProducts} of the contract).
- * Testcontainers rather than H2, per the {@code testing} skill, and here that is not ceremony: half
- * of these tests are about {@code unaccent()}, a Postgres extension H2 does not have.
- *
- * <p>It seeds its own rows with {@link ProductMother} into {@link #CATALOG_DATABASE}, so the two
- * defects under test are built explicitly instead of being fished out of the demo catalogue — and so
- * nothing it writes is visible to the tests that count the seed data.
+ * The container, the application and the seeded catalogue come from {@link CatalogIntegrationTest};
+ * what is left here is the listing itself.
  */
-@AutoConfigureRestTestClient
-@SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {
-            "spring.liquibase.contexts=prod",
-            "spring.jpa.properties.hibernate.generate_statistics=true",
-            "springdoc.api-docs.enabled=true"
-        })
-class ProductCatalogIT extends AbstractIntegrationTest {
-
-    @DynamicPropertySource
-    static void database(DynamicPropertyRegistry registry) {
-        useDatabase(registry, CATALOG_DATABASE);
-    }
+class ProductCatalogIT extends CatalogIntegrationTest {
 
     private static final String CATALOG = "/api/products";
 
@@ -61,49 +28,6 @@ class ProductCatalogIT extends AbstractIntegrationTest {
 
     private record Item(
             Long id, String sku, String name, String price, Long typeId, String typeName, String imageUrl) {}
-
-    @Autowired
-    private RestTestClient restTestClient;
-
-    @Autowired
-    private JdbcTemplate jdbc;
-
-    @Autowired
-    private EntityManager entityManager;
-
-    @Autowired
-    private EntityManagerFactory entityManagerFactory;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-
-    /**
-     * Persisted in a transaction of its own that commits before any request is made: the endpoint is
-     * served on another thread, so rows left inside an open test transaction would be invisible to it.
-     */
-    @BeforeEach
-    void seedTheCatalogue() {
-        ProductType sofas = ProductMother.type("Sofás");
-        ProductType beds = ProductMother.type("Camas");
-        ProductType tables = ProductMother.type("Mesas");
-
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            List.of(sofas, beds, tables).forEach(entityManager::persist);
-            List.of(
-                            ProductMother.leatherSofa(sofas),
-                            ProductMother.bunkBed(beds),
-                            ProductMother.coffeeTable(tables),
-                            ProductMother.floorLamp(tables),
-                            ProductMother.discontinuedChair(tables))
-                    .forEach(entityManager::persist);
-        });
-    }
-
-    /** Ordered truncation rather than {@code @DirtiesContext}, per the `testing` skill. */
-    @AfterEach
-    void clearTheCatalogue() {
-        jdbc.execute("TRUNCATE TABLE product, product_type RESTART IDENTITY CASCADE");
-    }
 
     @Test
     @DisplayName("the public catalogue never returns a discontinued product")
@@ -273,9 +197,7 @@ class ProductCatalogIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("the listing resolves every product type in the same query")
     void listsTheCatalogueWithoutAnNPlusOne() {
-        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
-        statistics.setStatisticsEnabled(true);
-        statistics.clear();
+        Statistics statistics = freshStatistics();
 
         List<Item> firstPage = pageOf(CATALOG + "?size=2").items();
 
@@ -414,9 +336,5 @@ class ProductCatalogIT extends AbstractIntegrationTest {
 
     private List<Long> idsOf(String uri) {
         return pageOf(uri).items().stream().map(Item::id).toList();
-    }
-
-    private long typeIdOf(String name) {
-        return jdbc.queryForObject("SELECT id FROM product_type WHERE name = ?", Long.class, name);
     }
 }

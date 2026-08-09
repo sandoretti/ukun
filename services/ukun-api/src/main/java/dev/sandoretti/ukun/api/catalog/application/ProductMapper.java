@@ -31,4 +31,24 @@ public interface ProductMapper {
     @Mapping(target = "typeName", source = "productType.name")
     @Mapping(target = "imageUrl", source = "imageKey", qualifiedByName = "toImageUrl")
     ProductSummaryResponse toSummary(Product product);
+
+    /**
+     * The same seven fields plus {@code description}, which MapStruct maps by name without being told.
+     * The three explicit {@code @Mapping}s are repeated rather than factored out into a shared
+     * {@code @Mapping} constant: annotations cannot be inherited between methods of an interface, and
+     * {@code unmappedTargetPolicy = ERROR} makes forgetting one a compile error rather than a
+     * {@code null} in the response.
+     */
+    @Mapping(target = "typeId", source = "productType.id")
+    @Mapping(target = "typeName", source = "productType.name")
+    @Mapping(target = "imageUrl", source = "imageKey", qualifiedByName = "toImageUrl")
+    ProductDetailResponse toDetail(Product product);
+
+    /**
+     * The typeahead row. It maps {@code imageUrl} and nothing about the type, which is the whole point:
+     * touching {@code productType} here would fetch an association the response does not carry, on the
+     * one endpoint that runs on every keystroke.
+     */
+    @Mapping(target = "imageUrl", source = "imageKey", qualifiedByName = "toImageUrl")
+    ProductSuggestionResponse toSuggestion(Product product);
 }

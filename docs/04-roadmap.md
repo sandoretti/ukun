@@ -165,7 +165,12 @@ El baseline entra completo de una vez porque no hay ni datos que preservar ni le
 ### v0.3 — Catálogo REST + primer frontend real
 *Salida: React consume datos reales de lectura.*
 
-Paralelizable: los 4 endpoints (`/api/products` paginado+filtros, `/api/products/{id}`, `/api/product-types`, `/api/stores`) son slices verticales independientes; las 3 pantallas del front que los consumen también lo son. Aquí se estrena la plantilla arquitectónica completa (DTO record, `ProblemDetail`, `@EntityGraph`, `Page<T>`) sobre el caso más barato del dominio, a propósito. Entran también las dos correcciones de consulta de RF-01: `unaccent` en la búsqueda por nombre (defecto #22) y desempate por `id` en todo `Sort` (defecto #23).
+Paralelizable: los 6 endpoints (`/api/products` paginado+filtros, `/api/products/{id}`, `/api/products/suggest`, `/api/product-types`, `/api/stores`, `/api/availability`) son slices verticales independientes; las 3 pantallas del front que los consumen también lo son. Aquí se estrena la plantilla arquitectónica completa (DTO record, `ProblemDetail`, `@EntityGraph`, `Page<T>`) sobre el caso más barato del dominio, a propósito. Entran también las dos correcciones de consulta de RF-01: `unaccent` en la búsqueda por nombre (defecto #22) y desempate por `id` en todo `Sort` (defecto #23).
+
+Dos matices que la palabra «paralelizable» esconde y que el orden de ejecución sí tiene que respetar:
+
+- **El primer endpoint no es paralelo con los demás**: arrastra la infraestructura compartida del módulo `shared` (el `@RestControllerAdvice` con los cinco `code`s marcados como v0.3 en `12-error-contract.md`, la configuración de MapStruct, los parámetros de paginación). Hasta que ese primer slice esté mergeado, los otros cinco no tienen plantilla que copiar. Las dos correcciones de RF-01 van **dentro** de ese primer slice, no después: el contrato de `listProducts` ya las exige, y separarlas obliga a reescribir la consulta y sus ITs. La `unaccent` necesita además un changeset propio bajo `releases/` — el baseline solo crea `citext`.
+- **`/api/availability` es del módulo `inventory`, no de `catalog`** (ADR-0017 §3). Es el endpoint que permite a la pantalla de catálogo pintar disponibilidad sin que `catalog` importe `inventory`.
 
 ### v0.4 — Identidad
 *Salida: hay cuentas reales, con hash, y el API valida tokens.*
@@ -196,6 +201,8 @@ Aquí vive el trabajo de dominio serio: agregado `Order` con sus invariantes, bl
 *Salida: paridad funcional con `ukun-empleados` — se borran `ukun-empleados/`, `nginx/`, `database/` y los composes legacy del repo.*
 
 Paralelizable: **stock** · **CRUD de productos + tipos de producto + subida de imagen** · **gestión de empleados**. Los tres son independientes entre sí; dentro del segundo, el CRUD de tipos (RF-13) va **antes** que el de productos, porque dar de alta un producto exige elegir un tipo y es la primera pantalla que necesita el admin en una base recién creada.
+
+Dentro del slice de stock entra `GET /api/products/by-sku/{sku}`: es el paso previo en pantalla al alta de una línea (el empleado teclea el SKU y lo resuelve antes de crear la línea), y solo resuelve productos activos, de forma que un producto descatalogado no se pueda reponer (ADR-0013, ADR-0015).
 
 Aquí entran también la tabla `audit_log` en uso (`11-observabilidad-y-logging.md`, ADR-0014) y el `FileStoragePort` con su adaptador de filesystem (ADR-0017).
 
