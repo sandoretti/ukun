@@ -58,8 +58,16 @@ public abstract class AbstractIntegrationTest {
     /** Schema plus the demo catalogue: what the {@code demo} context produces. */
     protected static final String SEEDED_DATABASE = "ukun_app_demo";
 
-    /** Schema only, for the tests that seed their own rows with an object mother. */
+    /** Schema only, for the catalogue tests that seed their own rows with an object mother. */
     protected static final String CATALOG_DATABASE = "ukun_app_catalog";
+
+    /**
+     * Schema only, the same idea as {@link #CATALOG_DATABASE} for the store network and its stock.
+     * Separate from it because the catalogue's truncation cascades through {@code product} into
+     * {@code store_stock}: two suites clearing each other's tables is a failure that only appears when
+     * somebody reorders a test class.
+     */
+    protected static final String STORES_DATABASE = "ukun_app_stores";
 
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
