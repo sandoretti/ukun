@@ -1,0 +1,35 @@
+{
+  "title": "Catálogo",
+  "empty": "No hay productos que coincidan con la búsqueda",
+  "filters": {
+    "legend": "Filtrar el catálogo",
+    "name": "Nombre",
+    "namePlaceholder": "Sofá, mesa, litera...",
+    "type": "Tipo",
+    "allTypes": "Todos los tipos",
+    "priceMin": "Precio mínimo",
+    "priceMax": "Precio máximo",
+    "sort": "Orden",
+    "apply": "Filtrar",
+    "clear": "Limpiar"
+  },
+  "sort": {
+    "PRICE_ASC": "Precio: de menor a mayor",
+    "PRICE_DESC": "Precio: de mayor a menor"
+  },
+  "product": {
+    "noImage": "Sin foto",
+    "sku": "SKU {{sku}}"
+  },
+  "availability": {
+    "available": "Disponible en la tienda online",
+    "unavailable": "Sin stock en la tienda online",
+    "unknown": "No hemos podido consultar la disponibilidad. El catálogo se muestra igualmente."
+  },
+  "pagination": {
+    "label": "Paginación del catálogo",
+    "status": "Página {{page}} de {{totalPages}} · {{total}} productos",
+    "previous": "Anterior",
+    "next": "Siguiente"
+  }
+}

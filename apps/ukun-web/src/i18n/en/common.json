@@ -1,1 +1,15 @@
-{"loading": "Loading...", "empty": "No results found", "error": "An error occurred", "title": "Ukun"}
+{
+  "title": "Ukun",
+  "loading": "Loading...",
+  "empty": "No results found",
+  "error": "An error occurred",
+  "nav": {
+    "catalog": "Catalogue",
+    "toggle": "Open the navigation menu"
+  },
+  "language": {
+    "label": "Language",
+    "es": "Spanish",
+    "en": "English"
+  }
+}

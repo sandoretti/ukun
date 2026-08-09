@@ -13,3 +13,26 @@ $primary-bg: #E9F5D8;
   $secondary: #5d9d0b,
   $component-active-bg: #456e0f
 );
+
+// Utilidades que Bootstrap no trae y que docs/07-frontend-ux-ui.md exige. Viven aquí, en el tema,
+// y no como `style` inline dentro de una pantalla.
+
+// Cifras tabulares: precios y cantidades comparan alineados en una rejilla o una columna.
+.text-tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+// Un nombre de producto largo recorta a dos líneas en vez de romper la tarjeta.
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// El anillo de foco se pinta al navegar con teclado, no al hacer clic con el ratón.
+:focus-visible {
+  outline: 2px solid $primary-hover;
+  outline-offset: 2px;
+}

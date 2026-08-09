@@ -27,3 +27,8 @@ dist-ssr
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+
+# El .env.development del frontend no lleva secretos: solo fija los defaults de desarrollo
+# (MSW encendido, API en el mismo origen). La regla `.env.*` del raíz existe por las credenciales
+# de Postgres y aquí no aplica.
+!.env.development

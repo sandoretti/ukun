@@ -1,1 +1,15 @@
-{"loading": "Cargando...", "empty": "No hay resultados", "error": "Ha ocurrido un error", "title": "Ukun"}
+{
+  "title": "Ukun",
+  "loading": "Cargando...",
+  "empty": "No hay resultados",
+  "error": "Ha ocurrido un error",
+  "nav": {
+    "catalog": "Catálogo",
+    "toggle": "Abrir el menú de navegación"
+  },
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "Inglés"
+  }
+}
