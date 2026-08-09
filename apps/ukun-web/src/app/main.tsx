@@ -11,26 +11,16 @@ import 'material-symbols/outlined.css';
 const queryClient = new QueryClient();
 
 /**
- * Which backend the app talks to is a variable, not a code path: with `VITE_ENABLE_MSW=true` the
- * service worker answers from `mocks/`, and with it off the same axios instance reaches the real
- * API. Nothing above `shared/api/` knows the difference.
+ * There is one backend: the real one. `VITE_API_URL` empty means same origin — the gateway in
+ * production, the Vite proxy in development (`vite.config.ts`). Mocks live only in the test run
+ * (`src/test/msw/`) and never ship in a bundle.
  */
-async function enableMocking() {
-  if (import.meta.env.VITE_ENABLE_MSW !== 'true') {
-    return;
-  }
-  const { worker } = await import('../mocks/browser');
-  await worker.start({ onUnhandledRequest: 'bypass' });
-}
-
-void enableMocking().then(() => {
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </React.StrictMode>,
-  );
-});
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </QueryClientProvider>
+  </React.StrictMode>,
+);

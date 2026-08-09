@@ -1,34 +1,52 @@
 {
   "title": "Catálogo",
   "empty": "No hay productos que coincidan con la búsqueda",
+  "results_one": "{{count}} producto",
+  "results_other": "{{count}} productos",
   "filters": {
-    "legend": "Filtrar el catálogo",
-    "name": "Nombre",
-    "namePlaceholder": "Sofá, mesa, litera...",
+    "title": "Filtros",
+    "open": "Filtros",
+    "close": "Cerrar los filtros",
     "type": "Tipo",
     "allTypes": "Todos los tipos",
+    "price": "Precio",
     "priceMin": "Precio mínimo",
     "priceMax": "Precio máximo",
-    "sort": "Orden",
-    "apply": "Filtrar",
-    "clear": "Limpiar"
+    "priceFrom": "Desde",
+    "priceTo": "Hasta",
+    "activeCount_one": "{{count}} filtro activo",
+    "activeCount_other": "{{count}} filtros activos",
+    "active": "Filtros activos",
+    "remove": "Quitar el filtro {{label}}",
+    "clearAll": "Limpiar todo"
+  },
+  "chips": {
+    "name": "«{{value}}»",
+    "type": "Tipo: {{value}}",
+    "priceMin": "Desde {{value}}",
+    "priceMax": "Hasta {{value}}"
   },
   "sort": {
+    "label": "Ordenar por",
     "PRICE_ASC": "Precio: de menor a mayor",
     "PRICE_DESC": "Precio: de mayor a menor"
   },
   "product": {
-    "noImage": "Sin foto",
-    "sku": "SKU {{sku}}"
+    "noImage": "Sin foto"
   },
   "availability": {
-    "available": "Disponible en la tienda online",
-    "unavailable": "Sin stock en la tienda online",
+    "available": "En stock",
+    "unavailable": "Sin stock online",
     "unknown": "No hemos podido consultar la disponibilidad. El catálogo se muestra igualmente."
+  },
+  "loadMore": {
+    "action": "Ver más productos",
+    "progress": "Mostrando {{loaded}} de {{total}} productos",
+    "failed": "No hemos podido cargar más productos. Inténtalo de nuevo."
   },
   "pagination": {
     "label": "Paginación del catálogo",
-    "status": "Página {{page}} de {{totalPages}} · {{total}} productos",
+    "status": "Página {{page}} de {{totalPages}}",
     "previous": "Anterior",
     "next": "Siguiente"
   }

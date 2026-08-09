@@ -1,7 +1,7 @@
 import { http as mswHttp, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-import { server } from '../../mocks/server';
+import { server } from '../../test/msw/server';
 import { ProblemDetailError, http } from './http';
 
 describe('http', () => {

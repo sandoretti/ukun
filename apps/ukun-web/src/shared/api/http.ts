@@ -56,8 +56,8 @@ function readCookie(name: string): string | undefined {
 
 /**
  * The single axios instance of the app (ADR-0010). Every feature goes through it: no bare `fetch`,
- * no second instance. `baseURL` empty means same origin — which is what the gateway serves in
- * production and what MSW intercepts in development.
+ * no second instance. `baseURL` empty means same origin — the gateway in production, the Vite dev
+ * proxy in development; either way a real `ukun-api` answers.
  */
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '',

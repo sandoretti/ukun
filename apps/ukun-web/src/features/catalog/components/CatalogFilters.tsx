@@ -1,108 +1,67 @@
-import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Col, Form, Row } from 'react-bootstrap';
+import { Form } from 'react-bootstrap';
 
-import type { ProductFilters, ProductSort, ProductType } from '../api/productKeys';
-import { SORT_OPTIONS, type CatalogFilterInput } from '../useCatalogParams';
+import type { CatalogFilterInput, ProductType } from '../api/productKeys';
+import { PriceRange } from './PriceRange';
 
 type CatalogFiltersProps = {
-  filters: ProductFilters;
+  filters: CatalogFilterInput;
   types: ProductType[];
-  onApply: (filters: CatalogFilterInput) => void;
-  onClear: () => void;
+  /** End of the price track; `undefined` while the catalog has not said how far it goes. */
+  maxPrice?: number;
+  onChange: (patch: Partial<CatalogFilterInput>) => void;
 };
 
-export function CatalogFilters({ filters, types, onApply, onClear }: CatalogFiltersProps) {
+/**
+ * The filter sidebar: one section per criterion, separated by a rule, and every one of them applies
+ * the moment it is used — a listing that needs a second click to obey is the pattern this replaces.
+ *
+ * There is no "online only" filter on purpose: availability is a separate read (ADR-0017 §3) and
+ * filtering it in the client would leave the pagination lying about how many products there are.
+ * There are no per-type counts either: the public `ProductType` carries none (that is
+ * `AdminProductType`), and counting what is on the current page would count the wrong thing.
+ */
+export function CatalogFilters({ filters, types, maxPrice, onChange }: CatalogFiltersProps) {
   const { t } = useTranslation('catalog');
 
-  // The form is uncontrolled and seeded from the URL: the key makes it re-seed when the URL changes
-  // from outside (the back button), without duplicating the listing's state into a `useState`.
-  const formKey = [filters.name, filters.typeId, filters.priceMin, filters.priceMax, filters.sort].join('|');
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const typeId = String(data.get('typeId') ?? '');
-    onApply({
-      name: String(data.get('name') ?? '').trim(),
-      typeId: typeId === '' ? null : Number(typeId),
-      priceMin: String(data.get('priceMin') ?? '').trim(),
-      priceMax: String(data.get('priceMax') ?? '').trim(),
-      sort: String(data.get('sort') ?? '') as ProductSort,
-    });
-  }
-
   return (
-    <Form key={formKey} onSubmit={handleSubmit} className="mb-4">
-      <fieldset>
-        <legend className="h6">{t('filters.legend')}</legend>
-        <Row className="g-3 align-items-end">
-          <Col xs={12} md={4}>
-            <Form.Label htmlFor="catalog-filter-name">{t('filters.name')}</Form.Label>
-            <Form.Control
-              id="catalog-filter-name"
-              name="name"
-              type="search"
-              autoComplete="off"
-              placeholder={t('filters.namePlaceholder')}
-              defaultValue={filters.name}
-            />
-          </Col>
-          <Col xs={12} md={3}>
-            <Form.Label htmlFor="catalog-filter-type">{t('filters.type')}</Form.Label>
-            <Form.Select id="catalog-filter-type" name="typeId" defaultValue={filters.typeId ?? ''}>
-              <option value="">{t('filters.allTypes')}</option>
-              {types.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </Form.Select>
-          </Col>
-          <Col xs={6} md={2}>
-            <Form.Label htmlFor="catalog-filter-price-min">{t('filters.priceMin')}</Form.Label>
-            <Form.Control
-              id="catalog-filter-price-min"
-              name="priceMin"
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              defaultValue={filters.priceMin}
-            />
-          </Col>
-          <Col xs={6} md={2}>
-            <Form.Label htmlFor="catalog-filter-price-max">{t('filters.priceMax')}</Form.Label>
-            <Form.Control
-              id="catalog-filter-price-max"
-              name="priceMax"
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              defaultValue={filters.priceMax}
-            />
-          </Col>
-          <Col xs={12} md={3}>
-            <Form.Label htmlFor="catalog-filter-sort">{t('filters.sort')}</Form.Label>
-            <Form.Select id="catalog-filter-sort" name="sort" defaultValue={filters.sort}>
-              {SORT_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {t(`sort.${option}`)}
-                </option>
-              ))}
-            </Form.Select>
-          </Col>
-          <Col xs={12} md="auto" className="d-flex gap-2">
-            <Button type="submit" variant="primary">
-              {t('filters.apply')}
-            </Button>
-            <Button type="button" variant="outline-secondary" onClick={onClear}>
-              {t('filters.clear')}
-            </Button>
-          </Col>
-        </Row>
+    <div>
+      <h2 className="h6 d-none d-lg-block">{t('filters.title')}</h2>
+
+      <fieldset className="filter-section">
+        <legend className="h6 fw-normal text-body-secondary">{t('filters.type')}</legend>
+        <Form.Check
+          type="radio"
+          id="catalog-type-all"
+          name="typeId"
+          label={t('filters.allTypes')}
+          checked={filters.typeId === null}
+          onChange={() => onChange({ typeId: null })}
+        />
+        {types.map((type) => (
+          <Form.Check
+            key={type.id}
+            type="radio"
+            id={`catalog-type-${type.id}`}
+            name="typeId"
+            label={type.name}
+            checked={filters.typeId === type.id}
+            onChange={() => onChange({ typeId: type.id })}
+          />
+        ))}
       </fieldset>
-    </Form>
+
+      {maxPrice !== undefined && (
+        <fieldset className="filter-section">
+          <legend className="h6 fw-normal text-body-secondary">{t('filters.price')}</legend>
+          <PriceRange
+            priceMin={filters.priceMin}
+            priceMax={filters.priceMax}
+            ceiling={maxPrice}
+            onCommit={onChange}
+          />
+        </fieldset>
+      )}
+    </div>
   );
 }

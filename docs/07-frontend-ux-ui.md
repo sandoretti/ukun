@@ -50,7 +50,7 @@ apps/ukun-web/src/
 │   └── hooks/      # hooks transversales (useAuth, useDebounce, ...)
 ├── i18n/           # namespaces de react-i18next: common, catalog, cart,
 │                   # checkout, profile, backoffice, errors — ver ADR-0019
-├── mocks/          # handlers de MSW, generados/alineados con el OpenAPI
+├── test/msw/       # dobles HTTP de Vitest — NUNCA los ve el navegador
 └── types/api.d.ts  # generado por openapi-typescript — NUNCA editar a mano
 ```
 
@@ -85,19 +85,43 @@ export const productKeys = {
 
 La jerarquía es lo que hace que invalidar sea dirigido: tras editar un producto se invalida `productKeys.detail(sku)` y, si hace falta, `productKeys.lists()` — no un `invalidateQueries()` sin argumentos que tire la caché entera. Escribir la misma key a mano en dos ficheros es el bug de caché clásico, y aparece en cuanto conviven varias features escribiendo sobre los mismos datos (v0.6: carrito y pedidos sobre el mismo producto). Se fija ahora, con `shared/api/` todavía vacío, porque después cuesta mucho más.
 
-En listados paginados, `placeholderData` con la página anterior mientras carga la siguiente — la alternativa es que la tabla desaparezca y reaparezca en cada cambio de página.
+En listados paginados, `placeholderData` con la página anterior mientras carga la siguiente — la alternativa es que la tabla desaparezca y reaparezca en cada cambio de página. Cuando la página se carga por bloques (el catálogo, ver abajo), la consulta es `useInfiniteQuery` y su key sale de la misma factoría (`productKeys.chunks(criterios, página)`, colgando de `lists()` para que invalidar por prefijo la siga alcanzando): el bloque nunca es un `useState` con un array al que se le hace `push`.
 
 ## El estado de una pantalla de listado vive en la URL
 
 Filtros, orden y página van en query params, no en un `useState` local. Es lo que hace que un resultado de catálogo se pueda enlazar y compartir, que el botón atrás del navegador haga lo que el usuario espera, y que recargar no devuelva al estado inicial. Aplica desde la primera pantalla de listado (catálogo, v0.3) y a todas las que vengan después: stock y pedidos del back-office tienen el mismo problema.
 
+La página se cuenta **desde 1** en la URL y se omite cuando vale 1 (`/products`, `/products?page=2`), aunque el API cuente desde 0: `?page=1` significando "la segunda" es una trampa para quien edita la barra de direcciones, y la traducción se hace en un solo sitio, la capa `api/` de la feature. Lo que **no** va en la URL es cuántos bloques de la página se han cargado: eso es avance dentro de un mismo resultado, no un resultado distinto, y escribirlo llenaría el historial de entradas que muestran lo mismo.
+
+## Anatomía de una pantalla de listado
+
+El catálogo (v0.3) fija la forma que repiten las demás pantallas de listado —tiendas, stock y pedidos del back-office—, tomada de las tiendas online que ya la tienen resuelta (IKEA, Amazon, PcComponentes):
+
+- **El buscador por nombre vive en la barra de navegación, no entre los filtros.** Es la acción principal de una tienda y está en todas las pantallas. Se implementa como combobox accesible (`shared/ui/SearchBox.tsx`, patrón ARIA *combobox with listbox*: `aria-expanded`, `aria-controls`, `aria-activedescendant`, flechas, Enter, Escape) sobre `GET /api/products/suggest`, con el término escrito con retardo (`shared/hooks/useDebouncedValue.ts`) y `placeholderData` para que la lista no parpadee tecla a tecla. El componente base no pide datos: quien los resuelve es `shared/ui/ProductSearchBox.tsx`. Vive en `shared/` porque lo consumen la barra (`app/`) y la pantalla de inicio — nunca una feature importando otra.
+- **Los filtros son un panel lateral**, no una fila de controles encima de la rejilla: `<Offcanvas responsive="lg">` es barra lateral pegajosa desde `lg` y panel deslizante por debajo, con **una sola instancia** del formulario (sin `id`s duplicados ni ramas por breakpoint). Una sección por criterio, separadas por un filete, y **sin scroll propio**: una segunda zona de scroll dentro de la página parte el sidebar en dos.
+- **Se aplican al elegirlos**, sin botón "Filtrar". La excepción es un rango: el precio es un control de dos pomos (dos `input[type=range]` superpuestos, sin dependencia nueva y con el teclado nativo intacto) **más sus dos campos numéricos**, porque un slider no sabe decir "exactamente 249,50" — arrastrar es para explorar, escribir es para quien ya sabe lo que quiere. Los dos escriben los mismos dos valores, así que no hay estado que sincronizar, y ninguno filtra mientras se mueve: se aplica al soltar el pomo o al salir del campo, de modo que cruzar la pista es una petición y no cuarenta. El techo del recorrido se lee del propio catálogo (una página de un elemento ordenada a la baja, redondeada hacia arriba), nunca de una constante que caduca el día que alguien da de alta un sofá más caro.
+- **Los filtros activos se pintan como chips** encima de la rejilla, cada uno con su botón de quitar y un "Limpiar todo". Es lo que mantiene honesta la pantalla cuando los controles no están a la vista: el nombre se escribe en la barra y el resto se esconde en el offcanvas del móvil.
+- **El orden y el recuento van en la barra de resultados**, arriba a la derecha y arriba a la izquierda.
+- **La rejilla crece al bajar, pero la página tiene tope**: se piden bloques de 24 productos (`CHUNK_SIZE`, múltiplo de las 2/3/4 columnas, así que cada bloque cierra filas completas) hasta 72 por página (`PAGE_SIZE`), y de ahí en adelante se pasa de página. Es el modelo de chollometro: el scroll infinito es cómodo para explorar, pero sin tope acaba en una lista que no se puede enlazar, con un DOM y una caché que crecen sin final y un pie de página inalcanzable. El bloque siguiente lo dispara un centinela con `IntersectionObserver` **y** un `<button>` "Ver más productos" que sigue ahí: lo automático es la comodidad, nunca la única vía, porque con teclado o con el observer sin disparar no habría ninguna. Bajo la rejilla queda el recuento de lo cargado ("Mostrando 48 de 105 productos", en `aria-live="polite"` — lo que cambia se anuncia) y, centrada debajo, la paginación con "Página X de Y", que no se pinta si solo hay una página. Al cambiar de página se vuelve arriba del documento: tras 72 productos el lector está en el fondo, y aterrizar a mitad de la siguiente es cómo un listado pierde a quien lo estaba leyendo.
+- **La tarjeta de producto** es foto (proporción fija, `object-fit: cover`) → tipo como línea superior en versalitas → nombre a dos líneas → precio destacado con cifras tabulares → estado. Ni SKU ni `Badge` de color: son datos de la ficha o ruido de back-office.
+- **La disponibilidad se muestra en pequeño**: punto de color + microtexto ("En stock" / "Sin stock online"), y la foto de lo agotado se atenúa. Un producto sin fila de stock es *no disponible*, nunca "desconocido" (RF-01). Que falle la lectura de disponibilidad no es un `Alert` a todo el ancho: es una nota discreta en la barra de resultados, porque el catálogo se sigue viendo.
+- **Lo que no se puede filtrar, no se ofrece**: no hay filtro "solo disponibles" (la disponibilidad es otro endpoint, ADR-0017 §3, y filtrar en cliente falsearía el recuento y la paginación) ni recuento por tipo (`ProductType` público no lleva `productCount`; ese es `AdminProductType`).
+
+Las utilidades que esto añade al tema —y que, como el resto, no se escriben inline en una pantalla— son `.product-media` (+ `--dimmed`), `.overline`, `.status-dot` (+ `--in`/`--out`), `.filter-sidebar`, `.filter-section`, `.price-range`, `.search-box`/`.search-suggestions` y `.icon-sm|md|lg`. El único `style` inline de todo esto son los dos porcentajes del tramo seleccionado del slider, que es exactamente el "valor dinámico" que la sección de descartes admite.
+
 ## Formularios: react-hook-form + zod
 
 Cada formulario define su esquema `zod` una vez; ese esquema valida en el cliente **y** sus tipos se derivan para el payload que se envía. Los errores de validación del servidor (`code: VALIDATION_FAILED` con extensión `errors: [{field, message}]`, ver `docs/12-error-contract.md`) se mapean a los mismos campos del formulario — un solo sitio donde se pinta un error de campo, venga de donde venga.
 
-## Tipos y mocks: generados, no escritos a mano
+## Tipos: generados, no escritos a mano
 
-`types/api.d.ts` se genera con `openapi-typescript` a partir de `docs/api/openapi/ukun-api.yaml` (ver el `local_resource` del Tiltfile en `06-entorno-local-tilt.md`). Los handlers de MSW en `mocks/` responden con esos mismos tipos. Si el backend cambia un contrato, el tipo cambia solo y TypeScript señala cada punto del frontend que hay que actualizar — así es como el check de deriva de OpenAPI (`04-roadmap.md`) se convierte en errores de compilación, no en sorpresas en producción.
+`types/api.d.ts` se genera con `openapi-typescript` a partir de `docs/api/openapi/ukun-api.yaml` (ver el `local_resource` del Tiltfile en `06-entorno-local-tilt.md`). Si el backend cambia un contrato, el tipo cambia solo y TypeScript señala cada punto del frontend que hay que actualizar — así es como el check de deriva de OpenAPI (`04-roadmap.md`) se convierte en errores de compilación, no en sorpresas en producción.
+
+## El navegador habla siempre con el API real
+
+**No hay modo mock en el navegador.** El entorno de desarrollo es `tilt up` con `ukun-api` levantado, y el dev server de Vite le lleva `/api` y `/media` por proxy (`VITE_API_URL` vacía = mismo origen, igual que en producción tras el gateway). No existe interruptor tipo `VITE_ENABLE_MSW`, ni service worker registrado, ni handlers generados del OpenAPI para desarrollar: eran un segundo backend que hay que mantener al día para que mienta más despacio, y ahora que el API existe solo servían para que un fallo real —una consulta mal formada, una cabecera CSRF que falta, una latencia— se descubriese tarde.
+
+Los **únicos** mocks del frontend son dobles HTTP de MSW en `src/test/msw/`, cargados por el setup de Vitest y por nada más. Están tipados con los mismos `types/api.d.ts`, así que un cambio de contrato también rompe su compilación. Ver `13-testing.md` §2 para por qué el doble vive en la frontera HTTP y no en axios.
 
 ## Accesibilidad
 
@@ -134,6 +158,7 @@ Hoy hay 7 usos sueltos de Bootstrap Icons repartidos en las plantillas, sin ning
 | Envío | `local_shipping` | Favorito | `favorite` |
 | Éxito / confirmado | `check_circle` | Error / rechazado | `error` |
 | Advertencia | `warning` | Stock | `inventory_2` |
+| Filtros | `tune` | Quitar / cerrar | `close` |
 
 Ampliar el mapa es añadir una fila aquí, no elegir un icono ad-hoc dentro de una pantalla.
 

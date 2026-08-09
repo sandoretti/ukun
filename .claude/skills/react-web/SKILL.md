@@ -16,7 +16,7 @@ src/
 ├── shared/ui/       componentes base envueltos sobre react-bootstrap
 ├── shared/api/       cliente HTTP + hooks de TanStack Query
 ├── i18n/            namespaces de react-i18next: common, catalog, cart, checkout, profile, backoffice, errors
-├── mocks/           handlers MSW
+├── test/msw/        dobles HTTP de Vitest — NUNCA los ve el navegador
 └── types/api.d.ts   generado — NUNCA editar a mano
 ```
 
@@ -35,22 +35,24 @@ Nombres de carpeta en inglés (ADR-0018), alineados con los módulos de Spring M
      detail: (sku: string) => [...productKeys.all, 'detail', sku] as const,
    };
    ```
-   Un `invalidateQueries()` sin key, o una key escrita a mano en dos sitios, es el bug de caché que aparece cuando llegan carrito y pedidos. En listados paginados, `placeholderData` para no parpadear entre páginas.
+   Un `invalidateQueries()` sin key, o una key escrita a mano en dos sitios, es el bug de caché que aparece cuando llegan carrito y pedidos. En listados paginados, `placeholderData` para no parpadear entre páginas. Si la página se carga por bloques (el catálogo: bloques de 24 hasta un tope de 72 por página, `docs/07-frontend-ux-ui.md`), es `useInfiniteQuery` con `chunks(criterios, página)` en la misma factoría y bajo `lists()` — nunca un array acumulado en `useState`.
 4. **Los componentes de `shared/ui/` se componen, no se parametrizan con booleanos.** Envuelven react-bootstrap con variantes con nombre en vez de props booleanas acumuladas (`variant="danger"`, no `<Button danger primary small outline>`), y con componentes distintos cuando lo que cambia es el comportamiento y no solo el aspecto; `children` antes que props `renderX`; y `ref` como prop normal — React 19, sin `forwardRef` en código nuestro. El estado de servidor nunca sube a un contexto: para eso está la regla 2. El contexto queda para estado de UI (tema, idioma, sesión).
 5. **Iconos: un único componente `<Icon name="..."/>`** sobre `material-symbols` (npm, autohospedado — nunca CDN ni mezclar con otro set como Bootstrap Icons). Tamaño, peso óptico y color salen del tema, nunca de un `style` inline. Mapa de icono por acción en `docs/07-frontend-ux-ui.md`.
 6. **Todo formulario usa react-hook-form + zod.** El esquema zod es la única fuente de validación de cliente; los errores del servidor (`code: VALIDATION_FAILED`, extensión `errors[].field/message` — `docs/12-error-contract.md`) se mapean a los mismos campos.
 7. **`types/api.d.ts` se genera con `openapi-typescript`** desde `docs/api/openapi/*.yaml` — si el tipo que necesitas no existe, el contrato está desactualizado o incompleto, no se escribe el tipo a mano como parche.
 8. **Toda pantalla que muestra datos cubre cuatro estados**: carga, vacío, error (`code` del `ProblemDetail` resuelto vía `t('errors:CODE', {...})`, nunca `detail` crudo — ver ADR-0019), éxito. Se implementan en los componentes base de `shared/ui/`, no ad-hoc por pantalla.
-9. **En una pantalla de listado, el estado vive en la URL**: filtros, orden y página como query params, no como `useState` local. Es lo que la hace enlazable, compartible y correcta con el botón atrás del navegador.
+9. **En una pantalla de listado, el estado vive en la URL**: filtros, orden y página como query params, no como `useState` local. Es lo que la hace enlazable, compartible y correcta con el botón atrás del navegador. La página se cuenta desde 1 y se omite cuando vale 1, aunque el API cuente desde 0; el avance dentro de una página (cuántos bloques se han cargado) no se escribe en la URL.
 10. **Accesibilidad no es una pasada final**: foco visible con `:focus-visible` (nunca `outline: none` sin sustituto), labels asociados a inputs, agrupación de campos relacionados con `fieldset`/`legend` en formularios largos (el signup legacy no lo hace), `aria-label` en botones de solo icono y `aria-hidden` en los decorativos, `aria-live="polite"` en toasts y validación asíncrona, error inline junto al campo con foco al primero al enviar, contraste suficiente en la paleta del tema, `<html lang>` sincronizado con el idioma activo.
 11. **i18n con react-i18next** (ver ADR-0019): todo texto de usuario sale de `t(...)`, nunca hardcodeado — regla de ESLint que rompe el build si aparece un literal en JSX. Namespaces por feature; `errors.json` indexado por el `code` del registro de `docs/12-error-contract.md`, en `es` y `en`. Idioma activo: `customer.locale` si hay sesión, `localStorage`/`navigator.language` si es anónimo.
 12. **Todo identificador de código en inglés** (componentes, props, hooks, variables) — ver ADR-0018. El texto en pantalla es lo único bilingüe, y vive en `i18n/`, nunca en el propio componente.
 13. **Prohibido rediseñar una pantalla ya entregada antes de v1.0** salvo bug de usabilidad real — el pulido general tiene su propio hueco en el roadmap (`docs/04-roadmap.md`, v1.0).
 14. **Componentes y hooks se testean con Vitest + React Testing Library**, consultando por rol/label — nunca solo por `data-testid` salvo que no haya alternativa accesible. Playwright cubre los tres recorridos end-to-end; Vitest cubre todo lo demás, incluido el test de paridad de claves de traducción. Convenciones completas: skill `testing` y `docs/13-testing.md`.
 
-## Desarrollo contra mocks
+## Se desarrolla contra el API real, siempre
 
-Mientras el backend real de una feature no exista, se desarrolla contra los mocks de MSW en `mocks/`, alineados con el mismo OpenAPI que genera los tipos. Cambiar de mocks a backend real es una variable de entorno, no una reescritura.
+**No hay modo mock en el navegador** y no se vuelve a introducir uno. El entorno es `tilt up` con `ukun-api` levantado; `VITE_API_URL` va vacía (mismo origen) y el proxy del dev server lleva `/api` y `/media` al servicio. Si un endpoint que necesitas todavía no existe, la respuesta es implementarlo o acordar el contrato en el OpenAPI —no montar un service worker que lo finja: los handlers generados del OpenAPI, `VITE_ENABLE_MSW` y `public/mockServiceWorker.js` se retiraron al cerrar v0.3 (`docs/04-roadmap.md`) y volver a añadirlos es reabrir una decisión ya tomada.
+
+Los únicos mocks del frontend son dobles HTTP de MSW en `src/test/msw/`, que solo ve Vitest (skill `testing`, `docs/13-testing.md` §2).
 
 ## Skills externas de apoyo
 

@@ -7,6 +7,14 @@
     "catalog": "Catálogo",
     "toggle": "Abrir el menú de navegación"
   },
+  "search": {
+    "label": "Buscar productos",
+    "placeholder": "Sofá, mesa, litera…",
+    "submit": "Buscar",
+    "hint": "Pulsa Intro para ver todos los resultados",
+    "status_one": "{{count}} sugerencia",
+    "status_other": "{{count}} sugerencias"
+  },
   "language": {
     "label": "Idioma",
     "es": "Español",

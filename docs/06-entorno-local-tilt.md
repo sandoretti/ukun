@@ -110,7 +110,7 @@ Se descarta explícitamente CDS/AOT (Class Data Sharing / `native-image`): reduc
 ## Cómo probar el API
 
 - **springdoc con Swagger UI** en `ukun-api`, activo solo en el perfil de desarrollo. Matiz importante: como el contrato es design-first (`04-roadmap.md`), **springdoc no es la fuente de verdad** — el YAML versionado en `docs/api/openapi/` lo es. Springdoc sirve para explorar y probar a mano, y es el productor del `/v3/api-docs` que el check de deriva de CI compara contra ese YAML.
-- **Colección Bruno versionada en `docs/api/bruno/`**, no Postman: son ficheros de texto que se revisan en un diff normal de git y no exigen cuenta ni sincronización en la nube — coherente con que el contrato también viva como texto versionado. Con un entorno `local` (contra `tilt up`) y uno `mocks` (contra MSW).
+- **Colección Bruno versionada en `docs/api/bruno/`**, no Postman: son ficheros de texto que se revisan en un diff normal de git y no exigen cuenta ni sincronización en la nube — coherente con que el contrato también viva como texto versionado. Un solo entorno, `local`, contra el stack de `tilt up` — no hay backend de mocks contra el que apuntar.
 - Un `local_resource` de UI (botón en `localhost:10350`) que abre Swagger UI, siguiendo el mismo patrón manual que `db-reset` — ver skill `tilt-dev`.
 
 ## Qué hacer si algo no va

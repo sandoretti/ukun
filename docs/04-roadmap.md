@@ -50,7 +50,7 @@ Lo que **sí** se conserva del legacy, y hay que tratar como requisito: los comp
 |---|---|---|
 | **P1 · Backend Core** | `ukun-api`: dominio, endpoints REST, Liquibase de `ukun_app` | exista el OpenAPI acordado |
 | **P2 · Backend Identidad** | `ukun-auth`, siembra de cuentas, saga de signup | el contrato `/internal/accounts` esté fijado |
-| **P3 · Frontend** | React + react-bootstrap, rutas, componentes | existan OpenAPI + mocks MSW |
+| **P3 · Frontend** | React + react-bootstrap, rutas, componentes | exista el OpenAPI (en v0.1–v0.2, con mocks MSW; desde v0.3, contra `ukun-api` levantado) |
 | **P4 · Infra/DevEx** | Tilt, composes, Dockerfiles, gateway, CI | nada — es la primera en arrancar |
 | **P5 · Calidad** | Testcontainers, ArchUnit, Playwright, check de deriva de contrato | exista al menos un endpoint |
 
@@ -64,7 +64,7 @@ flowchart LR
     B --> E["Baseline Liquibase ukun_app"]
 
     G["Inventario de endpoints"] --> H["OpenAPI v1 draft"]
-    H --> I["mocks MSW"]
+    H --> I["mocks MSW (andamio, retirado en v0.3)"]
     I --> J["Frontend puede empezar (P3)"]
     H --> K["Implementación de endpoints (P1)"]
 
@@ -83,7 +83,7 @@ flowchart LR
 ## Artefactos-contrato que desbloquean paralelismo
 
 1. **`docs/api/openapi/ukun-api.yaml`** escrito a mano en v0.1, *antes* de que exista implementación (design-first). Es lo que permite que P3 empiece en la primera semana y no cuando el backend "esté listo".
-2. **Tipos + mocks MSW** generados del OpenAPI (`openapi-typescript`). El frontend desarrolla contra mocks realistas y cambia una variable de entorno para apuntar al backend real.
+2. **Tipos generados del OpenAPI** (`openapi-typescript`), permanentes. Los **mocks MSW de navegador** fueron el andamio que permitió a P3 empezar en v0.1 sin backend, y como todo andamio tienen fecha de caducidad: se retiran al cerrar v0.3, cuando el frontend ya consume `ukun-api` de verdad. Mantener los dos vivos a la vez es pagar un segundo backend para que mienta cada vez mejor. Desde entonces MSW existe solo dentro de Vitest (`13-testing.md` §2).
 3. **Check de deriva en CI**: se levanta `ukun-api`, se descarga `/v3/api-docs` (springdoc) y se diffea contra el YAML versionado. El build falla si divergen — contract testing sin traer Pact.
 4. **Contexts de Liquibase** (`demo`/`prod`): mismos changelogs de esquema, distintos datos, sin scripts paralelos.
 
@@ -117,7 +117,7 @@ gantt
 
     section P3 Frontend
     v0.1 Vite 8 + React 19 + tema react-bootstrap :f0, 2026-08-17, 6d
-    v0.3 Catálogo, ficha, tiendas (mocks->real)   :f1, after f0, 10d
+    v0.3 Catálogo, ficha, tiendas (API real)      :f1, after f0, 10d
     v0.5 Login/logout contra BFF                  :f2, 2026-10-05, 5d
     v0.6 Carrito, checkout, pedidos, perfil       :crit, f3, after f2, 12d
     v0.7 Back-office: stock + admin               :f4, after f3, 12d
@@ -171,6 +171,7 @@ Dos matices que la palabra «paralelizable» esconde y que el orden de ejecució
 
 - **El primer endpoint no es paralelo con los demás**: arrastra la infraestructura compartida del módulo `shared` (el `@RestControllerAdvice` con los cinco `code`s marcados como v0.3 en `12-error-contract.md`, la configuración de MapStruct, los parámetros de paginación). Hasta que ese primer slice esté mergeado, los otros cinco no tienen plantilla que copiar. Las dos correcciones de RF-01 van **dentro** de ese primer slice, no después: el contrato de `listProducts` ya las exige, y separarlas obliga a reescribir la consulta y sus ITs. La `unaccent` necesita además un changeset propio bajo `releases/` — el baseline solo crea `citext`.
 - **`/api/availability` es del módulo `inventory`, no de `catalog`** (ADR-0017 §3). Es el endpoint que permite a la pantalla de catálogo pintar disponibilidad sin que `catalog` importe `inventory`.
+- **Cerrar v0.3 incluye retirar los mocks de navegador**, no dejarlos como alternativa: fuera el service worker, `VITE_ENABLE_MSW` y los handlers generados del OpenAPI. Una vez que el frontend consume el API real, un modo mock paralelo solo esconde los fallos que importan (una consulta mal formada, una cabecera que falta, latencia) hasta que ya no se pueden atribuir al cambio que los causó. MSW se queda como dependencia de test (`13-testing.md` §2).
 
 ### v0.4 — Identidad
 *Salida: hay cuentas reales, con hash, y el API valida tokens.*
