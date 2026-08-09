@@ -1,5 +1,6 @@
 package dev.sandoretti.ukun.api.catalog.web;
 
+import dev.sandoretti.ukun.api.catalog.application.ProductDetailResponse;
 import dev.sandoretti.ukun.api.catalog.application.ProductFilters;
 import dev.sandoretti.ukun.api.catalog.application.ProductQueryService;
 import dev.sandoretti.ukun.api.catalog.application.ProductSummaryResponse;
@@ -8,6 +9,7 @@ import dev.sandoretti.ukun.api.shared.web.PaginationParams;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,5 +45,20 @@ class ProductController {
             @Valid @ParameterObject ProductFilters filters, @Valid @ParameterObject PaginationParams pagination) {
 
         return products.list(filters, pagination);
+    }
+
+    /**
+     * The product detail. There is no {@code if (product == null)} here and there never will be: the
+     * service throws {@link dev.sandoretti.ukun.api.shared.error.ResourceNotFoundException} and the
+     * advice turns it into the {@code ProblemDetail} of {@code docs/12-error-contract.md} with
+     * {@code code: RESOURCE_NOT_FOUND}.
+     *
+     * <p>The method name is the {@code operationId} of the contract, because that is what springdoc
+     * publishes by default and what the frontend's generated client is named after. Renaming it
+     * renames a function in the SPA.
+     */
+    @GetMapping("/{id}")
+    ProductDetailResponse getProduct(@PathVariable Long id) {
+        return products.detail(id);
     }
 }

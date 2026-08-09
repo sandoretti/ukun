@@ -3,6 +3,7 @@ package dev.sandoretti.ukun.api.catalog.application;
 import dev.sandoretti.ukun.api.catalog.domain.Product;
 import dev.sandoretti.ukun.api.catalog.infra.ProductRepository;
 import dev.sandoretti.ukun.api.catalog.infra.ProductSpecifications;
+import dev.sandoretti.ukun.api.shared.error.ResourceNotFoundException;
 import dev.sandoretti.ukun.api.shared.web.PageResponse;
 import dev.sandoretti.ukun.api.shared.web.PaginationParams;
 import java.util.ArrayList;
@@ -42,6 +43,28 @@ public class ProductQueryService {
                 products.findAll(specificationFor(filters), pagination.toPageable(filters.sort().toSort()));
 
         return PageResponse.of(page, mapper::toSummary);
+    }
+
+    /**
+     * The product detail (RF-01, {@code getProduct}).
+     *
+     * <p>A discontinued product is a {@code 404} and not a {@code 200} carrying a flag: it is out of
+     * the public catalog (ADR-0013), so as far as this API is concerned it does not exist. Filtering
+     * after the look-up rather than inside the query is deliberate — the row is fetched by primary
+     * key, so there is nothing to save, and the rule stays visible in the use case instead of being
+     * buried in a method name.
+     *
+     * <p>{@code orElseThrow} and never a {@code null} return (rule 5 of the skill {@code spring-api}):
+     * the exception already carries its {@code code}, its status and the {@code resource}/{@code id}
+     * extensions, and the advice renders it. That is what replaces the legacy habit of returning
+     * {@code null} and re-testing for it in every controller (defect #11).
+     */
+    public ProductDetailResponse detail(Long id) {
+        return products
+                .findById(id)
+                .filter(Product::isActive)
+                .map(mapper::toDetail)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", id));
     }
 
     /**
