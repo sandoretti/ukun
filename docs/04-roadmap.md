@@ -58,7 +58,7 @@ Lo que **sí** se conserva del legacy, y hay que tratar como requisito: los comp
 
 ```mermaid
 flowchart LR
-    A["POM agregador + JDK 25"] --> B["ukun-api skeleton"]
+    A["Build agregador + JDK 25"] --> B["ukun-api skeleton"]
     A --> C["ukun-auth skeleton"]
     A --> D["ukun-gateway skeleton"]
     B --> E["Baseline Liquibase ukun_app"]
@@ -96,7 +96,7 @@ gantt
     axisFormat  S%W
 
     section P4 Infra/DevEx
-    v0.1 POM agregador + JDK25 + Dockerfiles     :i1, 2026-08-03, 5d
+    v0.1 Build agregador + JDK25 + Dockerfiles   :i1, 2026-08-03, 5d
     v0.1 Tiltfile de los servicios nuevos        :i2, after i1, 5d
     v0.1 .env fuera de git                       :crit, i3, 2026-08-03, 2d
     v0.5 Spring Cloud Gateway + BFF + CSRF       :i4, 2026-09-28, 10d
@@ -145,7 +145,7 @@ gantt
 
 Paralelizable:
 
-- (a) POM agregador + JDK 25 + **Dockerfiles de producción** de los tres servicios Java (jar en capas, usuario no root, `HEALTHCHECK`, `ENTRYPOINT` con nombre de jar fijo, caché de BuildKit para `~/.m2` — `06-entorno-local-tilt.md`).
+- (a) Build agregador + JDK 25 + **Dockerfiles de producción** de los tres servicios Java (jar en capas, usuario no root, `HEALTHCHECK`, `ENTRYPOINT` con nombre de jar fijo, caché de BuildKit para `~/.gradle` — `06-entorno-local-tilt.md`). El build es Gradle desde ADR-0021.
 - (b) `Tiltfile` + `compose.yaml` de los servicios nuevos, con live update.
 - (c) **Inventario de endpoints** recorriendo los 12 controllers legacy → `docs/02-requisitos.md` → `ukun-api.yaml`/`ukun-auth.yaml`, **en inglés desde el primer borrador** (ADR-0018): `/api/products`, `/api/product-types`, `/api/stores`, `/api/availability` (endpoint separado de `/api/products`, consecuencia del ciclo `catalog`↔`inventory` resuelto en ADR-0017 §3), `/api/checkout/attempts` + los cuatro `code`s de error asociados (ADR-0016, `docs/12-error-contract.md`), `/api/cart`, `/api/orders`, `/api/me/profile` (con el campo `locale`, ADR-0019), `/api/signup` (público, lo orquesta el API — `08-identidad-y-seguridad.md` §3), `/api/stores/{storeId}/stock/{lineId}`, y toda la superficie solo-`admin` bajo **`/api/admin/**`** (ADR-0020): CRUD de productos con descatalogación y subida de imagen (RF-10), CRUD de tipos de producto (RF-13) y gestión de empleados (`/api/admin/employees`, RF-11 — antes se planificó como `/api/employees`).
   Los **dos** contratos entran en este mismo ítem, con la superficie repartida según la frontera de servicios de ADR-0003/ADR-0004: `ukun-api.yaml` todo lo anterior; `ukun-auth.yaml` únicamente el contrato interno `/internal/accounts` + `:activate`/`:release` (`client_credentials`, scope `accounts:write`, nunca lo llama el navegador). Los endpoints OAuth2/OIDC del Authorization Server no se documentan a mano — son estándar y los publica su propio `/.well-known/openid-configuration`.

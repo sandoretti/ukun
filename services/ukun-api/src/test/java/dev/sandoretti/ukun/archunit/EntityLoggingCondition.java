@@ -76,9 +76,9 @@ import java.util.stream.Collectors;
  * benefit is that it never invents a violation. The three shapes above, which are the ones real
  * code writes, are pinned by {@code ArchitectureRulesSelfTest}.
  *
- * <p>It depends on the local variable table for the type behind an {@code ALOAD}.
- * {@code maven-compiler-plugin} emits debug information by default and the root {@code pom.xml}
- * does not turn it off; if it ever did, this rule would quietly weaken.
+ * <p>It depends on the local variable table for the type behind an {@code ALOAD}. The convention
+ * plugin in {@code buildSrc} sets {@code options.isDebug} explicitly for that reason; if anyone ever
+ * turns it off, this rule would quietly weaken rather than fail.
  */
 class EntityLoggingCondition extends ArchCondition<JavaClass> {
 

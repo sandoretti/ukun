@@ -6,7 +6,7 @@
 
 ## 1. Sistema legacy (referencia, no está en marcha)
 
-Dos monolitos Spring Boot 3.2 / Java 17 independientes (sin código ni POM compartido), cada uno con su propio Thymeleaf, atacando directamente la misma base Postgres. nginx solo enruta por prefijo de path, sin lógica. La autenticación es un atributo de `HttpSession` por app, sin Spring Security.
+Dos monolitos Spring Boot 3.2 / Java 17 independientes (sin código ni build compartido), cada uno con su propio Thymeleaf, atacando directamente la misma base Postgres. nginx solo enruta por prefijo de path, sin lógica. La autenticación es un atributo de `HttpSession` por app, sin Spring Security.
 
 Este apartado está aquí porque `ukun-clientes`/`ukun-empleados` son la **especificación del comportamiento** que hay que conservar (`02-requisitos.md`) y el catálogo de lo que no hay que repetir (`03-analisis-y-patrones.md`), no porque haya que convivir con ellos: no corren, y no hay estrategia de coexistencia (`04-roadmap.md`).
 

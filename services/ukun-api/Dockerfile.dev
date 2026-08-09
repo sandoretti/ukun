@@ -1,11 +1,23 @@
+# Imagen de DESARROLLO para Tilt. No usar en producción — ver docs/06-entorno-local-tilt.md.
+#
+# El contexto de build es la RAÍZ del repo, no este directorio: de ahí que las rutas de los COPY
+# empiecen por services/. Lo fijan así el Tiltfile y compose.yaml.
+#
+# No compila nada: espera las clases, los recursos y las dependencias ya generadas por el
+# local_resource `gradle-api` del Tiltfile (`:ukun-api:classes` y `:ukun-api:copyDeps`). Eso es lo que
+# permite que Tilt sincronice solo el classpath y reinicie el proceso sin reconstruir la imagen.
+#
+# Los recursos van en su propio directorio porque Gradle los separa de las clases; Maven mandaba los
+# dos a target/classes. application.yaml vive ahí, así que esa entrada del classpath no es opcional.
 FROM eclipse-temurin:25-jre-jammy
 WORKDIR /opt/app
 
-RUN mkdir -p /opt/app/classes /opt/app/deps
-COPY target/dependency/ /opt/app/deps/
-COPY target/classes/    /opt/app/classes/
+RUN mkdir -p /opt/app/classes /opt/app/resources /opt/app/deps
+COPY services/ukun-api/build/dependency/         /opt/app/deps/
+COPY services/ukun-api/build/classes/java/main/  /opt/app/classes/
+COPY services/ukun-api/build/resources/main/     /opt/app/resources/
 
 EXPOSE 8081 5005
 ENV JAVA_TOOL_OPTIONS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 
-ENTRYPOINT ["java", "-cp", "/opt/app/classes:/opt/app/deps/*", "dev.sandoretti.ukun.api.UkunApiApplication"]
+ENTRYPOINT ["java", "-cp", "/opt/app/classes:/opt/app/resources:/opt/app/deps/*", "dev.sandoretti.ukun.api.UkunApiApplication"]

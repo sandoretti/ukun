@@ -1,0 +1,11 @@
+# Lista de ignore de Dockerfile.dev. BuildKit lee <dockerfile>.dockerignore con preferencia sobre
+# cualquier .dockerignore del contexto, que es lo que permite que la imagen de desarrollo reciba
+# justo lo que el Dockerfile de producción excluye: la salida de compilación.
+#
+# Se invierte la lógica —todo fuera, y solo se readmite lo necesario— porque el contexto es la raíz
+# del repo: sin esto entrarían docs/, node_modules/ y el build/libs/app.jar de decenas de MB que esta
+# imagen no usa, porque monta el classpath a mano en vez de un jar.
+*
+!services/ukun-gateway/build/classes/java/main/**
+!services/ukun-gateway/build/resources/main/**
+!services/ukun-gateway/build/dependency/**

@@ -1,6 +1,6 @@
 ---
 name: testing
-description: Convenciones de este repo para escribir tests — nomenclatura, AssertJ como única librería de aserciones, object mothers, Testcontainers singleton, mocks solo en fronteras, y el reparto entre surefire/failsafe/Vitest/Playwright. Usar al escribir o revisar cualquier test, backend o frontend, en cualquiera de los servicios nuevos.
+description: Convenciones de este repo para escribir tests — nomenclatura, AssertJ como única librería de aserciones, object mothers, Testcontainers singleton, mocks solo en fronteras, y el reparto entre las tareas test/integrationTest de Gradle, Vitest y Playwright. Usar al escribir o revisar cualquier test, backend o frontend, en cualquiera de los servicios nuevos.
 ---
 
 # Convenciones de testing en este repo
@@ -9,7 +9,7 @@ Este documento resume `docs/13-testing.md` — léelo entero si vas a diseñar l
 
 ## Backend
 
-- `*Test` unitario (surefire) — `*IT` integración con Testcontainers (failsafe). No mezclar.
+- `*Test` unitario (tarea `test`) — `*IT` integración con Testcontainers (tarea `integrationTest`). No mezclar. Las dos tandas comparten `src/test/java` y se separan por el **nombre de la clase**, no por su ubicación: no crees `src/integrationTest/java`.
 - `@DisplayName` y nombres de método **en inglés** (ADR-0018): `shouldRejectOrderWhenAnyLineLacksStock`, no `testCreateOrder2`.
 - **AssertJ y solo AssertJ.** Nunca `assertEquals` de JUnit ni Hamcrest.
 - *Given/when/then* en tres bloques separados por línea en blanco, sin comentarios que los etiqueten.
@@ -35,12 +35,12 @@ Este documento resume `docs/13-testing.md` — léelo entero si vas a diseñar l
 Instalada desde skills.sh (ver `.claude/skills/README.md`). Su tabla de qué slice usar por capa, los objetivos de tiempo por tipo de test, el rechazo de `@DirtiesContext` y el aviso sobre `@TestPropertySource` coinciden con lo de arriba y son útiles. **Pero asume Spring Boot 3.x**, así que dos cosas suyas ni siquiera compilan aquí:
 
 - `@MockBean` → **eliminado en Spring Boot 4**. Usa `@MockitoBean`/`@MockitoSpyBean` (`org.springframework.test.context.bean.override.mockito`).
-- `org.testcontainers:junit-jupiter:1.19.0` con `<version>` a mano → Testcontainers 2.x lo gestiona `spring-boot-dependencies`, y el paquete es `org.testcontainers.postgresql`.
+- `org.testcontainers:junit-jupiter:1.19.0` con versión a mano → Testcontainers 2.x lo gestiona el BOM de Boot (los artefactos son `testcontainers-junit-jupiter` y `testcontainers-postgresql`), y el paquete es `org.testcontainers.postgresql`. Ninguna dependencia declara versión fuera de `gradle/libs.versions.toml`.
 
 Y tres donde este repo ya decidió lo contrario: `@Testcontainers`/`@Container` (aquí el ciclo de vida es del inicializador estático de `AbstractIntegrationTest`), `@ServiceConnection` por encima de `@DynamicPropertySource` (aquí al revés, porque hacen falta dos bases en un contenedor), y `postgres:16-alpine` (aquí 17). Tabla completa en `.claude/skills/README.md`.
 
 ## CI
 
-`surefire` y Vitest en cada push · `failsafe` (Testcontainers) y Playwright (los tres recorridos de `03` §3) antes de merge · Jacoco informativo en todo el backend, **umbral obligatorio solo en `orders` e `inventory`** · sin umbral global de cobertura.
+`./gradlew test` y Vitest en cada push · `./gradlew integrationTest` (Testcontainers) y Playwright (los tres recorridos de `03` §3) antes de merge · Jacoco informativo en todo el backend sobre las dos tandas, **umbral obligatorio solo en `orders` e `inventory`** · sin umbral global de cobertura.
 
 Detalle completo, ejemplos de código y la tabla de reparto por fase: `docs/13-testing.md`.

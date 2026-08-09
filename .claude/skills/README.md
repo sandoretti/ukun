@@ -51,14 +51,16 @@ No hace falta redescubrirlos. Un ✗ marca lo que además **no compila** con el 
 | Dice | Aquí |
 |---|---|
 | ✗ `@MockBean` (en `SKILL.md` y en tres ficheros de `references/`) | Eliminado en Spring Boot 4. Se usa `@MockitoBean` / `@MockitoSpyBean` de `org.springframework.test.context.bean.override.mockito` |
-| ✗ `org.testcontainers:junit-jupiter:1.19.0` con `<version>` fijado a mano | Testcontainers 2.x lo gestiona `spring-boot-dependencies`; ningún módulo fija `<version>` (ver `pom.xml` raíz). El paquete es `org.testcontainers.postgresql`, no `org.testcontainers.containers` |
+| ✗ `org.testcontainers:junit-jupiter:1.19.0` con la versión fijada a mano | Testcontainers 2.x lo gestiona el BOM de Boot, y los artefactos son `testcontainers-junit-jupiter` / `testcontainers-postgresql`; ninguna versión se declara fuera de `gradle/libs.versions.toml`. El paquete es `org.testcontainers.postgresql`, no `org.testcontainers.containers` |
 | `@Testcontainers` + `@Container` para el ciclo de vida | Inicializador estático en `AbstractIntegrationTest`. JUnit para el contenedor al final de **cada** clase, que es exactamente lo que convierte el singleton en un contenedor por clase (issue #11) |
 | "Prefiere `@ServiceConnection` sobre `@DynamicPropertySource`" | Al revés, y razonado en el javadoc de `AbstractIntegrationTest`: hacen falta dos bases (contextos `prod` y `demo` de Liquibase) en un mismo contenedor, y `@ServiceConnection` no permite elegir base |
 | `postgres:16-alpine`, JDK 17 en el CI de ejemplo | `postgres:17-alpine`, Java 25 (`docs/05-stack-y-versiones.md`) |
 | `withReuse(true)` + `TESTCONTAINERS_REUSE_ENABLE` | El singleton es por JVM; no dependemos de reutilización entre ejecuciones |
 | Aserciones sin librería fijada y `verify(...)` de Mockito abundante | **AssertJ y solo AssertJ**; mocks **solo en fronteras** (`AccountsPort`, `FileStoragePort`, `Clock`), nunca un repositorio JPA |
 | `User.builder()` dentro del test | Object mothers (`ProductMother.sofa()`) |
-| No distingue `*Test` de `*IT` | surefire `*Test` / failsafe `*IT`, sin mezclar |
+| No distingue `*Test` de `*IT` | tarea `test` para `*Test` / tarea `integrationTest` para `*IT`, sin mezclar y sin source set aparte |
+| Perfiles de Maven (`-Punit-tests`, `-Pintegration-tests`) con `maven-surefire-plugin`/`maven-failsafe-plugin`, y `./mvnw test` en sus ejemplos de CI | El build es Gradle (ADR-0021): `./gradlew test` e `./gradlew integrationTest`, filtrando por nombre de clase desde el convention plugin. No hay perfiles |
+| H2 como base en memoria entre las opciones de `references/test-dependencies.md` | **Prohibido**, ni siquiera como dependencia de test (`docs/13-testing.md`) — media docena de tests dependen de `unaccent()`, que H2 no tiene |
 
 Lo que sí sirve de esta skill: la tabla de qué slice usar para cada capa, los objetivos de tiempo por tipo de test, el rechazo de `@DirtiesContext` y el aviso sobre `@TestPropertySource` fragmentando el cacheo de contexto. Todo eso coincide con `docs/13-testing.md`.
 
@@ -80,7 +82,7 @@ Lo que sí sirve: paginación con `Sort`, `@Transactional(readOnly = true)` en c
 
 | Dice | Aquí |
 |---|---|
-| "Maven o Gradle" | Maven, y con POM padre propio que **no** hereda de `spring-boot-starter-parent` (ADR-0001) |
+| "Maven o Gradle" | Gradle con Kotlin DSL (ADR-0021), un build agregador en la raíz y los BOM de plataforma **importados** con `platform(...)`, nunca heredados (ADR-0001). Lo compartido entre servicios va en un convention plugin de `buildSrc/`, no en `subprojects {}` |
 | "`@Query` o la Criteria API para consultas complejas" | Antes que eso, la escalera de `docs/03-analisis-y-patrones.md` §2: proyección → `@EntityGraph` → fetch join → `default_batch_fetch_size` |
 | "Considera Testcontainers" | Obligatorio, y **nunca H2**, ni siquiera como dependencia de test |
 | No menciona `@Data`, `BigDecimal` ni mutaciones por `GET` | Las reglas duras de `CLAUDE.md` se aplican encima, siempre |

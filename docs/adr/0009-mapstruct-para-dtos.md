@@ -19,7 +19,7 @@ Esa premisa (~25 DTOs, dominio pequeño) **sigue siendo cierta** — este ADR no
 
 ## Consecuencias
 - Un mapper nuevo (interfaz vacía con `@Mapper`) por cada agregado que necesite DTOs, en vez de un método estático por DTO. Más ficheros, menos código repetido de asignación campo a campo.
-- El procesador de anotaciones de MapStruct debe convivir con el de Lombok en el mismo módulo — orden de `annotationProcessorPaths` en el POM, con Lombok primero. Es la trampa clásica de esta combinación y se deja documentada en `05-stack-y-versiones.md`.
+- El procesador de anotaciones de MapStruct debe convivir con el de Lombok en el mismo módulo — orden de declaración en la configuración `annotationProcessor`, con Lombok primero. Es la trampa clásica de esta combinación, la vigila `StackValidationIT` y se deja documentada en `05-stack-y-versiones.md`.
 - La verificación del "hola mundo" de v0.1 (Boot 4.1 + Lombok + Testcontainers + springdoc sobre JDK 25, ya prevista en `05-stack-y-versiones.md`) debe incluir MapStruct desde ese mismo día, no añadirse después.
 - `03-analisis-y-patrones.md` se actualiza para reflejar esta decisión, con una nota explícita de que reemplaza a la sección anterior de fábricas estáticas.
 

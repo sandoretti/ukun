@@ -31,91 +31,109 @@ dc_resource('db', labels=['data'])
 
 # ---------------------------------------------------------------------------
 # Compilación de los servicios Java.
-def mvn_build_cmd(module):
-    return (
-        'docker run --rm ' +
-        # Sin --user el contenedor compila como root sobre el bind mount del repo, y contra un
-        # daemon rootful (systemd, un runner de CI) deja services/*/target propiedad de root:
-        # el siguiente ./mvnw clean del host muere con "Failed to delete target/dependency/*.jar".
-        # Docker Desktop lo enmascara porque mapea el montaje al usuario del host, así que el
-        # fallo aparecería directamente en CI. Mismo principio que los Dockerfiles de producción
-        # (docs/06-entorno-local-tilt.md, "usuario no root").
-        '--user "$(id -u):$(id -g)" ' +
-        '-v "$(pwd)":/opt/app ' +
-        # La caché de Maven es el ~/.m2 del host y no un volumen con nombre: Docker crea el
-        # volumen como root:root y un contenedor no-root no puede escribir en él. De paso, las
-        # compilaciones de Tilt y las del host comparten caché en vez de duplicar descargas.
-        # HOME hace falta porque el uid del host no existe en /etc/passwd de la imagen, así que
-        # ni el wrapper de Maven ni la JVM sabrían dónde está el home sin decírselo.
-        '-e HOME=/var/maven ' +
-        '-e MAVEN_OPTS=-Duser.home=/var/maven ' +
-        '-v "$HOME/.m2":/var/maven/.m2 ' +
-        '-w /opt/app ' +
-        'eclipse-temurin:25-jdk-jammy ' +
-        './mvnw -q -T1C -DskipTests compile dependency:copy-dependencies -pl {module} -am'
-    ).format(module=module)
+#
+# Se compila en el HOST, no en un contenedor auxiliar (ADR-0021). El daemon de Gradle es lo que
+# mantiene caliente la JVM y el análisis incremental entre ciclos, y un `docker run --rm` lo mata en
+# cada invocación: el arranque en frío costaría más que todo el ciclo. A cambio, el host necesita un
+# JDK — requisito nuevo, ver docs/06-entorno-local-tilt.md.
+#
+# De paso desaparecen tres cosas que la variante en contenedor obligaba a arrastrar: el `--user`
+# para que los directorios de salida no quedaran de root, el bind mount de la caché, y el HOME
+# postizo para que el wrapper supiera dónde escribir.
+#
+# `classes` (no `build`) y `copyDeps` son el mínimo que el live update necesita: nada de tests, nada
+# de empaquetar un jar. Los ficheros de build entran en `deps` además de src/ — con Maven un cambio
+# en el POM raíz no disparaba nada, que era un agujero latente.
+def gradle_build_cmd(module):
+    return './gradlew -q :{module}:classes :{module}:copyDeps'.format(module=module)
+
+# Cambiar cualquiera de estos invalida el classpath de los tres servicios, no solo de uno.
+BUILD_FILES = [
+    'gradle/libs.versions.toml',
+    'settings.gradle.kts',
+    'build.gradle.kts',
+    'buildSrc',
+]
+
+def java_service_deps(module):
+    return ['services/{}/src'.format(module), 'services/{}/build.gradle.kts'.format(module)] + BUILD_FILES
 
 local_resource(
-    name='mvn-api',
-    cmd=mvn_build_cmd('services/ukun-api'),
-    deps=['services/ukun-api/src', 'services/ukun-api/pom.xml'],
+    name='gradle-api',
+    cmd=gradle_build_cmd('ukun-api'),
+    deps=java_service_deps('ukun-api'),
     labels=['build'],
 )
 
 local_resource(
-    name='mvn-auth',
-    cmd=mvn_build_cmd('services/ukun-auth'),
-    deps=['services/ukun-auth/src', 'services/ukun-auth/pom.xml'],
+    name='gradle-auth',
+    cmd=gradle_build_cmd('ukun-auth'),
+    deps=java_service_deps('ukun-auth'),
     labels=['build'],
 )
 
 local_resource(
-    name='mvn-gateway',
-    cmd=mvn_build_cmd('services/ukun-gateway'),
-    deps=['services/ukun-gateway/src', 'services/ukun-gateway/pom.xml'],
+    name='gradle-gateway',
+    cmd=gradle_build_cmd('ukun-gateway'),
+    deps=java_service_deps('ukun-gateway'),
     labels=['build'],
 )
 
 # ---------------------------------------------------------------------------
 # Imágenes de desarrollo + live update.
+# Tres `sync` y no dos: Gradle separa clases y recursos en directorios distintos, mientras Maven
+# mandaba ambos a target/classes. El de recursos no es opcional — application.yaml vive ahí, y sin él
+# el servicio no arranca.
 docker_build(
     ref='ukun/api:dev',
-    context='services/ukun-api',
+    # El contexto es la raíz, igual que en el Dockerfile de producción. Hace falta para que
+    # `fall_back_on` pueda vigilar los ficheros de build compartidos: Tilt solo observa rutas que
+    # cuelguen del contexto, y gradle/, buildSrc/ y settings.gradle.kts están fuera del servicio.
+    context='.',
     dockerfile='services/ukun-api/Dockerfile.dev',
     live_update=[
-        fall_back_on(['services/ukun-api/pom.xml']),
-        sync('services/ukun-api/target/classes', '/opt/app/classes'),
-        sync('services/ukun-api/target/dependency', '/opt/app/deps'),
+        fall_back_on(['services/ukun-api/build.gradle.kts'] + BUILD_FILES),
+        sync('services/ukun-api/build/classes/java/main', '/opt/app/classes'),
+        sync('services/ukun-api/build/resources/main', '/opt/app/resources'),
+        sync('services/ukun-api/build/dependency', '/opt/app/deps'),
         restart_container(),
     ],
 )
-dc_resource('ukun-api', resource_deps=['mvn-api', 'db'], labels=['backend'])
+dc_resource('ukun-api', resource_deps=['gradle-api', 'db'], labels=['backend'])
 
 docker_build(
     ref='ukun/auth:dev',
-    context='services/ukun-auth',
+    # El contexto es la raíz, igual que en el Dockerfile de producción. Hace falta para que
+    # `fall_back_on` pueda vigilar los ficheros de build compartidos: Tilt solo observa rutas que
+    # cuelguen del contexto, y gradle/, buildSrc/ y settings.gradle.kts están fuera del servicio.
+    context='.',
     dockerfile='services/ukun-auth/Dockerfile.dev',
     live_update=[
-        fall_back_on(['services/ukun-auth/pom.xml']),
-        sync('services/ukun-auth/target/classes', '/opt/app/classes'),
-        sync('services/ukun-auth/target/dependency', '/opt/app/deps'),
+        fall_back_on(['services/ukun-auth/build.gradle.kts'] + BUILD_FILES),
+        sync('services/ukun-auth/build/classes/java/main', '/opt/app/classes'),
+        sync('services/ukun-auth/build/resources/main', '/opt/app/resources'),
+        sync('services/ukun-auth/build/dependency', '/opt/app/deps'),
         restart_container(),
     ],
 )
-dc_resource('ukun-auth', resource_deps=['mvn-auth', 'db'], labels=['backend'])
+dc_resource('ukun-auth', resource_deps=['gradle-auth', 'db'], labels=['backend'])
 
 docker_build(
     ref='ukun/gateway:dev',
-    context='services/ukun-gateway',
+    # El contexto es la raíz, igual que en el Dockerfile de producción. Hace falta para que
+    # `fall_back_on` pueda vigilar los ficheros de build compartidos: Tilt solo observa rutas que
+    # cuelguen del contexto, y gradle/, buildSrc/ y settings.gradle.kts están fuera del servicio.
+    context='.',
     dockerfile='services/ukun-gateway/Dockerfile.dev',
     live_update=[
-        fall_back_on(['services/ukun-gateway/pom.xml']),
-        sync('services/ukun-gateway/target/classes', '/opt/app/classes'),
-        sync('services/ukun-gateway/target/dependency', '/opt/app/deps'),
+        fall_back_on(['services/ukun-gateway/build.gradle.kts'] + BUILD_FILES),
+        sync('services/ukun-gateway/build/classes/java/main', '/opt/app/classes'),
+        sync('services/ukun-gateway/build/resources/main', '/opt/app/resources'),
+        sync('services/ukun-gateway/build/dependency', '/opt/app/deps'),
         restart_container(),
     ],
 )
-dc_resource('ukun-gateway', resource_deps=['mvn-gateway', 'ukun-api', 'ukun-auth'], labels=['backend'])
+dc_resource('ukun-gateway', resource_deps=['gradle-gateway', 'ukun-api', 'ukun-auth'], labels=['backend'])
 
 docker_build(
     ref='ukun/web:dev',

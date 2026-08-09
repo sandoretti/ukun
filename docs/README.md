@@ -14,7 +14,7 @@ Cada documento arranca con un bloque de cuatro líneas (*fuente de verdad de · 
 | [`02-requisitos.md`](./02-requisitos.md) | Qué debe hacer el sistema (RF-01…RF-13), matriz de permisos, requisitos no funcionales |
 | [`03-analisis-y-patrones.md`](./03-analisis-y-patrones.md) | Catálogo numerado de defectos del legacy (#1–#23), los patrones que los resuelven, reglas ArchUnit, y lo descartado por sobreingeniería |
 | [`04-roadmap.md`](./04-roadmap.md) | Línea temporal de releases (v0.1→v2.0), qué es paralelizable y qué depende de qué |
-| [`05-stack-y-versiones.md`](./05-stack-y-versiones.md) | Versión de cada tecnología y política de actualización |
+| [`05-stack-y-versiones.md`](./05-stack-y-versiones.md) | Versión de cada tecnología, del build y de sus plugins, y política de actualización |
 | [`06-entorno-local-tilt.md`](./06-entorno-local-tilt.md) | Cómo levantar y trabajar en el entorno local |
 | [`07-frontend-ux-ui.md`](./07-frontend-ux-ui.md) | React, react-bootstrap, tema, formularios, iconos, i18n, accesibilidad |
 | [`08-identidad-y-seguridad.md`](./08-identidad-y-seguridad.md) | Frontera api/auth, saga de signup, claims, autorización en tres capas, OWASP |
@@ -40,6 +40,7 @@ Para no buscar la misma decisión en tres sitios:
 | el nombre de un evento de negocio o de log | `11-observabilidad-y-logging.md` §3 — registro **cerrado** |
 | la ruta de un endpoint | `docs/api/openapi/*.yaml` — congelado desde SINC-1 |
 | cómo se escribe código en una tecnología | `.claude/skills/` (`spring-api`, `react-web`, …) |
+| cómo se construyen los servicios Java, o qué versión usa un plugin del build | `05-stack-y-versiones.md` §Build, y el porqué en ADR-0021 |
 | cuándo entra algo | `04-roadmap.md` |
 | en qué estado está una tarea | issues y milestones de GitHub — `./scripts/roadmap-status.sh` |
 

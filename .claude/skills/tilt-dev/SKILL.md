@@ -24,9 +24,12 @@ docker_build(
     context = '<carpeta-del-servicio>',
     dockerfile = '<carpeta-del-servicio>/Dockerfile.dev',
     live_update = [
-        fall_back_on(['<carpeta>/pom.xml']),   # cambio de dependencias -> rebuild completo
-        sync('<carpeta>/target/classes', '/opt/app/classes'),
-        sync('<carpeta>/target/dependency', '/opt/app/deps'),
+        # cambio de dependencias -> rebuild completo. BUILD_FILES son los ficheros compartidos
+        # (catálogo, settings, build raíz, buildSrc): tocarlos afecta a los tres servicios.
+        fall_back_on(['<carpeta>/build.gradle.kts'] + BUILD_FILES),
+        sync('<carpeta>/build/classes/java/main', '/opt/app/classes'),
+        sync('<carpeta>/build/resources/main', '/opt/app/resources'),
+        sync('<carpeta>/build/dependency', '/opt/app/deps'),
         restart_container(),
     ],
 )
@@ -34,13 +37,15 @@ docker_build(
 
 El destino es **`/opt/app`**, que es donde los `Dockerfile.dev` colocan la aplicación — no `/app`. Equivocarse aquí no rompe nada de forma visible: el `sync` sigue funcionando y lo que deja de pasar es que los cambios se reflejen.
 
-La compilación (`mvn compile dependency:copy-dependencies`) ocurre en un `local_resource` que produce `target/classes`/`target/dependency`, que es lo que el `sync` copia. **No se usa `spring-boot-devtools`** — motivo en `docs/06-entorno-local-tilt.md` y `docs/03-analisis-y-patrones.md` (su `RestartClassLoader` da fallos sutiles con proxies de Hibernate).
+**Son tres `sync`, no dos.** Gradle separa clases y recursos en directorios distintos (Maven mandaba ambos a `target/classes`), y `application.yaml` está en el de recursos: si te dejas ese `sync`, el servicio no arranca. El `ENTRYPOINT` del `Dockerfile.dev` lleva las tres entradas de classpath en el mismo orden.
 
-### El contenedor de build va como el usuario del host
+La compilación (`./gradlew :<servicio>:classes :<servicio>:copyDeps`) ocurre en un `local_resource` que produce esos directorios. `classes` y no `build`: no se empaqueta jar ni se corren tests. **No se usa `spring-boot-devtools`** — motivo en `docs/06-entorno-local-tilt.md` y `docs/03-analisis-y-patrones.md` (su `RestartClassLoader` da fallos sutiles con proxies de Hibernate).
 
-`mvn_build_cmd` compila dentro de un contenedor con el repo montado, y lleva `--user "$(id -u):$(id -g)"`. **No lo quites.** Sin eso, contra un daemon rootful (el de systemd, o un runner de CI) los `target/` quedan propiedad de root y el siguiente `./mvnw clean` del host falla con `Failed to delete .../target/dependency/*.jar`. Docker Desktop enmascara el fallo porque mapea el montaje al usuario del host, así que aparecería en CI y no en local.
+### La compilación va en el host, no en un contenedor
 
-Como consecuencia, la caché de Maven es un bind mount de `~/.m2` del host y no un volumen con nombre: Docker crea el volumen como `root:root` y un contenedor no-root no puede escribir en él. Van juntos — si revives el volumen, revives el problema.
+`gradle_build_cmd` invoca `./gradlew` directamente en el host. **No lo metas en un `docker run`** (ADR-0021): un contenedor efímero mata el daemon de Gradle en cada ciclo, y sin daemon el ciclo es más lento que el Maven que se sustituyó — se perdería justo lo que motivó el cambio. El precio es que el host necesita un JDK, y está aceptado y documentado en `docs/06`.
+
+Esto es un cambio respecto a cómo estaba montado con Maven, y hace desaparecer tres cosas que ya no vas a encontrar en el `Tiltfile`: el `--user "$(id -u):$(id -g)"` (que existía para que los directorios de salida no quedaran de root contra un daemon rootful), el bind mount de la caché, y el `HOME` postizo. Si alguna vez vuelves a compilar en contenedor, vuelven las tres — y con el daemon de Gradle además tendrías que decidir qué hacer con `~/.gradle`, que guarda locks y el registro del daemon, no solo dependencias descargadas.
 
 ## Al añadir un servicio Java nuevo (`ukun-api`, `ukun-auth`, `ukun-gateway`)
 

@@ -66,7 +66,7 @@ class StackValidationIT extends AbstractIntegrationTest {
         ProbeView view = mapper.toView(probe);
 
         // A null name here would mean MapStruct ran before Lombok and generated an empty
-        // mapper — the exact failure the processor order in the root pom.xml prevents.
+        // mapper — the exact failure the processor order in build.gradle.kts prevents.
         assertThat(view).isEqualTo(new ProbeView("widget", 3));
     }
 

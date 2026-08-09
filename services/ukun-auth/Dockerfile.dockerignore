@@ -2,8 +2,11 @@
 # preference to a .dockerignore at the context root, which is how each service keeps its own
 # list even though they all share the repository root as build context.
 
-# Build output — the image compiles from source, it never copies a locally built jar.
-**/target/
+# Build output — the image compiles from source, it never copies a locally built jar. `**/build/`
+# only matches directories named exactly `build`, so neither buildSrc/ nor any build.gradle.kts is
+# caught by it.
+**/build/
+.gradle/
 
 # Git metadata. In a worktree .git is a file, not a directory; both patterns are covered.
 .git
@@ -31,8 +34,8 @@ compose*.yaml
 docker-compose*.yml
 *.md
 
-# The other services' sources. Their POMs are still needed for the reactor and are copied
-# explicitly by the Dockerfile, so only src/ is excluded here.
+# The other services' sources. Their build scripts are still needed to configure the build and are
+# copied explicitly by the Dockerfile, so only src/ is excluded here.
 services/ukun-api/src/
 services/ukun-gateway/src/
 

@@ -16,7 +16,7 @@ No sustituye el juicio de quien revisa — lo hace más barato de ejercer.
 | P1 Backend Core | `services/ukun-api/` |
 | P2 Identidad | `services/ukun-auth/` |
 | P3 Frontend | `apps/ukun-web/` |
-| P4 Infra/DevEx | `Tiltfile`, `compose*.yaml`, `services/*/Dockerfile*`, `.github/` |
+| P4 Infra/DevEx | `Tiltfile`, `compose*.yaml`, `services/*/Dockerfile*`, `.github/`, y el build: `settings.gradle.kts`, `build.gradle.kts`, `gradle/`, `buildSrc/` |
 | P5 Calidad | tests dentro de los módulos de las demás — **no** su código de producción |
 
 Esto las hace candidatas naturales a **sesiones o agentes separados**, cada uno con contexto acotado a su pista. Un agente de P3 no necesita leer `PedidoServiceImpl.java`; necesita el OpenAPI y los mocks.

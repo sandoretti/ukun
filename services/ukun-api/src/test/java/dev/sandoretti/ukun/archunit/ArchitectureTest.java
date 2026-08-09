@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 /**
  * The seven rules of {@code docs/03-analisis-y-patrones.md} §3, run against the production code of
  * {@code ukun-api}. Pure bytecode analysis — no Spring context, no container — so it belongs to
- * surefire, next to {@code ModulithTest}, and runs on every build.
+ * the {@code test} task, next to {@code ModulithTest}, and runs on every build.
  *
  * <p>Today it passes over almost nothing: the ten application modules are declared and empty, and
  * business code lands from v0.3 onwards. That is the point of writing the rules now rather than

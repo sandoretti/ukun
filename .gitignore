@@ -3,7 +3,12 @@
 .env.*
 !.env.example
 
-# Maven (los módulos ya lo listan en su propio .gitignore; esto cubre módulos futuros)
+# Gradle (los tres servicios nuevos). El wrapper sí se versiona, igual que se versionaba el de Maven.
+build/
+.gradle/
+
+# Maven: solo lo usan ya ukun-clientes y ukun-empleados, que lo listan también en su propio
+# .gitignore. Esta línea se va con ellos en v0.7.
 target/
 
 # Node / frontend

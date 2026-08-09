@@ -15,8 +15,10 @@ services:
   ukun-api:
     image: ukun/api:dev
     build:
-      context: ./services/ukun-api
-      dockerfile: Dockerfile
+      # El contexto es la raíz del repo, no el directorio del servicio: el Dockerfile de producción
+      # copia gradlew, settings.gradle.kts y buildSrc/, que viven ahí.
+      context: .
+      dockerfile: services/ukun-api/Dockerfile
     ports:
       - "${API_PORT:-8081}:8081"
     environment:
@@ -29,8 +31,10 @@ services:
   ukun-auth:
     image: ukun/auth:dev
     build:
-      context: ./services/ukun-auth
-      dockerfile: Dockerfile
+      # El contexto es la raíz del repo, no el directorio del servicio: el Dockerfile de producción
+      # copia gradlew, settings.gradle.kts y buildSrc/, que viven ahí.
+      context: .
+      dockerfile: services/ukun-auth/Dockerfile
     ports:
       - "${AUTH_PORT:-9000}:9000"
     environment:
@@ -43,8 +47,10 @@ services:
   ukun-gateway:
     image: ukun/gateway:dev
     build:
-      context: ./services/ukun-gateway
-      dockerfile: Dockerfile
+      # El contexto es la raíz del repo, no el directorio del servicio: el Dockerfile de producción
+      # copia gradlew, settings.gradle.kts y buildSrc/, que viven ahí.
+      context: .
+      dockerfile: services/ukun-gateway/Dockerfile
     ports:
       - "${GATEWAY_PORT:-8080}:8080"
     depends_on:

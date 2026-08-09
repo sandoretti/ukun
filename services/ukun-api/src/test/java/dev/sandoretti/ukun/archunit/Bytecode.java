@@ -95,9 +95,10 @@ final class Bytecode {
     }
 
     /**
-     * Slot to declared type, read from the debug information {@code maven-compiler-plugin} emits by
-     * default. Without it an {@code ALOAD} carries no type and the logging rule would go blind, so
-     * the rule says so out loud rather than passing quietly.
+     * Slot to declared type, read from the debug information the compiler emits when
+     * {@code options.isDebug} is on — which the convention plugin in {@code buildSrc} sets
+     * explicitly. Without it an {@code ALOAD} carries no type and the logging rule would go blind,
+     * so the rule says so out loud rather than passing quietly.
      *
      * <p>Scopes are flattened: a slot reused by two variables of different types in disjoint ranges
      * keeps the last one seen. It costs nothing here, where the lookup only ever happens for the

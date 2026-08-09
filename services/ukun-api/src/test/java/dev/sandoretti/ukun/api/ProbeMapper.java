@@ -4,8 +4,8 @@ import org.mapstruct.Mapper;
 
 /**
  * Exists only to prove the annotation processor chain works (see {@link StackValidationIT}).
- * {@code componentModel} and {@code unmappedTargetPolicy} are not set here: the root pom.xml
- * passes them to every module as compiler arguments.
+ * {@code componentModel} and {@code unmappedTargetPolicy} are not set here: this service's
+ * {@code build.gradle.kts} passes them as compiler arguments, to main and test sources alike.
  */
 @Mapper
 public interface ProbeMapper {

@@ -11,8 +11,10 @@ services:
 
   ukun-api:
     build:
-      context: ./services/ukun-api
-      dockerfile: Dockerfile.dev
+      # La raíz del repo, igual que en compose.yaml: el Dockerfile.dev copia de services/<x>/build/,
+      # y Tilt necesita ese contexto para poder vigilar los ficheros de build compartidos.
+      context: .
+      dockerfile: services/ukun-api/Dockerfile.dev
     # Without this, the dev-only tooling declared in application.yaml (Swagger UI,
     # /actuator/modulith) stays off under `tilt up`, which is the one environment it exists for.
     environment:
@@ -25,8 +27,10 @@ services:
 
   ukun-auth:
     build:
-      context: ./services/ukun-auth
-      dockerfile: Dockerfile.dev
+      # La raíz del repo, igual que en compose.yaml: el Dockerfile.dev copia de services/<x>/build/,
+      # y Tilt necesita ese contexto para poder vigilar los ficheros de build compartidos.
+      context: .
+      dockerfile: services/ukun-auth/Dockerfile.dev
     ports:
       - "${JDWP_AUTH_PORT:-5006}:5005"
     depends_on:
@@ -35,8 +39,10 @@ services:
 
   ukun-gateway:
     build:
-      context: ./services/ukun-gateway
-      dockerfile: Dockerfile.dev
+      # La raíz del repo, igual que en compose.yaml: el Dockerfile.dev copia de services/<x>/build/,
+      # y Tilt necesita ese contexto para poder vigilar los ficheros de build compartidos.
+      context: .
+      dockerfile: services/ukun-gateway/Dockerfile.dev
     ports:
       - "${JDWP_GATEWAY_PORT:-5007}:5005"
     depends_on:

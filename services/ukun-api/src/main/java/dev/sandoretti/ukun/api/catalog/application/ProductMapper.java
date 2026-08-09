@@ -11,7 +11,7 @@ import org.mapstruct.Mapping;
  * avoid.
  *
  * <p>It carries no {@code componentModel} and no {@code unmappedTargetPolicy} of its own — both come
- * from the {@code compilerArgs} of the root {@code pom.xml}, so every mapper in the service is
+ * from the {@code compilerArgs} of this service's {@code build.gradle.kts}, so every mapper in the service is
  * generated as a Spring bean and any unmapped target field breaks the build instead of silently
  * serialising as {@code null}.
  *

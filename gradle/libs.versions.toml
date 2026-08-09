@@ -1,0 +1,95 @@
+# Catálogo de versiones: el único sitio donde se fija la versión de algo (ADR-0021).
+#
+# Sustituye al bloque <properties> + <dependencyManagement> del pom.xml agregador. A diferencia de
+# Maven, un catálogo no necesita repetir una versión para poder usarla en otro sitio: el problema que
+# obligaba a duplicar `lombok.version` a mano para `annotationProcessorPaths` no existe aquí.
+#
+# Las entradas SIN `version.ref` son deliberadas: esas coordenadas las gestiona uno de los tres BOM
+# de abajo, y fijarles una versión a mano es exactamente lo que docs/05-stack-y-versiones.md prohíbe.
+#
+# Antes de subir cualquier versión de aquí, confirma que sigue siendo la última estable
+# (docs/05-stack-y-versiones.md, "Política de actualización").
+
+[versions]
+# Plataformas. Verificadas contra Maven Central en agosto de 2026.
+spring-boot = "4.1.0"
+spring-cloud = "2025.1.2"
+spring-modulith = "2.1.0"
+
+# No cubiertas por ningún BOM de plataforma.
+mapstruct = "1.6.3"
+lombok = "1.18.46"
+lombok-mapstruct-binding = "0.2.0"
+springdoc = "3.0.3"
+archunit = "1.5.0"
+
+# Plugins de Gradle. La versión de Gradle en sí vive en gradle/wrapper/gradle-wrapper.properties.
+test-logger = "4.0.0"
+
+[libraries]
+# --- BOM de plataforma, importados con platform() en cada módulo que los necesita -------------
+# El ADR-0001 exige importarlos, nunca heredarlos. Con Gradle esa distinción desaparece por
+# construcción: no existe la herencia de <parent> que había que evitar en Maven.
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
+spring-cloud-bom = { module = "org.springframework.cloud:spring-cloud-dependencies", version.ref = "spring-cloud" }
+spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-bom", version.ref = "spring-modulith" }
+
+# --- Spring Boot (versión gestionada por spring-boot-bom) -------------------------------------
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+# starter-web no arrastra Bean Validation desde Boot 3, y cada query param del listado de catálogo
+# declara sus límites: sin esto las anotaciones compilan y no se aplican nunca.
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+# Boot 4 partió la autoconfiguración en un módulo por tecnología: liquibase-core sola trae el motor
+# pero no la autoconfiguración, y el changelog no se ejecutaría. Este artefacto trae las dos
+# (skill `liquibase`, regla 8).
+spring-boot-liquibase = { module = "org.springframework.boot:spring-boot-liquibase" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+# Boot 4 partió los starters de test: TestRestTemplate ya no está en starter-test y RestTestClient
+# es el reemplazo, en su propio módulo.
+spring-boot-resttestclient = { module = "org.springframework.boot:spring-boot-resttestclient" }
+# @ServiceConnection: apunta el datasource del contexto al contenedor sin @DynamicPropertySource.
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+# Genera spring-configuration-metadata.json para las @ConfigurationProperties del servicio: sin él
+# el IDE marca `ukun.catalog.media-base-path` como propiedad no resuelta y no la autocompleta.
+spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
+
+# --- Spring Cloud (versión gestionada por spring-cloud-bom) -----------------------------------
+# Nombre vigente del tren 2025.x; el viejo spring-cloud-starter-gateway quedó deprecado.
+spring-cloud-starter-gateway-server-webflux = { module = "org.springframework.cloud:spring-cloud-starter-gateway-server-webflux" }
+
+# --- Spring Modulith (versión gestionada por spring-modulith-bom) -----------------------------
+# starter-core trae la anotación @ApplicationModule; el actuator sirve /actuator/modulith, expuesto
+# solo bajo el perfil dev (docs/14-modules.md §6).
+spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core" }
+spring-modulith-actuator = { module = "org.springframework.modulith:spring-modulith-actuator" }
+# ApplicationModules.verify() y el Documenter que sustituye al diagrama de paquetes a mano.
+spring-modulith-starter-test = { module = "org.springframework.modulith:spring-modulith-starter-test" }
+spring-modulith-docs = { module = "org.springframework.modulith:spring-modulith-docs" }
+
+# --- Persistencia y contrato ------------------------------------------------------------------
+postgresql = { module = "org.postgresql:postgresql" }
+# Swagger UI solo para exploración manual. El contrato versionado de docs/api/openapi/ es la fuente
+# de verdad, no esto (docs/06-entorno-local-tilt.md).
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# --- Lombok y MapStruct -----------------------------------------------------------------------
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
+lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-binding", version.ref = "lombok-mapstruct-binding" }
+
+# --- Testcontainers (versión gestionada por spring-boot-bom) ----------------------------------
+# Testcontainers 2.x renombró los artefactos: `testcontainers-postgresql`, no `postgresql`.
+testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
+
+# --- ArchUnit ---------------------------------------------------------------------------------
+# El artefacto `archunit` plano, no `archunit-junit5`: las reglas se comprueban desde tests JUnit 5
+# normales con AssertJ, que es lo que exige la skill `testing`.
+archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+test-logger = { id = "com.adarshr.test-logger", version.ref = "test-logger" }

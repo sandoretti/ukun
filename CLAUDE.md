@@ -12,7 +12,7 @@ The target: a single Spring Boot API monolith (REST, no Thymeleaf) + a React fro
 
 Three **third-party Spring skills** installed from skills.sh also sit in `.claude/skills/` — `java-springboot`, `springboot-patterns`, `spring-boot-test-patterns` (origins and hashes in `skills-lock.json`). They are generic support material, not authority: **on any conflict the project's own skills, `docs/`, and the ADRs win**, and clean code plus the hard rules below win over all three. `.claude/skills/README.md` is the catalogue, holds the precedence rule, and lists the conflicts already identified — including two that don't even compile on Spring Boot 4 (`@MockBean`, a hand-pinned Testcontainers 1.19.0).
 
-The two Maven modules below are independent Spring Boot apps (no parent multi-module POM, no shared code — entities/DAOs like `Producto`, `Tienda`, `StockProducto`, `Cuenta` are duplicated in both, each mapped to the same underlying tables).
+The two legacy Maven modules below are independent Spring Boot apps (no parent multi-module POM, no shared code — entities/DAOs like `Producto`, `Tienda`, `StockProducto`, `Cuenta` are duplicated in both, each mapped to the same underlying tables).
 
 ## Progress tracking
 
@@ -27,6 +27,23 @@ The roadmap's **execution state** lives in GitHub issues + milestones, not in a 
 `docs/04-roadmap.md` stays the source of truth for *what* and *in what order*; issues only carry state and link back to the RF/ADR/skill they depend on. If the two disagree, the doc wins — fix the issue. Close issues from commits (`closes #42`) so the milestone bar stays current.
 
 ## Commands
+
+**The repo has two build tools on purpose** (ADR-0021). The three new services under `services/` use a single Gradle build from the repo root; the two legacy monoliths keep their own Maven wrapper until they are deleted in v0.6/v0.7. Never run Gradle inside `ukun-clientes`/`ukun-empleados`, and never add them to `settings.gradle.kts`.
+
+### The new services (Gradle, from the repo root)
+
+```bash
+./gradlew build                   # the three services: compile + both test rounds + jars
+./gradlew :ukun-api:test          # unit tests only (*Test) — no containers
+./gradlew :ukun-api:integrationTest             # *IT with Testcontainers, needs Docker
+./gradlew :ukun-api:integrationTest --tests '*StackValidationIT'   # one class
+./gradlew :ukun-api:bootJar       # -> services/ukun-api/build/libs/app.jar
+./gradlew :ukun-api:classes :ukun-api:copyDeps  # what Tilt's live update runs
+```
+
+Project names are flat (`:ukun-api`, not `:services:ukun-api`) — `settings.gradle.kts` remaps `projectDir`. Versions live only in `gradle/libs.versions.toml`; what is shared between the three services lives in `buildSrc/src/main/kotlin/ukun-java-conventions.gradle.kts`. `tilt up` needs a JDK on the host (see `docs/06-entorno-local-tilt.md`).
+
+### The legacy monoliths (Maven, from their own directory)
 
 Each app is built/run independently with its Maven wrapper from its own directory.
 

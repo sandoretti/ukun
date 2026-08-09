@@ -77,7 +77,7 @@ public abstract class AbstractIntegrationTest {
 
     /**
      * Creates {@code database} if this is the first class to ask for it and points the context's
-     * datasource at it. Surefire and failsafe run test classes sequentially, so there is no race
+     * datasource at it. The {@code test} and {@code integrationTest} tasks run test classes sequentially, so there is no race
      * to guard here.
      */
     protected static void useDatabase(DynamicPropertyRegistry registry, String database) {

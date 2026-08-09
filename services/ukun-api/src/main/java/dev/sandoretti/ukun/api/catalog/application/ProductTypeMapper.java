@@ -19,7 +19,7 @@ import org.mapstruct.Mapper;
  * path and the two mappers do not reference each other.
  *
  * <p>No {@code componentModel}, no {@code unmappedTargetPolicy} and no {@code uses}: the first two come
- * from the {@code compilerArgs} of the root {@code pom.xml}, and there is no collaborator to inject —
+ * from the {@code compilerArgs} of this service's {@code build.gradle.kts}, and there is no collaborator to inject —
  * both fields map by name. That is safe to leave implicit precisely because
  * {@code unmappedTargetPolicy = ERROR} turns a component without a source into a compile error.
  */

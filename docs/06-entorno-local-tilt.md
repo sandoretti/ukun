@@ -33,7 +33,8 @@ Se instala en `~/.local/bin`, que ya está en tu `PATH`. Verifica con `tilt vers
 
 - Docker corriendo.
 - `.env` en la raíz del repo con las credenciales de Postgres (usa `.env.example` como plantilla).
-- JDK, Maven y Node **no hacen falta en el host**: la compilación incremental ocurre en contenedores auxiliares del propio `Tiltfile`, así el entorno es reproducible sin depender de qué tengas instalado localmente.
+- **Un JDK en el host.** Requisito desde ADR-0021: la compilación incremental de los servicios Java se hace con `./gradlew` en el host, no en un contenedor auxiliar, porque un contenedor efímero mata el daemon de Gradle en cada ciclo y sin daemon no hay ciclo rápido. Sirve cualquier JDK que arranque Gradle 9.7 (de 17 a 26); el toolchain se encarga de compilar con 25 aunque el tuyo sea otro, descargándolo si hace falta.
+- Node **no hace falta en el host**: el frontend se construye dentro de su contenedor.
 
 ## Comandos
 
@@ -51,11 +52,13 @@ Con el stack arriba, `http://localhost:8080` sirve la aplicación completa a tra
 No usa `spring-boot-devtools` a propósito: su `RestartClassLoader` provoca fallos sutiles con proxies de Hibernate e `instanceof` entre classloaders — justo el tipo de ruido que arruina una sesión de depuración. En su lugar:
 
 1. Guardas un fichero en `services/<servicio>/src/`.
-2. Tilt dispara `./mvnw -q -o -T1C -DskipTests compile dependency:copy-dependencies` en un contenedor de build.
-3. Sincroniza `target/classes` y `target/dependency` dentro del contenedor de la app (`sync`).
+2. Tilt dispara `./gradlew -q :<servicio>:classes :<servicio>:copyDeps` **en el host**. `classes` y no `build`: no se empaqueta ningún jar ni se corre ningún test. `copyDeps` deja el classpath de runtime en `build/dependency`, y es el reemplazo de lo que en Maven hacía `dependency:copy-dependencies`.
+3. Sincroniza **tres** directorios dentro del contenedor de la app (`sync`): `build/classes/java/main`, `build/resources/main` y `build/dependency`. Son tres y no dos porque Gradle separa clases y recursos, mientras Maven mandaba ambos a `target/classes`; el de recursos no es opcional, `application.yaml` vive ahí.
 4. Reinicia el proceso Java dentro del **mismo contenedor** (`restart_container()`) — no reconstruye la imagen.
 
-Ciclo completo: ~2-4 segundos. Si cambias `pom.xml`, Tilt fuerza una reconstrucción completa de la imagen en vez de un sync (`fall_back_on`), porque un cambio de dependencias no se puede sincronizar en caliente.
+El paso 2 tarda **~1 segundo** con el daemon caliente (medido sobre `ukun-api` tras tocar un controlador), al que hay que sumar el `sync` y el arranque de la JVM del paso 4. Es lo que se compraba renunciando a compilar en contenedor.
+
+Si cambias un fichero de build —el `build.gradle.kts` del servicio, `gradle/libs.versions.toml`, `settings.gradle.kts` o `buildSrc/`— Tilt fuerza una reconstrucción completa de la imagen en vez de un sync (`fall_back_on`), porque un cambio de dependencias no se puede sincronizar en caliente. Los cuatro están también en los `deps` del `local_resource`: con Maven un cambio en el POM raíz no disparaba nada, que era un agujero latente.
 
 Para `ukun-web` el `live_update` es solo `sync` **sin** `restart_container()`: Vite hace HMR real (~150ms) y reiniciar el proceso sería más lento que dejarlo recargar solo.
 
@@ -96,9 +99,9 @@ Que es exactamente lo que hace el script de arranque que la skill deja en `.clau
 
 Las imágenes de desarrollo (`Dockerfile.dev`, con `live_update`) son distintas de las que se despliegan de verdad — este apartado es sobre las segundas, entregable de v0.1 (`04-roadmap.md`). Cinco correcciones sobre el `Dockerfile` legacy, cada una con su motivo:
 
-1. **`ENTRYPOINT` con nombre de jar fijo.** El legacy usa `java -jar /opt/app/*.jar` en exec form, que no expande el glob — funciona por accidente porque el jar resultante se llama literalmente `*.jar` (defecto #16). Se fija con `<finalName>` en el POM y `ENTRYPOINT ["java", "-jar", "/opt/app/app.jar"]`.
-2. **Jar en capas** (`java -Djarmode=tools -jar app.jar extract --layers` o el equivalente Maven): dependencias, loader, snapshots y clases de aplicación en capas Docker separadas, para que un cambio de código no invalide la capa (pesada) de dependencias.
-3. **Caché de BuildKit para `~/.m2`** (`RUN --mount=type=cache,target=/root/.m2 ./mvnw ...`) en vez de `dependency:go-offline`, que vuelve a descargar todo el árbol de dependencias en cuanto cambia una línea del `pom.xml`.
+1. **`ENTRYPOINT` con nombre de jar fijo.** El legacy usa `java -jar /opt/app/*.jar` en exec form, que no expande el glob — funciona por accidente porque el jar resultante se llama literalmente `*.jar` (defecto #16). Se fija con `bootJar { archiveFileName = "app.jar" }` en el convention plugin y `ENTRYPOINT ["java", "-jar", "/opt/app/app.jar"]`.
+2. **Jar en capas** (`java -Djarmode=tools -jar app.jar extract --layers`): dependencias, loader, snapshots y clases de aplicación en capas Docker separadas, para que un cambio de código no invalide la capa (pesada) de dependencias.
+3. **Caché de BuildKit para `~/.gradle`** (`RUN --mount=type=cache,target=/root/.gradle ./gradlew --no-daemon ...`), que guarda tanto las dependencias como la distribución que descarga el wrapper. Aquí el daemon **sí** se desactiva, al contrario que en el ciclo de Tilt: el contenedor es de un solo uso, así que un daemon solo añadiría arranque para tirarlo con la capa.
 4. **Usuario no root**: `USER` explícito sobre una base `-jre-jammy` o `-jre-alpine`, en vez de ejecutar el proceso Java como root por omisión.
 5. **`HEALTHCHECK`** contra `/actuator/health` y un `.dockerignore` por servicio.
 
@@ -112,7 +115,8 @@ Se descarta explícitamente CDS/AOT (Class Data Sharing / `native-image`): reduc
 
 ## Qué hacer si algo no va
 
-- **Un recurso se queda rojo**: mira su log en la UI; casi siempre es un fallo de compilación Maven o la base de datos aún no está lista (el `resource_deps` del `Tiltfile` ya ordena el arranque, pero si acabas de hacer `db-reset` dale unos segundos).
-- **Un cambio de código no se refleja**: comprueba que el fichero está dentro de `src/` (el `sync` solo vigila esa carpeta) y que no has tocado `pom.xml` a la vez sin dejar que termine el rebuild completo.
+- **Un recurso se queda rojo**: mira su log en la UI; casi siempre es un fallo de compilación de Gradle o la base de datos aún no está lista (el `resource_deps` del `Tiltfile` ya ordena el arranque, pero si acabas de hacer `db-reset` dale unos segundos).
+- **Un cambio de código no se refleja**: comprueba que el fichero está dentro de `src/` (el `sync` solo vigila esa carpeta) y que no has tocado a la vez un fichero de build sin dejar que termine el rebuild completo.
+- **El servicio arranca y muere quejándose de configuración ausente**: es el `sync` de `build/resources/main`. Si falta esa entrada del classpath, `application.yaml` no está y el contexto no llega a levantar.
 - **Puertos ocupados**: si tenías un `docker compose up` corriendo por fuera de Tilt, páralo primero (`docker compose down`).
 - **Dos stacks a la vez** (dos worktrees en paralelo): usa la skill `worktree`, que reasigna los puertos del segundo stack en vez de dejar que colisionen.

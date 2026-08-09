@@ -9,7 +9,7 @@
 ## 1. Backend
 
 ### Nomenclatura y organización
-- `*Test` — unitario, corre en `surefire`. `*IT` — integración (Testcontainers, `@WebMvcTest` con contexto real, etc.), corre en `failsafe`. La distinción no es cosmética: `surefire` corre en cada build local, `failsafe` solo en CI y antes de un push, porque levanta contenedores.
+- `*Test` — unitario, corre en la tarea `test`. `*IT` — integración (Testcontainers, `@WebMvcTest` con contexto real, etc.), corre en la tarea `integrationTest`. La distinción no es cosmética: `test` corre en cada build local, `integrationTest` solo en CI y antes de un push, porque levanta contenedores. Las dos tandas comparten `src/test/java` y se separan **por el nombre de la clase**, no por su ubicación: el filtro está en el convention plugin del build (ADR-0021), no en un source set aparte.
 - `@Nested` por escenario cuando un método bajo test tiene varias ramas de comportamiento — agrupa los tests relacionados en vez de repetir el nombre del método bajo test como prefijo de cada uno.
 - `@DisplayName` y nombres de método **en inglés** (ADR-0018), describiendo el comportamiento, no el método invocado: `shouldRejectOrderWhenAnyLineLacksStock`, no `testCreateOrder2`.
 
@@ -70,10 +70,20 @@ Test de persistencia con contador de sentencias (Hibernate `Statistics.getPrepar
 
 | Fase | Qué corre | Cuándo |
 |---|---|---|
-| `surefire` (unit) | `*Test` backend — sin Testcontainers, sin contexto de Spring salvo `@WebMvcTest`/`@DataJpaTest` puntual | cada build local y cada push |
-| `failsafe` (integration) | `*IT` backend — Testcontainers, `@SpringBootTest` de los 4 recorridos end-to-end (`03` §3) | CI, antes de merge |
+| `./gradlew test` | `*Test` backend — sin Testcontainers, sin contexto de Spring salvo `@WebMvcTest`/`@DataJpaTest` puntual | cada build local y cada push |
+| `./gradlew integrationTest` | `*IT` backend — Testcontainers, `@SpringBootTest` de los 4 recorridos end-to-end (`03` §3) | CI, antes de merge |
 | Vitest | componentes y hooks del frontend, incluida paridad de traducciones | cada build local y cada push |
 | Playwright | los tres recorridos de `03` §3 (cliente completo, admin crea producto, empleado edita stock) | CI, contra el stack levantado por Tilt |
-| Jacoco | cobertura informativa en todo el backend; **umbral obligatorio solo en `orders` e `inventory`** (`03` §3 — es donde está el dinero y la concurrencia) | CI |
+| Jacoco (`jacocoTestReport`) | cobertura informativa en todo el backend, sobre las dos tandas; **umbral obligatorio solo en `orders` e `inventory`** (`03` §3 — es donde está el dinero y la concurrencia) | CI |
+
+`./gradlew check` de un servicio corre las dos tandas y el informe de cobertura; `./gradlew build` añade el empaquetado. Para una sola clase, `--tests`:
+
+```bash
+./gradlew :ukun-api:test                                  # solo unitarios
+./gradlew :ukun-api:integrationTest                       # solo integración (necesita Docker)
+./gradlew :ukun-api:integrationTest --tests '*StackValidationIT'
+```
+
+Las dos tandas no se solapan nunca: una clase entra en una o en la otra según su nombre, y ninguna corre dos veces. Es comprobable comparando los informes de `build/test-results/test/` y `build/test-results/integrationTest/`.
 
 Sin umbral global de cobertura — invita a tests basura que solo rellenan líneas sin verificar comportamiento (`03-analisis-y-patrones.md` §3).

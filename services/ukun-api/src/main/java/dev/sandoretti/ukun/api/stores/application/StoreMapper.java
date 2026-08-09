@@ -9,7 +9,7 @@ import org.mapstruct.Mapping;
  * {@code Store} to its DTO, with MapStruct like every other mapping in the service (ADR-0009).
  *
  * <p>No {@code componentModel} and no {@code unmappedTargetPolicy}: both come from the
- * {@code compilerArgs} of the root {@code pom.xml}, which is also what makes a forgotten field a
+ * {@code compilerArgs} of this service's {@code build.gradle.kts}, which is also what makes a forgotten field a
  * compile error instead of a {@code null} in the response.
  *
  * <p>The nested {@link AddressResponse} is mapped by a second method in the same interface rather

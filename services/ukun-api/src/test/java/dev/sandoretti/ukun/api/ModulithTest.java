@@ -17,7 +17,7 @@ import org.springframework.modulith.docs.Documenter;
  * the modules are still empty, because that is the only moment at which the graph can be declared
  * without negotiating it against code that already violates it (docs/14-modules.md §4).
  *
- * <p>Pure bytecode analysis: no Spring context and no Testcontainers, so it belongs to surefire.
+ * <p>Pure bytecode analysis: no Spring context and no Testcontainers, so it belongs to the {@code test} task.
  */
 class ModulithTest {
 

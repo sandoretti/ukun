@@ -3,8 +3,8 @@
 # Production image for ukun-api. This is NOT the image the local dev loop uses — that one is
 # Dockerfile.dev, driven by Tilt with live_update. See docs/06-entorno-local-tilt.md.
 #
-# The build context is the REPOSITORY ROOT, not this directory: the aggregator pom.xml lives
-# there and the reactor needs it. Build with:
+# The build context is the REPOSITORY ROOT, not this directory: the aggregator build lives
+# there and Gradle needs it. Build with:
 #
 #     docker build -f services/ukun-api/Dockerfile -t ukun/ukun-api:0.1.0-SNAPSHOT .
 #
@@ -14,29 +14,38 @@
 FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /build
 
-# POMs first, sources after, so that editing code does not invalidate the dependency
-# resolution layer. All three module POMs are needed even for a single -pl build: Maven has
-# to read the whole reactor declared by the aggregator.
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-COPY services/ukun-api/pom.xml     services/ukun-api/
-COPY services/ukun-auth/pom.xml    services/ukun-auth/
-COPY services/ukun-gateway/pom.xml services/ukun-gateway/
+# Build scripts first, sources after, so that editing code does not invalidate the dependency
+# resolution layer. All three module scripts are needed even to build one service: settings.gradle.kts
+# declares the three projects and Gradle has to be able to configure every one of them.
+#
+# buildSrc carries the convention plugin the three services apply, and Gradle compiles it before
+# anything else — without it the build cannot even be configured.
+COPY gradlew ./
+COPY gradle/ gradle/
+COPY settings.gradle.kts build.gradle.kts ./
+COPY buildSrc/ buildSrc/
+COPY services/ukun-api/build.gradle.kts     services/ukun-api/
+COPY services/ukun-auth/build.gradle.kts    services/ukun-auth/
+COPY services/ukun-gateway/build.gradle.kts services/ukun-gateway/
 
 COPY services/ukun-api/src services/ukun-api/src
 
-# A BuildKit cache mount instead of `dependency:go-offline`: go-offline re-downloads the whole
-# dependency tree whenever a single line of the POM changes, the cache mount does not.
-# Tests are skipped here on purpose — they need a Docker daemon (Testcontainers) and they run
-# in the build, not in the image.
-RUN --mount=type=cache,target=/root/.m2 \
-    ./mvnw -B -q -pl services/ukun-api -am -DskipTests package
+# A BuildKit cache mount holds both the dependency cache and the Gradle distribution the wrapper
+# downloads, so neither is re-fetched on every build.
+#
+# --no-daemon is right here and wrong in the Tiltfile: this container is single-use, so a daemon
+# would only add startup cost and then be thrown away with the layer.
+#
+# Tests are skipped by building bootJar directly rather than `build` — they need a Docker daemon
+# (Testcontainers) and they run in the build pipeline, not in the image.
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew --no-daemon --console=plain -q :ukun-api:bootJar
 
 # Boot 3.3+ layered extraction (`layertools` is obsolete). Splits the fat jar into four
 # directories so dependencies — the heavy, rarely changing part — get their own Docker layer.
 # The jar left in application/ is a thin jar that references the extracted libs, which is why
 # the runtime stage can still start it with a plain `java -jar`.
-RUN java -Djarmode=tools -jar services/ukun-api/target/app.jar \
+RUN java -Djarmode=tools -jar services/ukun-api/build/libs/app.jar \
         extract --layers --destination /extracted
 
 
@@ -58,7 +67,7 @@ EXPOSE 8081
 HEALTHCHECK --interval=10s --timeout=3s --start-period=40s --retries=6 \
     CMD wget -q -O - http://127.0.0.1:8081/actuator/health | grep -q '"status":"UP"' || exit 1
 
-# Fixed jar name, guaranteed by <finalName>app</finalName> in the root pom.xml. The legacy
-# images use `java -jar /opt/app/*.jar` in exec form, where no shell expands the glob — it only
-# works because the file is literally named `*.jar` (defect #16, docs/03-analisis-y-patrones.md).
+# Fixed jar name, guaranteed by `bootJar { archiveFileName = "app.jar" }` in the convention plugin.
+# The legacy images use `java -jar /opt/app/*.jar` in exec form, where no shell expands the glob — it
+# only works because the file is literally named `*.jar` (defect #16, docs/03-analisis-y-patrones.md).
 ENTRYPOINT ["java", "-jar", "/opt/app/app.jar"]
