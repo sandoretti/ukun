@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge, Card } from 'react-bootstrap';
 
@@ -16,13 +17,23 @@ export function ProductCard({ product, available }: ProductCardProps) {
   const locale = i18n.resolvedLanguage ?? 'es';
 
   const titleId = `product-${product.id}-title`;
+  // Whether the photo actually loads is a property of this render, not of the product: a URL that
+  // 404s (nothing serves `/media/**` until the storage adapter exists) falls back to the same
+  // placeholder as a product with no photo, instead of leaving a broken image in the grid.
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = product.imageUrl !== null && !imageFailed;
 
   return (
     // An `article` named by its own title: the grid becomes a list of named regions for a screen
     // reader instead of an undifferentiated pile of divs.
     <Card as="article" aria-labelledby={titleId} className="h-100">
-      {product.imageUrl ? (
-        <Card.Img variant="top" src={product.imageUrl} alt={product.name} />
+      {showImage ? (
+        <Card.Img
+          variant="top"
+          src={product.imageUrl!}
+          alt={product.name}
+          onError={() => setImageFailed(true)}
+        />
       ) : (
         // The photo is optional (RF-10) and the URL always comes from the server: there is no
         // identifier-to-path convention to rebuild here.

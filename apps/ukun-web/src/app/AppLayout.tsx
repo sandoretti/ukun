@@ -14,7 +14,10 @@ export function AppLayout() {
 
   return (
     <>
-      <Navbar bg="light" expand="md" className="mb-4">
+      {/* La barra lleva el verde de marca con texto blanco (6.02:1, AA — docs/07-frontend-ux-ui.md).
+          `data-bs-theme="dark"` es lo que hace que Bootstrap 5.3 aclare marca, enlaces y toggler:
+          sin él la barra queda casi blanca sobre blanco y no se distingue del contenido. */}
+      <Navbar bg="primary" data-bs-theme="dark" expand="md" className="mb-4">
         <Container>
           <Navbar.Brand as={Link} to="/">
             {t('title')}
@@ -28,7 +31,10 @@ export function AppLayout() {
             </Nav>
             <Form.Group controlId="language-selector" className="d-flex align-items-center gap-2">
               <Form.Label className="mb-0 small">{t('language.label')}</Form.Label>
+              {/* El control vuelve al tema claro: un `select` oscuro sobre el verde de marca es
+                  ilegible, y el tema de la barra se hereda si no se corta aquí. */}
               <Form.Select
+                data-bs-theme="light"
                 size="sm"
                 value={i18n.resolvedLanguage ?? 'es'}
                 onChange={(event) => void i18n.changeLanguage(event.target.value)}

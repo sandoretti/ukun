@@ -4,7 +4,11 @@
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    // Fuera del directorio del proyecto: Vite resuelve `vite.config.js` ANTES que `vite.config.ts`,
+    // así que el .js que emitía `tsc -b` aquí al lado se convertía en la configuración real y
+    // congelaba silenciosamente la última compilación (un proxy añadido al .ts no tenía efecto).
+    "outDir": "./node_modules/.tmp/tsconfig.node"
   },
   "include": ["vite.config.ts"]
 }
