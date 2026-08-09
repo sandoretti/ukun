@@ -171,6 +171,7 @@ Dos matices que la palabra «paralelizable» esconde y que el orden de ejecució
 
 - **El primer endpoint no es paralelo con los demás**: arrastra la infraestructura compartida del módulo `shared` (el `@RestControllerAdvice` con los cinco `code`s marcados como v0.3 en `12-error-contract.md`, la configuración de MapStruct, los parámetros de paginación). Hasta que ese primer slice esté mergeado, los otros cinco no tienen plantilla que copiar. Las dos correcciones de RF-01 van **dentro** de ese primer slice, no después: el contrato de `listProducts` ya las exige, y separarlas obliga a reescribir la consulta y sus ITs. La `unaccent` necesita además un changeset propio bajo `releases/` — el baseline solo crea `citext`.
 - **`/api/availability` es del módulo `inventory`, no de `catalog`** (ADR-0017 §3). Es el endpoint que permite a la pantalla de catálogo pintar disponibilidad sin que `catalog` importe `inventory`.
+- **La mitad de lectura del módulo `storage` se adelantó aquí desde v0.7**, no estaba en el plan original de este release. El catálogo entrega una `imageUrl` servible desde su primer endpoint, y no había nadie al otro lado: toda foto de producto era un 404 en cuanto la pantalla de catálogo se conectó al backend real. Son `FileStoragePort`, el adaptador de filesystem y la ruta pública `GET /media/products/{key}`, con el bind mount de `resources/uploads` en `compose.yaml`. La **subida** de RF-10 se queda en v0.7.
 
 ### v0.4 — Identidad
 *Salida: hay cuentas reales, con hash, y el API valida tokens.*
@@ -204,7 +205,7 @@ Paralelizable: **stock** · **CRUD de productos + tipos de producto + subida de 
 
 Dentro del slice de stock entra `GET /api/products/by-sku/{sku}`: es el paso previo en pantalla al alta de una línea (el empleado teclea el SKU y lo resuelve antes de crear la línea), y solo resuelve productos activos, de forma que un producto descatalogado no se pueda reponer (ADR-0013, ADR-0015).
 
-Aquí entran también la tabla `audit_log` en uso (`11-observabilidad-y-logging.md`, ADR-0014) y el `FileStoragePort` con su adaptador de filesystem (ADR-0017).
+Aquí entra también la tabla `audit_log` en uso (`11-observabilidad-y-logging.md`, ADR-0014). Del `FileStoragePort` (ADR-0017) queda solo la **escritura**: el puerto, su adaptador de filesystem y la ruta pública de lectura se adelantaron a v0.3 porque el catálogo ya servía `imageUrl`. Lo que se implementa aquí es `store(...)` con el reemplazo compensado que exige `08-identidad-y-seguridad.md` §9, el multipart y su límite de 5 MB — y quitar el `:ro` del bind mount de `compose.yaml`.
 
 ### v1.0 — Endurecimiento
 
