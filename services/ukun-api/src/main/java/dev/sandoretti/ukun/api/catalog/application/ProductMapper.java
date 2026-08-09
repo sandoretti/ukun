@@ -1,7 +1,6 @@
 package dev.sandoretti.ukun.api.catalog.application;
 
 import dev.sandoretti.ukun.api.catalog.domain.Product;
-import dev.sandoretti.ukun.api.catalog.domain.ProductType;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -44,18 +43,6 @@ public interface ProductMapper {
     @Mapping(target = "typeName", source = "productType.name")
     @Mapping(target = "imageUrl", source = "imageKey", qualifiedByName = "toImageUrl")
     ProductDetailResponse toDetail(Product product);
-
-    /**
-     * Both names match, so there is nothing to declare — and {@code unmappedTargetPolicy = ERROR} is
-     * what makes that safe to leave implicit: adding a component to the record without a source for it
-     * breaks the build.
-     *
-     * <p>It lives in this mapper and not in a {@code ProductTypeMapper} of its own because MapStruct's
-     * unit is the aggregate, not the entity: {@code product} and {@code product_type} are the two
-     * tables the {@code catalog} module owns, and a second interface for a two-field record would be
-     * one more bean to find and nothing else.
-     */
-    ProductTypeResponse toType(ProductType productType);
 
     /**
      * The typeahead row. It maps {@code imageUrl} and nothing about the type, which is the whole point:

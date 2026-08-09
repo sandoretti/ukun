@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
  * The read side of {@code product_type} (RF-01, {@code listProductTypes} of the contract) — the list
  * that fills the type filter of the catalog.
  *
- * <p>A service of its own rather than one more method on {@link ProductQueryService}: it reads a
- * different table through a different repository, and the only thing the two share is the module.
+ * <p>A service of its own rather than one more method on {@link ProductQueryService}, and the same
+ * goes for its repository, its mapper and its controller: {@code product_type} is a separate aggregate
+ * with a separate lifecycle, and the only thing it shares with {@code product} is the module that owns
+ * both tables. Nothing in this read path touches anything on the product's.
  *
  * <p>{@code @Transactional(readOnly = true)} at class level and an empty constructor, for the same
  * two reasons as every other query service here: {@code open-in-view: false} makes a lazy access
@@ -35,14 +37,14 @@ public class ProductTypeQueryService {
     private static final Sort BY_NAME = Sort.by(Sort.Direction.ASC, "name").and(Sort.by(Sort.Direction.ASC, "id"));
 
     private final ProductTypeRepository types;
-    private final ProductMapper mapper;
+    private final ProductTypeMapper mapper;
 
-    public ProductTypeQueryService(ProductTypeRepository types, ProductMapper mapper) {
+    public ProductTypeQueryService(ProductTypeRepository types, ProductTypeMapper mapper) {
         this.types = types;
         this.mapper = mapper;
     }
 
     public List<ProductTypeResponse> list() {
-        return types.findAll(BY_NAME).stream().map(mapper::toType).toList();
+        return types.findAll(BY_NAME).stream().map(mapper::toResponse).toList();
     }
 }
