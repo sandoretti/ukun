@@ -90,6 +90,26 @@ testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgr
 # normales con AssertJ, que es lo que exige la skill `testing`.
 archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
 
+# --- Solo para :ukun-test-support (versión gestionada por spring-boot-bom) ---------------------
+# Las reglas de ArchUnit hablan de @Entity y de SLF4J sin ser un servicio, así que necesitan las dos
+# APIs sueltas: arrastrar starter-data-jpa entero a un proyecto que no tiene contexto de Spring
+# sería pagar Hibernate por una anotación.
+jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-api" }
+slf4j-api = { module = "org.slf4j:slf4j-api" }
+
+# Y estas tres solo las compilan los fixtures del self-test: son las anotaciones y los tipos que dan
+# forma a un controller, un servicio y un repositorio sin arrastrar ningún starter. Un proyecto que
+# no arranca un contexto de Spring no tiene por qué traerse Tomcat e Hibernate para declarar un
+# @RestController de mentira.
+spring-web = { module = "org.springframework:spring-web" }
+spring-context = { module = "org.springframework:spring-context" }
+spring-data-commons = { module = "org.springframework.data:spring-data-commons" }
+
+# El launcher lo añade el plugin de Spring Boot a testRuntimeOnly por su cuenta, y :ukun-test-support
+# no lo aplica porque no es un servicio. Sin esto Gradle no arranca el motor de JUnit: «Failed to load
+# JUnit Platform», con cero tests ejecutados y sin decir cuál falta.
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 test-logger = { id = "com.adarshr.test-logger", version.ref = "test-logger" }

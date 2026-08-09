@@ -15,8 +15,10 @@ FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /build
 
 # Build scripts first, sources after, so that editing code does not invalidate the dependency
-# resolution layer. All three module scripts are needed even to build one service: settings.gradle.kts
-# declares the three projects and Gradle has to be able to configure every one of them.
+# resolution layer. EVERY module script is needed even to build one service: settings.gradle.kts
+# declares four projects and Gradle has to be able to configure every one of them. Adding a project
+# there without adding its COPY here breaks this image, and `tilt up` will not notice — it builds
+# from Dockerfile.dev instead.
 #
 # buildSrc carries the convention plugin the three services apply, and Gradle compiles it before
 # anything else — without it the build cannot even be configured.
@@ -27,6 +29,7 @@ COPY buildSrc/ buildSrc/
 COPY services/ukun-api/build.gradle.kts     services/ukun-api/
 COPY services/ukun-auth/build.gradle.kts    services/ukun-auth/
 COPY services/ukun-gateway/build.gradle.kts services/ukun-gateway/
+COPY test-support/ukun-test-support/build.gradle.kts test-support/ukun-test-support/
 
 COPY services/ukun-gateway/src services/ukun-gateway/src
 

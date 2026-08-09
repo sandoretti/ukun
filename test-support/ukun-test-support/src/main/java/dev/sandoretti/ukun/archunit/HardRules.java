@@ -30,11 +30,17 @@ import java.util.regex.Pattern;
  * other seven stay, because Modulith knows nothing about {@code @Data} on an entity, {@code Double}
  * for money, or an entity handed to {@code log.*(...)}.
  *
- * <p>Every rule allows an empty {@code should} on purpose. Today the ten application modules are
- * declared and empty, so all seven pass over nothing — the proof that they work is
- * {@code ArchitectureRulesSelfTest}, which runs each of them against a class written to break it.
+ * <p>Every rule allows an empty {@code should} on purpose: a service applies the whole set from its
+ * first commit, when most of its modules are still empty and several rules pass over nothing. The
+ * proof that they work is {@code ArchitectureRulesSelfTest} in this same project, which runs each of
+ * them twice — against a class written to break it, and against the compliant shape.
+ *
+ * <p>They live here, and not in the test sources of a service, because {@code ukun-api} and
+ * {@code ukun-auth} must be held to the same seven. Each service keeps its own
+ * {@code ArchitectureTest}, which is the only part that is service-specific: it names the package to
+ * import.
  */
-final class HardRules {
+public final class HardRules {
 
     private static final String REST_CONTROLLER = "org.springframework.web.bind.annotation.RestController";
     private static final String SERVICE = "org.springframework.stereotype.Service";
@@ -54,7 +60,7 @@ final class HardRules {
      * persistence, which is the shape the layered structure of the skill {@code spring-api} exists
      * to prevent.
      */
-    static final ArchRule WEB_LAYER_IS_FREE_OF_PERSISTENCE = noClasses()
+    public static final ArchRule WEB_LAYER_IS_FREE_OF_PERSISTENCE = noClasses()
             .that()
             .resideInAPackage("..web..")
             .should()
@@ -74,14 +80,14 @@ final class HardRules {
      * between {@code Pedido} and {@code ProductoPedido} through mutual {@code toString}, and a
      * generated {@code toString} leaks passwords and card numbers into the log.
      */
-    static final ArchRule ENTITIES_WRITE_THEIR_OWN_IDENTITY = classes()
+    public static final ArchRule ENTITIES_WRITE_THEIR_OWN_IDENTITY = classes()
             .that()
             .areAnnotatedWith(Entity.class)
             .should(notLetLombokWriteTheirIdentityMethods())
             .because("@Data on an entity means a recursive toString and a leaked secret (docs/03 §2)")
             .allowEmptyShould(true);
 
-    static final ArchRule CONTROLLERS_DO_NOT_REACH_FOR_REPOSITORIES = noClasses()
+    public static final ArchRule CONTROLLERS_DO_NOT_REACH_FOR_REPOSITORIES = noClasses()
             .that()
             .areAnnotatedWith(REST_CONTROLLER)
             .should()
@@ -96,7 +102,7 @@ final class HardRules {
      * forbids an {@code @Entity} in the public API of a module, and {@code verify()} enforces that
      * nothing outside a module can even see its entities.
      */
-    static final ArchRule SERVICES_DO_NOT_RETURN_ENTITIES = noMethods()
+    public static final ArchRule SERVICES_DO_NOT_RETURN_ENTITIES = noMethods()
             .that()
             .arePublic()
             .and()
@@ -107,7 +113,7 @@ final class HardRules {
             .because("a service returns a DTO record mapped with MapStruct, never the entity (ADR-0009)")
             .allowEmptyShould(true);
 
-    static final ArchRule ENTITIES_DO_NOT_USE_FLOATING_POINT = noFields()
+    public static final ArchRule ENTITIES_DO_NOT_USE_FLOATING_POINT = noFields()
             .that()
             .areDeclaredInClassesThat()
             .areAnnotatedWith(Entity.class)
@@ -127,19 +133,19 @@ final class HardRules {
      * signup request means the password and for card data means the PAN and the CVV. That is the
      * counterpart of having chosen records for DTOs — {@code docs/11-observabilidad-y-logging.md} §4.
      */
-    static final ArchRule DTOS_CARRYING_A_SECRET_MASK_IT = classes()
+    public static final ArchRule DTOS_CARRYING_A_SECRET_MASK_IT = classes()
             .that(carriesASecret())
             .should(declareTheirOwnToString())
             .because("a record prints all its components unless told otherwise (docs/11 §4)")
             .allowEmptyShould(true);
 
-    static final ArchRule ENTITIES_NEVER_REACH_THE_LOG = classes()
+    public static final ArchRule ENTITIES_NEVER_REACH_THE_LOG = classes()
             .should(new EntityLoggingCondition())
             .because("an entity in a log line is how defects #10, #20a and #20b leaked secrets (docs/11 §4)")
             .allowEmptyShould(true);
 
     /** The seven, in the order {@code docs/03-analisis-y-patrones.md} §3 lists them. */
-    static final List<ArchRule> ALL = List.of(
+    public static final List<ArchRule> ALL = List.of(
             WEB_LAYER_IS_FREE_OF_PERSISTENCE,
             ENTITIES_WRITE_THEIR_OWN_IDENTITY,
             CONTROLLERS_DO_NOT_REACH_FOR_REPOSITORIES,

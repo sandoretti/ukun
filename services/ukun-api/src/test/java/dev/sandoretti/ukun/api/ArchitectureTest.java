@@ -1,21 +1,21 @@
-package dev.sandoretti.ukun.archunit;
+package dev.sandoretti.ukun.api;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
+import dev.sandoretti.ukun.archunit.HardRules;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
  * The seven rules of {@code docs/03-analisis-y-patrones.md} §3, run against the production code of
  * {@code ukun-api}. Pure bytecode analysis — no Spring context, no container — so it belongs to
- * the {@code test} task, next to {@code ModulithTest}, and runs on every build.
+ * the {@code test} task, next to {@link ModulithTest}, and runs on every build.
  *
- * <p>Today it passes over almost nothing: the ten application modules are declared and empty, and
- * business code lands from v0.3 onwards. That is the point of writing the rules now rather than
- * later — the same reason {@code docs/14-modules.md} §4 gives for declaring the module graph while
- * it is still free to declare. What proves the rules actually work is
- * {@link ArchitectureRulesSelfTest}.
+ * <p>The rules themselves live in {@code :ukun-test-support}, shared with {@code ukun-auth}; this
+ * class is the service-specific half, and the only thing it decides is which package to import.
+ * What proves the rules actually work is {@code ArchitectureRulesSelfTest}, which runs in that
+ * project rather than in every service that applies them.
  *
  * <p>Each test calls {@code check} and lets ArchUnit's own {@code AssertionError} through: its
  * message lists the offending class, method and line, which no wrapper assertion would improve on.
@@ -23,10 +23,11 @@ import org.junit.jupiter.api.Test;
 class ArchitectureTest {
 
     /**
-     * {@code DoNotIncludeTests} is not decoration. The test sources of this module include classes
-     * in {@code dev.sandoretti.ukun.api} ({@code Probe}, {@code ProbeMapper}) and the deliberately
-     * broken fixtures under {@code dev.sandoretti.ukun.archunit.violations} — the rules are about
-     * production code, and importing either would make this test fail for the wrong reason.
+     * {@code DoNotIncludeTests} is not decoration: the test sources of this module include classes
+     * in {@code dev.sandoretti.ukun.api} ({@code Probe}, {@code ProbeMapper}) that exist to exercise
+     * the annotation processor chain, not to obey the rules. The deliberately broken fixtures are no
+     * longer a concern here — they moved to the test sources of {@code :ukun-test-support}, where
+     * nothing on this classpath can reach them.
      */
     private static final JavaClasses PRODUCTION_CLASSES = new ClassFileImporter()
             .withImportOption(new ImportOption.DoNotIncludeTests())

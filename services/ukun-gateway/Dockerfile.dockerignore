@@ -34,10 +34,13 @@ compose*.yaml
 docker-compose*.yml
 *.md
 
-# The other services' sources. Their build scripts are still needed to configure the build and are
-# copied explicitly by the Dockerfile, so only src/ is excluded here.
+# The other projects' sources. Their build scripts are still needed to configure the build and are
+# copied explicitly by the Dockerfile, so only src/ is excluded here. :ukun-test-support carries the
+# shared ArchUnit rules and is never on a runtime classpath, so none of its sources belong in any
+# image either.
 services/ukun-api/src/
 services/ukun-auth/src/
+test-support/ukun-test-support/src/
 
 # Frontend and IDE noise.
 node_modules/

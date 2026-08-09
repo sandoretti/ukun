@@ -61,7 +61,11 @@ dependencies {
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.spring.modulith.starter.test)
     testImplementation(libs.spring.modulith.docs)
-    testImplementation(libs.archunit)
+
+    // Las siete reglas de docs/03 §3 y su self-test viven en :ukun-test-support, compartidas con
+    // ukun-auth. Lo único que se queda aquí es ArchitectureTest, que las aplica nombrando el paquete
+    // de producción de este servicio. Arrastra ArchUnit de forma transitiva (`api`).
+    testImplementation(project(":ukun-test-support"))
 
     // El driver es `runtimeOnly` en producción, pero SchemaBaselineIT importa org.postgresql.Driver
     // para registrarlo a mano. Hace falta declararlo otra vez: el scope `runtime` de Maven sí estaba
