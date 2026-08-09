@@ -19,6 +19,8 @@ Tilt orquesta el stack de desarrollo vía `docker_compose()` (ADR-0005), con rei
 La columna **Puerto** es el valor por defecto: son los que se usan si no defines nada, que es el
 caso normal de un checkout único. Solo se tocan al levantar dos stacks a la vez (ver más abajo).
 
+`ukun-api` monta además `resources/uploads/` del repo en `/opt/resources/uploads` (solo lectura), que es de donde el módulo `storage` sirve `GET /media/products/{key}` — las fotos de los productos demo. Es un bind mount de `compose.yaml`, no del override de desarrollo, así que **cambiarlo obliga a recrear el contenedor**: el live update sincroniza clases y recursos, no volúmenes.
+
 Los monolitos legacy (`ukun-clientes`, `ukun-empleados`, `nginx`) **no forman parte de este stack**: no están en servicio y no se levantan. Sus `docker-compose*.yml` siguen en el repo como referencia hasta que se borran (`04-roadmap.md` v0.7).
 
 ## Instalación (una vez, Fedora, sin root)

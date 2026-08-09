@@ -44,6 +44,13 @@ ukun:
     # OpenAPI contract.
     media-base-path: /media/products/
 
+  storage:
+    # Container side of the bind mount declared in compose.yaml, and the fix for defect #6: the legacy
+    # carries this path hardcoded inside UploadFileServiceImpl. The `storage` module reads from here
+    # and serves it under the prefix above; in v1.1 the adapter becomes object storage and this key
+    # disappears with it (docs/04-roadmap.md).
+    local-root: /opt/resources/uploads
+
 server:
   port: 8081
 

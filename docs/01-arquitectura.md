@@ -125,7 +125,7 @@ flowchart TB
     end
 
     web["ukun-web\nestático, servido por el gateway en prod"]
-    files["FileStoragePort\nadaptador: filesystem (v0.7) → S3/MinIO (v1.1)"]
+    files["FileStoragePort\nadaptador: filesystem (v0.3) → S3/MinIO (v1.1)\nbind mount /opt/resources/uploads"]
 
     browser -- "cookie de sesión" --> bff
     bff -- "Bearer JWT" --> apiSrv
@@ -134,6 +134,7 @@ flowchart TB
     apiSrv --> apiDb
     authSrv --> authDb
     apiSrv --> files
+    bff -. "enruta /media/**" .-> apiSrv
     bff -. sirve estático .-> web
 
     style authDb fill:#4a5568,color:#fff
