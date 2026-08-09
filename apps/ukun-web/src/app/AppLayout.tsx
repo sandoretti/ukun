@@ -6,6 +6,7 @@ import { Container, Form, Nav, Navbar } from 'react-bootstrap';
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
 import { LoadingState } from '../shared/ui/LoadingState';
 import { ProductSearchBox } from '../shared/ui/ProductSearchBox';
+import { SiteFooter } from '../shared/ui/SiteFooter';
 
 const LANGUAGES = ['es', 'en'] as const;
 
@@ -14,11 +15,19 @@ export function AppLayout() {
   useLocaleSync();
 
   return (
-    <>
+    // Columna a toda la altura para que el pie quede abajo también en las pantallas cortas, y no
+    // flotando a media página.
+    <div className="d-flex flex-column min-vh-100">
+      {/* Primer tabulador de la página: con una barra que lleva navegación, buscador e idioma, saltar
+          al contenido ahorra media docena de paradas en cada ruta. Solo se ve al enfocarlo. */}
+      <a href="#main-content" className="skip-link">
+        {t('nav.skipToContent')}
+      </a>
+
       {/* La barra lleva el verde de marca con texto blanco (6.02:1, AA — docs/07-frontend-ux-ui.md).
           `data-bs-theme="dark"` es lo que hace que Bootstrap 5.3 aclare marca, enlaces y toggler:
           sin él la barra queda casi blanca sobre blanco y no se distingue del contenido. */}
-      <Navbar bg="primary" data-bs-theme="dark" expand="lg" className="mb-4">
+      <Navbar bg="primary" data-bs-theme="dark" expand="lg" sticky="top">
         <Container>
           <Navbar.Brand as={Link} to="/">
             {t('title')}
@@ -55,11 +64,15 @@ export function AppLayout() {
           </Navbar.Collapse>
         </Container>
       </Navbar>
-      <Container as="main">
+
+      {/* Sin `Container` aquí: el ancho lo decide cada pantalla, porque la de inicio va a sangre. */}
+      <main id="main-content" className="flex-grow-1">
         <Suspense fallback={<LoadingState />}>
           <Outlet />
         </Suspense>
-      </Container>
-    </>
+      </main>
+
+      <SiteFooter />
+    </div>
   );
 }

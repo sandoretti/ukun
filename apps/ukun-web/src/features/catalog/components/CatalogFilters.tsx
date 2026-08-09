@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Form } from 'react-bootstrap';
 
-import type { CatalogFilterInput, ProductType } from '../api/productKeys';
+import type { ProductType } from '../../../shared/api/productTypes';
+import type { CatalogFilterInput } from '../api/productKeys';
 import { PriceRange } from './PriceRange';
 
 type CatalogFiltersProps = {

@@ -3,7 +3,8 @@ import { Button } from 'react-bootstrap';
 
 import { Icon } from '../../../shared/ui/Icon';
 import { formatMoney } from '../../../shared/format/money';
-import type { CatalogFilterInput, ProductType } from '../api/productKeys';
+import type { ProductType } from '../../../shared/api/productTypes';
+import type { CatalogFilterInput } from '../api/productKeys';
 
 type ActiveFiltersProps = {
   filters: CatalogFilterInput;

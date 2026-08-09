@@ -8,6 +8,8 @@ import esErrors from './es/errors.json';
 import enErrors from './en/errors.json';
 import esCatalog from './es/catalog.json';
 import enCatalog from './en/catalog.json';
+import esHome from './es/home.json';
+import enHome from './en/home.json';
 
 i18n
   .use(LanguageDetector)
@@ -18,11 +20,13 @@ i18n
         common: esCommon,
         errors: esErrors,
         catalog: esCatalog,
+        home: esHome,
       },
       en: {
         common: enCommon,
         errors: enErrors,
         catalog: enCatalog,
+        home: enHome,
       },
     },
     fallbackLng: 'es',

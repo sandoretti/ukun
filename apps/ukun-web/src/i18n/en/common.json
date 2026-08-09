@@ -5,7 +5,22 @@
   "error": "An error occurred",
   "nav": {
     "catalog": "Catalogue",
-    "toggle": "Open the navigation menu"
+    "toggle": "Open the navigation menu",
+    "skipToContent": "Skip to content"
+  },
+  "footer": {
+    "claim": "Minimalism and affordable prices. We turn any space around with good design, without it showing on the bill.",
+    "explore": {
+      "title": "Explore",
+      "home": "Home",
+      "catalog": "Catalogue",
+      "premium": "Top of the range"
+    },
+    "stores": {
+      "title": "Stores",
+      "body": "You can see and try the products in our physical stores before buying them."
+    },
+    "legal": "© {{year}} Ukun · Final degree project by Italo Joel Sandoval Amoretti · Computer Engineering, Universidad de Alcalá"
   },
   "search": {
     "label": "Search products",

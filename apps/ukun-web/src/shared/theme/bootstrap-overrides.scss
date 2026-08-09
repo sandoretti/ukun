@@ -4,6 +4,13 @@ $primary: #456e0f;
 $primary-hover: #365a08;
 $accent: #5d9d0b;
 $primary-bg: #E9F5D8;
+$on-dark: #fff;
+
+// La tipografía de la marca, la misma que ya usaban las dos apps legacy — pero servida una sola vez
+// (docs/07-frontend-ux-ui.md §"Qué se hereda"). Solo hay corte regular, así que se reserva para
+// titulares y marca: ponerla también en el cuerpo obligaría al navegador a fingir la negrita en cada
+// `<strong>`. El cuerpo se queda en la pila del sistema, que no cuesta ninguna descarga.
+$display-font: "Averta Standard", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
 // Bootstrap deriva $theme-colors de $primary/$secondary, así que configurarlos
 // basta y evita reescribir el mapa entero.
@@ -11,8 +18,19 @@ $primary-bg: #E9F5D8;
 @use "bootstrap/scss/bootstrap" with (
   $primary: #456e0f,
   $secondary: #5d9d0b,
-  $component-active-bg: #456e0f
+  $component-active-bg: #456e0f,
+  $headings-font-family: $display-font
 );
+
+// `woff2` y no el `.otf` original: mismo dibujo, la mitad de bytes. `swap` es lo que hace que el
+// titular se lea desde el primer pintado en vez de esperar a la fuente.
+@font-face {
+  font-family: "Averta Standard";
+  src: url("../../assets/fonts/AvertaStandard-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 // Utilidades que Bootstrap no trae y que docs/07-frontend-ux-ui.md exige. Viven aquí, en el tema,
 // y no como `style` inline dentro de una pantalla.
@@ -35,6 +53,43 @@ $primary-bg: #E9F5D8;
 :focus-visible {
   outline: 2px solid $primary-hover;
   outline-offset: 2px;
+}
+
+// Sobre las bandas verdes oscuras ese mismo anillo es invisible: ahí el foco se marca en blanco.
+.site-footer :focus-visible,
+.closing-cta :focus-visible {
+  outline-color: $on-dark;
+}
+
+// La barra es pegajosa, así que un salto a un ancla dejaría el encabezado debajo de ella.
+section[id] {
+  scroll-margin-top: 5rem;
+}
+
+// La marca en la barra, con la tipografía de la casa.
+.navbar-brand {
+  font-family: $display-font;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+}
+
+// Primer tabulador de cada ruta: fuera de pantalla hasta que se enfoca. Sin transición — aparecer
+// es instantáneo, que es también lo que pide `prefers-reduced-motion`.
+.skip-link {
+  position: fixed;
+  z-index: bootstrap.$zindex-tooltip;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: bootstrap.$border-radius;
+  background-color: var(--bs-body-bg);
+  box-shadow: bootstrap.$box-shadow;
+  color: $primary;
+  transform: translateY(-300%);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 // Tamaños del componente <Icon>. Eran un `style` inline con píxeles sueltos, que es justo lo que el
@@ -215,4 +270,165 @@ $primary-bg: #E9F5D8;
 // pintan lo mismo, que es lo que hace que `aria-activedescendant` y lo que se ve coincidan.
 .search-suggestion[aria-selected="true"] {
   background-color: $primary-bg;
+}
+
+// --- Portada ------------------------------------------------------------------------------------
+
+// La foto es una banda a sangre y el texto va encima, pero sobre un panel opaco: el contraste de un
+// texto sobre una foto depende del píxel que tenga detrás, y eso no se puede garantizar. El velo
+// claro es solo para que el borde del panel no se pierda en las zonas claras de la imagen.
+.hero {
+  padding-block: 3rem;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.35)),
+    url("../../assets/hero-living-room.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+@include bootstrap.media-breakpoint-up(md) {
+  .hero {
+    padding-block: 5rem;
+  }
+}
+
+.hero__panel {
+  max-width: 40rem;
+  padding: 1.5rem;
+  border-radius: bootstrap.$border-radius-lg;
+  background-color: var(--bs-body-bg);
+  box-shadow: bootstrap.$box-shadow-lg;
+}
+
+@include bootstrap.media-breakpoint-up(md) {
+  .hero__panel {
+    padding: 2.5rem;
+  }
+}
+
+// El logotipo lleva sus dimensiones intrínsecas en el atributo para que no salte el layout al
+// cargar; aquí manda el ancho real, que es relativo al panel.
+.hero__logo {
+  display: block;
+  width: 11rem;
+  max-width: 70%;
+  height: auto;
+  margin-bottom: 1.25rem;
+}
+
+.hero__tagline {
+  margin-bottom: 0.25rem;
+  font-family: $display-font;
+  font-size: 1.25rem;
+  font-style: italic;
+  color: $primary;
+}
+
+.hero__title {
+  // Escala con el ancho en vez de saltar por breakpoints, con tope arriba y abajo.
+  font-size: clamp(1.75rem, 4.5vw, 3rem);
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+// --- Categorías destacadas ----------------------------------------------------------------------
+
+.category-tile {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-height: 5rem;
+  padding: 1rem 1.25rem;
+  border: bootstrap.$border-width solid var(--bs-border-color);
+  // $accent (3.34:1) es legítimo aquí: es un filete, no texto.
+  border-left: 0.25rem solid $accent;
+  border-radius: bootstrap.$border-radius;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  font-weight: 500;
+  text-decoration: none;
+  // Solo `transform`: nada de `transition: all` (docs/07 §Accesibilidad).
+  transition: transform 0.15s ease-out;
+}
+
+.category-tile:hover,
+.category-tile:focus-visible {
+  transform: translateY(-2px);
+  color: $primary;
+}
+
+// Un nombre de tipo largo parte por donde haga falta antes que desbordar la baldosa.
+.category-tile__name {
+  overflow-wrap: anywhere;
+}
+
+// --- Bloques narrativos -------------------------------------------------------------------------
+
+.narrative {
+  padding-block: 3rem;
+}
+
+// Los bloques alternan lado y, con él, fondo: es lo que separa uno de otro sin el `<hr>` de colores
+// que traía la portada legacy.
+.narrative--media-start {
+  background-color: var(--bs-tertiary-bg);
+}
+
+// La ilustración crece con su columna en vez de quedarse clavada a 250 px como en el legacy.
+.narrative__illustration {
+  display: block;
+  width: 100%;
+  max-width: 14rem;
+  height: auto;
+  margin-inline: auto;
+}
+
+// --- Cierre y pie ---------------------------------------------------------------------------------
+
+// Blanco sobre $primary-hover: 8.01:1 (AAA).
+.closing-cta {
+  padding-block: 4rem;
+  background-color: $primary-hover;
+  color: $on-dark;
+}
+
+.closing-cta__lead {
+  max-width: 44rem;
+}
+
+.site-footer {
+  background-color: $primary-hover;
+  color: $on-dark;
+}
+
+.site-footer__brand {
+  font-family: $display-font;
+  font-size: 1.5rem;
+}
+
+.site-footer__link {
+  color: $on-dark;
+  text-decoration: none;
+}
+
+.site-footer__link:hover,
+.site-footer__link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.site-footer__legal {
+  border-top: bootstrap.$border-width solid rgba(255, 255, 255, 0.25);
+}
+
+// Quien pide menos movimiento no ve ninguno: lo que se anima aquí es decoración, no información.
+@media (prefers-reduced-motion: reduce) {
+  .category-tile {
+    transition: none;
+  }
+
+  .category-tile:hover,
+  .category-tile:focus-visible {
+    transform: none;
+  }
 }

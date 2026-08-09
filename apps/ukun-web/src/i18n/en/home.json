@@ -1,0 +1,34 @@
+{
+  "hero": {
+    "tagline": "Your ukun",
+    "title": "Design that fits your home and your budget",
+    "lead": "Clean-lined furniture, materials that stand up to daily use and prices with no small print. Look for what you are missing and take it home.",
+    "browse": "Browse the catalogue",
+    "explore": "Explore by category"
+  },
+  "categories": {
+    "title": "Start with a category",
+    "lead": "Every category opens the catalogue already filtered, with the price and availability of each product in plain sight.",
+    "empty": "No categories have been published yet"
+  },
+  "story": {
+    "design": {
+      "title": "Find the perfect balance",
+      "body": "Between minimalism and style: a short, carefully chosen range of clean lines and restrained finishes, meant to still make sense in five years' time. A smaller catalogue and a stronger point of view, so that choosing does not turn into work."
+    },
+    "price": {
+      "title": "Affordable prices, no compromises",
+      "body": "Good design should be within anyone's reach, so we trim the price where it does not show — in the logistics, never in the materials. What you see is what you pay: no hidden fees and no invented discounts on inflated prices."
+    },
+    "people": {
+      "title": "Build rooms that look like you",
+      "body": "Whether you are freshening up the living room, putting together a desk you actually want to work at, or finishing off that corner that has been empty for months, there are people behind this who know the range and help you decide. You bring the style; we bring the pieces and the judgement."
+    }
+  },
+  "closing": {
+    "title": "Explore our collection",
+    "lead": "The whole catalogue, with the availability of each product in plain sight and filters by type and price to get you there quickly.",
+    "action": "Go to the catalogue",
+    "stores": "We are also in our physical stores, where you can see and try the products before you decide."
+  }
+}

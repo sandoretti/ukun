@@ -8,6 +8,8 @@ import { formatMoney } from '../format/money';
 import { SearchBox, type SearchSuggestion } from './SearchBox';
 
 type ProductSearchBoxProps = {
+  /** See `SearchBox`: `md` in the navigation bar, `lg` when the field leads a screen. */
+  size?: 'md' | 'lg';
   className?: string;
 };
 
@@ -20,7 +22,7 @@ type ProductSearchBoxProps = {
  * Neither goes to the product detail, which does not exist yet (issue #19); when it does, the only
  * thing that changes is where `onSelect` navigates to.
  */
-export function ProductSearchBox({ className }: ProductSearchBoxProps) {
+export function ProductSearchBox({ size = 'md', className }: ProductSearchBoxProps) {
   const { t, i18n } = useTranslation('common');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -67,6 +69,7 @@ export function ProductSearchBox({ className }: ProductSearchBoxProps) {
   return (
     <SearchBox
       className={className}
+      size={size}
       label={t('search.label')}
       submitLabel={t('search.submit')}
       placeholder={t('search.placeholder')}

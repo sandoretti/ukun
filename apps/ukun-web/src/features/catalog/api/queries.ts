@@ -5,11 +5,9 @@ import {
   CHUNKS_PER_PAGE,
   CHUNK_SIZE,
   productKeys,
-  productTypeKeys,
   type CatalogFilterInput,
   type ProductFilters,
   type ProductPage,
-  type ProductType,
 } from './productKeys';
 
 function toQueryParams(filters: ProductFilters) {
@@ -89,15 +87,5 @@ export function useMaxProductPrice() {
       page.items.length === 0
         ? undefined
         : Math.ceil(Number(page.items[0].price) / PRICE_STEP) * PRICE_STEP,
-  });
-}
-
-/** Feeds the type filter: a small closed set the SPA caches whole. */
-export function useProductTypes() {
-  return useQuery({
-    queryKey: productTypeKeys.lists(),
-    queryFn: ({ signal }) =>
-      http.get<ProductType[]>('/api/product-types', { signal }).then((response) => response.data),
-    staleTime: 60 * 60 * 1000,
   });
 }

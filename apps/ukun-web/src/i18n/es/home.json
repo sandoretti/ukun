@@ -1,0 +1,34 @@
+{
+  "hero": {
+    "tagline": "Your ukun",
+    "title": "Diseño que cabe en tu casa y en tu presupuesto",
+    "lead": "Muebles de línea limpia, materiales que aguantan el uso diario y precios sin letra pequeña. Busca lo que te falta y llévatelo a casa.",
+    "browse": "Ver el catálogo",
+    "explore": "Explorar por categorías"
+  },
+  "categories": {
+    "title": "Empieza por una categoría",
+    "lead": "Cada categoría abre el catálogo ya filtrado, con el precio y la disponibilidad de cada producto a la vista.",
+    "empty": "Todavía no hay categorías publicadas"
+  },
+  "story": {
+    "design": {
+      "title": "Descubre el equilibrio perfecto",
+      "body": "Entre minimalismo y estilo: una selección corta y cuidada, de líneas limpias y acabados sobrios, pensada para que cada pieza siga teniendo sentido dentro de cinco años. Menos catálogo y más criterio, para que elegir no se convierta en un trabajo."
+    },
+    "price": {
+      "title": "Precios asequibles sin compromisos",
+      "body": "El buen diseño debería estar al alcance de cualquiera, así que ajustamos el precio donde no se nota —en la logística, nunca en los materiales—. Lo que ves es lo que pagas: sin cuotas escondidas ni descuentos inventados sobre precios inflados."
+    },
+    "people": {
+      "title": "Crea ambientes que reflejen tu estilo",
+      "body": "Ya quieras dar un aire nuevo al salón, montar un escritorio en el que apetezca trabajar o rematar ese rincón que lleva meses vacío, detrás hay gente que conoce el producto y te ayuda a decidir. Tú pones el estilo; nosotros, las piezas y el criterio."
+    }
+  },
+  "closing": {
+    "title": "Explora nuestra colección",
+    "lead": "Todo el catálogo, con la disponibilidad de cada producto a la vista y filtros por tipo y por precio para llegar rápido a lo que buscas.",
+    "action": "Ir al catálogo",
+    "stores": "También estamos en nuestras tiendas físicas, donde puedes ver y probar los productos antes de decidir."
+  }
+}

@@ -5,7 +5,22 @@
   "error": "Ha ocurrido un error",
   "nav": {
     "catalog": "Catálogo",
-    "toggle": "Abrir el menú de navegación"
+    "toggle": "Abrir el menú de navegación",
+    "skipToContent": "Saltar al contenido"
+  },
+  "footer": {
+    "claim": "Minimalismo y precios asequibles. Transformamos cualquier espacio con buen diseño, sin que se note en la factura.",
+    "explore": {
+      "title": "Explora",
+      "home": "Inicio",
+      "catalog": "Catálogo",
+      "premium": "Lo más alto de gama"
+    },
+    "stores": {
+      "title": "Tiendas",
+      "body": "Puedes ver y probar los productos en nuestras tiendas físicas antes de comprarlos."
+    },
+    "legal": "© {{year}} Ukun · TFG de Italo Joel Sandoval Amoretti · Grado en Ingeniería Informática, Universidad de Alcalá"
   },
   "search": {
     "label": "Buscar productos",

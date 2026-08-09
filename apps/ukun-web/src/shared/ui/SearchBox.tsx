@@ -25,6 +25,12 @@ type SearchBoxProps = {
   hint?: string;
   /** Announced in a polite live region, e.g. "3 suggestions". */
   status?: string;
+  /**
+   * Named variant, not a `big` boolean: `md` is the one in the navigation bar and `lg` the one the
+   * landing page leads with, where the field is the main action of the screen and not a corner of
+   * the chrome (`docs/07-frontend-ux-ui.md`).
+   */
+  size?: 'md' | 'lg';
   className?: string;
 };
 
@@ -47,6 +53,7 @@ export function SearchBox({
   onSelect,
   hint,
   status,
+  size = 'md',
   className = '',
 }: SearchBoxProps) {
   const baseId = useId();
@@ -114,13 +121,16 @@ export function SearchBox({
     }
   }
 
+  // `md` is Bootstrap's own default size and has no class of its own, so it travels as `undefined`.
+  const controlSize = size === 'lg' ? 'lg' : undefined;
+
   return (
-    <div className={`search-box ${className}`} onBlur={handleBlur}>
+    <div className={`search-box search-box--${size} ${className}`} onBlur={handleBlur}>
       <Form role="search" onSubmit={handleSubmit}>
         <Form.Label htmlFor={inputId} className="visually-hidden">
           {label}
         </Form.Label>
-        <InputGroup>
+        <InputGroup size={controlSize}>
           <Form.Control
             id={inputId}
             type="search"
@@ -139,8 +149,14 @@ export function SearchBox({
             }}
             onKeyDown={handleKeyDown}
           />
-          <Button type="submit" variant="light" aria-label={submitLabel}>
-            <Icon name="search" size="sm" />
+          {/* En la barra el campo va sobre el verde de marca y un botón verde se pierde en él, así
+              que ahí es neutro; en la portada va sobre banda clara y es la llamada a la acción. */}
+          <Button
+            type="submit"
+            variant={size === 'lg' ? 'primary' : 'light'}
+            aria-label={submitLabel}
+          >
+            <Icon name="search" size={size === 'lg' ? 'md' : 'sm'} />
           </Button>
         </InputGroup>
       </Form>

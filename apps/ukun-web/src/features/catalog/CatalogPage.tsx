@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Col, Offcanvas, Row } from 'react-bootstrap';
+import { Col, Container, Offcanvas, Row } from 'react-bootstrap';
 
 import { toProblem } from '../../shared/api/http';
 import { useAvailability } from '../../shared/api/availability';
+import { useProductTypes } from '../../shared/api/productTypes';
 import { useOnlineStore } from '../../shared/api/stores';
 import { EmptyState } from '../../shared/ui/EmptyState';
 import { ErrorState } from '../../shared/ui/ErrorState';
@@ -15,7 +16,7 @@ import { CatalogPagination } from './components/CatalogPagination';
 import { CatalogToolbar } from './components/CatalogToolbar';
 import { ProductCard } from './components/ProductCard';
 import { PAGE_SIZE } from './api/productKeys';
-import { useCatalogProducts, useMaxProductPrice, useProductTypes } from './api/queries';
+import { useCatalogProducts, useMaxProductPrice } from './api/queries';
 import { countActiveFilters, useCatalogParams } from './useCatalogParams';
 
 export default function CatalogPage() {
@@ -48,7 +49,9 @@ export default function CatalogPage() {
   const types = typesQuery.data ?? [];
 
   return (
-    <>
+    // El ancho lo pone cada pantalla y no el layout: la de inicio tiene bandas a sangre y no cabría
+    // dentro de un `Container` común.
+    <Container className="py-4">
       <h1 className="h3 mb-4">{t('title')}</h1>
 
       {/* Canalón ancho a partir de `lg`: los filtros y la rejilla son dos zonas distintas y tienen
@@ -128,6 +131,6 @@ export default function CatalogPage() {
           )}
         </Col>
       </Row>
-    </>
+    </Container>
   );
 }
