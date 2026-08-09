@@ -9,6 +9,7 @@ import dev.sandoretti.ukun.api.shared.web.PaginationParams;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,21 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class ProductQueryService {
+
+    /**
+     * The order of the typeahead: by name, so the dropdown does not reshuffle between two keystrokes
+     * that match the same rows, with {@code id} as the last criterion — defect #23, and the reason
+     * every {@code Sort} of this API is total. Without it, a {@code limit} applied over tied names is
+     * free to return a different subset each time the same letters are typed.
+     *
+     * <p>How two accented names compare is the database's collation and not ours, the same call
+     * {@code ProductSpecifications} makes for accent folding. Worth knowing rather than worth
+     * overriding here: under a {@code C} locale {@code Litera} sorts before {@code Lámpara}, which is
+     * not what a Spanish reader expects. If that is ever to change it is the collation of the column
+     * that changes, in a changeset a person reviews — not a {@code COLLATE} spliced into one query.
+     */
+    private static final Sort BY_NAME =
+            Sort.by(Sort.Direction.ASC, "name").and(Sort.by(Sort.Direction.ASC, "id"));
 
     private final ProductRepository products;
     private final ProductMapper mapper;
@@ -65,6 +81,37 @@ public class ProductQueryService {
                 .filter(Product::isActive)
                 .map(mapper::toDetail)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", id));
+    }
+
+    /**
+     * The typeahead of the search box (RF-01, {@code suggestProducts}).
+     *
+     * <p><strong>A list and never a {@code Page}.</strong> The contract declares a flat array with no
+     * wrapper, and that is a performance decision rather than a shape preference: a page carries
+     * {@code totalElements}, {@code totalElements} means a {@code COUNT} over the whole match, and this
+     * endpoint fires on every keystroke. Counting a result nobody paginates is exactly the cost the
+     * autocomplete exists to avoid.
+     *
+     * <p>Hence the fluent query rather than {@code findAll(spec, PageRequest.of(0, limit))}: it applies
+     * the limit without ever asking how many rows there were. It is also why no {@code @EntityGraph}
+     * appears anywhere near it — {@link ProductSuggestionResponse} carries no type, so nothing reads
+     * the association and there is no N+1 to prevent.
+     *
+     * <p>The specifications are {@link ProductSpecifications#isActive()} and
+     * {@link ProductSpecifications#nameContains(String)}, the very same two the listing composes. A
+     * second search query written for this endpoint would be a second answer to "what does typing
+     * {@code sofa} match", and the two would drift the first time one of them was fixed — accent
+     * folding (defect #22) and the escaping of {@code %} and {@code _} included.
+     */
+    public List<ProductSuggestionResponse> suggest(String term, int limit) {
+        Specification<Product> matches = Specification.allOf(
+                ProductSpecifications.isActive(), ProductSpecifications.nameContains(term));
+
+        return products
+                .findBy(matches, query -> query.sortBy(BY_NAME).limit(limit).all())
+                .stream()
+                .map(mapper::toSuggestion)
+                .toList();
     }
 
     /**

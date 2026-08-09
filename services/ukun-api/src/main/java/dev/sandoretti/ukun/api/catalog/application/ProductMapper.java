@@ -56,4 +56,12 @@ public interface ProductMapper {
      * one more bean to find and nothing else.
      */
     ProductTypeResponse toType(ProductType productType);
+
+    /**
+     * The typeahead row. It maps {@code imageUrl} and nothing about the type, which is the whole point:
+     * touching {@code productType} here would fetch an association the response does not carry, on the
+     * one endpoint that runs on every keystroke.
+     */
+    @Mapping(target = "imageUrl", source = "imageKey", qualifiedByName = "toImageUrl")
+    ProductSuggestionResponse toSuggestion(Product product);
 }
