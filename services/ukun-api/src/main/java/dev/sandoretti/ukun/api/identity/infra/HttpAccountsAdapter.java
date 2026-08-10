@@ -4,8 +4,6 @@ import dev.sandoretti.ukun.api.identity.AccountRef;
 import dev.sandoretti.ukun.api.identity.AccountsPort;
 import dev.sandoretti.ukun.api.identity.CreateAccountCommand;
 import dev.sandoretti.ukun.api.identity.EmailAlreadyExistsException;
-import dev.sandoretti.ukun.api.identity.Role;
-import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -26,6 +24,12 @@ import org.springframework.web.client.RestClient;
  * surface as the client's own exception so the saga can decide whether to retry or compensate. Turning
  * every failure into one flat exception would take that decision away from the only code able to make
  * it.
+ *
+ * <p>The command is serialised as the request body directly. It has exactly the four fields of the
+ * {@code CreateAccountRequest} schema, so a body type of its own would be the same record written
+ * twice — including the hand-written {@code toString()} that masks the password, which is precisely
+ * the kind of rule that gets updated in one copy and not the other. If the contract ever grows a
+ * field this port does not have, that is the moment to split them, not before.
  *
  * <p>Nothing here logs the command, the token or the response. {@code CreateAccountCommand} masks its
  * password in {@code toString()} for the times something else does
@@ -56,15 +60,6 @@ class HttpAccountsAdapter implements AccountsPort {
      */
     private record AccountRefResponse(UUID accountId) {}
 
-    private record CreateAccountBody(String email, String password, Set<Role> roles, boolean enabled) {
-
-        /** The password is a component of this record too, so it masks it for the same reason. */
-        @Override
-        public String toString() {
-            return "CreateAccountBody[email=%s, password=***, roles=%s, enabled=%s]".formatted(email, roles, enabled);
-        }
-    }
-
     @Override
     public AccountRef reserve(UUID registrationId, CreateAccountCommand command) {
         requireConfiguredSecret();
@@ -74,7 +69,7 @@ class HttpAccountsAdapter implements AccountsPort {
                 .uri(ACCOUNTS)
                 .header(IDEMPOTENCY_KEY, registrationId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(new CreateAccountBody(command.email(), command.password(), command.roles(), command.enabled()))
+                .body(command)
                 .retrieve()
                 .onStatus(
                         status -> status.value() == HttpStatus.CONFLICT.value(),
