@@ -177,7 +177,9 @@ Dos matices que la palabra «paralelizable» esconde y que el orden de ejecució
 ### v0.4 — Identidad
 *Salida: hay cuentas reales, con hash, y el API valida tokens.*
 
-Paralelizable: (a) `ukun-auth` — Authorization Server + clientes OAuth2 registrados + **baseline de `ukun_auth`**, ya con los módulos `accounts`/`registration`/`oauth2` de Spring Modulith (ADR-0017 §4) · (b) siembra de cuentas demo con contraseña hasheada · (c) `ukun-api` como resource server · (d) saga de signup.
+Paralelizable: (a) `ukun-auth` — Authorization Server + clientes OAuth2 registrados + **baseline de `ukun_auth`** · (b) siembra de cuentas demo con contraseña hasheada · (c) `ukun-api` como resource server · (d) saga de signup.
+
+Este release es donde `ukun-auth` deja de ser una decisión de papel: implementarlo mostró que los tres módulos de Spring Modulith que ADR-0017 §4 le asignaba no compraban nada en un servicio que **ya es** la extracción que Modulith prepara. **ADR-0022** los retira y lo aplana a capas; `ukun-api` no cambia.
 
 Punto de sincronización interno: (c) necesita que (a) publique el JWKS; (d) necesita (b) y (c). Detalle completo de la frontera de datos y la saga en `08-identidad-y-seguridad.md`.
 

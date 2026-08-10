@@ -136,7 +136,11 @@ Cada uno es además un módulo de Spring Modulith sin tabla (`identity`, `storag
 · ningún método de producción pasa un tipo @Entity como argumento a log.*(...)
 ```
 
+Las siete se aplican a **los dos servicios backend** y viven en un proyecto Gradle propio, `:ukun-test-support`, que ninguno empaqueta: cada servicio tiene su `ArchitectureTest`, que es la mitad específica —nombra el paquete a importar— y nada más. Estaban en las fuentes de test de `ukun-api` hasta que `ukun-auth` necesitó las mismas (v0.4); duplicarlas era garantizar que divergieran.
+
 La regla que faltaba en esta lista — "los paquetes de feature no se importan entre sí salvo a través de `..api..`" — no se hace cumplir con una regla ArchUnit escrita a mano: la sustituye `ApplicationModules.verify()` de **Spring Modulith** (ADR-0017, revierte el descarte de este mismo documento en §4), que además comprueba que ningún ciclo de dependencias se cuele entre módulos, algo que ArchUnit por sí solo no verificaba. Detalle de la descomposición en módulos, el grafo de dependencias y las convenciones de escritura: ADR-0017 y `docs/14-modules.md`.
+
+Esa octava regla es **solo de `ukun-api`**: `ukun-auth` no tiene módulos que verificar (ADR-0022), así que allí las siete de arriba son toda la verificación arquitectónica que hay.
 
 Las dos últimas reglas ArchUnit hacen cumplir en CI lo que hoy son los defectos #10/#20a/#20b (secretos logueados vía entidad) — ver `11-observabilidad-y-logging.md` §4. El resto, junto con `verify()`, hace cumplir en CI las reglas de este documento sin depender de que alguien se acuerde en cada PR.
 

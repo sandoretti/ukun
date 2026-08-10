@@ -1,10 +1,11 @@
 # Módulos: cómo se escribe un `@ApplicationModule` en este repo
 
 > **Fuente de verdad de:** la forma de un módulo, la regla de no exponer entidades, el ejemplo del cruce `inventory`→`catalog` y qué hacer cuando `verify()` falla.
-> **Léelo si:** vas a crear un paquete de nivel superior en `ukun-api`/`ukun-auth`, o te falla `ApplicationModules.verify()`.
+> **Léelo si:** vas a crear un paquete de nivel superior en `ukun-api`, o te falla `ApplicationModules.verify()`.
 > **No decide:** qué módulos existen y por qué (ADR-0017).
+> **Alcance:** **solo `ukun-api`.** `ukun-auth` no usa Spring Modulith — ADR-0022 lo aplanó a una estructura por capas; sus convenciones están en la skill `spring-auth`.
 
-ADR-0017 decide **qué** módulos existen y **por qué**. Este documento es el «cómo se escribe» — la contraparte operativa, en el mismo espíritu que las skills son el «cómo» de `docs/03-analisis-y-patrones.md`. Léelo antes de crear un paquete nuevo de nivel superior en `ukun-api` o `ukun-auth`.
+ADR-0017 decide **qué** módulos existen y **por qué**. Este documento es el «cómo se escribe» — la contraparte operativa, en el mismo espíritu que las skills son el «cómo» de `docs/03-analisis-y-patrones.md`. Léelo antes de crear un paquete nuevo de nivel superior en `ukun-api`.
 
 ## 1. Forma de un módulo
 
@@ -81,7 +82,7 @@ Nótese lo que **no** hay: ningún `for (var id : productIds) catalogApi.summary
 
 ## 4. Verificación en CI
 
-Un test por servicio, desde el primer commit del skeleton (no se añade después):
+Un solo `ModulithTest`, el de `ukun-api`, desde el primer commit del skeleton (no se añade después). Hubo un segundo en `ukun-auth` durante v0.4 y ADR-0022 lo retiró junto con los módulos de ese servicio:
 
 ```java
 class ModulithTest {
