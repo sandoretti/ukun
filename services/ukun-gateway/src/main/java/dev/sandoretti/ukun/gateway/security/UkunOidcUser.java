@@ -1,6 +1,9 @@
 package dev.sandoretti.ukun.gateway.security;
 
+import java.security.Principal;
 import java.util.Collection;
+import java.util.Optional;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
@@ -43,5 +46,26 @@ public final class UkunOidcUser extends DefaultOidcUser {
     /** The {@code sub} of the access token: the account's UUID, not the email ({@code docs/08} §4). */
     public String accountId() {
         return accountId;
+    }
+
+    /**
+     * The account behind a principal, when there is one. It lives here rather than in each caller
+     * because the knowledge it encodes is exactly the trap this class documents — the account is on
+     * this type and <strong>not</strong> in {@code getName()} — and that is worth knowing in one
+     * place instead of two.
+     *
+     * <p>It returns an {@code Optional} rather than a placeholder because its two callers want
+     * different things from the absence: the {@code auth.logout} event says {@code unknown}, since an
+     * audit line that admits what it does not know beats a missing one, while the access log leaves
+     * the field out, since most of the catalogue is served to nobody in particular.
+     *
+     * <p>Anything that is not this gateway's own user is absent too, including a principal whose
+     * {@code getName()} would happily return something. Guessing is how the email would get in.
+     */
+    public static Optional<String> accountIdOf(Principal principal) {
+        return principal instanceof Authentication authentication
+                        && authentication.getPrincipal() instanceof UkunOidcUser user
+                ? Optional.of(user.accountId())
+                : Optional.empty();
     }
 }

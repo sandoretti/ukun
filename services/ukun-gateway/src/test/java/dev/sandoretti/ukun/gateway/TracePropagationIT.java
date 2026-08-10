@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import dev.sandoretti.ukun.gateway.support.UpstreamStub;
-import java.util.UUID;
+import dev.sandoretti.ukun.tracing.Traceparent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,32 +33,26 @@ import org.junit.jupiter.api.Test;
  */
 class TracePropagationIT extends GatewayIntegrationTest {
 
-    private static final String TRACEPARENT = "traceparent";
-
-    /** {@code version-traceid-spanid-flags}, the W3C shape. 32 hex for the trace, 16 for the span. */
-    private static final String W3C = "^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$";
-
     @Test
     @DisplayName("forwards the trace it was given to ukun-api, under a span of its own")
     void forwardsTheIncomingTraceToTheApi() {
-        String traceId = aTraceId();
-        String spanId = aSpanId();
+        Traceparent sent = Traceparent.random();
 
         http.get()
                 .uri("/api/products")
-                .header(TRACEPARENT, traceparentOf(traceId, spanId))
+                .header(Traceparent.HEADER, sent.header())
                 .exchange()
                 .expectStatus()
                 .isOk();
 
         assertSoftly(softly -> {
-            String forwarded = UpstreamStub.API.received().getFirst().header(TRACEPARENT);
+            String forwarded = UpstreamStub.API.received().getFirst().header(Traceparent.HEADER);
             softly.assertThat(forwarded).as("ukun-api received no traceparent").isNotNull();
-            softly.assertThat(forwarded).matches(W3C);
+            softly.assertThat(forwarded).matches(Traceparent.HEADER_PATTERN);
             // The trace does not change: it is the whole contract between the three services.
-            softly.assertThat(forwarded).contains(traceId);
+            softly.assertThat(forwarded).contains(sent.traceId());
             // The span does, because this hop is a new one. See the note on the class.
-            softly.assertThat(forwarded).doesNotContain(spanId);
+            softly.assertThat(forwarded).doesNotContain(sent.spanId());
         });
     }
 
@@ -74,9 +68,9 @@ class TracePropagationIT extends GatewayIntegrationTest {
 
         assertThat(UpstreamStub.API.received())
                 .singleElement()
-                .extracting(received -> received.header(TRACEPARENT))
+                .extracting(received -> received.header(Traceparent.HEADER))
                 .asString()
-                .matches(W3C);
+                .matches(Traceparent.HEADER_PATTERN);
     }
 
     /**
@@ -87,31 +81,19 @@ class TracePropagationIT extends GatewayIntegrationTest {
     @Test
     @DisplayName("also traces what it forwards to ukun-auth")
     void forwardsTheTraceToAuthAsWell() {
-        String traceId = aTraceId();
+        Traceparent sent = Traceparent.random();
 
         http.get()
                 .uri("/oauth2/jwks")
-                .header(TRACEPARENT, traceparentOf(traceId, aSpanId()))
+                .header(Traceparent.HEADER, sent.header())
                 .exchange()
                 .expectStatus()
                 .isOk();
 
         assertThat(UpstreamStub.AUTH.received())
                 .singleElement()
-                .extracting(received -> received.header(TRACEPARENT))
+                .extracting(received -> received.header(Traceparent.HEADER))
                 .asString()
-                .contains(traceId);
-    }
-
-    private static String aTraceId() {
-        return UUID.randomUUID().toString().replace("-", "");
-    }
-
-    private static String aSpanId() {
-        return aTraceId().substring(0, 16);
-    }
-
-    private static String traceparentOf(String traceId, String spanId) {
-        return "00-%s-%s-01".formatted(traceId, spanId);
+                .contains(sent.traceId());
     }
 }

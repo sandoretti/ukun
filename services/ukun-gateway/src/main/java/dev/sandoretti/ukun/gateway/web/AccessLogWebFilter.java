@@ -1,7 +1,6 @@
 package dev.sandoretti.ukun.gateway.web;
 
 import dev.sandoretti.ukun.gateway.security.UkunOidcUser;
-import java.security.Principal;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +8,6 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -79,7 +77,7 @@ class AccessLogWebFilter implements WebFilter {
         // front costs nothing — the security chain, which runs before this filter, already loaded the
         // session's context, so this Mono is already valued.
         return exchange.getPrincipal()
-                .map(AccessLogWebFilter::accountIdOf)
+                .map(principal -> UkunOidcUser.accountIdOf(principal).orElse(ANONYMOUS))
                 .defaultIfEmpty(ANONYMOUS)
                 .flatMap(accountId ->
                         chain.filter(exchange).doFinally(signal -> emit(exchange, accountId, startedAt, signal)));
@@ -131,18 +129,5 @@ class AccessLogWebFilter implements WebFilter {
             return Level.ERROR;
         }
         return status.is4xxClientError() ? Level.WARN : Level.INFO;
-    }
-
-    /**
-     * The account's UUID, lifted into the principal by {@code AccessTokenOidcUserService}. Anything
-     * else — an anonymous request to the public catalogue, or an authentication of another shape —
-     * leaves the field out rather than filling it with a placeholder: the access log is written for
-     * every request, and a column of {@code unknown} teaches nobody anything.
-     */
-    private static String accountIdOf(Principal principal) {
-        return principal instanceof Authentication authentication
-                        && authentication.getPrincipal() instanceof UkunOidcUser user
-                ? user.accountId()
-                : ANONYMOUS;
     }
 }

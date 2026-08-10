@@ -3,7 +3,7 @@ package dev.sandoretti.ukun.api.shared.observability;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sandoretti.ukun.api.AbstractIntegrationTest;
-import java.util.UUID;
+import dev.sandoretti.ukun.tracing.Traceparent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,8 +41,6 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class TraceCorrelationIT extends AbstractIntegrationTest {
 
-    private static final String TRACEPARENT = "traceparent";
-
     /** Public, needs no token, and answers a {@code ProblemDetail} without touching a row. */
     private static final String UNKNOWN_PRODUCT = "/api/products/999999";
 
@@ -57,18 +55,18 @@ class TraceCorrelationIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("an error reports the trace id the caller arrived with")
     void reportsTheIncomingTraceId() {
-        String traceId = aTraceId();
+        Traceparent sent = Traceparent.random();
 
         restTestClient
                 .get()
                 .uri(UNKNOWN_PRODUCT)
-                .header(TRACEPARENT, "00-%s-%s-01".formatted(traceId, aTraceId().substring(0, 16)))
+                .header(Traceparent.HEADER, sent.header())
                 .exchange()
                 .expectStatus()
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.traceId")
-                .isEqualTo(traceId);
+                .isEqualTo(sent.traceId());
     }
 
     /**
@@ -87,10 +85,6 @@ class TraceCorrelationIT extends AbstractIntegrationTest {
                 .isNotFound()
                 .expectBody()
                 .jsonPath("$.traceId")
-                .value(String.class, traceId -> assertThat(traceId).matches("[0-9a-f]{32}"));
-    }
-
-    private static String aTraceId() {
-        return UUID.randomUUID().toString().replace("-", "");
+                .value(String.class, traceId -> assertThat(traceId).matches(Traceparent.TRACE_ID_PATTERN));
     }
 }

@@ -2,6 +2,7 @@ package dev.sandoretti.ukun.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sandoretti.ukun.tracing.Traceparent;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -40,8 +41,6 @@ import org.springframework.test.web.servlet.client.RestTestClient;
         })
 class TraceCorrelationIT extends AbstractIntegrationTest {
 
-    private static final String TRACEPARENT = "traceparent";
-
     private static final String ACCOUNTS = "/internal/accounts";
 
     private static final ParameterizedTypeReference<Map<String, Object>> JSON = new ParameterizedTypeReference<>() {};
@@ -57,17 +56,16 @@ class TraceCorrelationIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("an error reports the trace id ukun-api called with")
     void reportsTheIncomingTraceId() {
-        String traceId = aTraceId();
+        Traceparent sent = Traceparent.random();
 
-        Map<String, Object> problem = anonymousReservation(
-                        "00-%s-%s-01".formatted(traceId, aTraceId().substring(0, 16)))
+        Map<String, Object> problem = anonymousReservation(sent.header())
                 .expectStatus()
                 .isUnauthorized()
                 .expectBody(JSON)
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(problem).containsEntry("traceId", traceId);
+        assertThat(problem).containsEntry("traceId", sent.traceId());
     }
 
     /**
@@ -86,7 +84,7 @@ class TraceCorrelationIT extends AbstractIntegrationTest {
                 .returnResult()
                 .getResponseBody();
 
-        assertThat(problem).extracting("traceId").asString().matches("[0-9a-f]{32}");
+        assertThat(problem).extracting("traceId").asString().matches(Traceparent.TRACE_ID_PATTERN);
     }
 
     /** A well-formed reservation with no token: rejected before anything is read or written. */
@@ -97,16 +95,12 @@ class TraceCorrelationIT extends AbstractIntegrationTest {
                 .header("Idempotency-Key", UUID.randomUUID().toString());
 
         if (traceparent != null) {
-            request = request.header(TRACEPARENT, traceparent);
+            request = request.header(Traceparent.HEADER, traceparent);
         }
 
         return request.body(
                         """
                         {"email":"trace@example.com","password":"correct-horse-battery","role":"CUSTOMER"}""")
                 .exchange();
-    }
-
-    private static String aTraceId() {
-        return UUID.randomUUID().toString().replace("-", "");
     }
 }
