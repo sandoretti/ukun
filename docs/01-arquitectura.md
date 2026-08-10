@@ -114,8 +114,8 @@ flowchart TB
         bff["BFF\noauth2Login + sesión HttpOnly\nTokenRelay Bearer JWT\nCSRF: cookie XSRF-TOKEN"]
     end
 
-    subgraph auth["ukun-auth (Spring Authorization Server, en Spring Security 7, modularizado — ADR-0017)"]
-        authSrv["módulos: accounts · registration · oauth2\nAuthorization Code + PKCE\nemite JWT (JWKS)\nendpoints internos /internal/accounts"]
+    subgraph auth["ukun-auth (Spring Authorization Server, en Spring Security 7, por capas — ADR-0022)"]
+        authSrv["capas: domain · infra · application\nconfig · security · web\nAuthorization Code + PKCE\nemite JWT (JWKS)\nendpoints internos /internal/accounts"]
         authDb[("ukun_auth\naccount · account_role\noauth2_registered_client\noauth2_authorization")]
     end
 
