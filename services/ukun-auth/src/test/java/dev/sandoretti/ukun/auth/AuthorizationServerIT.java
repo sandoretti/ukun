@@ -33,13 +33,10 @@ import org.springframework.test.web.servlet.client.RestTestClient;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
             "spring.liquibase.contexts=prod",
-            "ukun.oauth2.gateway.secret=" + AuthorizationServerIT.GATEWAY_SECRET,
-            "ukun.oauth2.api.secret=" + AuthorizationServerIT.API_SECRET
+            "ukun.oauth2.gateway.secret=" + AbstractIntegrationTest.GATEWAY_SECRET,
+            "ukun.oauth2.api.secret=" + AbstractIntegrationTest.API_SECRET
         })
 class AuthorizationServerIT extends AbstractIntegrationTest {
-
-    static final String GATEWAY_SECRET = "test-gateway-secret";
-    static final String API_SECRET = "test-api-secret";
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {

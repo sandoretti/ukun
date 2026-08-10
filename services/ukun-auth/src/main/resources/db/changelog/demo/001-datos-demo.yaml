@@ -1,0 +1,99 @@
+# Demo data of ukun_auth: the fourteen accounts you log in with locally, hashed. Every changeset here
+# carries `context: demo` (skill `liquibase`, rule 2), so it never runs when the active profile asks
+# for `prod` — `application.yaml` defaults to `prod` and only the `dev` profile switches to `demo`.
+# `SchemaBaselineIT` asserts exactly that from the other side: under `prod` these tables stay empty.
+#
+# It has no equivalent in the legacy database/init.sql, and that is the point. There, `cuenta` stored
+# the password in the clear in a VARCHAR(16) and compared it with a string equality, so every account
+# it ever held is compromised. Nothing is migrated from it (ADR-0007): these are the same demo people
+# with a password that only exists here as a hash.
+#
+# ---------------------------------------------------------------------------------------------
+# Three things a reviewer should check first
+#
+# 1. THE ACCOUNT IDS ARE A CONTRACT BETWEEN TWO DATABASES, and this file is the *consumer* of it.
+#    They are decided in ukun_app's demo data — services/ukun-api/src/main/resources/db/changelog/
+#    demo/001-datos-demo.yaml (changeset `demo-07-customers`) and demo/data/employees.csv — and
+#    copied here verbatim. `customer.account_id`/`employee.account_id` are UUIDs with no foreign key,
+#    because they point into another database (docs/08 §1): a value invented here raises no error at
+#    all, it just makes every demo login resolve to nobody.
+#
+# 2. THE HASHES COME FROM THE SERVICE'S OWN ENCODER, the delegating one of PasswordEncoderConfig,
+#    which is why each starts with `{bcrypt}$2a$`. A hash pasted from anywhere else verifies against
+#    nothing and shows up as "wrong credentials", not as a startup failure. `DemoAccountsIT` asserts
+#    `passwordEncoder.matches(...)` row by row rather than trusting the prefix.
+#
+# 3. THE PASSWORD IS NOT IN THIS FILE, in any form. It is written down once, in
+#    docs/06-entorno-local-tilt.md, which is where somebody looking for it will be.
+#
+# ---------------------------------------------------------------------------------------------
+# Why `usePreparedStatements: false`
+#
+# Not for the reason ukun_app's demo needs it — there are no COMPUTED columns here, every value is a
+# literal. It is `account.email`: the column is CITEXT, and inlined values reach Postgres as untyped
+# literals it coerces to the column's type, while a prepared statement sends them as `varchar` and
+# depends on a cast between two types the extension does not promise in that direction. The hashes
+# survive inlining untouched: the bcrypt alphabet has no comma and no quote.
+#
+# Rollbacks are explicit because `loadData` generates none, and emptying the table wholesale is safe
+# precisely because these changesets only ever exist in a demo database.
+databaseChangeLog:
+
+  # Fourteen accounts, all of them enabled.
+  #
+  # `enabled` is stated on every row and never left to the column default, which is `false` on
+  # purpose: an account is always created in two steps, reserved and then activated (skill
+  # `spring-auth`, rule 4). Seeded data is the one case where the account is born activated — there
+  # is no saga behind it — and omitting the column would quietly produce fourteen accounts that
+  # cannot log in.
+  #
+  # No profile column appears here and none can: `name` and `last_name` live in ukun_app (ADR-0004),
+  # and the emails in this file are the login credential, not a copy of the profile's.
+  - changeSet:
+      id: demo-01-accounts
+      author: sandoretti
+      context: demo
+      comment: the fourteen demo accounts, hashed and enabled (docs/08 §2, ADR-0007)
+      changes:
+        - loadData:
+            tableName: account
+            file: data/accounts.csv
+            relativeToChangelogFile: true
+            usePreparedStatements: false
+            encoding: UTF-8
+            columns:
+              - column: {name: id, type: UUID}
+              - column: {name: email, type: STRING}
+              - column: {name: password_hash, type: STRING}
+              - column: {name: enabled, type: BOOLEAN}
+      rollback:
+        - delete: {tableName: account}
+
+  # Eighteen rows for fourteen accounts, and the difference is the whole reason `account_role` is a
+  # table: 2 CUSTOMER + 12 EMPLOYEE + the 4 employees who are also ADMIN. Admin is a sub-flag that
+  # accumulates on top of EMPLOYEE (ADR-0006), not a fourth role, so those four accounts carry two
+  # rows each. They are the same four flagged `is_admin` in ukun_app's employees.csv — the store
+  # managers of RF-12.
+  #
+  # ADR-0006 also forbids one account being both a customer and an employee, and no constraint can
+  # enforce that here: the two sides of it live in two different tables of a *different* database.
+  # It is the data's job, and DemoAccountsIT is where it is checked. The trap to know about is that
+  # joel.sandoval@ukun.com (employee) and joel.sandoval@email.com (customer) are two distinct
+  # accounts with two distinct ids, which is exactly what the ADR requires.
+  - changeSet:
+      id: demo-02-account-roles
+      author: sandoretti
+      context: demo
+      comment: business role per account, with admin as a second row on four of them (ADR-0006)
+      changes:
+        - loadData:
+            tableName: account_role
+            file: data/account-roles.csv
+            relativeToChangelogFile: true
+            usePreparedStatements: false
+            encoding: UTF-8
+            columns:
+              - column: {name: account_id, type: UUID}
+              - column: {name: role, type: STRING}
+      rollback:
+        - delete: {tableName: account_role}

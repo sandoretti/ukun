@@ -49,6 +49,16 @@ Al ejecutar `tilt up` se abre `http://localhost:10350`: cada servicio aparece co
 
 Con el stack arriba, `http://localhost:8080` sirve la aplicación completa a través del gateway. Las cuentas de prueba las siembra el changelog de Liquibase con `context: demo` (skill `liquibase`), ya con contraseña hasheada — nunca en texto plano, a diferencia del `database/init.sql` legacy.
 
+**Las 14 cuentas demo comparten contraseña: `ukun-demo-2026`.** Este documento es el único sitio donde aparece en claro; en `ukun_auth` solo existe su hash de BCrypt. Una de cada rol, para entrar rápido:
+
+| Rol | Correo |
+|---|---|
+| Cliente | `joel.sandoval@email.com` |
+| Empleado | `laura.martinez@ukun.com` |
+| Empleado + admin | `salvador.oton@ukun.com` |
+
+Las otras once están en `services/ukun-auth/src/main/resources/db/changelog/demo/data/accounts.csv`, y sus `account_id` son los mismos que `ukun_app` guarda en `customer`/`employee` (`docs/08-identidad-y-seguridad.md` §1). Si cambias la contraseña, el hash tiene que salir del `PasswordEncoder` delegante del propio servicio: uno pegado de cualquier otro sitio no lo verifica nadie y el fallo se ve como «credenciales incorrectas».
+
 ## Cómo funciona el live update de los servicios Java
 
 No usa `spring-boot-devtools` a propósito: su `RestartClassLoader` provoca fallos sutiles con proxies de Hibernate e `instanceof` entre classloaders — justo el tipo de ruido que arruina una sesión de depuración. En su lugar:
