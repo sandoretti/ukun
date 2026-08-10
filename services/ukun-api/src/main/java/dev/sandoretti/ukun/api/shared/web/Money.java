@@ -20,6 +20,10 @@ import java.lang.annotation.Target;
  * <p>An annotation of our own rather than a global Jackson setting: writing <em>every</em> number as
  * a string would turn identifiers, quantities and page counts into strings too, which is not what the
  * contract says.
+ *
+ * <p>This is only the half Jackson reads. The other half — publishing the amount as
+ * {@code type: string} in {@code /v3/api-docs}, so the document agrees with what the endpoint actually
+ * sends — is {@code shared.openapi.MoneyIsText}, and it was missing until the drift check found it.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.RECORD_COMPONENT})

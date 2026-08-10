@@ -1,9 +1,13 @@
 package dev.sandoretti.ukun.api.stores.web;
 
+import dev.sandoretti.ukun.api.shared.openapi.BadRequestResponse;
+import dev.sandoretti.ukun.api.shared.openapi.InternalErrorResponse;
 import dev.sandoretti.ukun.api.stores.application.StoreQueryService;
 import dev.sandoretti.ukun.api.stores.application.StoreResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  * repository (ArchUnit watches that), no {@code if (x == null)}.
  */
 @RestController
-@RequestMapping("/api/stores")
+@RequestMapping(path = "/api/stores", produces = MediaType.APPLICATION_JSON_VALUE)
 class StoreController {
 
     private final StoreQueryService stores;
@@ -48,6 +52,9 @@ class StoreController {
      * {@code VALIDATION_FAILED} {@code ProblemDetail} a rejected filter object produces.
      */
     @GetMapping
+    @ApiResponse(responseCode = "200", description = "Stores, sorted by name.")
+    @BadRequestResponse
+    @InternalErrorResponse
     List<StoreResponse> listStores(@RequestParam(required = false) @Size(min = 1, max = 255) String q) {
         return stores.list(q);
     }

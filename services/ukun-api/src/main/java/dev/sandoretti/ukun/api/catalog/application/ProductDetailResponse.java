@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.api.catalog.application;
 
 import dev.sandoretti.ukun.api.shared.web.Money;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 
 /**
@@ -21,6 +22,10 @@ import java.math.BigDecimal;
  * has no business announcing when a product was last edited. No availability either, for the same
  * reason {@link ProductSummaryResponse} carries none: stock lives in {@code inventory} and this module
  * cannot depend on it (ADR-0017 §3).
+ *
+ * <p>The two {@code @Schema} are the nullability of the contract, which springdoc cannot infer from a
+ * reference type: without them the published document types both as a plain {@code string} and the
+ * frontend's generated type promises a value that may not be there.
  */
 public record ProductDetailResponse(
         Long id,
@@ -29,5 +34,5 @@ public record ProductDetailResponse(
         @Money BigDecimal price,
         Long typeId,
         String typeName,
-        String imageUrl,
-        String description) {}
+        @Schema(nullable = true, format = "uri-reference") String imageUrl,
+        @Schema(nullable = true) String description) {}

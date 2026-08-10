@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.api.catalog.application;
 
 import dev.sandoretti.ukun.api.shared.web.Money;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 
 /**
@@ -16,4 +17,8 @@ import java.math.BigDecimal;
  * an employee types into the box, so the suggestion has to be able to show it back.
  */
 public record ProductSuggestionResponse(
-        Long id, String sku, String name, @Money BigDecimal price, String imageUrl) {}
+        Long id,
+        String sku,
+        String name,
+        @Money BigDecimal price,
+        @Schema(nullable = true, format = "uri-reference") String imageUrl) {}
