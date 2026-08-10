@@ -7,8 +7,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * Accounts for the tests, built explicitly rather than fished out of seed data — the {@code testing}
- * skill's reason for object mothers, and here also a practical one: the demo accounts are issue #23
- * and do not exist yet.
+ * skill's reason for object mothers. The seeded demo accounts do exist ({@link DemoAccountsIT}), but
+ * a test that leant on them would fail whenever that data changed for a reason of its own.
  *
  * <p>It writes through JDBC and not through a repository so that the row under test is exactly what
  * is asked for, including the states production code refuses to create — a disabled account, an

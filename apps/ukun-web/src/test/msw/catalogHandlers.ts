@@ -13,7 +13,6 @@ type ProductDetail = components['schemas']['ProductDetail'];
 type ProductType = components['schemas']['ProductType'];
 type ProductPage = components['schemas']['ProductPage'];
 type ProductSuggestion = components['schemas']['ProductSuggestion'];
-type Store = components['schemas']['Store'];
 type AvailabilityResponse = components['schemas']['AvailabilityResponse'];
 type ProblemDetail = components['schemas']['ProblemDetail'];
 
@@ -111,26 +110,11 @@ const descriptions: Record<number, string> = {
   6: 'Chaise longue reversible: el brazo se monta a izquierda o a derecha.',
 };
 
-export const stores: Store[] = [
-  {
-    id: 1,
-    name: 'Ukun Online',
-    isOnline: true,
-    phone: '+34900000001',
-    address: { street: 'Calle Uría 1', city: 'Oviedo', province: 'Asturias', postalCode: '33003' },
-  },
-  {
-    id: 2,
-    name: 'Ukun Gijón',
-    isOnline: false,
-    phone: '+34900000002',
-    address: { street: 'Avenida de la Costa 22', city: 'Gijón', province: 'Asturias', postalCode: '33205' },
-  },
-];
 
 /**
- * Units per store. Product 4 is stocked but at zero, and product 11 has **no row at all** — both
- * come back as unavailable, never as unknown (RF-01).
+ * Units per store, keyed by the identifiers of `storeHandlers` (1 is the online one). Product 4 is
+ * stocked but at zero, and product 11 has **no row at all** — both come back as unavailable, never
+ * as unknown (RF-01).
  */
 const stock: Record<number, Record<number, number>> = {
   1: {
@@ -248,8 +232,6 @@ export const catalogHandlers = [
   }),
 
   http.get(`${base}/api/product-types`, () => HttpResponse.json(productTypes)),
-
-  http.get(`${base}/api/stores`, () => HttpResponse.json(stores)),
 
   http.get(`${base}/api/availability`, ({ request }) => {
     const params = new URL(request.url).searchParams;

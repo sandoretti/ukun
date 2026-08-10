@@ -226,10 +226,10 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
     }
 
     /**
-     * The counterpart of the demo slice (issue #23): under the {@code prod} context the changelog
-     * creates the schema and stops there. Without an explicit {@code spring.liquibase.contexts}
-     * Liquibase runs every changeset regardless of its context, so the natural failure mode of that
-     * slice is a production database seeded with accounts whose password is public knowledge.
+     * The counterpart of {@link DemoAccountsIT}: under the {@code prod} context the changelog creates
+     * the schema and stops there. Without an explicit {@code spring.liquibase.contexts} Liquibase
+     * runs every changeset regardless of its context, and the demo ones seed accounts whose password
+     * is written down in {@code docs/06-entorno-local-tilt.md}.
      */
     @Test
     @DisplayName("the demo accounts never reach a production context")

@@ -1,0 +1,15 @@
+id,email,password_hash,enabled
+229b3f0d-771d-4052-b5d6-bc35276e17af,joel.sandoval@email.com,{bcrypt}$2a$10$OrRue/HwTHUd059xdxzqs.EivAnmkcCcyVov00bnxsRlnSdVBeQS6,true
+32eea2ae-79d5-4fe5-9efd-2a123d8daded,carmen.amoretti@email.com,{bcrypt}$2a$10$7UbgYLTa5kix9dJvIJ4M9OWB8WZjr3e6w6QkIxnOraAJmQQtPrpAG,true
+7f0b72e5-3d81-4fcd-8314-49746fd92424,salvador.oton@ukun.com,{bcrypt}$2a$10$OvDy3Sx.tG/K/2eMZrvf6eDFaWc57atZpeSmI4ffqGB3IxOmXDn0u,true
+7aa0572f-0500-4f88-9456-8d1bba447a9b,laura.martinez@ukun.com,{bcrypt}$2a$10$HK0sd3TAizzbAdxLNcoW0usMv5DTyEZgDIA/Q1HexjGbYlt9HOZeS,true
+ae64b655-cde4-45b3-a867-ad60700bf521,carlos.lopez@ukun.com,{bcrypt}$2a$10$pS11qG1zdWAC6uzLVT9wseBZ1D/2WLiE/Yc1Z7jEzdOebz85ESzZa,true
+80fe7045-0a2e-4cd2-9f02-d996c6bc9cc4,joel.sandoval@ukun.com,{bcrypt}$2a$10$ZrZFCXPqaSVYo9b/3gXMVOByi5XioSdqpBdJSLnpgyBG1xYXgrGgO,true
+29f8c753-174f-43da-b204-413b0db89418,daniel.garcia@ukun.com,{bcrypt}$2a$10$jJiQwA.3fKdjAsrmoWkW1OGMQ/gjSA9wm7cuSDl272C0NhFDsQTAS,true
+8e2a8b15-8717-4ce5-83e0-137fc10bb081,antonio.ruiz@ukun.com,{bcrypt}$2a$10$iBFaaZqRiRT4NcluKvTmfOJQB9jIQXY6KePbppO/b24otEFrS5iFi,true
+5b1699d4-03d3-4520-98f0-f7206045dfc7,miguel.virtus@ukun.com,{bcrypt}$2a$10$dXYAcot/mtfDjndlwTBwpeXSYwFMygn6HyNoqitBEyD030NEFcG3q,true
+e1467cb8-c2aa-41a7-906f-4f52b755eba8,alvaro.mazo@ukun.com,{bcrypt}$2a$10$DydvTwGa48RzlytI2dpao.PJ0aszD4af0Imx6/qmGsrXDn4mFtJlG,true
+0fc6a2dc-aae9-4a22-aaea-38ca5d690362,juan.martin@ukun.com,{bcrypt}$2a$10$SKDB3w0yTLnfJR2ObwK/eO5Yj/ZKK136jfOW8FWotyOHJpCUJqGBe,true
+ec253a9c-df95-4df6-96af-91677ad987f8,javier.castillo@ukun.com,{bcrypt}$2a$10$Nwe4fWh3LmLQEfR8zShxZOcGMAXHRjv8iJeTe.kcha5azFIJ4qmw6,true
+646bc329-05a3-4cd2-95d2-05b109d54ff9,marcos.rincon@ukun.com,{bcrypt}$2a$10$a6tGD8uAjYlg7LnzU0Mt/.bbUttIM/96iM9035gBCSnXBoNexoQ0a,true
+1058b6c6-4925-4b76-834c-9fe7b6b021ad,david.perez@ukun.com,{bcrypt}$2a$10$9EbepRXGXO4KusbFrxjYneFmFUaNQnJXAEETrihHRv4zQw3BQYtka,true
