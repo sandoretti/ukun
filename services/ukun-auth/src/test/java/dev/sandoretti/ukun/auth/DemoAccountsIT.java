@@ -3,7 +3,6 @@ package dev.sandoretti.ukun.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -35,13 +34,10 @@ import org.springframework.test.web.servlet.client.RestTestClient;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
             "spring.liquibase.contexts=demo",
-            "ukun.oauth2.gateway.secret=" + DemoAccountsIT.GATEWAY_SECRET,
-            "ukun.oauth2.api.secret=" + DemoAccountsIT.API_SECRET
+            "ukun.oauth2.gateway.secret=" + AbstractIntegrationTest.GATEWAY_SECRET,
+            "ukun.oauth2.api.secret=" + AbstractIntegrationTest.API_SECRET
         })
 class DemoAccountsIT extends AbstractIntegrationTest {
-
-    static final String GATEWAY_SECRET = "test-gateway-secret";
-    static final String API_SECRET = "test-api-secret";
 
     /**
      * The database of its own that {@link AbstractIntegrationTest} reserves for this class. Sharing
@@ -113,7 +109,8 @@ class DemoAccountsIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("the demo context seeds fourteen accounts and every one of them is enabled")
     void seedsFourteenEnabledAccounts() {
-        assertThat(countOf("account")).isEqualTo(14);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM account", Integer.class))
+                .isEqualTo(EXPECTED_ACCOUNT_IDS.size());
         assertThat(jdbc.queryForObject("SELECT count(*) FROM account WHERE NOT enabled", Integer.class))
                 .isZero();
     }
@@ -135,12 +132,15 @@ class DemoAccountsIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("every seeded hash verifies against the documented demo password")
     void hashesVerifyAgainstTheDemoPassword() {
-        List<Map<String, Object>> accounts = jdbc.queryForList("SELECT email, password_hash FROM account");
+        List<SeededHash> hashes = jdbc.query(
+                "SELECT email, password_hash FROM account",
+                (row, number) -> new SeededHash(row.getString("email"), row.getString("password_hash")));
 
-        assertThat(accounts).hasSize(14).allSatisfy(account -> assertThat(
-                        passwordEncoder.matches(DEMO_PASSWORD, (String) account.get("password_hash")))
-                .describedAs("the hash of %s does not verify", account.get("email"))
-                .isTrue());
+        assertThat(hashes)
+                .hasSize(EXPECTED_ACCOUNT_IDS.size())
+                .allSatisfy(seeded -> assertThat(passwordEncoder.matches(DEMO_PASSWORD, seeded.hash()))
+                        .describedAs("the hash of %s does not verify", seeded.email())
+                        .isTrue());
     }
 
     /**
@@ -200,11 +200,10 @@ class DemoAccountsIT extends AbstractIntegrationTest {
         assertThat(login.logIn(ADMIN, DEMO_PASSWORD).succeeded()).isTrue();
     }
 
-    private Integer countOf(String table) {
-        return jdbc.queryForObject("SELECT count(*) FROM " + table, Integer.class);
-    }
-
     private Integer countOfRole(String role) {
         return jdbc.queryForObject("SELECT count(*) FROM account_role WHERE role = ?", Integer.class, role);
     }
+
+    /** One seeded credential, named rather than read out of a {@code Map<String, Object>}. */
+    private record SeededHash(String email, String hash) {}
 }

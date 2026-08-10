@@ -90,7 +90,7 @@ class LoginRateLimitIT extends LoginIntegrationTest {
         accounts().account(email, PASSWORD, true, Role.CUSTOMER);
 
         IntStream.range(0, 20)
-                .forEach(attempt -> http.get().uri(LOGIN_PATH).exchange().expectStatus().isOk());
+                .forEach(attempt -> http.get().uri(FormLogin.LOGIN_PATH).exchange().expectStatus().isOk());
 
         assertThat(logIn(email, PASSWORD).succeeded()).isTrue();
     }

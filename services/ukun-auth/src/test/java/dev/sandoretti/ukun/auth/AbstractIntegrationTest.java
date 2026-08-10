@@ -36,6 +36,16 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  */
 public abstract class AbstractIntegrationTest {
 
+    /**
+     * The client secrets every {@code @SpringBootTest} of this suite has to supply, because
+     * {@code application.yaml} deliberately gives them no default: a service that starts with a
+     * well-known client secret is worse than one that refuses to start. They live here so the three
+     * fixtures that boot a context state the same value instead of three copies drifting apart.
+     */
+    protected static final String GATEWAY_SECRET = "test-gateway-secret";
+
+    protected static final String API_SECRET = "test-api-secret";
+
     /** Schema only: what the {@code prod} Liquibase context produces. */
     protected static final String SCHEMA_ONLY_DATABASE = "ukun_auth_schema";
 

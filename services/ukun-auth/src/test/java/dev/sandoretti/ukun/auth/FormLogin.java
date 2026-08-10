@@ -89,4 +89,7 @@ final class FormLogin {
     private static String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
+
+    /** The two things a browser takes away from the login page before it can post credentials back. */
+    private record LoginPage(String csrfToken, String sessionCookie) {}
 }

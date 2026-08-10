@@ -1,6 +1,5 @@
 package dev.sandoretti.ukun.auth;
 
-import dev.sandoretti.ukun.auth.AccountMother;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
@@ -29,19 +28,13 @@ import org.springframework.test.web.servlet.client.RestTestClient;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
             "spring.liquibase.contexts=prod",
-            "ukun.oauth2.gateway.secret=" + LoginIntegrationTest.GATEWAY_SECRET,
-            "ukun.oauth2.api.secret=" + LoginIntegrationTest.API_SECRET
+            "ukun.oauth2.gateway.secret=" + AbstractIntegrationTest.GATEWAY_SECRET,
+            "ukun.oauth2.api.secret=" + AbstractIntegrationTest.API_SECRET
         })
 abstract class LoginIntegrationTest extends AbstractIntegrationTest {
 
-    static final String GATEWAY_SECRET = "test-gateway-secret";
-    static final String API_SECRET = "test-api-secret";
-
     /** Must match what the seeder registers, or the authorization request is rejected. */
     static final String GATEWAY_REDIRECT_URI = "http://localhost:8080/login/oauth2/code/ukun";
-
-    /** Re-exported so the subclasses that hit the page directly keep naming it unqualified. */
-    static final String LOGIN_PATH = FormLogin.LOGIN_PATH;
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
