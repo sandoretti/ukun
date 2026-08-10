@@ -1,4 +1,4 @@
-package dev.sandoretti.ukun.api.identity;
+package dev.sandoretti.ukun.api;
 
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -31,11 +31,15 @@ import java.util.function.UnaryOperator;
  *
  * <p>It is the JDK's own HTTP server and Nimbus, both already on the classpath through the resource
  * server starter — no new dependency, and nothing here that a production profile could ever load.
+ *
+ * <p>It sits beside {@link AbstractIntegrationTest} rather than in the package of the first test that
+ * needed it, and for the same reason that class does: from v0.4 on, every {@code *IT} of a protected
+ * endpoint needs a token, so this is shared test infrastructure and not {@code identity}'s alone.
  */
-final class JwksTestServer implements AutoCloseable {
+public final class JwksTestServer implements AutoCloseable {
 
-    static final String ISSUER = "https://auth.test.ukun.dev";
-    static final String AUDIENCE = "ukun-api";
+    public static final String ISSUER = "https://auth.test.ukun.dev";
+    public static final String AUDIENCE = "ukun-api";
 
     private final HttpServer server;
     private final RSAKey signingKey;
@@ -45,7 +49,7 @@ final class JwksTestServer implements AutoCloseable {
         this.signingKey = signingKey;
     }
 
-    static JwksTestServer start() {
+    public static JwksTestServer start() {
         try {
             RSAKey key = new RSAKeyGenerator(2048)
                     .keyID(UUID.randomUUID().toString())
@@ -70,12 +74,12 @@ final class JwksTestServer implements AutoCloseable {
         }
     }
 
-    String jwkSetUri() {
+    public String jwkSetUri() {
         return "http://localhost:%d/oauth2/jwks".formatted(server.getAddress().getPort());
     }
 
     /** A token this service should accept: our issuer, our audience, an account and its roles. */
-    String validToken(UUID accountId, String email, List<String> roles) {
+    public String validToken(UUID accountId, String email, List<String> roles) {
         return token(builder -> builder.issuer(ISSUER)
                 .audience(AUDIENCE)
                 .subject(accountId.toString())
@@ -84,7 +88,7 @@ final class JwksTestServer implements AutoCloseable {
     }
 
     /** Signed with a key nobody published: the shape is right and the signature is not. */
-    String tokenSignedByAnotherKey(UUID accountId) {
+    public String tokenSignedByAnotherKey(UUID accountId) {
         try {
             RSAKey other = new RSAKeyGenerator(2048).keyID(signingKey.getKeyID()).generate();
 
@@ -101,7 +105,7 @@ final class JwksTestServer implements AutoCloseable {
         }
     }
 
-    String token(UnaryOperator<JWTClaimsSet.Builder> claims) {
+    public String token(UnaryOperator<JWTClaimsSet.Builder> claims) {
         return sign(signingKey, claims.apply(baseClaims()).build());
     }
 

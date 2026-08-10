@@ -78,6 +78,14 @@ public abstract class AbstractIntegrationTest {
      */
     protected static final String SIGNUP_DATABASE = "ukun_app_signup";
 
+    /**
+     * Schema only, for the profile of {@code /api/me}. Same reasoning as {@link #SIGNUP_DATABASE} and
+     * for the same three tables: these suites write and edit {@code customer} with its {@code address}
+     * and {@code card}, and sharing a database with the saga's would mean each one truncating rows the
+     * other still points at.
+     */
+    protected static final String PROFILE_DATABASE = "ukun_app_profile";
+
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
     static {

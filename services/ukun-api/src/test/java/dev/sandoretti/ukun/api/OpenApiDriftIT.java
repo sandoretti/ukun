@@ -103,10 +103,6 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
      * deleting its line here, and the day the list is empty the check is total.
      */
     private static final Set<String> NOT_IMPLEMENTED_YET = Set.of(
-            // v0.4 — identity and customer profile.
-            "getCurrentUser",
-            "getMyProfile",
-            "updateMyProfile",
             // v0.6 — cart, checkout and orders.
             "getCart",
             "clearCart",

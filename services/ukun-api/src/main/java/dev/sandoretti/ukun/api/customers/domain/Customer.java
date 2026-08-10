@@ -67,14 +67,19 @@ public class Customer {
 
     /**
      * The language this customer is written to in (ADR-0019). {@code CHAR(2)} with a {@code CHECK}
-     * over {@code ('es', 'en')}, defaulted by the column — signup does not ask for it, and the
-     * contract exposes it through {@code /api/me/profile}.
+     * over {@code ('es', 'en')}, exposed and edited through {@code /api/me/profile}.
+     *
+     * <p>{@code insertable = false} and yet writable afterwards, which is not a contradiction: signup
+     * does not ask for a language, so the {@code DEFAULT} of the column decides the initial value, and
+     * from then on it is the customer's to change. The typed half of it is {@link ProfileLocale} —
+     * this stays a {@code String} because the column holds {@code 'es'}, lowercase, and
+     * {@code @Enumerated(STRING)} would write {@code 'ES'} straight into the {@code CHECK}.
      *
      * <p>{@code @JdbcTypeCode(CHAR)} for the reason {@code StoreAddress} documents about its postal
      * code: a {@code String} defaults to {@code VARCHAR}, and {@code ddl-auto: validate} refuses to
      * start against the {@code bpchar} Postgres reports. It caught exactly that here.
      */
-    @Column(nullable = false, length = 2, insertable = false, updatable = false)
+    @Column(nullable = false, length = 2, insertable = false)
     @JdbcTypeCode(SqlTypes.CHAR)
     private String locale;
 
