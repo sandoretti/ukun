@@ -2,7 +2,10 @@ package dev.sandoretti.ukun.api.catalog.web;
 
 import dev.sandoretti.ukun.api.catalog.application.ProductTypeQueryService;
 import dev.sandoretti.ukun.api.catalog.application.ProductTypeResponse;
+import dev.sandoretti.ukun.api.shared.openapi.InternalErrorResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  * under {@code /api/admin/product-types} (ADR-0020), which is v0.7.
  */
 @RestController
-@RequestMapping("/api/product-types")
+@RequestMapping(path = "/api/product-types", produces = MediaType.APPLICATION_JSON_VALUE)
 class ProductTypeController {
 
     private final ProductTypeQueryService types;
@@ -30,8 +33,16 @@ class ProductTypeController {
         this.types = types;
     }
 
-    /** The method name is the {@code operationId} springdoc publishes; the SPA's client is named after it. */
+    /**
+     * The method name is the {@code operationId} springdoc publishes; the SPA's client is named after
+     * it.
+     *
+     * <p>The only operation of the contract with a single error status: nothing is bound here, so there
+     * is no {@code 400} to declare.
+     */
     @GetMapping
+    @ApiResponse(responseCode = "200", description = "Product types, sorted by name.")
+    @InternalErrorResponse
     List<ProductTypeResponse> listProductTypes() {
         return types.list();
     }

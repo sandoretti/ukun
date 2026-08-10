@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.api.catalog.application;
 
 import dev.sandoretti.ukun.api.shared.web.Money;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 
 /**
@@ -19,6 +20,16 @@ import java.math.BigDecimal;
  * that name is reserved for the {@code record} of the module's public API, the one
  * {@code docs/14-modules.md} §3 already sketches for the {@code inventory} → {@code catalog} crossing
  * (issue #77). The JSON is unaffected.
+ *
+ * <p>{@code imageUrl} states the contract's nullability in an annotation because springdoc cannot infer
+ * it from a reference type, and a document that types it as a plain {@code string} makes the frontend's
+ * generated type promise a URL that is genuinely absent for a product with no photo.
  */
 public record ProductSummaryResponse(
-        Long id, String sku, String name, @Money BigDecimal price, Long typeId, String typeName, String imageUrl) {}
+        Long id,
+        String sku,
+        String name,
+        @Money BigDecimal price,
+        Long typeId,
+        String typeName,
+        @Schema(nullable = true, format = "uri-reference") String imageUrl) {}

@@ -2,8 +2,13 @@ package dev.sandoretti.ukun.api.inventory.web;
 
 import dev.sandoretti.ukun.api.inventory.application.AvailabilityQueryService;
 import dev.sandoretti.ukun.api.inventory.application.AvailabilityResponse;
+import dev.sandoretti.ukun.api.shared.openapi.BadRequestResponse;
+import dev.sandoretti.ukun.api.shared.openapi.InternalErrorResponse;
+import dev.sandoretti.ukun.api.shared.openapi.NotFoundResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>It delegates and nothing else — no {@code @Transactional}, no repository, no null checks.
  */
 @RestController
-@RequestMapping("/api/availability")
+@RequestMapping(path = "/api/availability", produces = MediaType.APPLICATION_JSON_VALUE)
 class AvailabilityController {
 
     private final AvailabilityQueryService availability;
@@ -51,6 +56,10 @@ class AvailabilityController {
      * object is bound.
      */
     @GetMapping
+    @ApiResponse(responseCode = "200", description = "Availability, one entry per requested identifier.")
+    @BadRequestResponse
+    @NotFoundResponse
+    @InternalErrorResponse
     AvailabilityResponse getAvailability(
             @RequestParam Long store, @RequestParam @Size(min = 1, max = 100) List<Long> products) {
 

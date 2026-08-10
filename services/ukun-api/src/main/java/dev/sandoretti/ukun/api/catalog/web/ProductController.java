@@ -5,14 +5,19 @@ import dev.sandoretti.ukun.api.catalog.application.ProductFilters;
 import dev.sandoretti.ukun.api.catalog.application.ProductQueryService;
 import dev.sandoretti.ukun.api.catalog.application.ProductSuggestionResponse;
 import dev.sandoretti.ukun.api.catalog.application.ProductSummaryResponse;
+import dev.sandoretti.ukun.api.shared.openapi.BadRequestResponse;
+import dev.sandoretti.ukun.api.shared.openapi.InternalErrorResponse;
+import dev.sandoretti.ukun.api.shared.openapi.NotFoundResponse;
 import dev.sandoretti.ukun.api.shared.web.PageResponse;
 import dev.sandoretti.ukun.api.shared.web.PaginationParams;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,9 +46,14 @@ import org.springframework.web.bind.annotation.RestController;
  * two opaque query parameters called {@code filters} and {@code pagination}, so the
  * {@code /v3/api-docs} that CI diffs against the frozen contract stops matching it — while the
  * endpoint keeps working, which is exactly what makes that drift silent.
+ *
+ * <p>{@code produces} and the error responses are of that same family: {@code application/json} is the
+ * only representation the contract declares, and the statuses each operation can answer with are the
+ * contract's too, transcribed one by one because springdoc cannot see the advice that renders them
+ * ({@link BadRequestResponse}).
  */
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping(path = "/api/products", produces = MediaType.APPLICATION_JSON_VALUE)
 class ProductController {
 
     private final ProductQueryService products;
@@ -53,6 +63,9 @@ class ProductController {
     }
 
     @GetMapping
+    @ApiResponse(responseCode = "200", description = "A page of products.")
+    @BadRequestResponse
+    @InternalErrorResponse
     PageResponse<ProductSummaryResponse> listProducts(
             @Valid @ParameterObject ProductFilters filters, @Valid @ParameterObject PaginationParams pagination) {
 
@@ -82,6 +95,9 @@ class ProductController {
      * validating something the published document declares valid is a divergence too.
      */
     @GetMapping("/suggest")
+    @ApiResponse(responseCode = "200", description = "Suggestions, at most `limit` of them.")
+    @BadRequestResponse
+    @InternalErrorResponse
     List<ProductSuggestionResponse> suggestProducts(
             @RequestParam @Size(min = 1, max = 255) String q,
             @RequestParam(defaultValue = "8") @Min(1) @Max(10) int limit) {
@@ -100,6 +116,9 @@ class ProductController {
      * renames a function in the SPA.
      */
     @GetMapping("/{id}")
+    @ApiResponse(responseCode = "200", description = "The product.")
+    @NotFoundResponse
+    @InternalErrorResponse
     ProductDetailResponse getProduct(@PathVariable Long id) {
         return products.detail(id);
     }
