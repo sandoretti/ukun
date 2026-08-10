@@ -26,7 +26,8 @@
     },
     "stores": {
       "title": "Tiendas",
-      "body": "Puedes ver y probar los productos en nuestras tiendas físicas antes de comprarlos."
+      "body": "Puedes ver y probar los productos en nuestras tiendas físicas antes de comprarlos.",
+      "link": "Ver todas las tiendas"
     },
     "legal": "© {{year}} Ukun · Italo Joel Sandoval Amoretti"
   },

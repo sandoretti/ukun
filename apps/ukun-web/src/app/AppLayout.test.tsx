@@ -5,7 +5,7 @@ import { renderWithProviders } from '../test/renderWithProviders';
 import { AppLayout } from './AppLayout';
 
 /** Every caption of the shell whose screen is not built yet. */
-const NOT_BUILT_YET = ['Tiendas', 'Novedades', 'Sobre Ukun', 'Iniciar sesión', 'Crear cuenta'];
+const NOT_BUILT_YET = ['Novedades', 'Sobre Ukun', 'Iniciar sesión', 'Crear cuenta'];
 
 function renderShell() {
   renderWithProviders(<AppLayout />);
@@ -24,11 +24,11 @@ describe('AppLayout', () => {
     expect(within(brand).getByRole('img').getAttribute('alt')).toBe('Ukun');
   });
 
-  it('only links the one section that exists', () => {
+  it('only links the sections that exist', () => {
     const bar = renderShell();
 
     const links = bar.getAllByRole('link').map((link) => link.getAttribute('href'));
-    expect(links).toEqual(['/', '/products']);
+    expect(links).toEqual(['/', '/products', '/stores']);
   });
 
   it.each(NOT_BUILT_YET)('offers %s without turning it into a dead link', (label) => {

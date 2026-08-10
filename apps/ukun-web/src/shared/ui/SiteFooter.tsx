@@ -16,8 +16,9 @@ const EXPLORE_LINKS = [
  * The foot of every route, mounted once from `AppLayout`. It lives in `shared/ui/` and not in
  * `features/home/` because it is part of the shell, like the navigation bar.
  *
- * It only links to routes that exist. The stores block is deliberately text with no link: the stores
- * screen is issue #20 and is not merged yet, and a link to a blank screen is worse than no link.
+ * It only links to routes that exist — which now includes the stores screen (issue #20), so the
+ * stores block, deliberately text with no link while there was nowhere to send anyone, finally has a
+ * destination.
  */
 export function SiteFooter() {
   const { t } = useTranslation('common');
@@ -49,7 +50,10 @@ export function SiteFooter() {
 
           <Col md={3} sm={6}>
             <h2 className="h6 text-uppercase mb-3">{t('footer.stores.title')}</h2>
-            <p className="mb-0">{t('footer.stores.body')}</p>
+            <p className="mb-2">{t('footer.stores.body')}</p>
+            <Link to="/stores" className="site-footer__link">
+              {t('footer.stores.link')}
+            </Link>
           </Col>
         </Row>
 

@@ -15,7 +15,7 @@ import wordmark from '../../assets/ukun-wordmark-light.png';
  */
 const NAV_ITEMS = [
   { key: 'catalog', to: '/products' },
-  { key: 'stores' },
+  { key: 'stores', to: '/stores' },
   { key: 'news' },
   { key: 'about' },
 ] as const satisfies readonly { key: string; to?: string }[];

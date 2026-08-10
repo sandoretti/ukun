@@ -1,0 +1,22 @@
+{
+  "title": "Tiendas",
+  "lead": "Ven a ver y a probar los muebles antes de llevártelos. Estas son todas nuestras tiendas, con su dirección y su teléfono.",
+  "search": {
+    "label": "Filtrar por nombre o ciudad",
+    "placeholder": "Gijón, Oviedo…",
+    "clear": "Limpiar el filtro"
+  },
+  "results_one": "{{count}} tienda",
+  "results_other": "{{count}} tiendas",
+  "empty": {
+    "filtered": "No hay ninguna tienda que coincida con «{{term}}»",
+    "none": "Todavía no hay tiendas que mostrar"
+  },
+  "online": {
+    "badge": "Tienda online",
+    "note": "Es la tienda desde la que se preparan y se envían los pedidos. No es un local que se pueda visitar."
+  },
+  "card": {
+    "call": "Llamar a {{store}}"
+  }
+}

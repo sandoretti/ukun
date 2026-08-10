@@ -1,0 +1,22 @@
+{
+  "title": "Stores",
+  "lead": "Come and try the furniture before taking it home. These are all our stores, with their address and phone number.",
+  "search": {
+    "label": "Filter by name or city",
+    "placeholder": "Gijón, Oviedo…",
+    "clear": "Clear the filter"
+  },
+  "results_one": "{{count}} store",
+  "results_other": "{{count}} stores",
+  "empty": {
+    "filtered": "No store matches “{{term}}”",
+    "none": "There are no stores to show yet"
+  },
+  "online": {
+    "badge": "Online store",
+    "note": "This is the store orders are prepared and shipped from. It is not a shop you can visit."
+  },
+  "card": {
+    "call": "Call {{store}}"
+  }
+}
