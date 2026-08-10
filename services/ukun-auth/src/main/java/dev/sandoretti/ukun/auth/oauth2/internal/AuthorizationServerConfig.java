@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,6 +20,9 @@ import org.springframework.security.oauth2.server.authorization.OAuth2Authorizat
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 /**
  * The Authorization Server, wired by hand rather than left to Boot's autoconfiguration.
@@ -39,6 +43,9 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration(proxyBeanMethods = false)
 class AuthorizationServerConfig {
 
+    /** Where an unauthenticated browser is sent, and the path the rate limiter guards. */
+    private static final String LOGIN_PATH = "/login";
+
     /**
      * The OAuth2/OIDC endpoints. They are deliberately not described in
      * {@code docs/api/openapi/ukun-auth.yaml}: they are standard and the server publishes its own
@@ -54,28 +61,41 @@ class AuthorizationServerConfig {
 
         http.securityMatcher(authorizationServer.getEndpointsMatcher())
                 .with(authorizationServer, server -> server.oidc(Customizer.withDefaults()))
-                .authorizeHttpRequests(requests -> requests.anyRequest().authenticated());
+                .authorizeHttpRequests(requests -> requests.anyRequest().authenticated())
+                // Without this, an unauthenticated browser arriving at /oauth2/authorize gets a 401
+                // and the authorization code flow simply stops. The media type matcher is what keeps
+                // a machine client (the token endpoint, a health probe) getting its 401 instead of a
+                // redirect to an HTML page it cannot read.
+                .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
+                        new LoginUrlAuthenticationEntryPoint(LOGIN_PATH),
+                        new MediaTypeRequestMatcher(MediaType.TEXT_HTML)));
 
         return http.build();
     }
 
     /**
-     * Everything that is not an Authorization Server endpoint. The health probe is public because
-     * compose's {@code HEALTHCHECK} calls it without credentials; the rest is closed.
+     * Everything that is not an Authorization Server endpoint: the login form, and the health probe
+     * that compose's {@code HEALTHCHECK} calls without credentials.
      *
-     * <p>There is no authentication mechanism on this chain yet, so today it answers 401 to
-     * everything else — which is correct: the only flow that works at this point is client
-     * credentials, and that authenticates on the chain above. The login form arrives in the next
-     * commit, together with the events and the attempt limit.
+     * <p>The generated login page is the real login UI, and stays so past v0.5: under the BFF of
+     * ADR-0003 the browser is redirected <em>here</em> to type its password, and the SPA never sees
+     * the credentials any more than it sees the token. Replacing it with a branded page is a v1.0
+     * concern, not a missing piece of this one.
+     *
+     * <p>The rate limiter goes in front of the authentication filter rather than reacting to a
+     * failure event, because the point is to stop the attempt before it costs a BCrypt verification —
+     * which is deliberately expensive, and is therefore the thing an attacker would like to make us
+     * do repeatedly.
      */
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE + 1)
-    SecurityFilterChain defaultFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain defaultFilterChain(HttpSecurity http, LoginAttemptBuckets buckets) throws Exception {
         http.authorizeHttpRequests(requests -> requests.requestMatchers("/actuator/health/**")
                         .permitAll()
                         .anyRequest()
                         .authenticated())
-                .httpBasic(Customizer.withDefaults());
+                .formLogin(Customizer.withDefaults())
+                .addFilterBefore(new LoginRateLimiter(buckets), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

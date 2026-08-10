@@ -18,6 +18,17 @@ plugins {
     `java-library`
 }
 
+// Este proyecto no tiene ni tendrá tests de integración: sus reglas son análisis de bytecode puro,
+// sin contexto de Spring y sin contenedor. La tarea `integrationTest` del convention plugin filtra
+// por `*IT` y falla si no encuentra ninguno, que es la protección correcta en los tres servicios —
+// ahí "cero tests de integración" es un síntoma— y ruido aquí.
+//
+// Se relaja el filtro en vez de deshabilitar la tarea, para que un *IT que alguien añada algún día
+// sí se ejecute en lugar de quedarse mudo.
+tasks.named<Test>("integrationTest") {
+    filter.isFailOnNoMatchingTests = false
+}
+
 dependencies {
     implementation(platform(libs.spring.boot.bom))
 

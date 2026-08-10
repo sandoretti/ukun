@@ -26,6 +26,10 @@ dependencies {
     // tecnología de Boot 4 (la misma razón por la que abajo va `spring-boot-liquibase`).
     implementation(libs.spring.boot.starter.security.oauth2.authorization.server)
 
+    // Límite de intentos de login (docs/08 §8). Corta la fuerza bruta sin bloquear una cuenta
+    // legítima por un ataque dirigido a otra, que es lo que hace un bloqueo por cuenta a secas.
+    implementation(libs.bucket4j.core)
+
     // Liquibase es el dueño del esquema de ukun_auth (skill `liquibase`, regla 3): Hibernate no lo
     // crea nunca, `ddl-auto: validate` solo lo comprueba. Y es el artefacto de Boot, no
     // `liquibase-core`: ese trae el motor pero no la autoconfiguración, así que el changelog no se

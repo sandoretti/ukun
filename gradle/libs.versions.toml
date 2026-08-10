@@ -22,6 +22,12 @@ lombok = "1.18.46"
 lombok-mapstruct-binding = "0.2.0"
 springdoc = "3.0.3"
 archunit = "1.5.0"
+# Límite de intentos de login en ukun-auth (docs/08-identidad-y-seguridad.md §8). La serie 8.19.x es
+# la que fija docs/05-stack-y-versiones.md, y 8.19.0 es su última: 8.19.1 y 8.20.0 no existen en
+# Maven Central. Ojo al artefacto: desde 8.10 Bucket4j se publica partido por JDK
+# (`bucket4j_jdkNN-core`), y el `bucket4j-core` a secas que aparece en cualquier ejemplo antiguo ya
+# no se publica — comprobado resolviendo las tres variantes, no supuesto.
+bucket4j = "8.19.0"
 
 # Plugins de Gradle. La versión de Gradle en sí vive en gradle/wrapper/gradle-wrapper.properties.
 test-logger = "4.0.0"
@@ -93,6 +99,9 @@ testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgr
 # El artefacto `archunit` plano, no `archunit-junit5`: las reglas se comprueban desde tests JUnit 5
 # normales con AssertJ, que es lo que exige la skill `testing`.
 archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
+
+# --- Bucket4j (solo ukun-auth) ----------------------------------------------------------------
+bucket4j-core = { module = "com.bucket4j:bucket4j_jdk17-core", version.ref = "bucket4j" }
 
 # --- Solo para :ukun-test-support (versión gestionada por spring-boot-bom) ---------------------
 # Las reglas de ArchUnit hablan de @Entity y de SLF4J sin ser un servicio, así que necesitan las dos
