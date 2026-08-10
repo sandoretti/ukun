@@ -30,8 +30,8 @@ public record SignupRequest(
         @NotBlank String password,
         @NotBlank @Size(max = 100) String name,
         @NotBlank @Size(max = 100) String lastName,
-        @NotNull @Valid AddressRequest address,
-        @NotNull @Valid CardRequest card,
+        @NotNull @Valid ProfileAddress address,
+        @NotNull @Valid ProfileCard card,
         Long favoriteStoreId) {
 
     /**

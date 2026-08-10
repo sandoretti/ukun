@@ -40,8 +40,8 @@ public interface SignupMapper {
     Customer toCustomer(SignupRequest request, UUID accountId);
 
     @Mapping(target = "id", ignore = true)
-    CustomerAddress toAddress(AddressRequest request);
+    CustomerAddress toAddress(ProfileAddress request);
 
     @Mapping(target = "id", ignore = true)
-    CustomerCard toCard(CardRequest request);
+    CustomerCard toCard(ProfileCard request);
 }

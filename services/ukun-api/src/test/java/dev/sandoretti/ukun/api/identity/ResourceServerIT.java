@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import dev.sandoretti.ukun.api.AbstractIntegrationTest;
+import dev.sandoretti.ukun.api.JwksTestServer;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;

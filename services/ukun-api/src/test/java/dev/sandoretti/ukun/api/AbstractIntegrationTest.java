@@ -1,10 +1,16 @@
 package dev.sandoretti.ukun.api;
 
+import jakarta.persistence.EntityManagerFactory;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
@@ -78,11 +84,25 @@ public abstract class AbstractIntegrationTest {
      */
     protected static final String SIGNUP_DATABASE = "ukun_app_signup";
 
+    /**
+     * Schema only, for the profile of {@code /api/me}. Same reasoning as {@link #SIGNUP_DATABASE} and
+     * for the same three tables: these suites write and edit {@code customer} with its {@code address}
+     * and {@code card}, and sharing a database with the saga's would mean each one truncating rows the
+     * other still points at.
+     */
+    protected static final String PROFILE_DATABASE = "ukun_app_profile";
+
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
     static {
         POSTGRES.start();
     }
+
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     /**
      * Creates {@code database} if this is the first class to ask for it and points the context's
@@ -111,6 +131,35 @@ public abstract class AbstractIntegrationTest {
 
     protected static PostgreSQLContainer postgres() {
         return POSTGRES;
+    }
+
+    /**
+     * Runs {@code work} in a transaction of its own that commits before it returns. Every fixture in
+     * this suite needs it for the same reason: the endpoint under test is served on another thread, so
+     * rows left inside an open test transaction would be invisible to it.
+     */
+    protected void inATransaction(Runnable work) {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run());
+    }
+
+    /**
+     * A cleared, enabled Hibernate statement counter. Every statement issued after this call and before
+     * the assertion belongs to the request under test, which is what makes an <em>exact</em> count
+     * meaningful rather than "at most a few".
+     *
+     * <p>It lives here rather than in each fixture because the defect it guards against is not any one
+     * module's: an N+1 is what the {@code @EntityGraph} ladder of {@code docs/03-analisis-y-patrones.md}
+     * §2 exists to prevent, and every listing in this service is expected to answer for its statement
+     * count. Counting requires {@code hibernate.generate_statistics}, which each fixture turns on with
+     * its own {@code @SpringBootTest} properties — a shared context would be a shared cache key.
+     */
+    protected Statistics freshStatistics() {
+        Statistics statistics =
+                entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+
+        return statistics;
     }
 
     /**

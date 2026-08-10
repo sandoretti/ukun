@@ -5,9 +5,7 @@ import dev.sandoretti.ukun.api.identity.AccountsPort;
 import dev.sandoretti.ukun.api.identity.CreateAccountCommand;
 import dev.sandoretti.ukun.api.identity.EmailAlreadyExistsException;
 import dev.sandoretti.ukun.api.identity.Role;
-import dev.sandoretti.ukun.api.shared.error.FieldValidationException;
 import dev.sandoretti.ukun.api.shared.observability.BusinessEvents;
-import dev.sandoretti.ukun.api.stores.StoresApi;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
@@ -75,12 +73,12 @@ public class SignupService {
 
     private final AccountsPort accounts;
     private final CustomerRegistrar registrar;
-    private final StoresApi stores;
+    private final FavoriteStores favoriteStores;
 
-    SignupService(AccountsPort accounts, CustomerRegistrar registrar, StoresApi stores) {
+    SignupService(AccountsPort accounts, CustomerRegistrar registrar, FavoriteStores favoriteStores) {
         this.accounts = accounts;
         this.registrar = registrar;
-        this.stores = stores;
+        this.favoriteStores = favoriteStores;
     }
 
     /**
@@ -112,10 +110,7 @@ public class SignupService {
      * check-then-write race across a network as well.
      */
     private void validateLocally(SignupRequest request) {
-        Long favouriteStore = request.favoriteStoreId();
-        if (favouriteStore != null && !stores.exists(favouriteStore)) {
-            throw new FieldValidationException("favoriteStoreId", "does not match an existing store");
-        }
+        favoriteStores.requireExisting(request.favoriteStoreId());
     }
 
     /** Step 2: reserve the email with an account created disabled. */

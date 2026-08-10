@@ -3,10 +3,7 @@ package dev.sandoretti.ukun.api.catalog;
 import dev.sandoretti.ukun.api.AbstractIntegrationTest;
 import dev.sandoretti.ukun.api.catalog.domain.ProductType;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import java.util.List;
-import org.hibernate.SessionFactory;
-import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +13,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * The catalogue fixture the four public read endpoints of v0.3 share: a running application, a real
@@ -66,23 +61,14 @@ abstract class CatalogIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private EntityManager entityManager;
 
-    @Autowired
-    private EntityManagerFactory entityManagerFactory;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-
-    /**
-     * Persisted in a transaction of its own that commits before any request is made: the endpoint is
-     * served on another thread, so rows left inside an open test transaction would be invisible to it.
-     */
+    /** Persisted in a transaction of its own that commits before any request is made. */
     @BeforeEach
     void seedTheCatalogue() {
         ProductType sofas = ProductMother.type("Sofás");
         ProductType beds = ProductMother.type("Camas");
         ProductType tables = ProductMother.type("Mesas");
 
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+        inATransaction(() -> {
             List.of(sofas, beds, tables).forEach(entityManager::persist);
             List.of(
                             ProductMother.leatherSofa(sofas),
@@ -106,19 +92,5 @@ abstract class CatalogIntegrationTest extends AbstractIntegrationTest {
 
     protected long productIdOf(String sku) {
         return jdbc.queryForObject("SELECT id FROM product WHERE sku = ?", Long.class, sku);
-    }
-
-    /**
-     * A cleared, enabled Hibernate statement counter. Every statement issued after this call and
-     * before the assertion belongs to the request under test — which is what makes an <em>exact</em>
-     * count meaningful rather than "at most a few".
-     */
-    protected Statistics freshStatistics() {
-        Statistics statistics =
-                entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
-        statistics.setStatisticsEnabled(true);
-        statistics.clear();
-
-        return statistics;
     }
 }

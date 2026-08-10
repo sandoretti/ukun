@@ -2,10 +2,7 @@ package dev.sandoretti.ukun.api.stores;
 
 import dev.sandoretti.ukun.api.AbstractIntegrationTest;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import java.util.List;
-import org.hibernate.SessionFactory;
-import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +12,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * The store network the two public reads of v0.3 that involve a store share: a running application, a
@@ -66,12 +61,6 @@ public abstract class StoresIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     protected EntityManager entityManager;
 
-    @Autowired
-    private EntityManagerFactory entityManagerFactory;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-
     /**
      * Committed before any request is made: the endpoint is served on another thread, so rows left
      * inside an open test transaction would be invisible to it.
@@ -95,25 +84,7 @@ public abstract class StoresIntegrationTest extends AbstractIntegrationTest {
         jdbc.execute("TRUNCATE TABLE store, address RESTART IDENTITY CASCADE");
     }
 
-    protected void inATransaction(Runnable work) {
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run());
-    }
-
     protected long storeIdOf(String name) {
         return jdbc.queryForObject("SELECT id FROM store WHERE name = ?", Long.class, name);
-    }
-
-    /**
-     * A cleared, enabled Hibernate statement counter. Every statement issued after this call and
-     * before the assertion belongs to the request under test, which is what makes an <em>exact</em>
-     * count meaningful rather than "at most a few".
-     */
-    protected Statistics freshStatistics() {
-        Statistics statistics =
-                entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
-        statistics.setStatisticsEnabled(true);
-        statistics.clear();
-
-        return statistics;
     }
 }
