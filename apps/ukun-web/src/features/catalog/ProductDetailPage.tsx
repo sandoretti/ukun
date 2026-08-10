@@ -9,9 +9,11 @@ import { useOnlineStore } from '../../shared/api/stores';
 import { formatMoney } from '../../shared/format/money';
 import { useLocale } from '../../shared/hooks/useLocale';
 import { ErrorState } from '../../shared/ui/ErrorState';
+import { Icon } from '../../shared/ui/Icon';
 import { LoadingState } from '../../shared/ui/LoadingState';
 import { useProduct } from './api/queries';
 import { ProductPhoto } from './components/ProductPhoto';
+import { RelatedProducts } from './components/RelatedProducts';
 
 const CATALOG_PATH = '/products';
 
@@ -49,8 +51,13 @@ export default function ProductDetailPage() {
   const availabilityQuery = useAvailability(onlineStoreQuery.data?.id, productIds);
 
   const availabilityFailed = onlineStoreQuery.isError || availabilityQuery.isError;
-  const available = productId === undefined ? undefined : availabilityQuery.data?.get(productId);
-  const product = productQuery.data;
+  // Both come from the same pair of reads, so by the time there is an answer there is also a name:
+  // the availability of the online store cannot be known without having resolved which one it is.
+  const storeName = onlineStoreQuery.data?.name;
+  const available =
+    productId === undefined || storeName === undefined
+      ? undefined
+      : availabilityQuery.data?.get(productId);
 
   /** A failure with no way out is not a comprehensible screen: the catalog is one click away. */
   const deadEndWithExit = (error: unknown) => (
@@ -80,52 +87,66 @@ export default function ProductDetailPage() {
       );
     }
 
+    const product = productQuery.data;
+
     return (
-      <Row className="g-4 g-lg-5">
-        <Col lg={6}>
-          <ProductPhoto imageUrl={productQuery.data.imageUrl} name={productQuery.data.name} />
-        </Col>
+      <>
+        <Row className="g-4 g-lg-5">
+          <Col lg={6}>
+            <ProductPhoto imageUrl={product.imageUrl} name={product.name} />
+          </Col>
 
-        <Col lg={6}>
-          <p className="overline mb-1">{productQuery.data.typeName}</p>
-          <h1 className="h2 mb-3">{productQuery.data.name}</h1>
-          <p className="fs-3 fw-semibold text-tabular-nums mb-2">
-            {formatMoney(productQuery.data.price, locale)}
-          </p>
+          <Col lg={6}>
+            {/* The type stops being a dead line and becomes the way sideways: the listing already
+                reads `typeId` from the URL, so this is its own catalogue, already filtered. */}
+            <Link
+              to={`/products?typeId=${product.typeId}`}
+              className="btn btn-light btn-sm rounded-pill border d-inline-flex align-items-center gap-1 mb-3"
+              aria-label={t('detail.seeAllOfType', { type: product.typeName })}
+            >
+              {product.typeName}
+              <Icon name="arrow_forward" size="sm" />
+            </Link>
 
-          {/* The second read lands after the sheet is already painted, so what shows up here is
-              announced instead of appearing in silence. */}
-          <div aria-live="polite" className="mb-4">
-            {availabilityFailed ? (
-              <p className="small text-body-secondary mb-0">{t('detail.availabilityFailed')}</p>
+            <h1 className="h2 mb-1">{product.name}</h1>
+            {/* The business identifier (ADR-0015) is what a customer quotes when asking about the
+                product, not the headline of the screen: it belongs here, small and grey. */}
+            <p className="small text-body-secondary mb-3">{t('detail.reference', { sku: product.sku })}</p>
+
+            <p className="fs-2 fw-semibold text-tabular-nums mb-3">
+              {formatMoney(product.price, locale)}
+            </p>
+
+            {/* The second read lands after the sheet is already painted, so what shows up here is
+                announced instead of appearing in silence. */}
+            <div aria-live="polite" className="mb-4">
+              {availabilityFailed ? (
+                <p className="small text-body-secondary mb-0">{t('detail.availabilityFailed')}</p>
+              ) : (
+                available !== undefined && (
+                  <p
+                    className={`availability-block${available ? '' : ' availability-block--out'} d-flex align-items-center gap-2 mb-0`}
+                  >
+                    <Icon name={available ? 'check_circle' : 'warning'} />
+                    {available
+                      ? t('detail.availableAt', { store: storeName })
+                      : t('detail.unavailableAt', { store: storeName })}
+                  </p>
+                )
+              )}
+            </div>
+
+            <h2 className="h5">{t('detail.description')}</h2>
+            {product.description === null ? (
+              <p className="text-body-secondary mb-0">{t('detail.noDescription')}</p>
             ) : (
-              available !== undefined && (
-                <p className="small text-body-secondary d-flex align-items-center gap-2 mb-0">
-                  <span
-                    className={`status-dot status-dot--${available ? 'in' : 'out'}`}
-                    aria-hidden="true"
-                  />
-                  {available ? t('availability.available') : t('availability.unavailable')}
-                </p>
-              )
+              <p className="product-description mb-0">{product.description}</p>
             )}
-          </div>
+          </Col>
+        </Row>
 
-          {/* The business identifier of the product (ADR-0015). It is what the customer quotes when
-              asking about it, which is why it is on the sheet and not on the card. */}
-          <dl className="row mb-4">
-            <dt className="col-4 col-sm-3 fw-normal text-body-secondary">{t('detail.sku')}</dt>
-            <dd className="col-8 col-sm-9 mb-0">{productQuery.data.sku}</dd>
-          </dl>
-
-          <h2 className="h5">{t('detail.description')}</h2>
-          {productQuery.data.description === null ? (
-            <p className="text-body-secondary mb-0">{t('detail.noDescription')}</p>
-          ) : (
-            <p className="product-description mb-0">{productQuery.data.description}</p>
-          )}
-        </Col>
-      </Row>
+        <RelatedProducts typeId={product.typeId} excludeId={product.id} />
+      </>
     );
   };
 
@@ -138,7 +159,9 @@ export default function ProductDetailPage() {
         <Breadcrumb.Item linkAs={Link} linkProps={{ to: CATALOG_PATH }}>
           {t('title')}
         </Breadcrumb.Item>
-        {product !== undefined && <Breadcrumb.Item active>{product.name}</Breadcrumb.Item>}
+        {productQuery.data !== undefined && (
+          <Breadcrumb.Item active>{productQuery.data.name}</Breadcrumb.Item>
+        )}
       </Breadcrumb>
 
       {renderBody()}

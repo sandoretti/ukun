@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/react';
+import { screen, waitForElementToBeRemoved, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { http as mswHttp, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -27,27 +28,30 @@ describe('ProductDetailPage', () => {
     expect(screen.getByRole('status', { name: 'Cargando...' })).toBeDefined();
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Sofá de cuero' })).toBeDefined();
-    expect(screen.getByText('Sofás')).toBeDefined();
     // A regular expression because `Intl` separates the amount from the € with a non-breaking space.
     expect(screen.getByText(/^399,99\s€$/)).toBeDefined();
-    // The SKU belongs to the sheet, unlike the card of the listing.
-    expect(screen.getByText('SKU')).toBeDefined();
-    expect(screen.getByText('SOFA-CUERO-01')).toBeDefined();
+    // The SKU stays on the sheet (RF-01), as a reference and not as the headline.
+    expect(screen.getByText('Ref. SOFA-CUERO-01')).toBeDefined();
     expect(screen.getByText(/Estructura de madera maciza/)).toBeDefined();
 
     // The URL is the one the server composed (RF-10), never rebuilt from the identifier.
     const photo = screen.getByRole('img', { name: 'Sofá de cuero' });
     expect(photo.getAttribute('src')).toBe('/media/products/1.jpg');
 
-    // Availability is the second, parallel read: the sheet is on screen before it arrives.
-    expect(await screen.findByText('En stock')).toBeDefined();
+    // Availability is the second, parallel read: the sheet is on screen before it arrives, and it
+    // names the store it is talking about.
+    expect(await screen.findByText('Disponible en Ukun Online')).toBeDefined();
   });
 
-  it('offers the way back to the catalogue from the breadcrumb', async () => {
+  it('offers the way back to the catalogue, and sideways to the type', async () => {
     renderDetail('/products/1');
     await screen.findByRole('heading', { level: 1, name: 'Sofá de cuero' });
 
     expect(screen.getByRole('link', { name: 'Catálogo' }).getAttribute('href')).toBe('/products');
+    // The type is the way out to the rest of its kind, on the listing's own URL.
+    expect(screen.getByRole('link', { name: 'Ver todo en Sofás' }).getAttribute('href')).toBe(
+      '/products?typeId=1',
+    );
   });
 
   it('counts a product with no stock row as unavailable, and says when there is no photo or text', async () => {
@@ -58,9 +62,74 @@ describe('ProductDetailPage', () => {
     expect(screen.queryByRole('img', { name: 'Estantería modular' })).toBeNull();
     expect(screen.getByText('Sin foto')).toBeDefined();
     expect(screen.getByText('Este producto todavía no tiene descripción.')).toBeDefined();
+    // Nothing to enlarge, so nothing is offered.
+    expect(screen.queryByRole('button', { name: /Ampliar la imagen/ })).toBeNull();
 
     // Never "unknown": a missing row is a product that cannot be bought online (RF-01).
-    expect(await screen.findByText('Sin stock online')).toBeDefined();
+    expect(await screen.findByText('Sin stock en Ukun Online')).toBeDefined();
+  });
+
+  it('opens the photo in a viewer that can be zoomed and left with the keyboard', async () => {
+    const user = userEvent.setup();
+    renderDetail('/products/1');
+    await screen.findByRole('heading', { level: 1, name: 'Sofá de cuero' });
+
+    await user.click(screen.getByRole('button', { name: 'Ampliar la imagen de Sofá de cuero' }));
+
+    const viewer = await screen.findByRole('dialog', { name: 'Sofá de cuero' });
+    expect(within(viewer).getByRole('img', { name: 'Sofá de cuero' })).toBeDefined();
+    // It opens fitted, so there is nothing to reduce yet.
+    expect(within(viewer).getByText('×1')).toBeDefined();
+    expect(within(viewer).getByRole('button', { name: 'Reducir' }).hasAttribute('disabled')).toBe(true);
+
+    await user.click(within(viewer).getByRole('button', { name: 'Ampliar' }));
+
+    expect(await within(viewer).findByText('×1,5')).toBeDefined();
+    expect(within(viewer).getByRole('button', { name: 'Reducir' }).hasAttribute('disabled')).toBe(false);
+
+    // The viewer is a dialog, so Escape is the way out — nothing hand-rolled about it. It leaves
+    // through the modal's own fade, hence waiting for it to go instead of asserting on the spot.
+    await user.keyboard('{Escape}');
+
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+  });
+
+  it('shows other products of the same type, without the one being looked at', async () => {
+    renderDetail('/products/1');
+    await screen.findByRole('heading', { level: 1, name: 'Sofá de cuero' });
+
+    const related = await screen.findByRole('region', { name: 'También te puede interesar' });
+    const names = within(related)
+      .getAllByRole('article')
+      .map((card) => within(card).getByRole('heading').textContent);
+
+    expect(names).toEqual(['Sofá cama', 'Sofá chaise longue']);
+  });
+
+  it('drops the related strip when its read fails, and keeps the sheet whole', async () => {
+    server.use(
+      // Only the listing fails; the sheet's own read is a different endpoint.
+      mswHttp.get('/api/products', () =>
+        HttpResponse.json(
+          {
+            type: 'https://ukun.dev/errors/internal-error',
+            title: 'INTERNAL_ERROR',
+            status: 500,
+            code: 'INTERNAL_ERROR',
+            traceId: 'abc',
+          },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    renderDetail('/products/1');
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sofá de cuero' })).toBeDefined();
+    expect(await screen.findByText('Disponible en Ukun Online')).toBeDefined();
+    // Secondary content that could not be read is content that is not there — not an error message.
+    expect(screen.queryByText('También te puede interesar')).toBeNull();
+    expect(screen.queryByText('Algo ha fallado por nuestra parte. Inténtalo de nuevo')).toBeNull();
   });
 
   it('turns the 404 of a discontinued product into its own screen, with a way out', async () => {
@@ -123,8 +192,8 @@ describe('ProductDetailPage', () => {
       await screen.findByText('No hemos podido consultar la disponibilidad de este producto.'),
     ).toBeDefined();
     // A discreet note, not the error state taking over a sheet that has plenty to show.
-    expect(screen.queryByText('En stock')).toBeNull();
-    expect(screen.getByText('SOFA-CUERO-01')).toBeDefined();
+    expect(screen.queryByText('Disponible en Ukun Online')).toBeNull();
+    expect(screen.getByText('Ref. SOFA-CUERO-01')).toBeDefined();
   });
 
   it('paints the error state when the product itself cannot be read', async () => {

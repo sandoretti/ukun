@@ -36,11 +36,24 @@
   },
   "detail": {
     "breadcrumb": "Where you are",
-    "sku": "SKU",
+    "reference": "Ref. {{sku}}",
+    "seeAllOfType": "See everything in {{type}}",
+    "availableAt": "In stock at {{store}}",
+    "unavailableAt": "Out of stock at {{store}}",
     "description": "Description",
     "noDescription": "This product has no description yet.",
     "availabilityFailed": "We could not check the availability of this product.",
-    "backToCatalog": "Back to the catalogue"
+    "backToCatalog": "Back to the catalogue",
+    "zoom": "Enlarge the photo of {{name}}",
+    "related": "You may also like"
+  },
+  "viewer": {
+    "title": "Photo of {{name}}",
+    "close": "Close the photo",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "level": "×{{level}}",
+    "hint": "Drag the photo to move it"
   },
   "availability": {
     "available": "In stock",

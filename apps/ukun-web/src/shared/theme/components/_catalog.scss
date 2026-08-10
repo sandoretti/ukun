@@ -60,6 +60,175 @@
   white-space: pre-line;
 }
 
+// Al contrario que la tarjeta, la ficha NO recorta. El hueco es cuadrado —19 de las 24 fotos del
+// catálogo lo son— para que la página no salte de un producto al siguiente, pero la imagen se ve
+// entera dentro de él: con `cover`, una foto vertical (camas, lámparas de pie) pierde el cabecero.
+// Sin recuadro ni fondo gris: lo que se enseña es el producto, no su marco.
+.product-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.product-photo--empty {
+  background-color: var(--bs-tertiary-bg);
+  border-radius: bootstrap.$border-radius;
+}
+
+.product-zoom {
+  position: relative;
+}
+
+// El disparador del visor es un botón, así que hay que quitarle la caja de botón: lo que se ve es la
+// foto y nada más.
+.product-zoom__trigger {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+
+  &:focus-visible {
+    outline: 0.125rem solid tokens.$primary;
+    outline-offset: 0.25rem;
+  }
+}
+
+// Señal visible de que la foto hace algo al pulsarla; lo que hace lo dice su `aria-label`.
+.product-zoom__badge {
+  position: absolute;
+  inset-inline-end: 0.5rem;
+  inset-block-end: 0.5rem;
+  display: inline-flex;
+  padding: 0.375rem;
+  border-radius: 50%;
+  background-color: var(--bs-body-bg);
+  box-shadow: bootstrap.$box-shadow-sm;
+}
+
+// La lupa es un extra de ratón: no existe con el dedo ni con el teclado, y el panel ampliado
+// necesita una columna entera libre a la derecha. Donde no se cumplen las dos cosas, no se pinta —
+// el visor a pantalla completa sigue estando a un clic, que es el camino que siempre existe.
+.product-zoom__lens,
+.product-zoom__panel {
+  display: none;
+}
+
+@include bootstrap.media-breakpoint-up(xl) {
+  @media (hover: hover) and (pointer: fine) {
+    // Lente y panel comparten factor: la lente cubre el 40% de la foto y el panel la amplía 2,5x,
+    // así que lo que se ve ampliado es exactamente lo que la lente encuadra.
+    .product-zoom__lens {
+      display: block;
+      position: absolute;
+      inset-inline-start: var(--lens-x);
+      inset-block-start: var(--lens-y);
+      width: 40%;
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      border: bootstrap.$border-width solid var(--bs-border-color);
+      background-color: rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+    }
+
+    .product-zoom__panel {
+      display: block;
+      position: absolute;
+      inset-inline-start: calc(100% + 1.5rem);
+      inset-block-start: 0;
+      z-index: 3;
+      width: 100%;
+      aspect-ratio: 1;
+      border: bootstrap.$border-width solid var(--bs-border-color);
+      border-radius: bootstrap.$border-radius;
+      background-color: var(--bs-body-bg);
+      background-image: var(--photo);
+      background-repeat: no-repeat;
+      background-size: 250%;
+      background-position: var(--lens-x) var(--lens-y);
+      pointer-events: none;
+    }
+  }
+}
+
+// Disponibilidad en la tienda online: en la ficha sí es un bloque, porque es un solo producto y es
+// la respuesta a «¿puedo comprarlo?». En la rejilla del listado sigue siendo microtexto: allí son 24
+// a la vez y 24 recuadros serían ruido.
+.availability-block {
+  padding: 0.625rem 0.875rem;
+  border: bootstrap.$border-width solid var(--bs-border-color);
+  border-radius: bootstrap.$border-radius;
+  background-color: tokens.$primary-bg;
+  color: tokens.$primary-hover;
+}
+
+.availability-block--out {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+
+// --- Visor de imagen ----------------------------------------------------------------------------
+
+// El cuerpo del modal no scrollea: el que scrollea es el marco, que es quien contiene la imagen
+// ampliada. Con los dos activos, la imagen se desplazaría en dos ejes de scroll distintos.
+.product-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.product-viewer__frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-in;
+
+  &:focus-visible {
+    outline: 0.125rem solid tokens.$primary;
+    outline-offset: -0.125rem;
+  }
+}
+
+.product-viewer__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+// Ampliada, la imagen desborda el marco y el desplazamiento lo hace el propio marco: nativo, con
+// barras y con las flechas del teclado. Arrastrar es un atajo encima de eso, nunca el único medio.
+.product-viewer__frame.is-zoomed {
+  align-items: flex-start;
+  justify-content: flex-start;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  .product-viewer__image {
+    width: calc(var(--zoom) * 100%);
+    max-width: none;
+    max-height: none;
+    height: auto;
+  }
+}
+
+.product-viewer__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
 // --- Sidebar de filtros -------------------------------------------------------------------------
 
 // A partir de `lg` el sidebar acompaña al scroll de la rejilla; por debajo vive dentro de un

@@ -89,6 +89,37 @@ export function useProduct(id: number | undefined) {
   });
 }
 
+/** How many neighbours the sheet shows, and how many are asked for to still have that many. */
+const RELATED_SIZE = 4;
+
+/**
+ * The other products of the same type, for the strip at the foot of the detail sheet. It is the
+ * listing read with one filter and a small page — the same `fetchProducts` and the same key factory,
+ * not an endpoint of its own, so the cache entry is shared with anyone browsing that type.
+ *
+ * The API does not know which product is being looked at, so one extra is requested and the current
+ * one is dropped here: otherwise a type with exactly five products would show four minus itself.
+ */
+export function useRelatedProducts(typeId: number | undefined, excludeId: number | undefined) {
+  const filters: ProductFilters = {
+    name: '',
+    typeId: typeId ?? null,
+    priceMin: '',
+    priceMax: '',
+    sort: 'PRICE_ASC',
+    page: 0,
+    size: RELATED_SIZE + 1,
+  };
+
+  return useQuery({
+    queryKey: productKeys.list(filters),
+    queryFn: ({ signal }) => fetchProducts(filters, signal),
+    enabled: typeId !== undefined,
+    select: (page) =>
+      page.items.filter((item) => item.id !== excludeId).slice(0, RELATED_SIZE),
+  });
+}
+
 /** One page of one element sorted downwards: the most expensive product of the whole catalog. */
 const MOST_EXPENSIVE: ProductFilters = {
   name: '',
