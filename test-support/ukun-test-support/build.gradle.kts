@@ -1,10 +1,16 @@
-// Reglas de arquitectura compartidas por los servicios backend. NO es un servicio: no lleva el
-// plugin de Spring Boot, no produce un bootJar y no se empaqueta en ninguna imagen — solo aparece
-// en el classpath de `testImplementation` de quien la consume.
+// Lo que los tres servicios backend comparten al testear. NO es un servicio: no lleva el plugin de
+// Spring Boot, no produce un bootJar y no se empaqueta en ninguna imagen — solo aparece en el
+// classpath de `testImplementation` de quien la consume.
 //
 // Existe porque las siete reglas de docs/03-analisis-y-patrones.md §3 valen igual para ukun-api que
 // para ukun-auth, y vivían en las fuentes de test del primero. Duplicarlas para el segundo era
-// garantizar que divergieran.
+// garantizar que divergieran. Ese mismo argumento es el que trajo después a `tracing/Traceparent`
+// (v0.5): el formato de la cabecera W3C tiene que ser el mismo en los tres servicios o sus tests
+// dejan de hablar del mismo hecho.
+//
+// El criterio para entrar aquí no ha cambiado: sirve a más de un servicio y no contiene nada propio
+// de ninguno. Un fixture con nombres de base de datos o de eventos de un servicio se queda en él —
+// por eso AbstractIntegrationTest sigue duplicado y documenta por qué.
 //
 // Aplica `ukun-java-conventions` y eso NO es opcional: sus flags -parameters e isDebug son los que
 // dejan la LocalVariableTable en el bytecode, y sin ella EntityLoggingCondition no puede leer el

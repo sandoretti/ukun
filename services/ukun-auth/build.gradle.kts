@@ -18,6 +18,12 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.validation)
 
+    // Correlación con los otros dos procesos (docs/11 §5). Este servicio es el extremo de la saga de
+    // signup: sin un traceId común, un `signup.compensation` aquí y el `signup.started` de ukun-api
+    // son dos líneas de log que nadie puede juntar.
+    implementation(libs.spring.boot.micrometer.tracing.opentelemetry)
+    runtimeOnly(libs.micrometer.tracing.bridge.otel)
+
     // El Authorization Server dejó de ser un proyecto aparte y vive dentro de Spring Security 7
     // (docs/05-stack-y-versiones.md). El BOM de Boot 4.1 publica DOS coordenadas para esto:
     // `spring-boot-starter-oauth2-authorization-server` (nombre heredado) y la de aquí. Resueltos

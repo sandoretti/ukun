@@ -95,6 +95,18 @@ management:
       probes:
         enabled: true
 
+  # Correlation across the three processes (docs/11-observabilidad-y-logging.md §5), with the same
+  # two settings and the same reasoning as ukun-api. What it buys *here* is the signup saga: this
+  # service reserves the account and ukun-api completes it, and until now a `signup.compensation`
+  # logged here and the `signup.started` logged there were two lines nobody could join.
+  tracing:
+    sampling:
+      # Boot's default is 0.1. Nine out of ten sagas unfollowable is not a sampling policy.
+      probability: 1.0
+    propagation:
+      # Produced *and* consumed as W3C only; Boot would otherwise also accept B3 and B3_MULTI.
+      type: w3c
+
 ---
 spring:
   config:

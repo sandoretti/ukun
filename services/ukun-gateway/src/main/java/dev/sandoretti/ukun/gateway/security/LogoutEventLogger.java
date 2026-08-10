@@ -29,14 +29,11 @@ final class LogoutEventLogger implements ServerLogoutHandler {
 
     /**
      * The {@code sub} of the access token, lifted into the principal by
-     * {@link AccessTokenOidcUserService}. The fallback covers the shape this filter cannot rule out —
+     * {@link AccessTokenOidcUserService}. The fallback covers the shape this handler cannot rule out —
      * a logout arriving with some other authentication, or none — and says so rather than dropping
      * the event: an audit line that admits what it does not know beats a missing one.
      */
     private static String accountIdOf(Authentication authentication) {
-        if (authentication != null && authentication.getPrincipal() instanceof UkunOidcUser user) {
-            return user.accountId();
-        }
-        return "unknown";
+        return UkunOidcUser.accountIdOf(authentication).orElse("unknown");
     }
 }

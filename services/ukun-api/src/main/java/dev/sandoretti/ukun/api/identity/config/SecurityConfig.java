@@ -3,6 +3,7 @@ package dev.sandoretti.ukun.api.identity.config;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 import tools.jackson.databind.ObjectMapper;
+import dev.sandoretti.ukun.api.shared.observability.AccountIdMdcFilter;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -116,6 +118,12 @@ class SecurityConfig {
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults())
                         .authenticationEntryPoint(problemHandler)
                         .accessDeniedHandler(problemHandler))
+                // Right after authentication and before authorisation, which is the only window where
+                // both halves are true: there is a validated token to read the subject from, and the
+                // request has not been denied yet — so `auth.authorization.denied` still gets logged
+                // with the `accountId` that docs/11 §3 says it carries. Registering it any later would
+                // name every request except the interesting ones.
+                .addFilterAfter(new AccountIdMdcFilter(), BearerTokenAuthenticationFilter.class)
                 // No session, ever: this service authenticates each request from its Bearer token and
                 // keeps nothing between them. The session lives in the gateway, which is the only part
                 // of the system talking to a browser (ADR-0003).

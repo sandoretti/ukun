@@ -91,6 +91,26 @@ spring-boot-webmvc-test = { module = "org.springframework.boot:spring-boot-webmv
 # Genera spring-configuration-metadata.json para las @ConfigurationProperties del servicio: sin él
 # el IDE marca `ukun.catalog.media-base-path` como propiedad no resuelta y no la autocompleta.
 spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
+# Correlación entre los tres procesos (docs/11-observabilidad-y-logging.md §5). Con esto en el
+# classpath Boot rellena traceId/spanId en el MDC y propaga `traceparent` en cada salto: es
+# instrumentación, no código nuestro.
+#
+# Boot 4 volvió a partir por tecnología y aquí la elección importa. `spring-boot-starter-opentelemetry`
+# es el AGREGADOR: resuelto su POM, añade a lo de abajo `opentelemetry-exporter-otlp` y
+# `micrometer-registry-otlp`, que son justo lo que docs/11 §5 sitúa en v1.0 —cuando haya a dónde
+# exportar—. Lo que hace falta en v0.5 es correlacionar logs, no exportar traces.
+#
+# El bridge es el de OpenTelemetry y no el de Brave por la misma sección: OTLP es el protocolo hacia el
+# que va el ecosistema. Existe `spring-boot-micrometer-tracing-brave` y no se usa.
+spring-boot-micrometer-tracing-opentelemetry = { module = "org.springframework.boot:spring-boot-micrometer-tracing-opentelemetry" }
+# Y esta segunda coordenada NO sobra, aunque el nombre de la de arriba sugiera que sí. El módulo de
+# Boot trae la autoconfiguración y nada más: su POM declara cinco dependencias y el bridge no es
+# ninguna. Sin él no existen OtelTracer ni OtelPropagator, OpenTelemetryTracingAutoConfiguration no
+# carga, y el resultado no es un fallo de arranque sino algo peor — el gateway sigue funcionando y se
+# limita a copiar la cabecera `traceparent` que le llegue, así que parece que hay propagación mientras
+# una petición de navegador (que no trae ninguna) viaja sin traza. Diagnosticado así, con
+# TracePropagationIT: 1 Tracer, 0 Propagator y 0 GatewayPropagatingSenderTracingObservationHandler.
+micrometer-tracing-bridge-otel = { module = "io.micrometer:micrometer-tracing-bridge-otel" }
 
 # --- Spring Cloud (versión gestionada por spring-cloud-bom) -----------------------------------
 # Nombre vigente del tren 2025.x; el viejo spring-cloud-starter-gateway quedó deprecado.

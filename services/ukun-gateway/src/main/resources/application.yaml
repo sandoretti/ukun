@@ -2,6 +2,18 @@ spring:
   application:
     name: ukun-gateway
 
+  # La línea sin la cual el tracing de este servicio no se ve en ningún log, y la única propiedad de
+  # esta slice que es exclusiva del gateway. En un servicio reactivo el MDC no acompaña a la petición:
+  # cada señal puede cambiar de hilo, y el patrón de log lee `%mdc{traceId}` en el hilo donde acaba
+  # escribiendo. Reactor sabe restaurarlo, pero hay que pedírselo.
+  #
+  # Comprobado en el bytecode de ReactorAutoConfiguration (Boot 4.1), no supuesto: llama a
+  # Hooks.enableAutomaticContextPropagation() SOLO si este valor es `auto`. El defecto es `limited`, y
+  # con él error/TraceIds seguiría inventando un UUID por respuesta de error mientras el trace real
+  # existe y viaja hacia ukun-api.
+  reactor:
+    context-propagation: auto
+
   cloud:
     gateway:
       # El prefijo lleva `server.webflux` desde el tren 2025.x, igual que el artefacto: el
@@ -85,6 +97,22 @@ management:
     health:
       probes:
         enabled: true
+
+  # La correlación de los tres procesos (docs/11-observabilidad-y-logging.md §5). Este servicio es el
+  # extremo que importa: es el único que habla con el navegador, así que es quien ACUÑA el traceId
+  # cuando la petición no trae `traceparent` — y ninguna del navegador lo trae. Auth y api lo heredan.
+  #
+  # Nada de esto exporta un trace a ningún sitio. Lo que compra es el traceId en el MDC; el exportador
+  # OTLP es de v1.0.
+  tracing:
+    sampling:
+      # El defecto de Boot es 0.1, y con él nueve de cada diez peticiones serían imposibles de seguir
+      # entre servicios, que es justo el problema que este release resuelve. docs/11 §5 fija 1.0.
+      probability: 1.0
+    propagation:
+      # Boot ya PRODUCE W3C, pero por defecto CONSUME también B3 y B3_MULTI. Se estrecha a uno a
+      # propósito: quien entra por aquí es un navegador, no otro sistema de tracing.
+      type: w3c
 
 ukun:
   # El cliente OAuth2 que es este servicio (ADR-0003). Prefijo propio y no
