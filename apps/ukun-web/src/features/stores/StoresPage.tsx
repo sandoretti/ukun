@@ -4,6 +4,8 @@ import { Col, Container, Row } from 'react-bootstrap';
 
 import { useStores } from '../../shared/api/stores';
 import { QueryBoundary } from '../../shared/ui/QueryBoundary';
+import { Section } from '../../shared/ui/Section';
+import { OnlineStoreBanner } from './components/OnlineStoreBanner';
 import { StoreCard } from './components/StoreCard';
 import { StoreFilter } from './components/StoreFilter';
 import { filterStores, useStoreSearch } from './useStoreSearch';
@@ -17,7 +19,12 @@ import { filterStores, useStoreSearch } from './useStoreSearch';
  * travelling as the contract's `q`: stores are closed reference data, and a request per typed term
  * would trade a cache entry that lasts the session for one that lasts a keystroke.
  *
- * The three mandatory states are `QueryBoundary`'s, not this screen's (`docs/07-frontend-ux-ui.md`).
+ * Three zones: a coloured band with the heading and the filter, the online store in a panel of its
+ * own, and the grid of the ones you can walk into. Splitting the online one out is what levels the
+ * grid — it was the only card carrying a badge and a note, and it broke every row it sat in.
+ *
+ * All three live inside a **single** `QueryBoundary`: loading, empty and error are its business and
+ * are not improvised per zone (`docs/07-frontend-ux-ui.md`).
  */
 export default function StoresPage() {
   const { t } = useTranslation('stores');
@@ -27,41 +34,65 @@ export default function StoresPage() {
   const stores = useMemo(() => filterStores(storesQuery.data, term), [storesQuery.data, term]);
 
   return (
-    // El ancho lo pone cada pantalla y no el layout, como en el catálogo.
-    <Container className="py-4">
-      <h1 className="h3 mb-2">{t('title')}</h1>
-      <p className="text-body-secondary mb-4">{t('lead')}</p>
+    <>
+      {/* La banda clara de marca abre la pantalla, como abre la portada: el color de entrada sale
+          del tema (`tone="soft"`), nunca escrito aquí. */}
+      <Section tone="soft">
+        <h1 className="h2 mb-2">{t('title')}</h1>
+        <p className="text-body-secondary mb-4">{t('lead')}</p>
 
-      {/* El campo no ocupa el ancho de la página: un buscador de una línea a sangre completa se lee
-          como un formulario, y esto es un filtro sobre un puñado de filas. */}
-      <Row>
-        <Col md={8} lg={5}>
-          <StoreFilter
-            value={term}
-            onChange={setTerm}
-            status={stores === undefined ? '' : t('results', { count: stores.length })}
-          />
-        </Col>
-      </Row>
+        {/* El campo no ocupa el ancho de la página: un buscador de una línea a sangre completa se
+            lee como un formulario, y esto es un filtro sobre un puñado de filas. */}
+        <Row>
+          <Col md={8} lg={5}>
+            <StoreFilter
+              value={term}
+              onChange={setTerm}
+              status={stores === undefined ? '' : t('results', { count: stores.length })}
+            />
+          </Col>
+        </Row>
+      </Section>
 
-      {/* Two different ways of having nothing to show, and they do not say the same thing: a filter
-          that matched nothing is the reader's doing and is undone by clearing the field; a listing
-          with no stores at all is not. */}
-      <QueryBoundary
-        query={storesQuery}
-        data={stores}
-        empty={term.trim() === '' ? t('empty.none') : t('empty.filtered', { term: term.trim() })}
-      >
-        {(items) => (
-          <Row xs={1} md={2} xl={3} className="g-4">
-            {items.map((store) => (
-              <Col key={store.id}>
-                <StoreCard store={store} />
-              </Col>
-            ))}
-          </Row>
-        )}
-      </QueryBoundary>
-    </Container>
+      <Container className="py-5">
+        {/* Two different ways of having nothing to show, and they do not say the same thing: a
+            filter that matched nothing is the reader's doing and is undone by clearing the field; a
+            listing with no stores at all is not. */}
+        <QueryBoundary
+          query={storesQuery}
+          data={stores}
+          empty={term.trim() === '' ? t('empty.none') : t('empty.filtered', { term: term.trim() })}
+        >
+          {(items) => {
+            // Exactly one row has `isOnline` (`ux_store_online`), so this is a `find`, not a
+            // partition that has to cope with two. A filter can leave either side empty, and
+            // neither heading is painted over nothing.
+            const online = items.find((store) => store.isOnline);
+            const physical = items.filter((store) => !store.isOnline);
+
+            return (
+              <>
+                {online !== undefined && <OnlineStoreBanner store={online} />}
+
+                {physical.length > 0 && (
+                  <>
+                    <h2 className="h4 mb-4">{t('directory.title')}</h2>
+                    {/* En el orden que manda el API, que ya viene por nombre: la pantalla no aplica
+                        un segundo criterio por su cuenta. */}
+                    <Row xs={1} md={2} xl={3} className="g-4">
+                      {physical.map((store) => (
+                        <Col key={store.id}>
+                          <StoreCard store={store} />
+                        </Col>
+                      ))}
+                    </Row>
+                  </>
+                )}
+              </>
+            );
+          }}
+        </QueryBoundary>
+      </Container>
+    </>
   );
 }

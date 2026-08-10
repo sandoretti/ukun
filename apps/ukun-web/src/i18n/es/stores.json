@@ -14,9 +14,15 @@
   },
   "online": {
     "badge": "Tienda online",
-    "note": "Es la tienda desde la que se preparan y se envían los pedidos. No es un local que se pueda visitar."
+    "note": "Es la tienda desde la que se preparan y se envían los pedidos. No es un local que se pueda visitar.",
+    "cta": "Ver el catálogo"
+  },
+  "directory": {
+    "title": "Tiendas que puedes visitar"
   },
   "card": {
-    "call": "Llamar a {{store}}"
+    "call": "Llamar a {{store}}",
+    "directions": "Cómo llegar",
+    "directionsLabel": "Cómo llegar a {{store}} (se abre en una pestaña nueva)"
   }
 }

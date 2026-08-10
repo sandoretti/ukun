@@ -1,0 +1,80 @@
+@use "../bootstrap";
+@use "../tokens";
+
+// Lo propio de la pantalla de tiendas: el panel de la tienda online y la tarjeta de tienda física.
+// Ningún color se escribe aquí: todos salen de `_tokens.scss`, que es la única fuente de la paleta.
+
+// --- Tienda online ------------------------------------------------------------------------------
+
+// La única tienda contra la que se sirven pedidos (RF-04) sale de la rejilla y ocupa su propio
+// panel. No es solo jerarquía: dentro de la rejilla llevaba un distintivo y una nota que las demás
+// tarjetas no tienen, y por eso rompía la altura de la fila.
+// Blanco sobre $primary: 6.02:1 (AA).
+.store-online {
+  border-radius: bootstrap.$border-radius-lg;
+  background-color: tokens.$primary;
+  color: tokens.$on-dark;
+}
+
+// El icono del envío, dentro de un disco claro para que no flote suelto sobre el verde. Es
+// decorativo —lo que dice está escrito al lado—, así que el disco puede bajar de contraste.
+.store-online__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+// El distintivo se invierte respecto al panel: fondo blanco y verde de marca encima, que es el mismo
+// 6.02:1 al revés. Un `Badge bg="light"` de Bootstrap dejaría el texto en gris oscuro y perdería la
+// marca.
+.store-online__badge {
+  background-color: tokens.$on-dark;
+  color: tokens.$primary;
+}
+
+// Los enlaces del panel van sobre el verde, así que heredan el blanco en vez del azul de Bootstrap.
+// Subrayados siempre: sobre un fondo de color, quitarles el subrayado los deja sin nada que los
+// distinga del texto que los rodea salvo el propio color, que aquí es el mismo.
+.store-online__link {
+  color: tokens.$on-dark;
+  text-underline-offset: 0.25rem;
+}
+
+.store-online__link:hover,
+.store-online__link:focus-visible {
+  color: tokens.$on-dark;
+}
+
+.store-online:focus-visible,
+.store-online :focus-visible {
+  outline-color: tokens.$on-dark;
+}
+
+// --- Tarjeta de tienda física -------------------------------------------------------------------
+
+// El color va en el dato, no en un adorno: en un listado de tiendas lo que se busca es la ciudad, y
+// es lo único que se lee antes que el nombre. $primary sobre fondo de tarjeta es 6.02:1 (AA), así
+// que aquí sí puede ir bajo texto. Pisa el gris de `.overline` por orden de cascada — este parcial
+// va después de `utilities` en `index.scss`.
+.store-card__region {
+  color: tokens.$primary;
+}
+
+// Todas las tarjetas de la rejilla tienen exactamente la misma estructura, así que la dirección es
+// lo único que puede variar de alto. Reservarle tres líneas mantiene el teléfono y el «cómo llegar»
+// de todas las tarjetas de una fila a la misma altura, no solo el borde inferior.
+.store-card__address {
+  min-height: 4.5rem;
+}
+
+// Las acciones se separan de los datos con la misma línea que ya usa cualquier borde del tema. No es
+// decoración: es lo que dice dónde acaba lo que se lee y empieza lo que se pulsa.
+.store-card__actions {
+  border-top: bootstrap.$border-width solid var(--bs-border-color);
+  padding-top: 0.75rem;
+}

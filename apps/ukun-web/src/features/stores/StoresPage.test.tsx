@@ -31,14 +31,15 @@ const storeNames = () =>
 const filterField = () => screen.getByRole('searchbox', { name: 'Filtrar por nombre o ciudad' });
 
 describe('StoresPage', () => {
-  it('shows the loading state and then every store, in the order the API sent them', async () => {
+  it('shows the loading state and then every store, the online one first', async () => {
     renderStores();
 
     expect(screen.getByRole('status', { name: 'Cargando...' })).toBeDefined();
 
-    expect(await screen.findByRole('article', { name: 'Ukun Avilés' })).toBeDefined();
-    // Sorted by name by the API (`listStores`), and not re-sorted here.
-    expect(storeNames()).toEqual(['Ukun Avilés', 'Ukun Gijón', 'Ukun León', 'Ukun Online', 'Ukun Oviedo']);
+    expect(await screen.findByRole('article', { name: 'Ukun Online' })).toBeDefined();
+    // The online store is lifted out of the grid into its own panel; the ones you can walk into keep
+    // the order the API sent them (`listStores` sorts by name) with no second criterion applied here.
+    expect(storeNames()).toEqual(['Ukun Online', 'Ukun Avilés', 'Ukun Gijón', 'Ukun León', 'Ukun Oviedo']);
     expect(screen.getByText('5 tiendas')).toBeDefined();
   });
 
@@ -48,7 +49,7 @@ describe('StoresPage', () => {
     const gijon = await screen.findByRole('article', { name: 'Ukun Gijón' });
     expect(within(gijon).getByText('Avenida de la Costa 22')).toBeDefined();
     expect(within(gijon).getByText('33205 Gijón')).toBeDefined();
-    expect(within(gijon).getByText('Asturias')).toBeDefined();
+    expect(within(gijon).getByText('Gijón · Asturias')).toBeDefined();
 
     // The dialler gets the raw E.164 value; the reader gets it grouped. The accessible name says
     // which store is being called, so a list of links is not five identical numbers.
@@ -57,7 +58,25 @@ describe('StoresPage', () => {
     expect(call.textContent).toBe('+34 900 000 002');
   });
 
-  it('marks the online store without offering it as a shop to visit', async () => {
+  it('points each physical store at a map, away from this tab', async () => {
+    renderStores();
+
+    const gijon = await screen.findByRole('article', { name: 'Ukun Gijón' });
+    const directions = within(gijon).getByRole('link', {
+      name: 'Cómo llegar a Ukun Gijón (se abre en una pestaña nueva)',
+    });
+
+    // A search by the address the API returned: the contract carries no coordinates, so there is no
+    // pin to drop and none is invented.
+    expect(directions.getAttribute('href')).toBe(
+      'https://www.google.com/maps/search/?api=1&query=' +
+        encodeURIComponent('Ukun Gijón, Avenida de la Costa 22, 33205 Gijón, Asturias'),
+    );
+    expect(directions.getAttribute('target')).toBe('_blank');
+    expect(directions.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('lifts the online store out of the grid instead of offering it as a shop to visit', async () => {
     renderStores();
 
     const online = await screen.findByRole('article', { name: 'Ukun Online' });
@@ -67,11 +86,31 @@ describe('StoresPage', () => {
         'Es la tienda desde la que se preparan y se envían los pedidos. No es un local que se pueda visitar.',
       ),
     ).toBeDefined();
+    // It still carries what RF-02 asks a public listing for.
+    expect(within(online).getByText('Polígono de Asipo, nave 12')).toBeDefined();
+    expect(within(online).getByRole('link', { name: 'Llamar a Ukun Online' })).toBeDefined();
+    // Orders are served from it (RF-04), so what follows from reading it is the catalogue.
+    expect(within(online).getByRole('link', { name: /Ver el catálogo/ }).getAttribute('href')).toBe('/products');
+    // No route to walk to: it is a warehouse, and the grid's "how to get there" is not offered here.
+    expect(within(online).queryByRole('link', { name: /Cómo llegar/ })).toBeNull();
 
     // Exactly one store is the online one, and it is told apart by `isOnline`, never by its name.
     expect(screen.getAllByText('Tienda online')).toHaveLength(1);
     const oviedo = screen.getByRole('article', { name: 'Ukun Oviedo' });
     expect(within(oviedo).queryByText('Tienda online')).toBeNull();
+  });
+
+  it('filters by city too, and drops the grid heading when only the online store is left', async () => {
+    const user = userEvent.setup();
+    renderStores();
+    await screen.findByRole('article', { name: 'Ukun Online' });
+
+    // No store is called «Llanera»: this only matches through the address.
+    await user.type(filterField(), 'llanera');
+
+    expect(storeNames()).toEqual(['Ukun Online']);
+    // A heading over an empty grid is worse than no heading.
+    expect(screen.queryByRole('heading', { name: 'Tiendas que puedes visitar' })).toBeNull();
   });
 
   it('filters by name ignoring accents, and writes the term to the URL', async () => {
@@ -85,17 +124,6 @@ describe('StoresPage', () => {
     expect(screen.getByText('1 tienda')).toBeDefined();
     // A linkable result: the term is in the address bar, not in a `useState`.
     expect(screen.getByText('/stores?q=gijon')).toBeDefined();
-  });
-
-  it('filters by city too, which is not always part of the name', async () => {
-    const user = userEvent.setup();
-    renderStores();
-    await screen.findByRole('article', { name: 'Ukun Avilés' });
-
-    // No store is called «Llanera»: this only matches through the address.
-    await user.type(filterField(), 'llanera');
-
-    expect(storeNames()).toEqual(['Ukun Online']);
   });
 
   it('filters on the cached list instead of asking the API again', async () => {

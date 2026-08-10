@@ -14,9 +14,15 @@
   },
   "online": {
     "badge": "Online store",
-    "note": "This is the store orders are prepared and shipped from. It is not a shop you can visit."
+    "note": "This is the store orders are prepared and shipped from. It is not a shop you can visit.",
+    "cta": "Browse the catalogue"
+  },
+  "directory": {
+    "title": "Stores you can visit"
   },
   "card": {
-    "call": "Call {{store}}"
+    "call": "Call {{store}}",
+    "directions": "Get directions",
+    "directionsLabel": "Get directions to {{store}} (opens in a new tab)"
   }
 }
