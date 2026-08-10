@@ -43,6 +43,12 @@ spring-modulith-bom = { module = "org.springframework.modulith:spring-modulith-b
 # --- Spring Boot (versión gestionada por spring-boot-bom) -------------------------------------
 spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+# El starter de seguridad a secas, solo para ukun-gateway: no es resource server ni authorization
+# server, sino que necesita la cadena reactiva para el filtro grueso por rol y los escritores de
+# cabeceras (docs/08 §8). Boot autoconfigura la variante reactiva porque WebFlux está en el classpath
+# vía el starter de Gateway; las otras tres coordenadas `...-security-oauth2-*` son las que llegarán
+# con el oauth2Login del BFF (issue #28), no esta.
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
 # starter-web no arrastra Bean Validation desde Boot 3, y cada query param del listado de catálogo
 # declara sus límites: sin esto las anotaciones compilan y no se aplican nunca.
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
@@ -113,7 +119,9 @@ testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgr
 
 # --- Spring Security (versión gestionada por spring-boot-bom) ---------------------------------
 # SecurityMockMvcRequestPostProcessors.jwt(), que construye una autenticación ya validada y permite
-# probar autoridades y rutas sin firmar un token. No viene en starter-test.
+# probar autoridades y rutas sin firmar un token. No viene en starter-test. Su mitad reactiva,
+# SecurityMockServerConfigurers.mockUser(), es la que usa ukun-gateway para probar el filtro grueso
+# por rol sin montar todavía el oauth2Login que llega en #28.
 spring-security-test = { module = "org.springframework.security:spring-security-test" }
 
 # --- ArchUnit ---------------------------------------------------------------------------------
