@@ -1,0 +1,16 @@
+// El tema de la aplicación, en un índice. Cada parcial se ocupa de una cosa y ninguno redefine la
+// paleta: los tokens viven en `_tokens.scss` y `_bootstrap.scss` es el único sitio donde se
+// configura Bootstrap (docs/07-frontend-ux-ui.md §Qué se descarta — nada de CSS suelto por pantalla).
+//
+// El orden importa: es el de la cascada. Bootstrap primero, para que todo lo de abajo lo matice;
+// `components/section` antes que `components/home`, porque la portada afina sobre las bandas que el
+// componente <Section> ya define y, a igual especificidad, gana la última regla en llegar.
+@use "bootstrap";
+@use "fonts";
+@use "base";
+@use "utilities";
+@use "components/section";
+@use "components/shell";
+@use "components/search-box";
+@use "components/catalog";
+@use "components/home";

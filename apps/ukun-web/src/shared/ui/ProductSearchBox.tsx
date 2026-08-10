@@ -4,10 +4,13 @@ import { createSearchParams, useNavigate, useSearchParams } from 'react-router-d
 
 import { SUGGEST_MIN_LENGTH, useProductSuggestions } from '../api/products';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useLocale } from '../hooks/useLocale';
 import { formatMoney } from '../format/money';
 import { SearchBox, type SearchSuggestion } from './SearchBox';
 
 type ProductSearchBoxProps = {
+  /** See `SearchBox`: `md` in the navigation bar, `lg` when the field leads a screen. */
+  size?: 'md' | 'lg';
   className?: string;
 };
 
@@ -20,8 +23,9 @@ type ProductSearchBoxProps = {
  * Neither goes to the product detail, which does not exist yet (issue #19); when it does, the only
  * thing that changes is where `onSelect` navigates to.
  */
-export function ProductSearchBox({ className }: ProductSearchBoxProps) {
-  const { t, i18n } = useTranslation('common');
+export function ProductSearchBox({ size = 'md', className }: ProductSearchBoxProps) {
+  const { t } = useTranslation('common');
+  const locale = useLocale();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -40,7 +44,6 @@ export function ProductSearchBox({ className }: ProductSearchBoxProps) {
   const debouncedTerm = useDebouncedValue(term);
   const { data } = useProductSuggestions(debouncedTerm);
 
-  const locale = i18n.resolvedLanguage ?? 'es';
   const suggestions = useMemo<SearchSuggestion[]>(
     () =>
       // Guarded by the text on screen, not by the debounced one: emptying the field closes the
@@ -67,6 +70,7 @@ export function ProductSearchBox({ className }: ProductSearchBoxProps) {
   return (
     <SearchBox
       className={className}
+      size={size}
       label={t('search.label')}
       submitLabel={t('search.submit')}
       placeholder={t('search.placeholder')}

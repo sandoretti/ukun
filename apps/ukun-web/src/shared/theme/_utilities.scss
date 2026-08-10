@@ -1,0 +1,25 @@
+// Utilidades que Bootstrap no trae y que docs/07-frontend-ux-ui.md exige. Viven aquí, en el tema,
+// y no como `style` inline dentro de una pantalla.
+
+// Cifras tabulares: precios y cantidades comparan alineados en una rejilla o una columna.
+.text-tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+// Un nombre de producto largo recorta a dos líneas en vez de romper la tarjeta.
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// Línea superior de una tarjeta (el tipo de producto): versalitas grises, jerarquía por debajo del
+// nombre.
+.overline {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}

@@ -1,0 +1,216 @@
+@use "../bootstrap";
+@use "../tokens";
+
+// Lo propio de la portada. Va después de `_section.scss` en el índice: lo que aquí se declara sobre
+// una banda —el aire del cierre, el aire extra del hero a partir de `md`— matiza lo que el
+// componente <Section> ya pone, y con la misma especificidad manda el último en llegar.
+
+// --- Cubierta -----------------------------------------------------------------------------------
+
+// La foto es una banda a sangre y el texto va encima, pero sobre un panel opaco: el contraste de un
+// texto sobre una foto depende del píxel que tenga detrás, y eso no se puede garantizar. El velo
+// claro es solo para que el borde del panel no se pierda en las zonas claras de la imagen.
+.hero {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.35)),
+    url("../../../assets/hero-living-room.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+.hero__panel {
+  max-width: 40rem;
+  padding: 1.5rem;
+  border-radius: bootstrap.$border-radius-lg;
+  background-color: var(--bs-body-bg);
+  box-shadow: bootstrap.$box-shadow-lg;
+}
+
+@include bootstrap.media-breakpoint-up(md) {
+  .hero {
+    padding-block: 5rem;
+  }
+
+  .hero__panel {
+    padding: 2.5rem;
+  }
+}
+
+// «Your ukun» sobre el titular. Versalitas espaciadas en vez de la cursiva de antes: el reclamo de
+// marca tiene que leerse como un rótulo por encima del título, no como una frase suelta que compite
+// con él. Arranca en el mismo borde que el `<h1>`, que es lo que el logotipo en mapa de bits no
+// podía hacer sin descontar su aire transparente a mano.
+.hero__eyebrow {
+  margin-bottom: 0.75rem;
+  font-family: tokens.$display-font;
+  font-size: 0.875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: tokens.$primary;
+}
+
+.hero__title {
+  // Escala con el ancho en vez de saltar por breakpoints, con tope arriba y abajo.
+  font-size: clamp(1.75rem, 4.5vw, 3rem);
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+// --- Categorías destacadas ----------------------------------------------------------------------
+
+// Índice editorial: una fila por categoría, a ancho completo, separadas por un filete. La primera
+// lleva también el de arriba para que la lista abra y cierre con línea.
+.category-index__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding-block: 1rem;
+  border-block-end: bootstrap.$border-width solid var(--bs-border-color);
+  color: var(--bs-body-color);
+  text-decoration: none;
+}
+
+.category-index > li:first-child .category-index__row {
+  border-block-start: bootstrap.$border-width solid var(--bs-border-color);
+}
+
+// El nombre es lo que se lee de lejos, así que escala con el ancho; y parte por donde haga falta
+// antes que desbordar la fila.
+.category-index__name {
+  font-family: tokens.$display-font;
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+// La flecha avanza al apuntar la fila. Solo `transform`, nunca `transition: all` (docs/07).
+.category-index__arrow {
+  color: tokens.$primary;
+  transition: transform 0.15s ease-out;
+}
+
+.category-index__row:hover,
+.category-index__row:focus-visible {
+  color: tokens.$primary;
+}
+
+.category-index__row:hover .category-index__arrow,
+.category-index__row:focus-visible .category-index__arrow {
+  transform: translateX(0.35rem);
+}
+
+// --- Bloques narrativos -------------------------------------------------------------------------
+
+// El bloque puede traer más de un párrafo, así que la separación entre ellos la pone el contenedor
+// y no un margen que cada pantalla tendría que recordar quitarle al último.
+.narrative__body > p:last-child {
+  margin-bottom: 0;
+}
+
+// --- Banda de cifras ------------------------------------------------------------------------------
+
+.stat-band__value {
+  font-family: tokens.$display-font;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.1;
+  color: tokens.$primary;
+}
+
+.stat-band__label {
+  color: var(--bs-secondary-color);
+  font-size: 0.9375rem;
+}
+
+// --- Línea de tiempo ------------------------------------------------------------------------------
+
+// El hito cuelga de una línea vertical continua; el punto es el `::before` de cada uno, centrado
+// sobre esa línea. Es decoración pura: el orden lo lleva el `<ol>` y el año va escrito.
+.timeline__list {
+  position: relative;
+  padding-inline-start: 2rem;
+  border-inline-start: bootstrap.$border-width solid var(--bs-border-color);
+}
+
+.timeline__item {
+  position: relative;
+}
+
+.timeline__item + .timeline__item {
+  margin-block-start: 2.5rem;
+}
+
+.timeline__item::before {
+  content: "";
+  position: absolute;
+  top: 0.4rem;
+  // Medio punto más el grosor del filete: así el círculo queda centrado sobre la línea.
+  left: calc(-2rem - 0.375rem - #{bootstrap.$border-width} / 2);
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  // $accent (3.34:1) vale aquí: es un punto, no texto.
+  background-color: tokens.$accent;
+}
+
+.timeline__year {
+  font-family: tokens.$display-font;
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: tokens.$primary;
+}
+
+@include bootstrap.media-breakpoint-up(md) {
+  .timeline__list {
+    max-width: 44rem;
+  }
+}
+
+// --- Preguntas frecuentes -------------------------------------------------------------------------
+
+// Una línea de texto larga se lee mal a todo el ancho de la página; las respuestas se acotan.
+.faq__container {
+  max-width: 52rem;
+}
+
+// El ordinal de la pregunta, con el mismo papel que el del índice de categorías.
+.faq__number {
+  min-width: 1.75rem;
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+// El encabezado del acordeón es un `<h3>` y react-bootstrap le mete dentro el botón: sin esto el
+// título hereda el tamaño de un h3 y desequilibra la lista.
+.faq .accordion-header {
+  margin-bottom: 0;
+  font-size: 1rem;
+}
+
+// --- Cierre ---------------------------------------------------------------------------------------
+
+// El color lo pone `.section--brand` ($primary): el pie usa el verde más oscuro, y con los dos
+// bloques del mismo color se leían como una sola masa verde de siete rem en la que no se sabía dónde
+// acababa la página. El aire extra por abajo separa la llamada del pie sin depender solo del salto
+// de color.
+.closing-cta {
+  padding-block: 4rem 5rem;
+}
+
+.closing-cta__lead {
+  max-width: 44rem;
+}
+
+// Quien pide menos movimiento no ve ninguno: lo que se anima aquí es decoración, no información.
+@media (prefers-reduced-motion: reduce) {
+  .category-index__arrow {
+    transition: none;
+  }
+
+  .category-index__row:hover .category-index__arrow,
+  .category-index__row:focus-visible .category-index__arrow {
+    transform: none;
+  }
+}

@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Col, Offcanvas, Row } from 'react-bootstrap';
+import { Col, Container, Offcanvas, Row } from 'react-bootstrap';
 
-import { toProblem } from '../../shared/api/http';
 import { useAvailability } from '../../shared/api/availability';
+import { useProductTypes } from '../../shared/api/productTypes';
 import { useOnlineStore } from '../../shared/api/stores';
-import { EmptyState } from '../../shared/ui/EmptyState';
 import { ErrorState } from '../../shared/ui/ErrorState';
-import { LoadingState } from '../../shared/ui/LoadingState';
+import { QueryBoundary } from '../../shared/ui/QueryBoundary';
 import { ActiveFilters } from './components/ActiveFilters';
 import { CatalogFilters } from './components/CatalogFilters';
 import { CatalogLoadMore } from './components/CatalogLoadMore';
@@ -15,7 +14,7 @@ import { CatalogPagination } from './components/CatalogPagination';
 import { CatalogToolbar } from './components/CatalogToolbar';
 import { ProductCard } from './components/ProductCard';
 import { PAGE_SIZE } from './api/productKeys';
-import { useCatalogProducts, useMaxProductPrice, useProductTypes } from './api/queries';
+import { useCatalogProducts, useMaxProductPrice } from './api/queries';
 import { countActiveFilters, useCatalogParams } from './useCatalogParams';
 
 export default function CatalogPage() {
@@ -48,7 +47,9 @@ export default function CatalogPage() {
   const types = typesQuery.data ?? [];
 
   return (
-    <>
+    // El ancho lo pone cada pantalla y no el layout: la de inicio tiene bandas a sangre y no cabría
+    // dentro de un `Container` común.
+    <Container className="py-4">
       <h1 className="h3 mb-4">{t('title')}</h1>
 
       {/* Canalón ancho a partir de `lg`: los filtros y la rejilla son dos zonas distintas y tienen
@@ -78,7 +79,7 @@ export default function CatalogPage() {
               />
             </Offcanvas.Body>
           </Offcanvas>
-          {typesQuery.isError && <ErrorState code={toProblem(typesQuery.error).code} />}
+          {typesQuery.isError && <ErrorState error={typesQuery.error} />}
         </Col>
 
         <Col lg={9}>
@@ -93,41 +94,34 @@ export default function CatalogPage() {
 
           <ActiveFilters filters={criteria} types={types} onRemove={removeFilter} onClear={clearFilters} />
 
-          {/* A chunk that fails is not the screen failing: the error state is for when there is
-              nothing to show, and dropping 48 products already read to report the 49th is worse
-              than the failure itself — that one is reported where it happened, next to the button. */}
-          {productsQuery.isPending ? (
-            <LoadingState />
-          ) : productsQuery.isError && products.length === 0 ? (
-            <ErrorState
-              code={toProblem(productsQuery.error).code}
-              extensions={toProblem(productsQuery.error).extensions}
-            />
-          ) : products.length === 0 ? (
-            <EmptyState message={t('empty')} />
-          ) : (
-            <>
-              <Row xs={2} md={3} xl={4} className="g-4">
-                {products.map((product) => (
-                  <Col key={product.id}>
-                    <ProductCard product={product} available={availabilityQuery.data?.get(product.id)} />
-                  </Col>
-                ))}
-              </Row>
-              {/* Scroll adds chunks up to `PAGE_SIZE`; from there on it is the pagination's turn. */}
-              <CatalogLoadMore
-                loaded={products.length}
-                total={totalElements}
-                hasMore={productsQuery.hasNextPage}
-                isLoading={productsQuery.isFetchingNextPage}
-                failed={productsQuery.isFetchNextPageError}
-                onLoadMore={() => void productsQuery.fetchNextPage()}
-              />
-              <CatalogPagination page={page} totalPages={totalPages} onPageChange={goToPage} />
-            </>
-          )}
+          {/* A chunk that fails is not the screen failing, and `QueryBoundary` knows it: with
+              products already on screen the error is reported where it happened, next to the
+              button, and not by wiping the grid. */}
+          <QueryBoundary query={productsQuery} data={products} empty={t('empty')}>
+            {(items) => (
+              <>
+                <Row xs={2} md={3} xl={4} className="g-4">
+                  {items.map((product) => (
+                    <Col key={product.id}>
+                      <ProductCard product={product} available={availabilityQuery.data?.get(product.id)} />
+                    </Col>
+                  ))}
+                </Row>
+                {/* Scroll adds chunks up to `PAGE_SIZE`; from there on it is the pagination's turn. */}
+                <CatalogLoadMore
+                  loaded={items.length}
+                  total={totalElements}
+                  hasMore={productsQuery.hasNextPage}
+                  isLoading={productsQuery.isFetchingNextPage}
+                  failed={productsQuery.isFetchNextPageError}
+                  onLoadMore={() => void productsQuery.fetchNextPage()}
+                />
+                <CatalogPagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+              </>
+            )}
+          </QueryBoundary>
         </Col>
       </Row>
-    </>
+    </Container>
   );
 }

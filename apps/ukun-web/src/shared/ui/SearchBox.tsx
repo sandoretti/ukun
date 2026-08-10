@@ -1,6 +1,7 @@
-import { useId, useState, type FocusEvent, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { Button, Form, InputGroup } from 'react-bootstrap';
 
+import { useCombobox } from '../hooks/useCombobox';
 import { Icon } from './Icon';
 
 export type SearchSuggestion = {
@@ -25,13 +26,18 @@ type SearchBoxProps = {
   hint?: string;
   /** Announced in a polite live region, e.g. "3 suggestions". */
   status?: string;
+  /**
+   * Named variant, not a `big` boolean: `md` is the one in the navigation bar and `lg` the one the
+   * landing page leads with, where the field is the main action of the screen and not a corner of
+   * the chrome (`docs/07-frontend-ux-ui.md`).
+   */
+  size?: 'md' | 'lg';
   className?: string;
 };
 
 /**
- * The search field with its suggestion list, following the ARIA combobox-with-listbox pattern:
- * the input keeps the focus at all times and `aria-activedescendant` moves the selection, so the
- * arrow keys work without the focus ever leaving the field.
+ * The search field with its suggestion list. The keyboard, the open/closed state and the pairing of
+ * identifiers are `useCombobox`'s; what is left here is the markup and how it looks.
  *
  * It holds no server state of its own — it receives the suggestions already resolved. Who fetches
  * them is `ProductSearchBox`; this component is the base piece and can serve another list later.
@@ -47,122 +53,81 @@ export function SearchBox({
   onSelect,
   hint,
   status,
+  size = 'md',
   className = '',
 }: SearchBoxProps) {
-  const baseId = useId();
-  const inputId = `${baseId}-input`;
-  const listboxId = `${baseId}-listbox`;
-  const optionId = (index: number) => `${baseId}-option-${index}`;
-
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
-
-  const expanded = isOpen && suggestions.length > 0;
-
-  function close() {
-    setIsOpen(false);
-    setActiveIndex(-1);
-  }
-
-  function select(suggestion: SearchSuggestion) {
-    close();
-    onSelect(suggestion);
-  }
+  const combobox = useCombobox({
+    optionCount: suggestions.length,
+    onSelect: (index) => onSelect(suggestions[index]),
+    // Escape on a closed list clears the field; on an empty one there is nothing to clear.
+    onCancel: () => {
+      if (value !== '') {
+        onChange('');
+      }
+    },
+  });
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    close();
+    combobox.close();
     onSubmit(value);
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      if (suggestions.length === 0) return;
-      setIsOpen(true);
-      const step = event.key === 'ArrowDown' ? 1 : -1;
-      setActiveIndex((current) => {
-        // `-1` (nothing highlighted) is one more state of the cycle, so going past either end
-        // returns to the plain typed text instead of dead-ending on the first or last row.
-        const total = suggestions.length;
-        const state = current + 1;
-        return ((state + step + total + 1) % (total + 1)) - 1;
-      });
-      return;
-    }
-    if (event.key === 'Enter' && expanded && activeIndex >= 0) {
-      // Only when something is highlighted: with nothing chosen, Enter submits the search.
-      event.preventDefault();
-      select(suggestions[activeIndex]);
-      return;
-    }
-    if (event.key === 'Escape') {
-      // First Escape closes the list; with the list already closed it clears the field.
-      if (expanded) {
-        event.preventDefault();
-        close();
-      } else if (value !== '') {
-        onChange('');
-      }
-    }
-  }
-
-  /** The list only closes when the focus leaves the whole component, not when it moves inside it. */
-  function handleBlur(event: FocusEvent<HTMLDivElement>) {
-    if (!event.currentTarget.contains(event.relatedTarget)) {
-      close();
-    }
-  }
+  // `md` is Bootstrap's own default size and has no class of its own, so it travels as `undefined`.
+  const controlSize = size === 'lg' ? 'lg' : undefined;
 
   return (
-    <div className={`search-box ${className}`} onBlur={handleBlur}>
+    <div className={`search-box search-box--${size} ${className}`} onBlur={combobox.handleBlur}>
       <Form role="search" onSubmit={handleSubmit}>
-        <Form.Label htmlFor={inputId} className="visually-hidden">
+        <Form.Label htmlFor={combobox.inputId} className="visually-hidden">
           {label}
         </Form.Label>
-        <InputGroup>
+        <InputGroup size={controlSize}>
           <Form.Control
-            id={inputId}
+            id={combobox.inputId}
             type="search"
             role="combobox"
             autoComplete="off"
-            aria-expanded={expanded}
-            aria-controls={listboxId}
+            aria-expanded={combobox.expanded}
+            aria-controls={combobox.listboxId}
             aria-autocomplete="list"
-            aria-activedescendant={expanded && activeIndex >= 0 ? optionId(activeIndex) : undefined}
+            aria-activedescendant={combobox.activeDescendantId}
             placeholder={placeholder}
             value={value}
             onChange={(event) => {
               onChange(event.target.value);
-              setIsOpen(true);
-              setActiveIndex(-1);
+              combobox.open();
             }}
-            onKeyDown={handleKeyDown}
+            onKeyDown={combobox.handleKeyDown}
           />
-          <Button type="submit" variant="light" aria-label={submitLabel}>
-            <Icon name="search" size="sm" />
+          {/* En la barra el campo va sobre el verde de marca y un botón verde se pierde en él, así
+              que ahí es neutro; en la portada va sobre banda clara y es la llamada a la acción. */}
+          <Button type="submit" variant={size === 'lg' ? 'primary' : 'light'} aria-label={submitLabel}>
+            <Icon name="search" size={size === 'lg' ? 'md' : 'sm'} />
           </Button>
         </InputGroup>
       </Form>
 
-      {expanded && (
+      {combobox.expanded && (
         <div className="search-suggestions">
-          <ul id={listboxId} role="listbox" aria-label={label} className="list-unstyled mb-0">
+          <ul id={combobox.listboxId} role="listbox" aria-label={label} className="list-unstyled mb-0">
             {suggestions.map((suggestion, index) => (
               <li
                 key={suggestion.id}
-                id={optionId(index)}
+                id={combobox.optionId(index)}
                 role="option"
-                aria-selected={index === activeIndex}
+                aria-selected={index === combobox.activeIndex}
                 className="search-suggestion d-flex justify-content-between gap-3 px-3 py-2"
                 // The mouse must not blur the input before the click lands, or the list closes first.
                 onMouseDown={(event) => event.preventDefault()}
-                onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => select(suggestion)}
+                onMouseEnter={() => combobox.setActiveIndex(index)}
+                onClick={() => combobox.select(index)}
               >
                 <span className="text-truncate">{suggestion.label}</span>
                 {suggestion.meta !== undefined && (
-                  <span className="text-body-secondary text-tabular-nums flex-shrink-0">{suggestion.meta}</span>
+                  <span className="text-body-secondary text-tabular-nums flex-shrink-0">
+                    {suggestion.meta}
+                  </span>
                 )}
               </li>
             ))}

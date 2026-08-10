@@ -4,9 +4,11 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '../i18n/config';
 import App from './App';
-import '../shared/theme/bootstrap-overrides.scss';
-// La fuente de iconos va autohospedada por npm, nunca por CDN (docs/07-frontend-ux-ui.md).
+// La fuente de iconos va autohospedada por npm, nunca por CDN (docs/07-frontend-ux-ui.md). Va antes
+// que el tema a propósito: el tema corrige la caja del glifo, y con la misma especificidad gana la
+// última hoja en llegar. Invertir estas dos líneas devuelve el icono descentrado dentro del botón.
 import 'material-symbols/outlined.css';
+import '../shared/theme/index.scss';
 
 const queryClient = new QueryClient();
 

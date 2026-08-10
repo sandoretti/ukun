@@ -2,14 +2,37 @@
   "title": "Ukun",
   "loading": "Cargando...",
   "empty": "No hay resultados",
-  "error": "Ha ocurrido un error",
   "nav": {
     "catalog": "Catálogo",
-    "toggle": "Abrir el menú de navegación"
+    "stores": "Tiendas",
+    "news": "Novedades",
+    "about": "Sobre Ukun",
+    "comingSoon": "{{label}} (próximamente)",
+    "primary": "Navegación principal",
+    "toggle": "Abrir el menú de navegación",
+    "skipToContent": "Saltar al contenido"
+  },
+  "account": {
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta"
+  },
+  "footer": {
+    "claim": "Minimalismo y precios asequibles. Transformamos cualquier espacio con buen diseño, sin que se note en la factura.",
+    "explore": {
+      "title": "Explora",
+      "home": "Inicio",
+      "catalog": "Catálogo",
+      "premium": "Lo más alto de gama"
+    },
+    "stores": {
+      "title": "Tiendas",
+      "body": "Puedes ver y probar los productos en nuestras tiendas físicas antes de comprarlos."
+    },
+    "legal": "© {{year}} Ukun · Italo Joel Sandoval Amoretti"
   },
   "search": {
     "label": "Buscar productos",
-    "placeholder": "Sofá, mesa, litera…",
+    "placeholder": "¿Qué buscas para tu casa?",
     "submit": "Buscar",
     "hint": "Pulsa Intro para ver todos los resultados",
     "status_one": "{{count}} sugerencia",
@@ -18,6 +41,10 @@
   "language": {
     "label": "Idioma",
     "es": "Español",
-    "en": "Inglés"
+    "en": "Inglés",
+    "short": {
+      "es": "ES",
+      "en": "EN"
+    }
   }
 }

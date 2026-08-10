@@ -1,0 +1,16 @@
+@use "tokens";
+
+// El único punto donde se configura Bootstrap. `@use ... with` solo puede aparecer una vez en todo
+// el grafo de módulos, así que la configuración vive aquí y los demás parciales hacen
+// `@use "../bootstrap" as bootstrap` para leer sus variables y mixins. Sass emite el CSS de
+// Bootstrap una sola vez, en el punto donde se carga por primera vez.
+//
+// Bootstrap deriva $theme-colors de $primary/$secondary, así que configurarlos basta y evita
+// reescribir el mapa entero. `@use`/`@forward` en vez de `@import`: sass 1.80+ deprecó @import y lo
+// elimina en 3.0.
+@forward "bootstrap/scss/bootstrap" with (
+  $primary: tokens.$primary,
+  $secondary: tokens.$accent,
+  $component-active-bg: tokens.$primary,
+  $headings-font-family: tokens.$display-font
+);

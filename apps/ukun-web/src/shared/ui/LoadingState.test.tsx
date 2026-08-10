@@ -1,19 +1,15 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
+import { renderWithProviders } from '../../test/renderWithProviders';
 import { LoadingState } from './LoadingState';
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}));
-
 describe('LoadingState', () => {
-  it('renders a status role with localized aria-label', () => {
-    render(<LoadingState />);
-    // Since we mock t() to return the key 'loading'
-    const statusElement = screen.getByRole('status', { name: 'loading' });
-    expect(statusElement).toBeDefined();
+  it('announces the wait as a named status, not as a silent spinner', () => {
+    // With the real i18n bundles and not a mocked `t`: what is being checked is that the wait has a
+    // name a screen reader can read, and a mock that echoes the key would pass without it.
+    renderWithProviders(<LoadingState />);
+
+    expect(screen.getByRole('status', { name: 'Cargando...' })).toBeDefined();
   });
 });

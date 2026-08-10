@@ -3,7 +3,6 @@ import type { components } from '../../../types/api';
 export type ProductSort = components['schemas']['ProductSort'];
 export type ProductSummary = components['schemas']['ProductSummary'];
 export type ProductPage = components['schemas']['ProductPage'];
-export type ProductType = components['schemas']['ProductType'];
 
 /** Everything the listing is filtered and sorted by — the part of the URL that is not the page. */
 export type CatalogFilterInput = {
@@ -46,10 +45,4 @@ export const productKeys = {
     [...productKeys.lists(), 'chunks', criteria, page] as const,
   details: () => [...productKeys.all, 'detail'] as const,
   detail: (id: number) => [...productKeys.details(), id] as const,
-};
-
-/** A different entity from a product, so a factory of its own rather than a branch of the above. */
-export const productTypeKeys = {
-  all: ['product-types'] as const,
-  lists: () => [...productTypeKeys.all, 'list'] as const,
 };
