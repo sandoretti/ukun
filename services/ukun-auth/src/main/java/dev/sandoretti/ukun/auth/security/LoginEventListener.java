@@ -1,8 +1,8 @@
-package dev.sandoretti.ukun.auth.oauth2.internal;
+package dev.sandoretti.ukun.auth.security;
 
-import dev.sandoretti.ukun.auth.accounts.AccountCredentials;
-import dev.sandoretti.ukun.auth.accounts.AccountsApi;
-import dev.sandoretti.ukun.auth.accounts.Role;
+import dev.sandoretti.ukun.auth.application.AccountCredentials;
+import dev.sandoretti.ukun.auth.application.AccountsService;
+import dev.sandoretti.ukun.auth.domain.Role;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,9 +38,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Component
 class LoginEventListener {
 
-    private final AccountsApi accounts;
+    private final AccountsService accounts;
 
-    LoginEventListener(AccountsApi accounts) {
+    LoginEventListener(AccountsService accounts) {
         this.accounts = accounts;
     }
 

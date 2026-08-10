@@ -1,9 +1,10 @@
 // Servicio de identidad: Authorization Server de Spring Security 7 sobre su propia base, ukun_auth.
-// Lleva los tres módulos de aplicación de ADR-0017 §4 (accounts, registration, oauth2) y su
-// ModulithTest desde el primer commit con código.
+// Estructura por capas (domain/infra/application/config/security), SIN Spring Modulith: ADR-0022 lo
+// retiró porque esa herramienta prepara la extracción de un monolito y este servicio ya *es* la
+// extracción. Su verificación arquitectónica son las siete reglas de :ukun-test-support.
 //
-// Ninguna dependencia declara versión: las gestionan los dos BOM importados abajo o el catálogo
-// (gradle/libs.versions.toml). No importa el BOM de Spring Cloud, que no usa.
+// Ninguna dependencia declara versión: las gestiona el BOM importado abajo o el catálogo
+// (gradle/libs.versions.toml). No importa el BOM de Spring Cloud ni el de Modulith, que no usa.
 
 plugins {
     id("ukun-java-conventions")
@@ -12,7 +13,6 @@ plugins {
 
 dependencies {
     implementation(platform(libs.spring.boot.bom))
-    implementation(platform(libs.spring.modulith.bom))
 
     implementation(libs.spring.boot.starter.web)
     implementation(libs.spring.boot.starter.actuator)
@@ -38,10 +38,6 @@ dependencies {
     implementation(libs.spring.boot.liquibase)
     runtimeOnly(libs.postgresql)
 
-    // Módulos de aplicación (ADR-0017 §4, docs/14-modules.md).
-    implementation(libs.spring.modulith.starter.core)
-    runtimeOnly(libs.spring.modulith.actuator)
-
     // A diferencia de ukun-api, aquí no hay MapStruct: este servicio es anémico (ADR-0004) y sus
     // DTOs son tres records que se construyen a mano. Lombok sí, porque la regla dura de CLAUDE.md
     // pide @Getter/@Setter con equals/hashCode escritos a mano en toda entidad — y sin la cadena de
@@ -56,8 +52,6 @@ dependencies {
     testImplementation(libs.spring.boot.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.spring.modulith.starter.test)
-    testImplementation(libs.spring.modulith.docs)
 
     // Las siete reglas de docs/03 §3, compartidas con ukun-api. Arrastra ArchUnit por `api`.
     testImplementation(project(":ukun-test-support"))

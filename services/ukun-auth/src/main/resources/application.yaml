@@ -92,10 +92,6 @@ spring:
   liquibase:
     contexts: demo
 
-management:
-  endpoints:
-    web:
-      exposure:
-        # /actuator/modulith prints the module structure and its dependencies, which is far easier
-        # to read than the exception of a failing verify(). Development only (docs/14-modules.md §6).
-        include: health,modulith
+# No /actuator/modulith here, unlike ukun-api: this service has no application modules to print
+# (ADR-0022). Nothing else is dev-only in it yet — springdoc is not wired because the only contract
+# it exposes, /internal/accounts, is service-to-service and lives in docs/api/openapi/ukun-auth.yaml.

@@ -1,6 +1,6 @@
-package dev.sandoretti.ukun.auth.accounts.domain;
+package dev.sandoretti.ukun.auth.domain;
 
-import dev.sandoretti.ukun.auth.accounts.Role;
+import dev.sandoretti.ukun.auth.domain.Role;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;

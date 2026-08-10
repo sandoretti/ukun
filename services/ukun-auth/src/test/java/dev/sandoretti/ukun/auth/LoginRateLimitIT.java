@@ -1,9 +1,9 @@
-package dev.sandoretti.ukun.auth.oauth2;
+package dev.sandoretti.ukun.auth;
 
-import static dev.sandoretti.ukun.auth.accounts.AccountMother.PASSWORD;
+import static dev.sandoretti.ukun.auth.AccountMother.PASSWORD;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.sandoretti.ukun.auth.accounts.Role;
+import dev.sandoretti.ukun.auth.domain.Role;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

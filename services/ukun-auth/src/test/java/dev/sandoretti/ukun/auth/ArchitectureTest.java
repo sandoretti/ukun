@@ -18,6 +18,10 @@ import org.junit.jupiter.api.Test;
  * handed to {@code log.*(...)}, leaks a credential rather than a product name. Those are defects
  * #10, #20a and #20b of the legacy, and all three come from the same cause.
  *
+ * <p>Since ADR-0022 this is the <strong>only</strong> architectural verification of this service:
+ * there is no {@code ModulithTest} here, because there are no application modules. If you are about
+ * to add one, read that ADR first — {@code docs/14-modules.md} is a document about {@code ukun-api}.
+ *
  * <p>Each test calls {@code check} and lets ArchUnit's own {@code AssertionError} through: its
  * message lists the offending class, method and line.
  */

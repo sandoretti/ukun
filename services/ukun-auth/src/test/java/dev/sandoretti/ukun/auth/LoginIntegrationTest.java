@@ -1,7 +1,6 @@
-package dev.sandoretti.ukun.auth.oauth2;
+package dev.sandoretti.ukun.auth;
 
-import dev.sandoretti.ukun.auth.AbstractIntegrationTest;
-import dev.sandoretti.ukun.auth.accounts.AccountMother;
+import dev.sandoretti.ukun.auth.AccountMother;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;

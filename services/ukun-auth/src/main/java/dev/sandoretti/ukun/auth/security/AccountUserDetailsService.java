@@ -1,8 +1,8 @@
-package dev.sandoretti.ukun.auth.oauth2.internal;
+package dev.sandoretti.ukun.auth.security;
 
-import dev.sandoretti.ukun.auth.accounts.AccountCredentials;
-import dev.sandoretti.ukun.auth.accounts.AccountsApi;
-import dev.sandoretti.ukun.auth.accounts.Role;
+import dev.sandoretti.ukun.auth.application.AccountCredentials;
+import dev.sandoretti.ukun.auth.application.AccountsService;
+import dev.sandoretti.ukun.auth.domain.Role;
 import java.util.List;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 
 /**
  * Turns an account into something Spring Security can authenticate. It goes through
- * {@link AccountsApi} and never through the repository — that is the boundary
- * {@code ApplicationModules.verify()} enforces (docs/14-modules.md §2).
+ * {@link AccountsService} and never through {@code AccountRepository}: what comes back is a record,
+ * so no lazy association can escape a closed session into the middle of a login.
  *
  * <p>The username is the email, because that is what a person types. It is <em>not</em> what ends up
  * in the {@code sub} claim: {@link TokenClaimsCustomizer} replaces it with the account's UUID,
@@ -29,9 +29,9 @@ import org.springframework.stereotype.Service;
 @Service
 class AccountUserDetailsService implements UserDetailsService {
 
-    private final AccountsApi accounts;
+    private final AccountsService accounts;
 
-    AccountUserDetailsService(AccountsApi accounts) {
+    AccountUserDetailsService(AccountsService accounts) {
         this.accounts = accounts;
     }
 

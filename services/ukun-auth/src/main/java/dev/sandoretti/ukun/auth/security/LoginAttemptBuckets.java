@@ -1,4 +1,4 @@
-package dev.sandoretti.ukun.auth.oauth2.internal;
+package dev.sandoretti.ukun.auth.security;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
  * does not.
  */
 @Component
-class LoginAttemptBuckets {
+public class LoginAttemptBuckets {
 
     /** Room for a person who mistypes, none for a script. */
     private static final Bandwidth BURST = Bandwidth.builder()
@@ -43,7 +43,7 @@ class LoginAttemptBuckets {
 
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-    Bucket forAttempt(String ip, String email) {
+    public Bucket forAttempt(String ip, String email) {
         return buckets.computeIfAbsent(keyOf(ip, email), key -> newBucket());
     }
 

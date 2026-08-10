@@ -1,4 +1,4 @@
-package dev.sandoretti.ukun.auth.oauth2.internal;
+package dev.sandoretti.ukun.auth.config;
 
 import java.util.List;
 import lombok.Getter;

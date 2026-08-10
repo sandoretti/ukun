@@ -1,5 +1,7 @@
-package dev.sandoretti.ukun.auth.oauth2.internal;
+package dev.sandoretti.ukun.auth.config;
 
+import dev.sandoretti.ukun.auth.security.LoginAttemptBuckets;
+import dev.sandoretti.ukun.auth.security.LoginRateLimiter;
 import javax.sql.DataSource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;

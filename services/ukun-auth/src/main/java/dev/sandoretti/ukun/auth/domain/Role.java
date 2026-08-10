@@ -1,9 +1,7 @@
-package dev.sandoretti.ukun.auth.accounts;
+package dev.sandoretti.ukun.auth.domain;
 
 /**
- * The closed list of business roles, ADR-0006. It lives in the module's root package rather than in
- * {@code domain/} because it is part of what {@code AccountsApi} returns, and a subpackage would put
- * it out of reach of {@code oauth2}.
+ * The closed list of business roles, ADR-0006.
  *
  * <p>{@code CUSTOMER} and {@code EMPLOYEE} are mutually exclusive — the saga refuses an email that
  * already holds the other one — and {@code ADMIN} is a sub-flag that only accompanies

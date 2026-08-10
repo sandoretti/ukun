@@ -1,5 +1,6 @@
-package dev.sandoretti.ukun.auth.accounts;
+package dev.sandoretti.ukun.auth;
 
+import dev.sandoretti.ukun.auth.domain.Role;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;

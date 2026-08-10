@@ -1,4 +1,4 @@
-package dev.sandoretti.ukun.auth.oauth2.internal;
+package dev.sandoretti.ukun.auth.security;
 
 import io.github.bucket4j.ConsumptionProbe;
 import jakarta.servlet.FilterChain;
@@ -17,7 +17,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * <p>Deliberately not a {@code @Component}: Boot registers any {@code Filter} bean into the servlet
  * chain for every request, and this one belongs to a single route of a single security chain. It is
- * constructed by {@code AuthorizationServerConfig} and added with {@code addFilterBefore}.
+ * constructed by {@code AuthorizationServerConfig} and added with {@code addFilterBefore} — which is
+ * the only reason this class and {@link LoginAttemptBuckets} are public rather than package-private:
+ * the wiring lives in {@code config} and the component in {@code security}.
  *
  * <h2>Why the response is a bare 429 and not a ProblemDetail</h2>
  *
@@ -34,7 +36,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * <em>which emails exist</em> — which a 429 keyed on IP + email does not reveal, because an unknown
  * email is throttled exactly like a known one.
  */
-class LoginRateLimiter extends OncePerRequestFilter {
+public class LoginRateLimiter extends OncePerRequestFilter {
 
     private static final String LOGIN_PATH = "/login";
 
@@ -42,7 +44,7 @@ class LoginRateLimiter extends OncePerRequestFilter {
 
     private final LoginAttemptBuckets buckets;
 
-    LoginRateLimiter(LoginAttemptBuckets buckets) {
+    public LoginRateLimiter(LoginAttemptBuckets buckets) {
         this.buckets = buckets;
     }
 

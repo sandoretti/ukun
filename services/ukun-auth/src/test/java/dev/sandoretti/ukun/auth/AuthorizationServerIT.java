@@ -1,9 +1,8 @@
-package dev.sandoretti.ukun.auth.oauth2;
+package dev.sandoretti.ukun.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.nimbusds.jwt.SignedJWT;
-import dev.sandoretti.ukun.auth.AbstractIntegrationTest;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;

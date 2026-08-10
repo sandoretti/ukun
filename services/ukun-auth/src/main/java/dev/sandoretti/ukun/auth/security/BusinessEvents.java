@@ -1,4 +1,4 @@
-package dev.sandoretti.ukun.auth.oauth2.internal;
+package dev.sandoretti.ukun.auth.security;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

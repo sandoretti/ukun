@@ -1,7 +1,7 @@
-package dev.sandoretti.ukun.auth.oauth2;
+package dev.sandoretti.ukun.auth;
 
-import static dev.sandoretti.ukun.auth.accounts.AccountMother.CUSTOMER_EMAIL;
-import static dev.sandoretti.ukun.auth.accounts.AccountMother.PASSWORD;
+import static dev.sandoretti.ukun.auth.AccountMother.CUSTOMER_EMAIL;
+import static dev.sandoretti.ukun.auth.AccountMother.PASSWORD;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.nimbusds.jwt.SignedJWT;

@@ -1,8 +1,8 @@
-package dev.sandoretti.ukun.auth.oauth2.internal;
+package dev.sandoretti.ukun.auth.security;
 
-import dev.sandoretti.ukun.auth.accounts.AccountCredentials;
-import dev.sandoretti.ukun.auth.accounts.AccountsApi;
-import dev.sandoretti.ukun.auth.accounts.Role;
+import dev.sandoretti.ukun.auth.application.AccountCredentials;
+import dev.sandoretti.ukun.auth.application.AccountsService;
+import dev.sandoretti.ukun.auth.domain.Role;
 import java.util.List;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
@@ -42,9 +42,9 @@ class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext>
      */
     private static final String RESOURCE_SERVER = "ukun-api";
 
-    private final AccountsApi accounts;
+    private final AccountsService accounts;
 
-    TokenClaimsCustomizer(AccountsApi accounts) {
+    TokenClaimsCustomizer(AccountsService accounts) {
         this.accounts = accounts;
     }
 

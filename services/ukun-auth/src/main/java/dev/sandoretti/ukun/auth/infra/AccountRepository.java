@@ -1,12 +1,12 @@
-package dev.sandoretti.ukun.auth.accounts.infra;
+package dev.sandoretti.ukun.auth.infra;
 
-import dev.sandoretti.ukun.auth.accounts.domain.Account;
+import dev.sandoretti.ukun.auth.domain.Account;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-/** Persistence of {@code accounts}. Internal to the module: nothing outside it may inject this. */
+/** Persistence of accounts. Injected by {@code AccountsService} and by nothing else. */
 public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     /**

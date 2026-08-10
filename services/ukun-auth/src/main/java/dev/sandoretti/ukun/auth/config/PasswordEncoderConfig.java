@@ -1,4 +1,4 @@
-package dev.sandoretti.ukun.auth.accounts.internal;
+package dev.sandoretti.ukun.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -6,8 +6,7 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
- * The password hash, which ADR-0017 §4 places in {@code accounts} — it belongs next to the column it
- * writes.
+ * The password hash.
  *
  * <p>There is nothing to "fix later" here, and that is the whole point: the legacy stores
  * {@code cuenta.contrasenna} in the clear in a {@code VARCHAR(16)} and compares it with a string

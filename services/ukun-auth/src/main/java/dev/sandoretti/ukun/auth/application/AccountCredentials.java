@@ -1,11 +1,13 @@
-package dev.sandoretti.ukun.auth.accounts;
+package dev.sandoretti.ukun.auth.application;
 
+import dev.sandoretti.ukun.auth.domain.Role;
 import java.util.Set;
 import java.util.UUID;
 
 /**
- * What {@code accounts} publishes about an account, and the only shape in which it leaves the
- * module: a record, never the {@code Account} entity (docs/14-modules.md §2).
+ * What this service knows about an account, and the only shape in which it leaves the service
+ * layer: a record, never the {@code Account} entity. That is not a convention — the fourth of the
+ * seven ArchUnit rules of {@code docs/03-analisis-y-patrones.md} §3 fails the build otherwise.
  *
  * @param accountId the value that becomes the {@code sub} claim and that {@code ukun-api} stores as
  *     {@code customer.account_id} — opaque on the other side, with no real foreign key, because it
