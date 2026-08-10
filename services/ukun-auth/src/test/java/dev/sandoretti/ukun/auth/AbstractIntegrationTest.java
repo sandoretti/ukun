@@ -26,9 +26,9 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * <h2>Why more than one database</h2>
  *
  * The same reason as in {@code ukun-api}: {@link SchemaBaselineIT} runs under {@code contexts=prod}
- * and asserts the schema and that nothing seeded it, while the demo accounts of issue #23 will need
- * a database migrated under {@code demo}. Sharing one would let the order in which the classes
- * happen to run decide which of the two fails.
+ * and asserts the schema and that nothing seeded it, while {@link DemoAccountsIT} needs a database
+ * migrated under {@code demo}. Sharing one would let the order in which the classes happen to run
+ * decide which of the two fails.
  *
  * <p>That is also why the datasource is wired with {@code @DynamicPropertySource} instead of the
  * {@code @ServiceConnection} that {@code docs/13} §1 describes: {@code @ServiceConnection} points
@@ -39,7 +39,7 @@ public abstract class AbstractIntegrationTest {
     /** Schema only: what the {@code prod} Liquibase context produces. */
     protected static final String SCHEMA_ONLY_DATABASE = "ukun_auth_schema";
 
-    /** Schema plus the demo accounts: what the {@code demo} context produces (issue #23). */
+    /** Schema plus the demo accounts: what the {@code demo} context produces ({@link DemoAccountsIT}). */
     protected static final String SEEDED_DATABASE = "ukun_auth_demo";
 
     /**

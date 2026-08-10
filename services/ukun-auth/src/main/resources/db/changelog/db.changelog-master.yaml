@@ -4,9 +4,15 @@
 #
 # Order is the execution order and never changes. `baseline/` is the complete schema, applied once
 # to an empty database; `releases/vX.Y/` only appears if implementing a feature *discovers* a change
-# (docs/10-modelo-de-datos.md §8); `demo/` will carry the seeded accounts of issue #23 under
-# `context: demo` and never runs in production.
+# (docs/10-modelo-de-datos.md §8); `demo/` carries the seeded accounts under `context: demo` and
+# never runs in production.
+#
+# The demo include goes last and stays last: it is data on top of a schema, so it needs every table
+# it fills to exist already.
 databaseChangeLog:
   - include:
       file: baseline/001-esquema-inicial.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: demo/001-datos-demo.yaml
       relativeToChangelogFile: true

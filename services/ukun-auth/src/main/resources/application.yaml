@@ -16,11 +16,11 @@ spring:
   # ukun_app — different databases, different change histories.
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
-    # Never leave this unset, even while no demo changeset exists yet. With no contexts configured
-    # Liquibase runs *every* changeset, so the day issue #23 adds the seeded demo accounts the
-    # default failure mode would not be "the demo data is missing", it would be "production seeds
-    # itself with accounts whose password is public knowledge". Schema changesets carry no context
-    # and therefore always apply, whichever value is active here.
+    # Never leave this unset. With no contexts configured Liquibase runs *every* changeset, and the
+    # demo changesets seed accounts whose password is written down in docs/06-entorno-local-tilt.md:
+    # the failure mode of forgetting this line is not "the demo data is missing", it is "production
+    # seeded itself with public credentials". Schema changesets carry no context and therefore always
+    # apply, whichever value is active here.
     contexts: prod
 
   jpa:
@@ -86,9 +86,8 @@ spring:
     activate:
       on-profile: dev
 
-  # compose.dev.yaml sets SPRING_PROFILES_ACTIVE=dev, so `tilt up` gets the demo accounts with no
-  # extra wiring. The changeset that seeds them is issue #23; the context is declared here first so
-  # that slice only has to add the file.
+  # compose.dev.yaml sets SPRING_PROFILES_ACTIVE=dev, so `tilt up` gets the fourteen demo accounts
+  # of db/changelog/demo/ with no extra wiring.
   liquibase:
     contexts: demo
 

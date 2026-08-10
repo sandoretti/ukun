@@ -32,9 +32,10 @@ services:
       context: .
       dockerfile: services/ukun-auth/Dockerfile.dev
     # Sin esto el perfil dev de application.yaml no se activa nunca, y con él el `contexts: demo` de
-    # Liquibase que el issue #23 necesita para sembrar las cuentas de demostración. ukun-api ya lo
-    # tenía; ukun-auth no, y no se notaría hasta que alguien se preguntase por qué la base de dev
-    # sale vacía. (Aquí no hay /actuator/modulith que activar, a diferencia de ukun-api: ADR-0022.)
+    # Liquibase que siembra las catorce cuentas de demostración (contraseña en
+    # `docs/06-entorno-local-tilt.md`). ukun-api ya lo tenía; ukun-auth no, y no se notaría hasta que
+    # alguien se preguntase por qué no puede iniciar sesión con ninguna cuenta.
+    # (Aquí no hay /actuator/modulith que activar, a diferencia de ukun-api: ADR-0022.)
     environment:
       - SPRING_PROFILES_ACTIVE=dev
     ports:
