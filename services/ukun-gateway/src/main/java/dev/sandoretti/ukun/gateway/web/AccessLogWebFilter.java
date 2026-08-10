@@ -2,6 +2,7 @@ package dev.sandoretti.ukun.gateway.web;
 
 import dev.sandoretti.ukun.gateway.security.UkunOidcUser;
 import java.time.Duration;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -62,10 +63,8 @@ class AccessLogWebFilter implements WebFilter {
 
     private static final String ACCOUNT_ID = "accountId";
 
-    /** What is printed when the exchange ended before a status was assigned, and when nobody is logged in. */
+    /** What is printed when the exchange ended before a status was assigned. */
     private static final String UNKNOWN_STATUS = "-";
-
-    private static final String ANONYMOUS = "";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -76,21 +75,24 @@ class AccessLogWebFilter implements WebFilter {
         // reactive lookup there would be a subscription nobody is going to wait for. Resolving it up
         // front costs nothing — the security chain, which runs before this filter, already loaded the
         // session's context, so this Mono is already valued.
+        //
+        // Absence stays an Optional all the way to `emit` instead of collapsing into a sentinel
+        // string: there are two ways to have no account here — an anonymous request and a principal
+        // this service does not recognise — and neither is an account whose id happens to be empty.
         return exchange.getPrincipal()
-                .map(principal -> UkunOidcUser.accountIdOf(principal).orElse(ANONYMOUS))
-                .defaultIfEmpty(ANONYMOUS)
+                .map(UkunOidcUser::accountIdOf)
+                .defaultIfEmpty(Optional.empty())
                 .flatMap(accountId ->
                         chain.filter(exchange).doFinally(signal -> emit(exchange, accountId, startedAt, signal)));
     }
 
-    private static void emit(ServerWebExchange exchange, String accountId, long startedAt, SignalType signal) {
+    private static void emit(
+            ServerWebExchange exchange, Optional<String> accountId, long startedAt, SignalType signal) {
+
         HttpStatusCode status = exchange.getResponse().getStatusCode();
         long millis = Duration.ofNanos(System.nanoTime() - startedAt).toMillis();
 
-        boolean named = !accountId.isEmpty();
-        if (named) {
-            MDC.put(ACCOUNT_ID, accountId);
-        }
+        accountId.ifPresent(id -> MDC.put(ACCOUNT_ID, id));
 
         // Put, log and remove in one synchronous block with no operator in between, so no signal can
         // hop threads while the key is set. It is the same narrow guarantee the `BusinessEvents` of
@@ -105,9 +107,7 @@ class AccessLogWebFilter implements WebFilter {
                             status != null ? status.value() : UNKNOWN_STATUS,
                             millis);
         } finally {
-            if (named) {
-                MDC.remove(ACCOUNT_ID);
-            }
+            MDC.remove(ACCOUNT_ID);
         }
     }
 
