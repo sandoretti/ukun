@@ -50,12 +50,19 @@ services:
       # y Tilt necesita ese contexto para poder vigilar los ficheros de build compartidos.
       context: .
       dockerfile: services/ukun-gateway/Dockerfile.dev
+    # Sin esto el gateway serviría el SPA como build estático, y en desarrollo ese build no existe:
+    # el perfil dev es el que enruta hacia el dev server de Vite con HMR y el que relaja la CSP para
+    # que arranque (docs/06-entorno-local-tilt.md, DevSpaRouteConfig).
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
     ports:
       - "${JDWP_GATEWAY_PORT:-5007}:5005"
     depends_on:
       ukun-api:
         condition: service_started
       ukun-auth:
+        condition: service_started
+      ukun-web:
         condition: service_started
 
   ukun-web:

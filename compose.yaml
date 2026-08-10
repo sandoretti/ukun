@@ -81,6 +81,15 @@ services:
       dockerfile: services/ukun-gateway/Dockerfile
     ports:
       - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      # Los tres destinos que este servicio enruta, por nombre de contenedor: los resuelve el
+      # gateway desde dentro de la red de Docker, nunca el navegador — es la misma distinción que
+      # separa UKUN_AUTH_JWK_SET_URI de UKUN_AUTH_ISSUER en ukun-api, y aquí no hay ningún valor
+      # que el navegador tenga que ver.
+      - UKUN_API_URI=${UKUN_API_URI:-http://ukun-api:8081}
+      - UKUN_AUTH_URI=${UKUN_AUTH_URI:-http://ukun-auth:9000}
+      # El dev server de Vite, al que solo enruta el perfil dev (compose.dev.yaml).
+      - UKUN_WEB_URI=${UKUN_WEB_URI:-http://ukun-web:5173}
     depends_on:
       - ukun-api
       - ukun-auth

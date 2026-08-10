@@ -2,6 +2,55 @@ spring:
   application:
     name: ukun-gateway
 
+  cloud:
+    gateway:
+      # El prefijo lleva `server.webflux` desde el tren 2025.x, igual que el artefacto: el
+      # `spring.cloud.gateway.routes` de cualquier ejemplo anterior ya no lo lee nadie, y una ruta
+      # bajo el prefijo viejo no falla — simplemente no existe.
+      server:
+        webflux:
+          # Estas cinco rutas son el sustituto del nginx/nginx.conf legacy (skill `spring-gateway`
+          # §4). No se portan sus dos `location` hacia los monolitos, que no están en servicio
+          # (ADR-0007): lo que se porta es el papel de único punto de entrada.
+          #
+          # No hay ruta para /internal/** y eso es el mecanismo, no un olvido: sin ruta, sin recurso
+          # estático y excluida del fallback del SPA (ReservedPaths), ningún HandlerMapping devuelve
+          # handler y el DispatcherHandler responde 404. Ver docs/08 §3 y GatewayRoutingIT.
+          routes:
+            - id: api
+              uri: ${ukun.gateway.api-uri}
+              predicates:
+                - Path=/api/**
+
+            # Las fotos de producto. El gateway es dueño de la RUTA; el adaptador que las sirve vive
+            # en el módulo `storage` de ukun-api, porque es lo que pasa a ser un cliente de S3 en
+            # v1.1 (ADR-0017 §1, docs/08 §9). Aquí no se configura ningún directorio de ficheros.
+            - id: media
+              uri: ${ukun.gateway.api-uri}
+              predicates:
+                - Path=/media/**
+
+            # OJO al montar el BFF (issue #28): /oauth2/authorization/{id} y /login/oauth2/code/{id}
+            # son endpoints LOCALES de la cadena de seguridad de este servicio y ganan a estas dos
+            # rutas por construcción, no por configuración. Explicado en GatewaySecurityConfig.
+            - id: auth-oauth2
+              uri: ${ukun.gateway.auth-uri}
+              predicates:
+                - Path=/oauth2/**
+
+            - id: auth-login
+              uri: ${ukun.gateway.auth-uri}
+              predicates:
+                - Path=/login/oauth2/**
+
+            # El documento de descubrimiento del Authorization Server, que es lo que el navegador
+            # necesita alcanzar además de /oauth2/**. No está en ukun-auth.yaml a propósito: es
+            # estándar y lo publica Spring Authorization Server (ver la introducción de ese contrato).
+            - id: auth-well-known
+              uri: ${ukun.gateway.auth-uri}
+              predicates:
+                - Path=/.well-known/**
+
 server:
   port: 8080
 
@@ -14,3 +63,52 @@ management:
     health:
       probes:
         enabled: true
+
+ukun:
+  gateway:
+    # Nombre interno del contenedor por defecto, sobreescribible por entorno: es el patrón que ya
+    # usa ukun-api con UKUN_AUTH_JWK_SET_URI, y lo que permite que cada worktree desplace los
+    # puertos sin tocar este fichero. Los tests de integración apuntan estos dos a un stub.
+    api-uri: ${UKUN_API_URI:http://ukun-api:8081}
+    auth-uri: ${UKUN_AUTH_URI:http://ukun-auth:9000}
+    web-uri: ${UKUN_WEB_URI:http://ukun-web:5173}
+
+    # Todavía no hay nada que deje aquí el build de apps/ukun-web (haría falta una etapa de build del
+    # frontend en el Dockerfile, que es de otra pista). Hasta entonces el fallback responde 404, que
+    # es exactamente lo que hace un directorio vacío.
+    web-root: ${UKUN_WEB_ROOT:file:/opt/app/web/}
+
+    # El mismo valor que spring.servlet.multipart.max-file-size de ukun-api. Que los dos coincidan es
+    # lo que evita repetir el defecto #17 (docs/08 §9).
+    max-body-size: 5MB
+
+    # 'unsafe-inline' aparece en style-src y SOLO ahí: react-bootstrap posiciona dropdowns, tooltips
+    # y modales escribiendo el atributo `style` desde Popper, que la directiva cubre. script-src se
+    # queda sin él a propósito — es la mitad que de verdad importa (docs/08 §8).
+    content-security-policy: >-
+      default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+      img-src 'self' data:; font-src 'self'; connect-src 'self';
+      frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  # `tilt up` sirve la aplicación entera por el gateway (docs/06-entorno-local-tilt.md), así que el
+  # dev server de Vite queda detrás de él y su HMR también. La ruta que lo enruta vive en Java
+  # (DevSpaRouteConfig) y no aquí: una lista bajo `on-profile` REEMPLAZA a la del documento por
+  # defecto en vez de sumarse, así que declararla aquí borraría las cinco rutas de arriba. Los
+  # RouteLocator, en cambio, se componen.
+
+# A través del gateway, el dev server inyecta el preámbulo de React Refresh y el polyfill de
+# modulepreload como <script> inline, mete el CSS de cada módulo como <style> en caliente, y abre el
+# websocket de HMR contra el propio origen. Sin estas tres relajaciones la aplicación no arranca en
+# el puerto del gateway. Es una propiedad escalar, así que aquí sí se puede sobreescribir.
+ukun:
+  gateway:
+    content-security-policy: >-
+      default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws:;
+      frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'

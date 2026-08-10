@@ -135,7 +135,10 @@ docker_build(
         restart_container(),
     ],
 )
-dc_resource('ukun-gateway', resource_deps=['gradle-gateway', 'ukun-api', 'ukun-auth'], labels=['backend'])
+# Depende también de ukun-web: desde v0.5 el gateway es el único punto de entrada y enruta hacia el
+# dev server de Vite todo lo que no sea backend, así que localhost:$GATEWAY_PORT sirve la aplicación
+# entera (docs/06-entorno-local-tilt.md).
+dc_resource('ukun-gateway', resource_deps=['gradle-gateway', 'ukun-api', 'ukun-auth', 'ukun-web'], labels=['backend'])
 
 docker_build(
     ref='ukun/web:dev',
