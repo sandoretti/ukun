@@ -2,6 +2,7 @@ import { http as mswHttp, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { server } from '../../test/msw/server';
+import { unauthenticated } from '../../test/msw/sessionHandlers';
 import { startSignIn } from '../auth/signIn';
 import { ProblemDetailError, http } from './http';
 
@@ -9,14 +10,6 @@ vi.mock('../auth/signIn', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../auth/signIn')>()),
   startSignIn: vi.fn(),
 }));
-
-/** A 401 with the body the gateway's entry point answers with. */
-function unauthenticated() {
-  return HttpResponse.json(
-    { type: 'https://ukun.dev/errors/unauthenticated', title: 'UNAUTHENTICATED', status: 401, code: 'UNAUTHENTICATED' },
-    { status: 401 },
-  );
-}
 
 describe('http', () => {
   beforeEach(() => {

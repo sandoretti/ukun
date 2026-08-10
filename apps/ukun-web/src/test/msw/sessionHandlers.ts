@@ -15,8 +15,17 @@ const base = import.meta.env.VITE_API_URL || '';
  * **The default is the anonymous visitor**, which is the state most screens are tested in — the
  * catalogue, the product sheet and the stores are public and must work with no session at all.
  */
-const anonymous = http.get(`${base}/api/me`, () =>
-  HttpResponse.json(
+const anonymous = http.get(`${base}/api/me`, () => unauthenticated());
+
+export const sessionHandlers = [anonymous];
+
+/**
+ * The 401 the gateway's entry point answers with, body included. It is exported because the
+ * interceptor is tested against the same answer on a different endpoint: what tells a dead session
+ * apart from an anonymous read is the request, never the response.
+ */
+export function unauthenticated() {
+  return HttpResponse.json(
     {
       type: 'https://ukun.dev/errors/unauthenticated',
       title: 'UNAUTHENTICATED',
@@ -25,10 +34,8 @@ const anonymous = http.get(`${base}/api/me`, () =>
       code: 'UNAUTHENTICATED',
     },
     { status: 401 },
-  ),
-);
-
-export const sessionHandlers = [anonymous];
+  );
+}
 
 /** The account every signed-in test uses unless it needs a different set of roles. */
 export const currentUser: CurrentUser = {
