@@ -3,10 +3,8 @@ package dev.sandoretti.ukun.api.customers.application;
 import dev.sandoretti.ukun.api.customers.domain.Customer;
 import dev.sandoretti.ukun.api.customers.infra.CustomerRepository;
 import dev.sandoretti.ukun.api.identity.CurrentAccount;
-import dev.sandoretti.ukun.api.shared.error.FieldValidationException;
 import dev.sandoretti.ukun.api.shared.error.ResourceNotFoundException;
 import dev.sandoretti.ukun.api.shared.observability.BusinessEvents;
-import dev.sandoretti.ukun.api.stores.StoresApi;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +36,12 @@ public class MyProfileService {
 
     private final CustomerRepository customers;
     private final ProfileMapper mapper;
-    private final StoresApi stores;
+    private final FavoriteStores favoriteStores;
 
-    public MyProfileService(CustomerRepository customers, ProfileMapper mapper, StoresApi stores) {
+    public MyProfileService(CustomerRepository customers, ProfileMapper mapper, FavoriteStores favoriteStores) {
         this.customers = customers;
         this.mapper = mapper;
-        this.stores = stores;
+        this.favoriteStores = favoriteStores;
     }
 
     /**
@@ -67,7 +65,7 @@ public class MyProfileService {
         Customer customer = customers.findByAccountId(account.accountId())
                 .orElseThrow(() -> new ResourceNotFoundException("Customer", account.accountId()));
 
-        requireExistingStore(request.favoriteStoreId());
+        favoriteStores.requireExisting(request.favoriteStoreId());
 
         // RF-05: a form saved without edits is reported, not written. Asked before anything is applied,
         // because afterwards there is nothing left to compare against.
@@ -89,18 +87,6 @@ public class MyProfileService {
         }
 
         return mapper.toResponse(customer, account.email());
-    }
-
-    /**
-     * Checked before writing so a wrong value comes back as a {@code 400} naming the field, the same
-     * answer the signup gives it, instead of a foreign key violation flattened into a {@code 409} with
-     * nothing to point at ({@code docs/08-identidad-y-seguridad.md} §3, step 0). {@code null} is a
-     * legitimate value — it clears the favourite store — so it is not asked about.
-     */
-    private void requireExistingStore(Long favoriteStoreId) {
-        if (favoriteStoreId != null && !stores.exists(favoriteStoreId)) {
-            throw new FieldValidationException(FAVORITE_STORE_FIELD, "does not match an existing store");
-        }
     }
 
     /** Field names, never their values: a profile is personal data ({@code docs/11} §3). */

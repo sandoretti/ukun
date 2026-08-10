@@ -74,7 +74,7 @@ class CurrentUserIT extends ProfileIntegrationTest {
         return restTestClient
                 .get()
                 .uri(ME)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .exchange()
                 .expectStatus()
                 .isOk()

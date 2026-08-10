@@ -6,11 +6,8 @@ import dev.sandoretti.ukun.api.customers.domain.Customer;
 import dev.sandoretti.ukun.api.customers.domain.ProfileLocale;
 import dev.sandoretti.ukun.api.stores.StoreMother;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import java.util.List;
 import java.util.UUID;
-import org.hibernate.SessionFactory;
-import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +17,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * The fixture the two {@code /api/me} suites share: a running application, a real Postgres, and a real
@@ -78,12 +73,6 @@ abstract class ProfileIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private EntityManager entityManager;
 
-    @Autowired
-    private EntityManagerFactory entityManagerFactory;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-
     @BeforeEach
     void seedTheStoreNetwork() {
         inATransaction(() -> List.of(StoreMother.alcalaStore(), StoreMother.barcelonaStore())
@@ -133,26 +122,8 @@ abstract class ProfileIntegrationTest extends AbstractIntegrationTest {
         return jdbc.queryForObject("SELECT id FROM store WHERE name = ?", Long.class, name);
     }
 
-    protected long customerIdOf(UUID accountId) {
-        return jdbc.queryForObject("SELECT id FROM customer WHERE account_id = ?", Long.class, accountId);
-    }
-
-    protected void inATransaction(Runnable work) {
-        new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run());
-    }
-
-    /**
-     * A cleared, enabled Hibernate statement counter. Every statement issued after this call and before
-     * the assertion belongs to the request under test, which is what makes an <em>exact</em> count
-     * meaningful rather than "at most a few".
-     */
-    protected Statistics freshStatistics() {
-        Statistics statistics =
-                entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
-        statistics.setStatisticsEnabled(true);
-        statistics.clear();
-
-        return statistics;
+    protected static String bearer(String token) {
+        return "Bearer " + token;
     }
 
     private static void stopAuth() {

@@ -1,10 +1,16 @@
 package dev.sandoretti.ukun.api;
 
+import jakarta.persistence.EntityManagerFactory;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
@@ -92,6 +98,12 @@ public abstract class AbstractIntegrationTest {
         POSTGRES.start();
     }
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     /**
      * Creates {@code database} if this is the first class to ask for it and points the context's
      * datasource at it. The {@code test} and {@code integrationTest} tasks run test classes sequentially, so there is no race
@@ -119,6 +131,35 @@ public abstract class AbstractIntegrationTest {
 
     protected static PostgreSQLContainer postgres() {
         return POSTGRES;
+    }
+
+    /**
+     * Runs {@code work} in a transaction of its own that commits before it returns. Every fixture in
+     * this suite needs it for the same reason: the endpoint under test is served on another thread, so
+     * rows left inside an open test transaction would be invisible to it.
+     */
+    protected void inATransaction(Runnable work) {
+        new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run());
+    }
+
+    /**
+     * A cleared, enabled Hibernate statement counter. Every statement issued after this call and before
+     * the assertion belongs to the request under test, which is what makes an <em>exact</em> count
+     * meaningful rather than "at most a few".
+     *
+     * <p>It lives here rather than in each fixture because the defect it guards against is not any one
+     * module's: an N+1 is what the {@code @EntityGraph} ladder of {@code docs/03-analisis-y-patrones.md}
+     * §2 exists to prevent, and every listing in this service is expected to answer for its statement
+     * count. Counting requires {@code hibernate.generate_statistics}, which each fixture turns on with
+     * its own {@code @SpringBootTest} properties — a shared context would be a shared cache key.
+     */
+    protected Statistics freshStatistics() {
+        Statistics statistics =
+                entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+
+        return statistics;
     }
 
     /**

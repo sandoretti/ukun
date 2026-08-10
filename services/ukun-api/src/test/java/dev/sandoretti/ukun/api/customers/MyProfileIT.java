@@ -337,8 +337,4 @@ class MyProfileIT extends ProfileIntegrationTest {
                 request.card(),
                 storeId);
     }
-
-    private static String bearer(String token) {
-        return "Bearer " + token;
-    }
 }
