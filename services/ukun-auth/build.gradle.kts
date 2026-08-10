@@ -18,6 +18,11 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.validation)
 
+    // La página de login, que es la única vista renderizada en servidor del sistema nuevo. Vive aquí
+    // y no en el SPA porque aquí es donde se teclea la contraseña (ADR-0003), y con plantilla propia
+    // en vez de la que genera Spring Security para que se parezca a la tienda a la que pertenece.
+    implementation(libs.spring.boot.starter.thymeleaf)
+
     // Correlación con los otros dos procesos (docs/11 §5). Este servicio es el extremo de la saga de
     // signup: sin un traceId común, un `signup.compensation` aquí y el `signup.started` de ukun-api
     // son dos líneas de log que nadie puede juntar.

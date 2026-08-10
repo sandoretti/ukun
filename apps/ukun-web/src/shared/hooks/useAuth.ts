@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { useCurrentUser, type CurrentUser, type Role } from '../api/session';
-import { startSignIn } from '../auth/signIn';
+import { rememberReturnTo, startSignIn } from '../auth/signIn';
 
 type Auth = {
   /** The signed-in user, or `undefined` for a visitor — the shell renders for both. */
@@ -11,8 +11,13 @@ type Auth = {
   /** The probe is still in flight: it is not yet known which of the two this is. */
   isPending: boolean;
   hasRole: (role: Role) => boolean;
-  /** Sends the browser to authenticate and brings it back to the route it is on now. */
+  /** Leaves for the authorization server, remembering the route to come back to. */
   signIn: () => void;
+  /**
+   * Marks the route being looked at as the one to come back to, without going anywhere. For the
+   * route guard, which sends the reader to `/signin` first because it has a reason to give.
+   */
+  rememberThisRoute: () => void;
 };
 
 /**
@@ -37,9 +42,14 @@ export function useAuth(): Auth {
     isPending,
     hasRole: useCallback((role: Role) => user?.roles.includes(role) ?? false, [user]),
     // The route comes from the router and not from `window.location`: they agree in the browser and
-    // they do not under a `MemoryRouter`, which is where this gets tested.
+    // they do not under a `MemoryRouter`, which is where this gets tested. It is also the only
+    // place that composes the two halves of a route, so the bar and the guard cannot drift.
     signIn: useCallback(
       () => startSignIn(location.pathname + location.search),
+      [location.pathname, location.search],
+    ),
+    rememberThisRoute: useCallback(
+      () => rememberReturnTo(location.pathname + location.search),
       [location.pathname, location.search],
     ),
   };

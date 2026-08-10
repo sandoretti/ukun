@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 import { Container, Nav, Navbar } from 'react-bootstrap';
 
+import { BrandMark } from './BrandMark';
 import { ComingSoonNavItem } from './ComingSoon';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ProductSearchBox } from './ProductSearchBox';
-import wordmark from '../../assets/ukun-wordmark-light.png';
 
 /**
  * The entries of the navigation bar, in order. A `to` that is missing means the screen does not
@@ -48,17 +48,7 @@ export function SiteHeader({ children }: SiteHeaderProps) {
     <Navbar bg="primary" data-bs-theme="dark" expand="lg" sticky="top" aria-label={t('nav.primary')}>
       <Container>
         <Navbar.Brand as={Link} to="/">
-          {/* La silueta del logotipo en blanco, no el original bicolor: los dos verdes de la marca
-              sobre el verde de la barra no se distinguirían. El `alt` sí nombra la marca — es el
-              enlace a inicio, y sin texto el enlace se queda sin nombre accesible. Las dimensiones
-              intrínsecas van en los atributos para que la barra no salte al cargar la imagen. */}
-          <img
-            src={wordmark}
-            alt={t('title')}
-            className="navbar-brand__logo"
-            width={882}
-            height={254}
-          />
+          <BrandMark />
         </Navbar.Brand>
         <Navbar.Toggle aria-label={t('nav.toggle')} />
         <Navbar.Collapse>

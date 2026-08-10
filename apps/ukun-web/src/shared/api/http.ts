@@ -1,6 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-import { startSignIn } from '../auth/signIn';
+import { sendToSignIn } from '../auth/signIn';
 import type { components } from '../../types/api';
 
 declare module 'axios' {
@@ -113,14 +113,16 @@ http.interceptors.response.use(
   (error: AxiosError<ProblemDetail>) => {
     const status = error.response?.status;
 
-    // A dead session is not a screen-level error: it is handled once, here, by starting the flow
-    // again from wherever the reader was. The destination is the gateway's own `oauth2Login`
-    // endpoint — `/login` is a reserved prefix that answers 404 to the SPA, never a screen.
+    // A dead session is not a screen-level error: it is handled once, here, by sending the reader
+    // to the sign-in screen from wherever they were. It goes to the screen and not straight to the
+    // authorization server on purpose — a session that expires mid-visit is a surprise, and being
+    // told so before the browser leaves the site is the difference between an explanation and a
+    // jump.
     //
     // A request that says it can be answered anonymously is exempt: its 401 means "no session",
     // which is a perfectly good state for a public screen to be in.
     if (status === 401 && error.config?.allowAnonymous !== true) {
-      startSignIn();
+      sendToSignIn('expired');
     }
 
     if (status !== undefined) {

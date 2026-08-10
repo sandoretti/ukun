@@ -1,4 +1,4 @@
-import { screen, waitForElementToBeRemoved, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { http as mswHttp, HttpResponse } from 'msw';
@@ -91,7 +91,10 @@ describe('ProductDetailPage', () => {
     // through the modal's own fade, hence waiting for it to go instead of asserting on the spot.
     await user.keyboard('{Escape}');
 
-    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
+    // `waitFor` and not `waitForElementToBeRemoved`: that one demands the element still be there
+    // when the wait starts, and under a loaded suite the 300ms fade can finish inside the awaited
+    // keystroke. The assertion wanted is "it is gone", which is true either way.
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
   it('shows other products of the same type, without the one being looked at', async () => {

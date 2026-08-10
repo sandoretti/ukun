@@ -1,0 +1,117 @@
+<!doctype html>
+<!--/*
+  La única pantalla del sistema nuevo donde se teclea una contraseña, y por eso la única renderizada
+  en servidor. Reproduce la tarjeta centrada de `/signin` del SPA (apps/ukun-web) con la misma
+  paleta y la misma barra verde: quien llega aquí viene de la tienda y no debería notar que ha
+  cambiado de servicio, aunque el navegador sí cambie de origen — que es lo correcto y deliberado
+  (ADR-0003, docs/08 §4).
+
+  Lo que NO lleva, a diferencia de la tarjeta del SPA: enlace de alta. El signup todavía no existe
+  como pantalla, y ofrecerlo deshabilitado aquí, a mitad del flujo de autorización, sería ruido.
+*/-->
+<html th:lang="${#locale.language}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title th:text="#{login.pageTitle}">Ukun</title>
+    <!--/* Hoja externa y nunca un <style> en línea: docs/08 §8 fija una CSP con `style-src` propio
+           y sin `unsafe-inline`. La sirve este mismo servicio, permitida sin sesión en
+           AuthorizationServerConfig — si no, el login se pinta desnudo. */-->
+    <link rel="stylesheet" th:href="@{/css/login.css}" />
+  </head>
+
+  <body class="auth-shell">
+    <!--/* La barra, reducida a lo que esta pantalla puede ofrecer: la marca, que además es la
+           salida, y el idioma. Ni menú ni buscador — no hay tienda a este lado. */-->
+    <header class="auth-bar">
+      <a class="auth-bar__brand" th:href="${storeUrl}" th:text="#{brand}">Ukun</a>
+
+      <nav class="lang-switch" th:aria-label="#{language.label}">
+        <!--/* Enlaces y no botones: aquí el cambio de idioma es una navegación de verdad. Las dos
+               direcciones las compone el controlador, y no esta plantilla, porque Thymeleaf prohíbe
+               leer `param` dentro de una expresión de enlace — a propósito, para que un parámetro de
+               la petición no acabe tejido en una URL que la página emite. Ver LoginPageController. */-->
+        <!--/* Cada enlace se lee entero —«Español», no «ES»—, igual que el conmutador del SPA: un
+               nombre accesible de dos letras no es un nombre, y `title` no lo suple porque los
+               lectores de pantalla no lo anuncian de forma fiable. La abreviatura es lo que se ve;
+               el idioma completo, lo que se oye. */-->
+        <a
+          class="lang-switch__option"
+          th:href="${spanishHref}"
+          th:aria-current="${#locale.language == 'es'} ? 'true' : null"
+        >
+          <span aria-hidden="true" th:text="#{language.short.es}">ES</span>
+          <span class="visually-hidden" th:text="#{language.es}">Español</span>
+        </a>
+        <a
+          class="lang-switch__option"
+          th:href="${englishHref}"
+          th:aria-current="${#locale.language == 'en'} ? 'true' : null"
+        >
+          <span aria-hidden="true" th:text="#{language.short.en}">EN</span>
+          <span class="visually-hidden" th:text="#{language.en}">Inglés</span>
+        </a>
+      </nav>
+    </header>
+
+    <main class="auth-shell__main">
+      <div class="auth-card">
+        <!--/* Un único mensaje para «ese correo no existe» y para «esa contraseña no es». Cambiarlo
+               por algo más servicial convierte esta página en un oráculo de enumeración de cuentas
+               (docs/08 §8), y hay un test que lo comprueba desde fuera. */-->
+        <div class="alert alert--danger" role="alert" th:if="${failed}">
+          <span th:text="#{login.error}">El correo o la contraseña no son correctos.</span>
+        </div>
+
+        <div class="alert alert--info" role="status" th:if="${signedOut}">
+          <span th:text="#{login.loggedOut}">Has cerrado sesión.</span>
+        </div>
+
+        <!--/* La marca en tipografía y no como imagen: el logotipo que sirve el SPA es la silueta
+               blanca, pensada para el verde de la barra, y sobre la tarjeta no se vería. */-->
+        <p class="auth-card__brand" th:text="#{brand}">Ukun</p>
+
+        <h1 class="auth-card__title" th:text="#{login.heading}">Bienvenido de nuevo</h1>
+        <p class="auth-card__lead" th:text="#{login.lead}">Entra con tu cuenta.</p>
+
+        <form method="post" th:action="@{/login}">
+          <div class="field">
+            <label class="field__label" for="username" th:text="#{login.email}">Correo</label>
+            <input
+              class="field__control"
+              type="email"
+              id="username"
+              name="username"
+              autocomplete="username"
+              required
+              autofocus
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="password" th:text="#{login.password}">Contraseña</label>
+            <input
+              class="field__control"
+              type="password"
+              id="password"
+              name="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <!--/* `name` antes de `value`, y no al revés: el helper de test FormLogin lee el token con
+                 la expresión `name="_csrf".*?value="(...)"`, así que invertirlos deja sin token a
+                 todos los ITs de login y el fallo no apunta a esta línea. */-->
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+          <button class="button button--primary" type="submit" th:text="#{login.submit}">Entrar</button>
+        </form>
+      </div>
+
+      <p class="auth-shell__back">
+        <a th:href="${storeUrl}" th:text="#{login.backToStore}">Volver a la tienda</a>
+      </p>
+    </main>
+  </body>
+</html>

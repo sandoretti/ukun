@@ -52,6 +52,10 @@ spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-
 # starter-web no arrastra Bean Validation desde Boot 3, y cada query param del listado de catálogo
 # declara sus límites: sin esto las anotaciones compilan y no se aplican nunca.
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+# La única vista renderizada en servidor de todo el sistema: la página de login de ukun-auth. No
+# vuelve el Thymeleaf del legacy — el frontend sigue siendo React contra un API REST (ADR-0002) —,
+# es que la contraseña se teclea en el Authorization Server y esa pantalla no es del SPA (ADR-0003).
+spring-boot-starter-thymeleaf = { module = "org.springframework.boot:spring-boot-starter-thymeleaf" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 # Boot 4 partió la autoconfiguración en un módulo por tecnología: liquibase-core sola trae el motor
 # pero no la autoconfiguración, y el changelog no se ejecutaría. Este artefacto trae las dos

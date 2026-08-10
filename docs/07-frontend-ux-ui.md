@@ -49,6 +49,14 @@ Los dos verdes actuales (`#365a08`/`#e5f6db` en un módulo, `#5d9d0b`/`#456e0f`/
 
 Regla dura: **ningún token con ratio de contraste por debajo de 4.5:1 se asigna a texto normal ni a un botón con texto encima.** `--bs-accent` es el único que puede bajar de ese umbral, y solo para elementos gráficos grandes.
 
+### La paleta tiene un segundo consumidor fuera de este documento
+
+La **página de login vive en `ukun-auth`**, no aquí: la contraseña se teclea en el Authorization Server y nunca en el SPA (ADR-0003), así que esa pantalla se renderiza en servidor, en otro origen y con otra cadena de herramientas. Es la única del sistema nuevo en esa situación y la única excepción al «todo es React» de ADR-0002.
+
+Para que se parezca a la tienda a la que pertenece, `services/ukun-auth/src/main/resources/static/css/login.css` **copia los cuatro colores de `_tokens.scss`**. Es duplicación deliberada, y la alternativa —acoplar el build de Gradle al de npm para compartir el CSS compilado— costaría poder construir ese servicio por separado. Lo que no se admite es la **deriva**: `PaletteParityTest`, en `ukun-auth`, lee los dos ficheros y falla si un color deja de coincidir. Si cambias un token, cámbialo aquí primero y arrastra esa hoja en el mismo commit.
+
+Lo que **no** se duplica es el `.woff2` de la marca: la hoja declara la misma pila tipográfica sin el `@font-face`, así que en esa pantalla la palabra «Ukun» cae en `system-ui`. La regla de abajo —la fuente se sirve una sola vez— sigue en pie.
+
 ## Cómo se acota "buen UX/UI" para que no devore el calendario
 
 Es el requisito con más riesgo de no tener nunca un "terminado". Se acota así:

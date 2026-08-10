@@ -1,0 +1,55 @@
+@use "../bootstrap";
+@use "../tokens";
+
+// La pantalla de entrada: un marco propio con una sola tarjeta centrada. Es la única pantalla sin
+// barra de navegación ni pie, así que el fondo tiene que decir por sí solo dónde acaba la tarjeta.
+
+.auth-shell {
+  display: flex;
+  flex-direction: column;
+  // `dvh` y no `vh`: en el móvil la barra del navegador se retrae, y con `vh` la tarjeta queda
+  // descentrada por la altura de una barra que ya no está.
+  min-height: 100dvh;
+  background-color: tokens.$primary-bg;
+}
+
+.auth-shell__main {
+  flex: 1;
+  display: grid;
+  // `safe` es lo que impide que un viewport bajo —o la tarjeta con el aviso de sesión caducada—
+  // recorte el titular por arriba: cuando no cabe, deja de centrar y ancla al principio.
+  place-content: safe center;
+  padding: 2rem 1rem;
+}
+
+.auth-card {
+  // Una sola columna de lectura corta: la medida que ya usan las tarjetas del catálogo, no el ancho
+  // del contenedor.
+  width: 100%;
+  max-width: 26rem;
+  // El centrado horizontal no depende solo del `place-content` de arriba: un navegador que no
+  // entienda la palabra clave `safe` descarta esa declaración entera, y sin este margen la tarjeta
+  // se iría al borde izquierdo.
+  margin-inline: auto;
+  padding: 2rem;
+  border: bootstrap.$border-width solid var(--bs-border-color);
+  border-radius: bootstrap.$border-radius-lg;
+  background-color: var(--bs-body-bg);
+  box-shadow: bootstrap.$box-shadow-sm;
+}
+
+// La marca de la tarjeta va en tipografía y no como imagen: el logotipo que se sirve es la silueta
+// blanca, pensada para el verde de la barra. Mismo recurso que la portada en `.hero__eyebrow`.
+.auth-card__brand {
+  margin-bottom: 1.5rem;
+  font-family: tokens.$display-font;
+  font-size: 0.875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: tokens.$primary;
+}
+
+// Separa la acción principal del alta, que es otra decisión distinta y no una alternativa a ella.
+.auth-card__divider {
+  margin-block: 1.5rem;
+}

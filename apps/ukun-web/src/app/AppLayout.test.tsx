@@ -34,8 +34,9 @@ describe('AppLayout', () => {
   it('offers the way in to a visitor, and it is not a route of this router', () => {
     const bar = renderShell();
 
-    // Signing in navigates to the gateway (`/oauth2/authorization/ukun`), so the control is an
-    // enabled button and never a link: `/login` is a reserved prefix and answers 404 to the SPA.
+    // Signing in navigates out of the SPA (`/oauth2/authorization/ukun`), so the control is an
+    // enabled button and never a link. It does not stop at `/signin` either: that screen is for
+    // someone who was thrown out and is owed a reason, not for someone who just asked.
     const signIn = bar.getByRole('button', { name: 'Iniciar sesión' });
     expect(signIn.hasAttribute('disabled')).toBe(false);
   });

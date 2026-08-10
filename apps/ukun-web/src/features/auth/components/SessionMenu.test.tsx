@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { navigateTo } from '../../../shared/browser/navigateTo';
-import { SIGN_IN_URL } from '../../../shared/auth/signIn';
+import { SIGN_IN_URL, takeReturnTo } from '../../../shared/auth/signIn';
 import { server } from '../../../test/msw/server';
 import { currentUser, signedIn } from '../../../test/msw/sessionHandlers';
 import { renderWithProviders } from '../../../test/renderWithProviders';
@@ -30,14 +30,16 @@ describe('SessionMenu', () => {
     vi.mocked(navigateTo).mockClear();
   });
 
-  it('offers the way in to a visitor, and takes it to the gateway', async () => {
+  it('offers the way in to a visitor, and takes it straight to the authorization server', async () => {
     renderWithProviders(<SessionMenu />, { route: '/products' });
 
-    // Signing in is a navigation to the gateway's own endpoint, so it is a button and never a link:
-    // there is no route of this router behind it.
+    // A navigation out of the SPA, so it is a button and never a link: there is no route of this
+    // router behind it, and `/signin` is not a stop on this path either.
     await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
 
     expect(vi.mocked(navigateTo)).toHaveBeenCalledWith(SIGN_IN_URL);
+    // And the route being left is marked, so the trip back lands on it.
+    expect(takeReturnTo()).toBe('/products');
   });
 
   it('names the session by the account it belongs to', async () => {

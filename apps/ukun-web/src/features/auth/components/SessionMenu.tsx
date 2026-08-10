@@ -10,9 +10,14 @@ import { SignOutForm } from './SignOutForm';
 /**
  * The account end of the navigation bar: who you are, or the way in if you are nobody yet.
  *
- * Signing in is a **navigation to the gateway**, not a screen of this router: `oauth2Login` owns
+ * Signing in is a **navigation out of the SPA**, not a screen of this router: `oauth2Login` owns
  * `/oauth2/authorization/ukun` and the callback, and the SPA never sees a token (ADR-0003). That is
  * why the entry point is a `<button>` and not a `<Link>` — the destination is not a route.
+ *
+ * It goes straight out and not through `/signin`, which does exist: that screen is for a reader who
+ * was thrown out and is owed an explanation. Someone who presses this has already said what they
+ * want, and the page they land on is `ukun-auth`'s own, wearing this shop's card — so there is
+ * neither anything to explain nor any change of scenery to cushion.
  *
  * While the session probe is in flight this renders the anonymous block, deliberately: the wait is
  * a couple of milliseconds, and a spinner or a disabled button in the bar would flicker on every

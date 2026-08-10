@@ -34,8 +34,11 @@ export function ComingSoonNavItem({ label }: ComingSoonProps) {
 }
 
 type ComingSoonButtonProps = ComingSoonProps & {
-  /** Named variant, as in the rest of `shared/ui/` — never a stack of booleans. */
-  variant: 'light' | 'outline-light';
+  /**
+   * Named variant, as in the rest of `shared/ui/` — never a stack of booleans. The two light ones
+   * are for the green of the bar; `outline-primary` is for the white of a card.
+   */
+  variant: 'light' | 'outline-light' | 'outline-primary';
 };
 
 /** An action of the shell — signing in, signing up — with no flow behind it yet. */
