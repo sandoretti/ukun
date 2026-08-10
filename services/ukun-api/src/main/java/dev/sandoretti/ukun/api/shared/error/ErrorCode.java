@@ -27,8 +27,21 @@ public enum ErrorCode {
 
     MALFORMED_REQUEST(HttpStatus.BAD_REQUEST),
 
+    /** The token is missing, expired, or was not issued for this service. Never says which. */
+    UNAUTHENTICATED(HttpStatus.UNAUTHORIZED),
+
+    /** Authenticated, but not allowed: the wrong role, or somebody else's resource. */
+    FORBIDDEN(HttpStatus.FORBIDDEN),
+
     /** Extensions: {@code resource} and {@code id}. */
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND),
+
+    /**
+     * Uniqueness of an email, which this service cannot check locally — it belongs to ukun-auth and
+     * arrives propagated through the signup saga. That is why it has a code of its own instead of
+     * being folded into {@code DUPLICATE_VALUE} ({@code docs/12} §2, "three boundaries").
+     */
+    EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT),
 
     /** Extension: {@code allowed} — the methods the resource does accept. */
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED),
@@ -51,6 +64,8 @@ public enum ErrorCode {
      */
     private static final Map<HttpStatus, ErrorCode> BY_STATUS = Map.of(
             HttpStatus.BAD_REQUEST, VALIDATION_FAILED,
+            HttpStatus.UNAUTHORIZED, UNAUTHENTICATED,
+            HttpStatus.FORBIDDEN, FORBIDDEN,
             HttpStatus.NOT_FOUND, RESOURCE_NOT_FOUND,
             HttpStatus.METHOD_NOT_ALLOWED, METHOD_NOT_ALLOWED,
             HttpStatus.NOT_ACCEPTABLE, NOT_ACCEPTABLE,

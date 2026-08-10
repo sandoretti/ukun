@@ -21,6 +21,58 @@ spring:
     # changesets carry no context and therefore always apply, whichever value is active here.
     contexts: prod
 
+  security:
+    oauth2:
+      # This service is the final authorisation authority (docs/08-identidad-y-seguridad.md §4): it
+      # validates the token itself and never trusts a header the gateway may have injected.
+      resourceserver:
+        jwt:
+          # These two URIs name the same service on purpose, and the pair is the whole trap of this
+          # slice. `iss` is what the *browser* sees, because the browser has to follow the redirect
+          # to /oauth2/authorize, and it is compared as a literal string; the keys, on the other
+          # hand, are fetched from inside the container network. Point `issuer-uri` at the container
+          # name and every token is rejected; drop `jwk-set-uri` and Boot resolves the issuer by
+          # discovery against `localhost:9000`, which from inside a container is this service.
+          #
+          # With both set, Boot builds the decoder from the JWKS (`jwtDecoderByJwkKeySetUri`) and
+          # `issuer-uri` contributes only a JwtIssuerValidator — no discovery call is ever made.
+          jwk-set-uri: ${UKUN_AUTH_JWK_SET_URI:http://ukun-auth:9000/oauth2/jwks}
+          issuer-uri: ${UKUN_AUTH_ISSUER:http://localhost:9000}
+
+          # Not validated by default, and the one check that stops a token minted for somebody else
+          # from being accepted here. ukun-auth's TokenClaimsCustomizer sets `aud: ["ukun-api"]` on
+          # the user token precisely so this line can exist.
+          audiences: ukun-api
+
+          # `roles: ["CUSTOMER"]` -> ROLE_CUSTOMER. The claim travels bare and the prefix belongs on
+          # this side, which is where hasRole() expects it (docs/08 §4). Naming the claim also stops
+          # `scope` from being mapped: roles are claims, not scopes, and authorisation here is by
+          # role — the contract says so in its `bearerAuth` description.
+          authorities-claim-name: roles
+          authority-prefix: ROLE_
+
+      # The other half of the boundary: this service calling ukun-auth's /internal/accounts through
+      # AccountsPort. Machine to machine, no browser and no person involved — it mirrors the
+      # RegisteredClient that ukun-auth's RegisteredClientSeeder.api(...) already registers.
+      client:
+        registration:
+          ukun-auth:
+            client-id: ukun-api
+            # Empty default, unlike every other secret in this repo, and it is a considered
+            # exception: with a bare placeholder the context fails to start, which would take down
+            # the whole integration suite for a port nothing calls until the signup saga (#25)
+            # lands. An empty secret is not a working one — ukun-auth rejects it — and
+            # HttpAccountsAdapter refuses to issue a call while it is blank rather than letting a
+            # 401 from the token endpoint surface as a mystery. Whoever wires the saga is the one
+            # who should make this mandatory.
+            client-secret: ${UKUN_OAUTH2_API_SECRET:}
+            authorization-grant-type: client_credentials
+            scope: accounts:write
+        provider:
+          ukun-auth:
+            # The container name, not the issuer: nobody's browser takes part in this flow.
+            token-uri: ${UKUN_AUTH_TOKEN_URI:http://ukun-auth:9000/oauth2/token}
+
   jpa:
     hibernate:
       # `validate`, never `create`/`update`: Hibernate checks the schema Liquibase created and

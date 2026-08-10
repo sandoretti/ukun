@@ -55,12 +55,28 @@ spring-boot-liquibase = { module = "org.springframework.boot:spring-boot-liquiba
 # `spring-boot-starter-oauth2-authorization-server`, que resuelve al mismo árbol salvo por una capa
 # de alias: se usa este, que sigue la partición por tecnología del resto de Boot 4.
 spring-boot-starter-security-oauth2-authorization-server = { module = "org.springframework.boot:spring-boot-starter-security-oauth2-authorization-server" }
+# ukun-api como resource server: valida él mismo el JWT que emite ukun-auth, sin confiar en ninguna
+# cabecera que le inyecte el gateway (docs/08-identidad-y-seguridad.md §4).
+spring-boot-starter-security-oauth2-resource-server = { module = "org.springframework.boot:spring-boot-starter-security-oauth2-resource-server" }
+# El otro lado de la misma frontera: ukun-api llamando a /internal/accounts de ukun-auth con
+# client_credentials y scope accounts:write (AccountsPort, ADR-0017 §1). Es cliente OAuth2, no
+# resource server — son dos starters distintos y hacen falta los dos.
+spring-boot-starter-security-oauth2-client = { module = "org.springframework.boot:spring-boot-starter-security-oauth2-client" }
+# Autoconfiguración de RestClient.Builder: en Boot 4 no viene con starter-web, y sin ella no hay bean
+# que inyectar (AccountsPort habla HTTP con ukun-auth). Importa que sea el builder de Boot y no
+# RestClient.builder() a secas: es el que lleva los customizers, incluidos los de observabilidad que
+# entran con micrometer-tracing en v0.5.
+spring-boot-restclient = { module = "org.springframework.boot:spring-boot-restclient" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 # Boot 4 partió los starters de test: TestRestTemplate ya no está en starter-test y RestTestClient
 # es el reemplazo, en su propio módulo.
 spring-boot-resttestclient = { module = "org.springframework.boot:spring-boot-resttestclient" }
 # @ServiceConnection: apunta el datasource del contexto al contenedor sin @DynamicPropertySource.
 spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+# @WebMvcTest. Boot 4 partió también los slices de test por tecnología: spring-boot-test-autoconfigure
+# se quedó con la infraestructura común (22 clases) y la anotación se fue a su propio módulo. Sin este
+# artefacto el import no existe, que es un fallo de compilación y no de configuración.
+spring-boot-webmvc-test = { module = "org.springframework.boot:spring-boot-webmvc-test" }
 # Genera spring-configuration-metadata.json para las @ConfigurationProperties del servicio: sin él
 # el IDE marca `ukun.catalog.media-base-path` como propiedad no resuelta y no la autocompleta.
 spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
@@ -94,6 +110,11 @@ lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-bindin
 # Testcontainers 2.x renombró los artefactos: `testcontainers-postgresql`, no `postgresql`.
 testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter" }
 testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
+
+# --- Spring Security (versión gestionada por spring-boot-bom) ---------------------------------
+# SecurityMockMvcRequestPostProcessors.jwt(), que construye una autenticación ya validada y permite
+# probar autoridades y rutas sin firmar un token. No viene en starter-test.
+spring-security-test = { module = "org.springframework.security:spring-security-test" }
 
 # --- ArchUnit ---------------------------------------------------------------------------------
 # El artefacto `archunit` plano, no `archunit-junit5`: las reglas se comprueban desde tests JUnit 5

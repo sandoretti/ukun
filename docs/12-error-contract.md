@@ -68,6 +68,8 @@ El arreglo es que el advice extienda `ResponseEntityExceptionHandler` —que res
 
 Ninguno de los dos lo puede provocar el SPA, que solo llama a rutas y verbos generados del propio OpenAPI; los ve quien usa la API a mano o un cliente desactualizado. Se traducen igual que el resto, por `code`.
 
+**Desde v0.4, a quien no presenta token no le llega ninguno de los dos.** La cadena de filtros del resource server decide antes que el *handler mapping*, así que un anónimo que pide una ruta inexistente —o un verbo de escritura sobre un endpoint de solo lectura— recibe `401 UNAUTHENTICATED`, no `404 RESOURCE_NOT_FOUND` ni `405 METHOD_NOT_ALLOWED`. No es una pérdida a lamentar: responder `404` a un desconocido le confirma qué rutas existen y cuáles no, que es justo lo que busca quien escanea. Los dos códigos siguen intactos para quien está autenticado, y hay un test de cada mitad (`ProductCatalogIT` para el anónimo, `ResourceServerIT` para el portador de un token). Por lo mismo, la fila de `RESOURCE_NOT_FOUND` cubre «también la ruta que no existe» solo dentro de la superficie pública del contrato o con token por delante.
+
 ### Tres fronteras que es fácil confundir
 
 - **`DUPLICATE_VALUE` frente a `REFERENTIAL_INTEGRITY`**: el segundo es la red de seguridad para una violación de **clave ajena** (`SQLState 23503`) que se cuela sin comprobación previa; el primero es una violación de **unicidad** (`23505`) de un dato de negocio que el caso de uso comprueba *antes* de escribir para poder decir qué campo choca. No son el mismo error con distinto nombre: uno dice "esto está referenciado", el otro "esto ya existe".
