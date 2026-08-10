@@ -30,9 +30,10 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * {@code WebFilter}, the dispatcher, the gateway's own handler mapping — and only replaces the
  * transport, so the call to the upstream stub is still real HTTP.
  *
- * <p>There is no authentication mechanism yet: {@code oauth2Login} arrives with issue #28. Until
- * then the roles come from the mutator, which is exactly what lets this rule be verified before the
- * login flow that will feed it exists.
+ * <p>The roles come from the mutator rather than from a real login, and they still should: what this
+ * class is about is the rule, not how a principal acquires its authorities. Where those authorities
+ * come from in production — the {@code roles} claim of the relayed access token — is
+ * {@code AccessTokenOidcUserServiceTest}, and the flow that produces it is {@code OAuth2LoginIT}.
  */
 @SpringBootTest
 class RouteAuthorizationIT {

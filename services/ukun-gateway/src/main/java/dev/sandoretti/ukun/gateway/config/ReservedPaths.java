@@ -26,13 +26,24 @@ import java.util.List;
  * <p>The others are routed or handled locally: {@code /api} and {@code /media} go to
  * {@code ukun-api}; {@code /oauth2}, {@code /login} and {@code /.well-known} to {@code ukun-auth}
  * (some of them intercepted first by the security chain — see {@code GatewaySecurityConfig});
- * {@code /actuator} is served by this service. A fallback that swallowed any of them would turn a
- * backend call into an HTML page, which is the failure mode this class exists to prevent.
+ * {@code /actuator} and {@code /logout} are served by this service. A fallback that swallowed any of
+ * them would turn a backend call into an HTML page, which is the failure mode this class exists to
+ * prevent.
+ *
+ * <h2>{@code /logout} is a server path, so the SPA posts to it and does not navigate to it</h2>
+ *
+ * The logout endpoint of the security chain answers {@code POST /logout} only, and a filter handles
+ * it before any mapping is consulted, so reserving the prefix changes nothing for the logout itself.
+ * What it decides is the other half: {@code GET /logout} answers 404 instead of the HTML shell, which
+ * means the frontend cannot own {@code /logout} as a client-side route. That is on purpose and
+ * matches {@code /login} — a path this service owns should not have two meanings depending on the
+ * verb, and a "signing out…" screen that lives at the same URL as the endpoint is the kind of thing
+ * that works in development and breaks behind a bookmark.
  */
 public final class ReservedPaths {
 
     private static final List<String> PREFIXES =
-            List.of("/api", "/media", "/oauth2", "/login", "/.well-known", "/actuator", "/internal");
+            List.of("/api", "/media", "/oauth2", "/login", "/logout", "/.well-known", "/actuator", "/internal");
 
     private ReservedPaths() {}
 
