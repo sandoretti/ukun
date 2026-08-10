@@ -1,10 +1,12 @@
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Col, Row } from 'react-bootstrap';
 
 import type { Store } from '../../../shared/api/stores';
 import { Icon } from '../../../shared/ui/Icon';
-import { formatPhone } from '../formatPhone';
+import { StoreAddress } from './StoreAddress';
+import { StorePhoneLink } from './StorePhoneLink';
 
 type OnlineStoreBannerProps = {
   store: Store;
@@ -23,10 +25,7 @@ type OnlineStoreBannerProps = {
  */
 export function OnlineStoreBanner({ store }: OnlineStoreBannerProps) {
   const { t } = useTranslation('stores');
-
-  const titleId = `store-${store.id}-title`;
-  const { street, postalCode, city, province } = store.address;
-  const locality = `${postalCode} ${city}`;
+  const titleId = useId();
 
   return (
     <article aria-labelledby={titleId} className="store-online p-4 p-lg-5 mb-5">
@@ -53,20 +52,10 @@ export function OnlineStoreBanner({ store }: OnlineStoreBannerProps) {
         <Col lg={5}>
           {/* La dirección y el teléfono también aquí: RF-02 pide el listado público con los dos, y
               esta tienda es parte del listado, no un anuncio que lo encabeza. */}
-          <address className="mb-3">
-            <span className="d-block">{street}</span>
-            <span className="d-block">{locality}</span>
-            <span className="d-block">{province}</span>
-          </address>
+          <StoreAddress address={store.address} className="mb-3" />
 
           <p className="mb-3">
-            <a
-              className="store-online__link text-tabular-nums"
-              href={`tel:${store.phone}`}
-              aria-label={t('card.call', { store: store.name })}
-            >
-              {formatPhone(store.phone)}
-            </a>
+            <StorePhoneLink store={store} className="store-online__link" />
           </p>
 
           {/* Contra esta tienda se sirven los pedidos, así que lo que sigue a leerla es el catálogo.

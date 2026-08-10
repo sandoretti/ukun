@@ -50,7 +50,8 @@
   color: tokens.$on-dark;
 }
 
-.store-online:focus-visible,
+// El anillo de foco por defecto es oscuro y sobre el verde del panel casi no se ve. Solo los
+// descendientes: el propio panel no es enfocable.
 .store-online :focus-visible {
   outline-color: tokens.$on-dark;
 }

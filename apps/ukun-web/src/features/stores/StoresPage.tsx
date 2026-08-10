@@ -5,9 +5,8 @@ import { Col, Container, Row } from 'react-bootstrap';
 import { useStores } from '../../shared/api/stores';
 import { QueryBoundary } from '../../shared/ui/QueryBoundary';
 import { Section } from '../../shared/ui/Section';
-import { OnlineStoreBanner } from './components/OnlineStoreBanner';
-import { StoreCard } from './components/StoreCard';
 import { StoreFilter } from './components/StoreFilter';
+import { StoreResults } from './components/StoreResults';
 import { filterStores, useStoreSearch } from './useStoreSearch';
 
 /**
@@ -63,34 +62,7 @@ export default function StoresPage() {
           data={stores}
           empty={term.trim() === '' ? t('empty.none') : t('empty.filtered', { term: term.trim() })}
         >
-          {(items) => {
-            // Exactly one row has `isOnline` (`ux_store_online`), so this is a `find`, not a
-            // partition that has to cope with two. A filter can leave either side empty, and
-            // neither heading is painted over nothing.
-            const online = items.find((store) => store.isOnline);
-            const physical = items.filter((store) => !store.isOnline);
-
-            return (
-              <>
-                {online !== undefined && <OnlineStoreBanner store={online} />}
-
-                {physical.length > 0 && (
-                  <>
-                    <h2 className="h4 mb-4">{t('directory.title')}</h2>
-                    {/* En el orden que manda el API, que ya viene por nombre: la pantalla no aplica
-                        un segundo criterio por su cuenta. */}
-                    <Row xs={1} md={2} xl={3} className="g-4">
-                      {physical.map((store) => (
-                        <Col key={store.id}>
-                          <StoreCard store={store} />
-                        </Col>
-                      ))}
-                    </Row>
-                  </>
-                )}
-              </>
-            );
-          }}
+          {(items) => <StoreResults stores={items} />}
         </QueryBoundary>
       </Container>
     </>

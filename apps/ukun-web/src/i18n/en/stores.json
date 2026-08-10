@@ -21,6 +21,7 @@
     "title": "Stores you can visit"
   },
   "card": {
+    "region": "{{city}} · {{province}}",
     "call": "Call {{store}}",
     "directions": "Get directions",
     "directionsLabel": "Get directions to {{store}} (opens in a new tab)"
