@@ -59,9 +59,19 @@ class AuthorizationDeniedListener {
         return authentication != null && authentication.isAuthenticated() && authentication instanceof JwtAuthenticationToken;
     }
 
-    /** The {@code sub} claim as it arrived. Never the email: that is PII and not the key of anything. */
+    /**
+     * The {@code sub} claim as it arrived. Never the email: that is PII and not the key of anything
+     * ({@code docs/11-observabilidad-y-logging.md} §5).
+     *
+     * <p>Read from the token rather than through {@code getName()}, which returns whatever claim
+     * {@code spring.security.oauth2.resourceserver.jwt.principal-claim-name} names — a property that
+     * lives in the same block of {@code application.yaml} as {@code authorities-claim-name}, so it is
+     * one line away from turning this field into the caller's address on every 403. What this event
+     * publishes is a decision of this class, not of a property nobody has declared. Same read as
+     * {@code shared/observability/AccountIdMdcFilter}.
+     */
     private static String accountIdOf(Authentication authentication) {
-        return authentication.getName();
+        return ((JwtAuthenticationToken) authentication).getToken().getSubject();
     }
 
     /** What the caller <em>does</em> hold, which is the useful half of "why was this denied". */
