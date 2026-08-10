@@ -16,6 +16,7 @@ Escritas para este repo, en español, y trazadas a `docs/` y a los ADR. Son la a
 | `testing` | Tests de backend y frontend |
 | `tilt-dev` | Entorno local |
 | `slice`, `worktree` | Reparto de trabajo entre sesiones |
+| `refactor`, `pr` | Cierre de sesión: pasada de refactor sin cambio de comportamiento, y apertura del PR con su plantilla |
 
 ## Skills externas (instaladas desde skills.sh)
 

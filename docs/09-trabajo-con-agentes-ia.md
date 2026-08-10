@@ -3,7 +3,7 @@
 > **Fuente de verdad de:** cómo se reparte el trabajo de `04-roadmap.md` entre varias sesiones o agentes sin que se pisen.
 > **Léelo si:** vas a lanzar más de una sesión a la vez sobre este repo, o a redactar el encargo de una tarea para otro agente.
 > **No decide:** qué hay que hacer (`04-roadmap.md`) ni cómo se escribe el código (skills).
-> **Herramientas asociadas:** skill `slice` (genera el encargo de una tarea) y skill `worktree` (aísla dos sesiones simultáneas).
+> **Herramientas asociadas:** skills `slice` (genera el encargo de una tarea), `worktree` (aísla dos sesiones simultáneas), `refactor` (pasada de cierre sin cambio de comportamiento) y `pr` (abre el PR y aplica la regla de §5 sobre el autocierre del issue).
 
 No sustituye el juicio de quien revisa — lo hace más barato de ejercer.
 
@@ -62,6 +62,8 @@ Encargos demasiado grandes ("implementa todo v0.6") pierden coherencia interna a
 - **Cualquier cosa marcada como riesgo en un ADR** (la saga de signup, el reparto pesimista/optimista de ADR-0008): son los puntos donde una decisión equivocada es cara de deshacer. Revisión humana antes de mergear, no después.
 - **Cambios en el contrato después de SINC-1**: tocar `docs/api/openapi/*.yaml` invalida los tipos generados y los mocks de todo el frontend. Es una decisión de coordinación, no una tarea de implementación.
 - **Rotación de secretos, force-push, reescritura de historia de git**: siempre con confirmación explícita, nunca como efecto colateral de una tarea más grande.
+
+Esta lista tiene una forma operativa: el label **`revision-humana`** en el issue. La skill `pr` lo lee antes de redactar el cuerpo y, cuando está presente, referencia el issue con `Refs #N` en vez de `Closes #N` —y comprueba que ningún mensaje de commit lleve un `closes` escondido, que autocerraría el issue al mergear y se saltaría esta sección entera—. El PR queda abierto para que lo cierre una persona; ningún agente lo mergea.
 
 ## 6. Cómo redactar el encargo de una slice
 
