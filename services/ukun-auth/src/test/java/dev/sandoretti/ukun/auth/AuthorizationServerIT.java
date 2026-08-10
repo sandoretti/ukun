@@ -52,7 +52,7 @@ class AuthorizationServerIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("the server issues a signed access token for the client credentials of ukun-api")
     void issuesASignedTokenForClientCredentials() throws ParseException {
-        Map<String, Object> response = requestClientCredentialsToken();
+        Map<String, Object> response = AccessTokens.responseOf(http, API_SECRET);
 
         assertThat(response).containsEntry("token_type", "Bearer").containsKey("expires_in");
 
@@ -74,7 +74,7 @@ class AuthorizationServerIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("a client credentials token carries no identity of a person")
     void aServiceTokenCarriesNoPersonalIdentity() throws ParseException {
-        SignedJWT token = SignedJWT.parse((String) requestClientCredentialsToken().get("access_token"));
+        SignedJWT token = SignedJWT.parse((String) AccessTokens.responseOf(http, API_SECRET).get("access_token"));
 
         assertThat(token.getJWTClaimsSet().getClaims()).doesNotContainKeys("email", "roles");
     }
@@ -87,7 +87,7 @@ class AuthorizationServerIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("no token ever carries a storeId")
     void noTokenCarriesAStoreId() throws ParseException {
-        SignedJWT token = SignedJWT.parse((String) requestClientCredentialsToken().get("access_token"));
+        SignedJWT token = SignedJWT.parse((String) AccessTokens.responseOf(http, API_SECRET).get("access_token"));
 
         assertThat(token.getJWTClaimsSet().getClaims()).doesNotContainKey("storeId");
     }
@@ -166,17 +166,4 @@ class AuthorizationServerIT extends AbstractIntegrationTest {
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
-    private Map<String, Object> requestClientCredentialsToken() {
-        return http.post()
-                .uri("/oauth2/token")
-                .headers(headers -> headers.setBasicAuth("ukun-api", API_SECRET))
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body("grant_type=client_credentials&scope=accounts:write")
-                .exchange()
-                .expectStatus()
-                .isOk()
-                .expectBody(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
-                .returnResult()
-                .getResponseBody();
-    }
 }

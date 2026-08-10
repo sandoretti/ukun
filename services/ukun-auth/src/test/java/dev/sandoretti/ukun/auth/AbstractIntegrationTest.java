@@ -58,6 +58,14 @@ public abstract class AbstractIntegrationTest {
      */
     protected static final String ACCOUNTS_DATABASE = "ukun_auth_accounts";
 
+    /**
+     * Schema only, for {@link AccountReconciliationIT} alone. That class runs a job whose whole
+     * purpose is to <em>delete</em> accounts by age, so sharing a database with the classes that write
+     * their own would make it able to collect their fixtures — and the resulting failure would look
+     * like a bug in whichever test ran second.
+     */
+    protected static final String RECONCILIATION_DATABASE = "ukun_auth_reconciliation";
+
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
     static {
