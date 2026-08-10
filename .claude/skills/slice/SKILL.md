@@ -32,7 +32,7 @@ Un encargo sin las cinco está incompleto. Búscalas siempre en la fuente, nunca
 
 ### Qué buscar según el tipo de slice
 
-- **Endpoint REST** → RF correspondiente · esquema del OpenAPI · `code`s de error aplicables de `docs/12-error-contract.md` · eventos de `docs/11-observabilidad-y-logging.md` §3 · módulo de Spring Modulith al que pertenece (`docs/14-modules.md`).
+- **Endpoint REST** → RF correspondiente · esquema del OpenAPI · `code`s de error aplicables de `docs/12-error-contract.md` · eventos de `docs/11-observabilidad-y-logging.md` §3 · y, **solo si es de `ukun-api`**, el módulo de Spring Modulith al que pertenece (`docs/14-modules.md`). `ukun-auth` no tiene módulos —ADR-0022 lo aplanó a capas—, así que un encargo suyo nombra la capa (`application`, `security`, …) y la skill `spring-auth`, nunca un módulo.
 - **Pantalla React** → RF · tipos generados del OpenAPI · namespace de i18n (ADR-0019) · estados carga/vacío/error obligatorios (`docs/07-frontend-ux-ui.md`).
 - **Cambio de esquema** → `docs/10-modelo-de-datos.md` (que ya justifica cada tipo, `CHECK` e índice) · skill `liquibase`. **Marca el encargo como "propone, no aplica"**: los changesets los revisa una persona (`docs/09` §5).
 - **Concurrencia / dinero / identidad** → el ADR correspondiente, citado explícitamente, y aviso de revisión humana antes de mergear.

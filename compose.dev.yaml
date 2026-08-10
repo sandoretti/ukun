@@ -31,6 +31,12 @@ services:
       # y Tilt necesita ese contexto para poder vigilar los ficheros de build compartidos.
       context: .
       dockerfile: services/ukun-auth/Dockerfile.dev
+    # Sin esto el perfil dev de application.yaml no se activa nunca, y con él el `contexts: demo` de
+    # Liquibase que el issue #23 necesita para sembrar las cuentas de demostración. ukun-api ya lo
+    # tenía; ukun-auth no, y no se notaría hasta que alguien se preguntase por qué la base de dev
+    # sale vacía. (Aquí no hay /actuator/modulith que activar, a diferencia de ukun-api: ADR-0022.)
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
     ports:
       - "${JDWP_AUTH_PORT:-5006}:5005"
     depends_on:

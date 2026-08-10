@@ -114,8 +114,8 @@ flowchart TB
         bff["BFF\noauth2Login + sesión HttpOnly\nTokenRelay Bearer JWT\nCSRF: cookie XSRF-TOKEN"]
     end
 
-    subgraph auth["ukun-auth (Spring Authorization Server, en Spring Security 7, modularizado — ADR-0017)"]
-        authSrv["módulos: accounts · registration · oauth2\nAuthorization Code + PKCE\nemite JWT (JWKS)\nendpoints internos /internal/accounts"]
+    subgraph auth["ukun-auth (Spring Authorization Server, en Spring Security 7, por capas — ADR-0022)"]
+        authSrv["capas: domain · infra · application\nconfig · security · web\nAuthorization Code + PKCE\nemite JWT (JWKS)\nendpoints internos /internal/accounts"]
         authDb[("ukun_auth\naccount · account_role\noauth2_registered_client\noauth2_authorization")]
     end
 
@@ -141,7 +141,9 @@ flowchart TB
     style apiDb fill:#4a5568,color:#fff
 ```
 
-**Módulos de `ukun-api`/`ukun-auth`:** el diagrama de arriba solo nombra los módulos; el grafo completo de dependencias entre ellos (`allowedDependencies`, incluido el ciclo `catalog`↔`inventory` y cómo se rompe) vive en ADR-0017 y `docs/14-modules.md`, y se regenera automáticamente en cada build de desarrollo vía `Documenter` de Spring Modulith — no se mantiene un segundo diagrama a mano aquí.
+**Módulos de `ukun-api`:** el diagrama de arriba solo nombra los módulos; el grafo completo de dependencias entre ellos (`allowedDependencies`, incluido el ciclo `catalog`↔`inventory` y cómo se rompe) vive en ADR-0017 y `docs/14-modules.md`, y se regenera automáticamente en cada build de desarrollo vía `Documenter` de Spring Modulith — no se mantiene un segundo diagrama a mano aquí.
+
+`ukun-auth` **no** está modularizado con Modulith: es un servicio anémico de quince clases con estructura por capas (`domain`/`infra`/`application`/`config`/`security`), y no hay grafo que dibujar. ADR-0022 explica por qué se retiró.
 
 **Por qué BFF y no token en el SPA:** el token nunca entra en el alcance de un XSS del navegador, no hay que resolver refresh silencioso desde JavaScript, y al ser el gateway el único origen que ve el navegador, desaparece CORS. El coste es que el gateway pasa a tener estado (sesión) — asumible con un solo gateway en dev y con sesión en memoria; en producción con más de una réplica se resuelve con Redis, no antes.
 

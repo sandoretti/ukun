@@ -7,15 +7,25 @@ description: Convenciones de este repo para el servicio de identidad (services/u
 
 Lee `docs/08-identidad-y-seguridad.md` antes de tocar este servicio — este skill resume sus reglas operativas, el documento explica el porqué completo.
 
-## Estructura: módulos de Spring Modulith (ver ADR-0017)
+## Estructura: capas, **sin** Spring Modulith (ver ADR-0022)
 
-`ukun-auth` es deliberadamente anémico, y aquí la modularización pesa menos que en `ukun-api` — se adopta por coherencia de herramienta con el resto del backend, no porque haga cumplir una frontera de negocio compleja:
+`ukun-auth` es deliberadamente anémico y no está modularizado con Modulith. Lo estuvo durante v0.4 (ADR-0017 §4) y **ADR-0022 lo revirtió**: la herramienta existe para preparar la extracción de un monolito, y este servicio ya *es* la extracción. Si escribes un `package-info.java` con `@ApplicationModule` aquí, has copiado de una fuente desactualizada — eso es `ukun-api`, y `docs/14-modules.md` es un documento solo suyo.
 
-| Módulo | Contenido | `allowedDependencies` |
-|---|---|---|
-| `accounts` | `account`, `account_role`, hash de contraseña, endpoints `/internal/accounts` | — |
-| `registration` | saga de signup, `registration_request` | `accounts` |
-| `oauth2` | `RegisteredClient`, JWKS, claims, rate limit de login | `accounts` |
+```
+dev.sandoretti.ukun.auth/
+  domain/       Account, Role
+  infra/        AccountRepository
+  application/  AccountsService, AccountCredentials
+  config/       AuthorizationServerConfig, JwkSourceConfig, PasswordEncoderConfig,
+                RegisteredClientProperties, RegisteredClientSeeder
+  security/     AccountUserDetailsService, TokenClaimsCustomizer, LoginEventListener,
+                BusinessEvents, LoginAttemptBuckets, LoginRateLimiter
+  web/          los @RestController de /internal/accounts
+```
+
+Los nombres de paquete son los mismos que `ukun-api` usa **dentro** de cada módulo, a propósito: moverse entre los dos servicios no debería exigir aprender dos nomenclaturas.
+
+**La entidad no sale de `application`.** No hay Modulith que lo impida, pero sí la cuarta de las siete reglas ArchUnit («ningún método público de un `@Service` devuelve una `@Entity`»), y por eso `AccountsService` devuelve `AccountCredentials` y no `Account`. Esa regla es la razón real, no un detalle de estilo.
 
 ```
 account(id UUID PK, email CITEXT UNIQUE, password_hash, enabled, created_at, updated_at)
@@ -51,9 +61,11 @@ registration_request(idempotency_key PK, account_id, created_at)   -- idempotenc
 
 Los datos actuales son desechables (ADR-0007): no hay migración de `cuenta` legacy, se siembra este servicio con las mismas cuentas de demostración pero con contraseña ya hasheada. No construyas ningún script de "migración desde `cuenta`" salvo que esa ADR se revierta explícitamente.
 
-## Testing y verificación de módulos
+## Testing y verificación arquitectónica
 
-`ApplicationModules.verify()` (`docs/14-modules.md`) desde el skeleton. Convenciones de test (AssertJ, object mothers, Testcontainers singleton): skill `testing` y `docs/13-testing.md`.
+Las **siete reglas** de `docs/03-analisis-y-patrones.md` §3, que viven en el proyecto compartido `:ukun-test-support` y se aplican desde `ArchitectureTest`. Son la única verificación arquitectónica de este servicio desde ADR-0022, y aquí es donde más valen: es el servicio que guarda hashes de contraseña, así que una entidad con `toString` generado o pasada a `log.*(...)` filtra una credencial, no el nombre de un producto.
+
+No hay `ModulithTest` — si estás a punto de escribir uno, relee ADR-0022. Convenciones de test (AssertJ, object mothers, Testcontainers singleton): skill `testing` y `docs/13-testing.md`.
 
 ## Skills externas de apoyo
 

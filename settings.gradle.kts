@@ -19,8 +19,19 @@ dependencyResolutionManagement {
     }
 }
 
-include("ukun-api", "ukun-auth", "ukun-gateway")
+// El cuarto proyecto NO es un servicio: :ukun-test-support lleva las siete reglas de ArchUnit de
+// docs/03-analisis-y-patrones.md §3, que valen igual para ukun-api que para ukun-auth. No aplica el
+// plugin de Boot, no produce jar ejecutable y nunca entra en una imagen — solo en el
+// `testImplementation` de los servicios que las aplican. Vive fuera de services/ precisamente para
+// que se lea como lo que es.
+//
+// OJO al añadir un proyecto aquí: los Dockerfile de producción de los tres servicios copian el
+// build.gradle.kts de CADA proyecto declarado, porque Gradle tiene que poder configurarlos todos
+// aunque solo construya uno. Un proyecto nuevo sin su COPY correspondiente rompe las tres imágenes
+// de producción, y no se nota con `tilt up`, que usa los Dockerfile.dev.
+include("ukun-api", "ukun-auth", "ukun-gateway", "ukun-test-support")
 
 project(":ukun-api").projectDir = file("services/ukun-api")
 project(":ukun-auth").projectDir = file("services/ukun-auth")
 project(":ukun-gateway").projectDir = file("services/ukun-gateway")
+project(":ukun-test-support").projectDir = file("test-support/ukun-test-support")

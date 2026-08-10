@@ -1,7 +1,7 @@
-# ADR-0017: Spring Modulith en `ukun-api` y `ukun-auth`, revirtiendo el descarte previo
+# ADR-0017: Spring Modulith en `ukun-api` (y en `ukun-auth`, revertido por ADR-0022), revirtiendo el descarte previo
 
 ## Estado
-Aceptado — revierte una decisión previamente aceptada de este mismo repositorio
+Aceptado — revierte una decisión previamente aceptada de este mismo repositorio. **Su §4 (descomposición de `ukun-auth`) está a su vez revertida por ADR-0022**; el resto sigue vigente.
 
 ## Contexto
 `03-analisis-y-patrones.md` §4 descartaba Spring Modulith explícitamente: *"Tentador y barato, pero ArchUnit ya cubre la necesidad real de hacer cumplir fronteras entre paquetes. Reevaluar en v1.x si el monolito crece mucho"*. Esa regla ArchUnit («los paquetes de feature no se importan entre sí salvo a través de `..api..`») sigue siendo cierta hoy en descripción, pero no en verificación: nadie la había hecho ejecutable, y la estructura por feature que la skill `spring-api` ya prescribe (`catalogo/`, `inventario/`, `tiendas/`, ...) no tenía ni un dueño de tabla declarado por módulo ni un grafo de dependencias explícito.
@@ -75,15 +75,19 @@ El frontend lanza ambas peticiones en paralelo (dos queries de TanStack Query) y
 
 Esta separación **cambia la forma del contrato REST** respecto a lo que se hubiera diseñado sin Modulith, así que entra en `docs/api/openapi/ukun-api.yaml` **antes de SINC-1 (2026-08-11)** — es la consecuencia de mayor urgencia de todo este ADR.
 
-### 4. Descomposición de `ukun-auth`
+### 4. Descomposición de `ukun-auth` — **REVERTIDA por ADR-0022**
 
-| Módulo | Contenido | `allowedDependencies` |
-|---|---|---|
-| `accounts` | `account`, `account_role`, hash de contraseña, endpoints `/internal/accounts` | — |
-| `registration` | saga de signup, `registration_request`, idempotencia de alta | `accounts` |
-| `oauth2` | `RegisteredClient`, JWKS, personalización de claims, rate limit de login (Bucket4j) | `accounts` |
+> **Esta sección ya no está vigente.** `ukun-auth` no usa Spring Modulith: se aplanó a una estructura por capas al implementarse (v0.4, issue #22). El resto de este ADR —§1, §2, §3 y §5, es decir todo lo que afecta a `ukun-api`— sigue vigente sin cambios. Ver **ADR-0022** para el porqué; se conserva lo de abajo porque es el contexto que ese ADR revierte.
+
+~~| Módulo | Contenido | `allowedDependencies` |~~
+~~|---|---|---|~~
+~~| `accounts` | `account`, `account_role`, hash de contraseña, endpoints `/internal/accounts` | — |~~
+~~| `registration` | saga de signup, `registration_request`, idempotencia de alta | `accounts` |~~
+~~| `oauth2` | `RegisteredClient`, JWKS, personalización de claims, rate limit de login (Bucket4j) | `accounts` |~~
 
 Aquí el beneficio es honestamente menor, y se deja dicho: `ukun-auth` es deliberadamente anémico (ADR-0004) — dos tablas de dominio, tres endpoints internos —, así que declarar módulos aquí es coherencia de herramienta con `ukun-api` más que una frontera real que necesite hacerse cumplir. Se acepta como decisión explícita, no porque el argumento a favor pese lo mismo que en `ukun-api`.
+
+Esa reserva resultó ser la parte importante del párrafo: ADR-0022 la lleva hasta su conclusión al implementar el servicio, con dos hechos que aquí no se tenían — que el propósito de la herramienta (preparar una extracción) no aplica a un servicio que **ya es** la extracción, y que la alternativa de ArchUnit ganó un hogar compartido (`:ukun-test-support`) que no existía cuando esto se escribió.
 
 ### 5. Convenciones
 
@@ -91,17 +95,17 @@ Aquí el beneficio es honestamente menor, y se deja dicho: `ukun-auth` es delibe
 - **Qué reemplaza y qué no**, corrección necesaria sobre `03-analisis-y-patrones.md` §3, que hoy enumera "ocho reglas" de ArchUnit: `ApplicationModules.verify()` **sustituye únicamente** la regla "los paquetes de feature no se importan entre sí salvo a través de `..api..`". Las **otras siete permanecen intactas** — Modulith no sabe nada de `@Data` en entidades, de `Float` para dinero, de una entidad pasada como argumento a `log.*(...)`, ni de un `toString()` que enmascare secretos. La lista pasa a describirse como "siete reglas ArchUnit + verificación de módulos de Modulith".
 - **Qué NO se adopta de Modulith**: el *Event Publication Registry* ni `@ApplicationModuleListener`. El descarte de "domain events + patrón outbox" de `03-analisis-y-patrones.md` §4 sigue vigente sin cambios — los eventos de negocio siguen siendo `BusinessEvents` (log estructurado + escritura en `audit_log` en la misma transacción del caso de uso, ver `11-observabilidad-y-logging.md`), síncronos. Adoptar Modulith **no** enciende por sí solo un mecanismo de eventos asíncronos entre módulos; el día que haga falta (p. ej. notificaciones por email, `03` §4), la infraestructura de módulos ya estará puesta, pero eso no ocurre en este ADR.
 - **Transacciones**: una transacción de negocio por caso de uso, que atraviesa llamadas entre módulos como llamadas Java normales dentro del mismo proceso. El checkout descuenta stock (`inventory`) y crea el pedido (`orders`) en la **misma** transacción — es justo la propiedad que se perdería el día que estos dos módulos se extrajeran a servicios separados, y es la razón de fondo por la que esa extracción no se hace en este release ni está prevista salvo que el negocio lo justifique.
-- **Verificación en CI**: `spring-modulith-starter-test`, con una clase `ModulithTest` por servicio que llama a `ApplicationModules.of(UkunApiApplication.class).verify()` (análogamente en `ukun-auth`), desde el mismo commit del skeleton — no se añade después. `spring-modulith-docs` genera el diagrama de módulos vía `Documenter`, que **sustituye** a mantener un diagrama de paquetes a mano en `01-arquitectura.md`. El endpoint de Actuator de módulos se activa solo en el perfil de desarrollo.
+- **Verificación en CI**: `spring-modulith-starter-test`, con una clase `ModulithTest` que llama a `ApplicationModules.of(UkunApiApplication.class).verify()`, desde el mismo commit del skeleton — no se añade después. (Este ADR decía «una por servicio, análogamente en `ukun-auth`»; desde ADR-0022 hay una sola, la de `ukun-api`.) `spring-modulith-docs` genera el diagrama de módulos vía `Documenter`, que **sustituye** a mantener un diagrama de paquetes a mano en `01-arquitectura.md`. El endpoint de Actuator de módulos se activa solo en el perfil de desarrollo.
 - **Límite explícito de esta decisión**: adoptar Modulith no es un compromiso de extraer microservicios de dominio. `03-analisis-y-patrones.md` §4 sigue descartando esa opción sin cambios. Lo único que cambia es que, el día que un módulo concreto justifique salir del monolito por una razón de negocio real (no de curiosidad técnica), su frontera ya estará declarada y verificada en CI en vez de tener que descubrirse a posteriori escarbando en el código.
 
 ## Consecuencias
-- Siete módulos con dueño de tabla claro en `ukun-api`, tres en `ukun-auth`, cada uno con su `package-info.java` y su entrada en el grafo de dependencias — verificable en build, no solo descrito en un documento.
+- Siete módulos con dueño de tabla claro en `ukun-api` ~~, tres en `ukun-auth`~~, cada uno con su `package-info.java` y su entrada en el grafo de dependencias — verificable en build, no solo descrito en un documento.
 - Seis asociaciones JPA existentes en el legacy se convierten a referencias por id al escribir las entidades nuevas; ninguna de las cuatro consultas culpables del defecto #12 se degrada (comprobación §2).
 - Aparece un ciclo real (`catalog`↔`inventory`) que se resuelve separando el endpoint de disponibilidad del catálogo — cambio de forma del contrato REST que debe entrar antes de SINC-1.
 - El diagrama de módulos deja de mantenerse a mano; lo genera `Documenter` en cada build de desarrollo.
-- Coste de mantenimiento: dos configuraciones de Modulith (una por servicio) en vez de una regla ArchUnit central; se acepta explícitamente que en `ukun-auth` el beneficio es menor que en `ukun-api`.
+- Coste de mantenimiento: dos configuraciones de Modulith (una por servicio) en vez de una regla ArchUnit central; se acepta explícitamente que en `ukun-auth` el beneficio es menor que en `ukun-api`. **Desde ADR-0022 queda una sola**, la de `ukun-api`.
 
 ## Alternativas descartadas
 - **Mantener solo la regla ArchUnit de fronteras entre paquetes** (decisión previa de `03-analisis-y-patrones.md` §4): sigue siendo un argumento válido para el tamaño actual del dominio. Se descarta aquí no porque fuera erróneo, sino por preferir la herramienta estándar del ecosistema Spring para este problema y dejar preparada una extracción futura sin coste añadido hoy.
-- **Modulith solo en `ukun-api`, `ukun-auth` sin modularizar**: descartado porque `ukun-auth` ya tiene una separación interna clara (cuentas / saga de registro / OAuth2) que Modulith puede hacer cumplir con coste marginal, aunque el beneficio sea menor que en `ukun-api`.
+- **Modulith solo en `ukun-api`, `ukun-auth` sin modularizar**: descartado porque `ukun-auth` ya tiene una separación interna clara (cuentas / saga de registro / OAuth2) que Modulith puede hacer cumplir con coste marginal, aunque el beneficio sea menor que en `ukun-api`. → **Esta alternativa es la que ADR-0022 acaba aceptando**, al implementar el servicio y comprobar que el coste no era el problema: lo que se compraba con él no aplicaba.
 - **Absorber `ukun-auth` como módulo de `ukun-api`**: revertiría ADR-0004 y parcialmente ADR-0003 (frontera de identidad y BFF en el gateway) sin que este ADR tenga mandato para tocar esas decisiones; la separación de `ukun-auth` es por seguridad (superficie de credenciales, base propia), no por escala, y ese argumento no cambia por adoptar Modulith.

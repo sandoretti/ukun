@@ -23,7 +23,7 @@ Cada documento arranca con un bloque de cuatro líneas (*fuente de verdad de · 
 | [`11-observabilidad-y-logging.md`](./11-observabilidad-y-logging.md) | Registro cerrado de eventos, qué nunca se loguea, formato/tracing, tabla `audit_log` |
 | [`12-error-contract.md`](./12-error-contract.md) | Registro cerrado de `code`s de error y proceso para añadir uno |
 | [`13-testing.md`](./13-testing.md) | Cómo se escribe un test: nomenclatura, AssertJ, object mothers, Testcontainers, fases de CI |
-| [`14-modules.md`](./14-modules.md) | Cómo se escribe un módulo de Spring Modulith y qué hacer si `verify()` falla |
+| [`14-modules.md`](./14-modules.md) | Cómo se escribe un módulo de Spring Modulith y qué hacer si `verify()` falla — **solo `ukun-api`**; `ukun-auth` va por capas (ADR-0022) |
 | [`adr/`](./adr/) | Decisiones estructurales, una por fichero, con su alternativa descartada |
 | [`api/openapi/`](./api/openapi/) | El contrato REST (`ukun-api.yaml`, `ukun-auth.yaml`), en inglés, escrito antes que la implementación |
 

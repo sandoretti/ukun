@@ -1,0 +1,353 @@
+# Complete baseline of ukun_auth (docs/10-modelo-de-datos.md §8, skill `liquibase`).
+#
+# It is complete, not incremental: there is no legacy reader to break and no data to preserve
+# (ADR-0007), so every type, CHECK, UNIQUE, index and ON DELETE lands in its final shape here.
+# There is no renameTable/renameColumn anywhere and never will be — the schema is born in English
+# (ADR-0018), and unlike ukun_app there is not even a Spanish predecessor to be tempted by: the
+# legacy `cuenta` table is not migrated, it is abandoned (docs/08-identidad-y-seguridad.md §1).
+#
+# ---------------------------------------------------------------------------------------------
+# What lives here, and what deliberately does not
+#
+# ukun_auth is anaemic on purpose (ADR-0004): credentials and roles, nothing else. `name` and
+# `last_name` are profile data and stay in ukun_app, so that editing a profile remains a single
+# local transaction. If a changeset in this file ever adds a profile column, the ADR is being
+# reopened by accident.
+#
+# There is no foreign key from here to anything in ukun_app and there never can be: they are
+# separate databases. customer.account_id over there is an opaque value with a unique index, not a
+# real FK (docs/08 §1).
+#
+# ---------------------------------------------------------------------------------------------
+# Why the changesets are grouped the way they are
+#
+# Same shape as the baseline of ukun_app, so the two read alike: tables first, then unique
+# constraints, CHECKs, foreign keys and indexes as their own changesets. Raw `sql` appears only
+# where liquibase-core (OSS) cannot express the change:
+#
+#   * CHECK constraints. `AddCheckConstraintChange` is Liquibase Pro, and the `checkConstraint`
+#     attribute of `constraints:` never reaches CreateTableStatement: the changeset validates,
+#     applies, reports success — and the constraint is simply absent from the database. That silent
+#     divergence between what the entity promises and what the database enforces is what rule 5 of
+#     the `liquibase` skill exists to prevent, so SchemaBaselineIT counts them in
+#     information_schema rather than trusting this file.
+#   * CREATE EXTENSION.
+#
+# Everything else is native and gets its rollback generated automatically.
+databaseChangeLog:
+
+  # CITEXT is what makes email uniqueness case-insensitive *in the type* rather than in every
+  # comparison (docs/10 §2). The alternative — TEXT plus a unique index on lower(email) — is more
+  # portable but leaks: Hibernate turns a derived `findByEmail` into `where email = ?`, so the first
+  # such query anybody writes silently skips the normalisation. Portability was already given up in
+  # docs/03-analisis-y-patrones.md §4.
+  - changeSet:
+      id: 001-01-extension-citext
+      author: sandoretti
+      comment: CITEXT extension, required by account.email (docs/10 §2)
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS citext
+      rollback:
+        - sql:
+            sql: DROP EXTENSION IF EXISTS citext
+
+  # The identity table. UUID and not BIGINT, unlike every id in ukun_app: this one travels outside
+  # its database — it is the `sub` claim of the JWT and the value ukun_app stores as
+  # customer.account_id — and a guessable sequential identifier for an account is a different thing
+  # from a guessable product id (docs/08 §1, §4).
+  #
+  # `password_hash` is VARCHAR(255) and that is a storage size, NOT a password policy: it fits a
+  # 60-character BCrypt hash with room for an Argon2id one (~100) if the encoder is ever migrated.
+  # The legacy VARCHAR(16) was a limit on the *password itself*, stored in the clear — the thing
+  # docs/08 §8 replaces with a 12-character minimum and no maximum at all.
+  #
+  # `enabled` defaults to false because an account is always created in two steps: reserved, then
+  # activated (skill `spring-auth`, rule 4). A default of true would make the safe path the one you
+  # have to remember.
+  - changeSet:
+      id: 001-02-table-account
+      author: sandoretti
+      comment: account — email, password hash and enabled flag (docs/08 §2, ADR-0004)
+      changes:
+        - createTable:
+            tableName: account
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints: {primaryKey: true, primaryKeyName: pk_account}
+              - column: {name: email, type: CITEXT, constraints: {nullable: false}}
+              - column: {name: password_hash, type: VARCHAR(255), constraints: {nullable: false}}
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints: {nullable: false}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+
+  # Roles as rows and not as a column on `account`: an account can carry EMPLOYEE and ADMIN at once
+  # (the admin sub-flag of ADR-0006), so a single-valued column would be wrong from day one.
+  #
+  # The composite primary key is what forbids the same role twice for the same account, and it makes
+  # a separate index on account_id redundant — it is already the leading column. The baseline of
+  # ukun_app makes the same call about two of its foreign keys.
+  - changeSet:
+      id: 001-03-table-account-role
+      author: sandoretti
+      comment: account_role — business role per account, CUSTOMER/EMPLOYEE/ADMIN (ADR-0006)
+      changes:
+        - createTable:
+            tableName: account_role
+            columns:
+              - column: {name: account_id, type: UUID, constraints: {nullable: false}}
+              - column: {name: role, type: VARCHAR(20), constraints: {nullable: false}}
+        - addPrimaryKey:
+            tableName: account_role
+            columnNames: account_id, role
+            constraintName: pk_account_role
+
+  # Idempotency of account creation, the table rule 6 of the `spring-auth` skill refers to. The
+  # signup saga sends an Idempotency-Key with the reservation; a retry with the same key returns the
+  # same accountId with 200 instead of a second account or a 409 (docs/08 §3). Without this table
+  # "idempotent" would mean "we trust the client not to retry".
+  - changeSet:
+      id: 001-04-table-registration-request
+      author: sandoretti
+      comment: registration_request — idempotency of the signup saga (docs/08 §3)
+      changes:
+        - createTable:
+            tableName: registration_request
+            columns:
+              - column:
+                  name: idempotency_key
+                  type: UUID
+                  constraints: {primaryKey: true, primaryKeyName: pk_registration_request}
+              - column: {name: account_id, type: UUID, constraints: {nullable: false}}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+
+  # ---------------------------------------------------------------------------------------------
+  # The three tables of spring-security-oauth2-authorization-server, transcribed.
+  #
+  # They are NOT included with `sqlFile` pointing at the scripts inside the dependency's jar
+  # (org/springframework/security/oauth2/server/authorization/*.sql). Tying a changeset's checksum
+  # to a file shipped by a library collides head-on with rule 1 of the `liquibase` skill — an
+  # applied changeset is never edited — because bumping Spring Security would change that checksum
+  # and desynchronise every database the changeset had already run against. Transcribed, a version
+  # bump that changes the vendor schema becomes what it should be: a new changeset under releases/,
+  # written on purpose.
+  #
+  # Transcribed from Spring Security 7.1.0, applying the two adjustments the scripts themselves
+  # document in their header for PostgreSQL: `blob` -> `text` (Postgres has no blob type) and
+  # `timestamp` -> `timestamptz` (so instants are stored accurately rather than losing their zone).
+  # ---------------------------------------------------------------------------------------------
+
+  - changeSet:
+      id: 001-05-table-oauth2-registered-client
+      author: sandoretti
+      comment: oauth2_registered_client — transcribed from Spring Security 7.1.0
+      changes:
+        - createTable:
+            tableName: oauth2_registered_client
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(100)
+                  constraints: {primaryKey: true, primaryKeyName: pk_oauth2_registered_client}
+              - column: {name: client_id, type: VARCHAR(100), constraints: {nullable: false}}
+              - column:
+                  name: client_id_issued_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column: {name: client_secret, type: VARCHAR(200)}
+              - column: {name: client_secret_expires_at, type: TIMESTAMPTZ}
+              - column: {name: client_name, type: VARCHAR(200), constraints: {nullable: false}}
+              - column: {name: client_authentication_methods, type: VARCHAR(1000), constraints: {nullable: false}}
+              - column: {name: authorization_grant_types, type: VARCHAR(1000), constraints: {nullable: false}}
+              - column: {name: redirect_uris, type: VARCHAR(1000)}
+              - column: {name: post_logout_redirect_uris, type: VARCHAR(1000)}
+              - column: {name: scopes, type: VARCHAR(1000), constraints: {nullable: false}}
+              - column: {name: client_settings, type: VARCHAR(2000), constraints: {nullable: false}}
+              - column: {name: token_settings, type: VARCHAR(2000), constraints: {nullable: false}}
+
+  - changeSet:
+      id: 001-06-table-oauth2-authorization
+      author: sandoretti
+      comment: oauth2_authorization — transcribed from Spring Security 7.1.0, blob -> TEXT
+      changes:
+        - createTable:
+            tableName: oauth2_authorization
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(100)
+                  constraints: {primaryKey: true, primaryKeyName: pk_oauth2_authorization}
+              - column: {name: registered_client_id, type: VARCHAR(100), constraints: {nullable: false}}
+              - column: {name: principal_name, type: VARCHAR(200), constraints: {nullable: false}}
+              - column: {name: authorization_grant_type, type: VARCHAR(100), constraints: {nullable: false}}
+              - column: {name: authorized_scopes, type: VARCHAR(1000)}
+              - column: {name: attributes, type: TEXT}
+              - column: {name: state, type: VARCHAR(500)}
+              - column: {name: authorization_code_value, type: TEXT}
+              - column: {name: authorization_code_issued_at, type: TIMESTAMPTZ}
+              - column: {name: authorization_code_expires_at, type: TIMESTAMPTZ}
+              - column: {name: authorization_code_metadata, type: TEXT}
+              - column: {name: access_token_value, type: TEXT}
+              - column: {name: access_token_issued_at, type: TIMESTAMPTZ}
+              - column: {name: access_token_expires_at, type: TIMESTAMPTZ}
+              - column: {name: access_token_metadata, type: TEXT}
+              - column: {name: access_token_type, type: VARCHAR(100)}
+              - column: {name: access_token_scopes, type: VARCHAR(1000)}
+              - column: {name: oidc_id_token_value, type: TEXT}
+              - column: {name: oidc_id_token_issued_at, type: TIMESTAMPTZ}
+              - column: {name: oidc_id_token_expires_at, type: TIMESTAMPTZ}
+              - column: {name: oidc_id_token_metadata, type: TEXT}
+              - column: {name: refresh_token_value, type: TEXT}
+              - column: {name: refresh_token_issued_at, type: TIMESTAMPTZ}
+              - column: {name: refresh_token_expires_at, type: TIMESTAMPTZ}
+              - column: {name: refresh_token_metadata, type: TEXT}
+              - column: {name: user_code_value, type: TEXT}
+              - column: {name: user_code_issued_at, type: TIMESTAMPTZ}
+              - column: {name: user_code_expires_at, type: TIMESTAMPTZ}
+              - column: {name: user_code_metadata, type: TEXT}
+              - column: {name: device_code_value, type: TEXT}
+              - column: {name: device_code_issued_at, type: TIMESTAMPTZ}
+              - column: {name: device_code_expires_at, type: TIMESTAMPTZ}
+              - column: {name: device_code_metadata, type: TEXT}
+
+  - changeSet:
+      id: 001-07-table-oauth2-authorization-consent
+      author: sandoretti
+      comment: oauth2_authorization_consent — transcribed from Spring Security 7.1.0
+      changes:
+        - createTable:
+            tableName: oauth2_authorization_consent
+            columns:
+              - column: {name: registered_client_id, type: VARCHAR(100), constraints: {nullable: false}}
+              - column: {name: principal_name, type: VARCHAR(200), constraints: {nullable: false}}
+              - column: {name: authorities, type: VARCHAR(1000), constraints: {nullable: false}}
+        - addPrimaryKey:
+            tableName: oauth2_authorization_consent
+            columnNames: registered_client_id, principal_name
+            constraintName: pk_oauth2_authorization_consent
+
+  # ---------------------------------------------------------------------------------------------
+
+  # Two unique constraints, and the second one is the single deliberate deviation from the vendor
+  # schema in this file.
+  #
+  # ux_account_email is the reason CITEXT is used above: it is uniqueness of the login credential,
+  # and it is what turns "this email is already taken" into a 409 from the database rather than a
+  # racy exists-then-insert. That race is exactly what the legacy ClienteValidator/EmpleadoValidator
+  # do wrong (docs/08 §3).
+  #
+  # ux_oauth2_registered_client_id is NOT in Spring's script. It is added because
+  # JdbcRegisteredClientRepository looks a client up by client_id expecting one row, and the seeder
+  # of the two clients registers them by that value: without the constraint, a seeder that raced
+  # with itself would leave two rows and the failure would surface later as an arbitrary choice
+  # between them, rather than here as a constraint violation.
+  - changeSet:
+      id: 001-08-unique-constraints
+      author: sandoretti
+      comment: uniqueness of the login credential and of client_id (docs/08 §3)
+      changes:
+        - addUniqueConstraint:
+            tableName: account
+            columnNames: email
+            constraintName: ux_account_email
+        - addUniqueConstraint:
+            tableName: oauth2_registered_client
+            columnNames: client_id
+            constraintName: ux_oauth2_registered_client_id
+
+  # CHECKs as raw SQL, for the reason stated in the header: the OSS `checkConstraint` attribute
+  # applies without creating anything. SchemaBaselineIT counts these in information_schema, which is
+  # the only way to notice if that ever silently stops working.
+  #
+  # The role list is enumerated here and not left to the enum in Java. docs/10 §1 wants integrity
+  # expressed in the changelog and not only in Bean Validation — the legacy has columns where the
+  # entity promises more than the database enforces, and this is the same shape of mistake.
+  # ADR-0012 already chose VARCHAR + CHECK over a native enum type for the order status; the same
+  # reasoning applies, and adding a role later is an ALTER of one constraint rather than of a type.
+  - changeSet:
+      id: 001-09-check-constraints
+      author: sandoretti
+      comment: non-blank credentials and the closed list of business roles (docs/10 §1, ADR-0006)
+      changes:
+        - sql:
+            sql: ALTER TABLE account ADD CONSTRAINT ck_account_email_not_blank CHECK (length(btrim(email)) > 0)
+        - sql:
+            sql: ALTER TABLE account ADD CONSTRAINT ck_account_password_hash_not_blank CHECK (length(btrim(password_hash)) > 0)
+        - sql:
+            sql: ALTER TABLE account_role ADD CONSTRAINT ck_account_role_role CHECK (role IN ('CUSTOMER', 'EMPLOYEE', 'ADMIN'))
+      rollback:
+        - sql:
+            sql: ALTER TABLE account DROP CONSTRAINT ck_account_email_not_blank
+        - sql:
+            sql: ALTER TABLE account DROP CONSTRAINT ck_account_password_hash_not_blank
+        - sql:
+            sql: ALTER TABLE account_role DROP CONSTRAINT ck_account_role_role
+
+  # Both foreign keys CASCADE, and both for the same reason docs/10 §6 gives: CASCADE only where the
+  # child is not history. A role is not a record of anything that happened, it is part of the
+  # account; and a registration_request outlives nothing either — the reconciliation job that
+  # deletes accounts still disabled after 24 hours (skill `spring-auth`, rule 7) must not leave its
+  # idempotency key behind, or retrying that same signup would resolve to an account that no longer
+  # exists.
+  - changeSet:
+      id: 001-10-foreign-keys
+      author: sandoretti
+      comment: both children belong to the account and go with it (docs/10 §6)
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: account_role
+            baseColumnNames: account_id
+            referencedTableName: account
+            referencedColumnNames: id
+            constraintName: fk_account_role_account
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: registration_request
+            baseColumnNames: account_id
+            referencedTableName: account
+            referencedColumnNames: id
+            constraintName: fk_registration_request_account
+            onDelete: CASCADE
+
+  # One index, and the list of what is deliberately absent is the more useful half.
+  #
+  # ix_registration_request_account exists because the FK above is not covered by any other index:
+  # account_id is not the leading column of that table's primary key, so deleting an account would
+  # scan it. account_role needs no equivalent — there, account_id *is* the leading column of the
+  # composite PK, and adding one would be the redundant index the baseline of ukun_app rejects twice.
+  #
+  # Not created, on purpose:
+  #   * anything on account.enabled or account.created_at for the reconciliation job. It runs daily
+  #     over a table of hundreds of rows; docs/10 §4 justifies each index by the query that motivates
+  #     it, and "a nightly sequential scan" motivates nothing.
+  #   * anything on the oauth2_* tables beyond their keys. Spring's own scripts create none, and
+  #     inventing one is a decision about somebody else's access patterns.
+  - changeSet:
+      id: 001-11-indexes
+      author: sandoretti
+      comment: the only foreign key not already covered by a primary key (docs/10 §4)
+      changes:
+        - createIndex:
+            tableName: registration_request
+            indexName: ix_registration_request_account
+            columns:
+              - column: {name: account_id}
