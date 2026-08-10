@@ -44,6 +44,16 @@ describe('CatalogPage', () => {
     expect(within(chest).getByText('Sin stock online')).toBeDefined();
   });
 
+  it('links every card to its detail sheet, which is the only way in', async () => {
+    renderWithProviders(<CatalogPage />, { route: '/products?name=sofa' });
+    await screen.findByRole('article', { name: 'Sofá de cuero' });
+
+    // Named by the title and not by the whole card, so tabbing through the grid is readable.
+    expect(screen.getByRole('link', { name: 'Sofá de cuero' }).getAttribute('href')).toBe(
+      '/products/1',
+    );
+  });
+
   it('filters by type the moment the option is picked, with no apply button', async () => {
     const user = userEvent.setup();
     renderWithProviders(<CatalogPage />, { route: '/products?page=2' });

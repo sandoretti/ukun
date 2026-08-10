@@ -34,6 +34,14 @@
   "product": {
     "noImage": "No photo"
   },
+  "detail": {
+    "breadcrumb": "Where you are",
+    "sku": "SKU",
+    "description": "Description",
+    "noDescription": "This product has no description yet.",
+    "availabilityFailed": "We could not check the availability of this product.",
+    "backToCatalog": "Back to the catalogue"
+  },
   "availability": {
     "available": "In stock",
     "unavailable": "Out of stock online",

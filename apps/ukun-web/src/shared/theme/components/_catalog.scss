@@ -14,6 +14,24 @@
   background-color: var(--bs-tertiary-bg);
 }
 
+// La tarjeta entera es el enlace a la ficha, así que tiene que parecerlo al pasar por encima: una
+// tarjeta clicable sin afordancia no se distingue de una que no lo es. Solo sombra y borde — la
+// maqueta de la tarjeta no se toca (regla 13 de la skill `react-web`).
+.product-card-link {
+  &:hover .card {
+    border-color: var(--bs-secondary-color);
+    box-shadow: bootstrap.$box-shadow-sm;
+  }
+
+  // El foco se pinta alrededor de la tarjeta, que es lo que el enlace abarca. `:focus-visible` y no
+  // `:focus`: con el ratón no hay anillo.
+  &:focus-visible {
+    outline: 0.125rem solid tokens.$primary;
+    outline-offset: 0.125rem;
+    border-radius: bootstrap.$border-radius;
+  }
+}
+
 // Sin stock en la tienda online: la foto se aparta del primer plano en vez de gritarlo con un
 // cartel. El significado lo lleva el texto de estado, no la atenuación.
 .product-media--dimmed {
@@ -33,6 +51,14 @@
 
 .status-dot--in { background-color: tokens.$accent; }
 .status-dot--out { background-color: var(--bs-secondary-color); }
+
+// --- Ficha de producto --------------------------------------------------------------------------
+
+// La descripción es texto libre que escribe el back-office (RF-10): sus saltos de línea son parte
+// del contenido y sin esto se colapsarían en un párrafo corrido.
+.product-description {
+  white-space: pre-line;
+}
 
 // --- Sidebar de filtros -------------------------------------------------------------------------
 
