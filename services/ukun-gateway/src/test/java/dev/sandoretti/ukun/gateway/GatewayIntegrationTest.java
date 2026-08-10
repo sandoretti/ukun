@@ -35,8 +35,14 @@ abstract class GatewayIntegrationTest {
         UpstreamStub.bind(registry);
     }
 
-    private static final String CSRF_COOKIE = "XSRF-TOKEN";
-    private static final String CSRF_HEADER = "X-XSRF-TOKEN";
+    /**
+     * The pair the SPA is written against: the cookie it reads and the header it echoes it in. Named
+     * here rather than in the one test that is about CSRF, because every mutation in every subclass
+     * now depends on them and two spellings of the same string is exactly how that stops being true.
+     */
+    protected static final String CSRF_COOKIE = "XSRF-TOKEN";
+
+    protected static final String CSRF_HEADER = "X-XSRF-TOKEN";
 
     @LocalServerPort
     private int port;

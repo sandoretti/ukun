@@ -3,23 +3,17 @@ package dev.sandoretti.ukun.gateway;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf;
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockOAuth2Login;
-import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
 
 import dev.sandoretti.ukun.gateway.support.UpstreamStub;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
@@ -28,27 +22,11 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * walk straight back through without a password, because the authorization server would still
  * recognise the browser and issue a code without prompting.
  */
-@SpringBootTest
-class LogoutIT {
-
-    @DynamicPropertySource
-    static void upstreams(DynamicPropertyRegistry registry) {
-        UpstreamStub.bind(registry);
-    }
-
-    @Autowired
-    private ApplicationContext context;
+class LogoutIT extends FilterChainIntegrationTest {
 
     /** Injected rather than rebuilt, so the flow under test uses the registration the service runs with. */
     @Autowired
     private ReactiveClientRegistrationRepository clients;
-
-    private WebTestClient http;
-
-    @BeforeEach
-    void bindToTheFilterChain() {
-        http = WebTestClient.bindToApplicationContext(context).apply(springSecurity()).build();
-    }
 
     @Test
     @DisplayName("sends the browser on to end the session at ukun-auth")

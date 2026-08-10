@@ -3,20 +3,11 @@ package dev.sandoretti.ukun.gateway;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockOAuth2Login;
-import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
 
 import dev.sandoretti.ukun.gateway.support.UpstreamStub;
 import dev.sandoretti.ukun.gateway.support.UpstreamStub.Received;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
  * The relay: a session on the way in, a {@code Bearer} token on the way out, and the browser never
@@ -26,34 +17,8 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * recorded, rather than from the response. That is the only place the question can actually be
  * answered: whether the gateway attached an {@code Authorization} header is invisible to the client
  * that made the request, which is the entire point of the pattern.
- *
- * <p>Bound to the application context rather than to a port for the reason
- * {@code RouteAuthorizationIT} gives: {@code mockOAuth2Login()} works by mutating the
- * {@code ServerWebExchange}, which a client talking to a real socket cannot do. The chain is intact
- * and the hop to the stub is still real HTTP.
  */
-@SpringBootTest
-class TokenRelayIT {
-
-    @DynamicPropertySource
-    static void upstreams(DynamicPropertyRegistry registry) {
-        UpstreamStub.bind(registry);
-    }
-
-    @Autowired
-    private ApplicationContext context;
-
-    private WebTestClient http;
-
-    @BeforeEach
-    void bindToTheFilterChain() {
-        http = WebTestClient.bindToApplicationContext(context).apply(springSecurity()).build();
-    }
-
-    @AfterEach
-    void forgetUpstreamRequests() {
-        UpstreamStub.forgetRequests();
-    }
+class TokenRelayIT extends FilterChainIntegrationTest {
 
     @Test
     @DisplayName("attaches the access token to what it proxies to ukun-api")

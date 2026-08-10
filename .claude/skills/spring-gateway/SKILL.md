@@ -45,7 +45,18 @@ Cinco cosas más que hereda quien toque la autenticación de este servicio. Ning
 
 Y una consecuencia de orden que cambia lo que ven los tests: **CSRF decide antes que el enrutado, antes del límite de tamaño y antes de la autorización.** Una mutación sin token no llega a producir ni el 413 ni el 404 de «esa ruta no existe». Un test que quiera afirmar cualquiera de los dos tiene que mandar una petición válida en todo lo demás (`csrfProtected` en `GatewayIntegrationTest`).
 
-Y un dato de test: en Boot 4 **no hay `WebTestClient` inyectable** para `@SpringBootTest(RANDOM_PORT)` (ese hueco lo ocupa `RestTestClient`), así que se construye a mano con `@LocalServerPort`. Sigue siendo `WebTestClient` y no `RestTestClient` porque los mutadores de `spring-security-test` —`mockUser()`, y mañana los de CSRF— solo existen para él, y necesitan `bindToApplicationContext`.
+Y un dato de test: en Boot 4 **no hay `WebTestClient` inyectable** para `@SpringBootTest(RANDOM_PORT)` (ese hueco lo ocupa `RestTestClient`), así que se construye a mano con `@LocalServerPort`. Sigue siendo `WebTestClient` y no `RestTestClient` porque los mutadores de `spring-security-test` —`mockUser()`, `mockOAuth2Login()`, `csrf()`— solo existen para él, y necesitan `bindToApplicationContext`.
+
+### Qué clase base elegir para un test de este servicio
+
+Hay dos, y la elección no es de estilo: son dos `webEnvironment` distintos, o sea dos contextos de Spring. Cualquier clase nueva **extiende una de las dos y no vuelve a declarar el `@DynamicPropertySource`** — ese método entra en la clave de caché del contexto, y declararlo a mano en cada clase es cómo se pasa de dos contextos a cinco sin que nadie lo note.
+
+| Si el test va de… | Base | Por qué |
+|---|---|---|
+| cookies, cabeceras, estados, tamaño del cuerpo, enrutado | `GatewayIntegrationTest` (puerto real) | El mecanismo *es* el cable; hace falta un socket de verdad |
+| ser alguien: roles, sesión, relevo del token, logout | `FilterChainIntegrationTest` (contexto) | Los mutadores autentican mutando el `ServerWebExchange`, y un cliente contra un puerto no tiene exchange que mutar |
+
+Y una consecuencia del orden que muerde al escribir tests: **CSRF decide antes que el enrutado, el límite de tamaño y la autorización.** Un test que quiera afirmar un 413 o un 404 tiene que mandar una petición válida en todo lo demás — para eso está `csrfProtected` en la primera base, que toma el token de `/actuator/health` justamente porque esa ruta no reenvía nada a ningún stub y no ensucia lo que el test va a contar.
 
 ## Skills externas de apoyo
 

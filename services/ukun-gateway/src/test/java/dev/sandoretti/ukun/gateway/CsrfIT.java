@@ -21,9 +21,6 @@ import org.junit.jupiter.api.Test;
  */
 class CsrfIT extends GatewayIntegrationTest {
 
-    private static final String COOKIE = "XSRF-TOKEN";
-    private static final String HEADER = "X-XSRF-TOKEN";
-
     /** {@code /api/products} is public at this layer (ADR-0020), so CSRF is the only thing gating it. */
     private static final String MUTATION = "/api/products";
 
@@ -43,11 +40,11 @@ class CsrfIT extends GatewayIntegrationTest {
                 .expectStatus()
                 .isOk()
                 .expectCookie()
-                .exists(COOKIE)
+                .exists(CSRF_COOKIE)
                 .expectCookie()
-                .httpOnly(COOKIE, false)
+                .httpOnly(CSRF_COOKIE, false)
                 .expectCookie()
-                .sameSite(COOKIE, "Lax");
+                .sameSite(CSRF_COOKIE, "Lax");
     }
 
     /**
