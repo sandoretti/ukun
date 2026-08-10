@@ -3,6 +3,16 @@ import { Link } from 'react-router-dom';
 import { Col, Container, Row } from 'react-bootstrap';
 
 /**
+ * Where the "Explore" block goes, in order. Data and not three near-identical `<li>`s, same as the
+ * navigation bar's entries — and every destination is a route that exists today.
+ */
+const EXPLORE_LINKS = [
+  { key: 'home', to: '/' },
+  { key: 'catalog', to: '/products' },
+  { key: 'premium', to: '/products?sort=PRICE_DESC' },
+] as const satisfies readonly { key: string; to: string }[];
+
+/**
  * The foot of every route, mounted once from `AppLayout`. It lives in `shared/ui/` and not in
  * `features/home/` because it is part of the shell, like the navigation bar.
  *
@@ -26,21 +36,13 @@ export function SiteFooter() {
             <h2 className="h6 text-uppercase mb-3">{t('footer.explore.title')}</h2>
             <nav aria-label={t('footer.explore.title')}>
               <ul className="list-unstyled mb-0 d-grid gap-2">
-                <li>
-                  <Link to="/" className="site-footer__link">
-                    {t('footer.explore.home')}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/products" className="site-footer__link">
-                    {t('footer.explore.catalog')}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/products?sort=PRICE_DESC" className="site-footer__link">
-                    {t('footer.explore.premium')}
-                  </Link>
-                </li>
+                {EXPLORE_LINKS.map((link) => (
+                  <li key={link.key}>
+                    <Link to={link.to} className="site-footer__link">
+                      {t(`footer.explore.${link.key}`)}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </nav>
           </Col>

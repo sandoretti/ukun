@@ -3,6 +3,7 @@ import { Button } from 'react-bootstrap';
 
 import { Icon } from '../../../shared/ui/Icon';
 import { formatMoney } from '../../../shared/format/money';
+import { useLocale } from '../../../shared/hooks/useLocale';
 import type { ProductType } from '../../../shared/api/productTypes';
 import type { CatalogFilterInput } from '../api/productKeys';
 
@@ -19,8 +20,8 @@ type ActiveFiltersProps = {
  * offcanvas on a phone, so without this row nothing would say why the listing is short.
  */
 export function ActiveFilters({ filters, types, onRemove, onClear }: ActiveFiltersProps) {
-  const { t, i18n } = useTranslation('catalog');
-  const locale = i18n.resolvedLanguage ?? 'es';
+  const { t } = useTranslation('catalog');
+  const locale = useLocale();
 
   const typeName = types.find((type) => type.id === filters.typeId)?.name;
 

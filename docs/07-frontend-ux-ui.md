@@ -11,9 +11,30 @@ Decisión base (ver `adr/0002-frontend-react-bootstrap.md`): **react-bootstrap**
 
 El CSS actual (`ukun-clientes/static/css/styles.css` y `ukun-empleados/static/css/styles.css`) son dos ficheros distintos con **dos paletas verdes distintas** (`#365a08`/`#e5f6db` en uno, `#5d9d0b`/`#456e0f`/`#E9F5D8` en otro), colores repetidos literalmente en vez de variables, y un color de marca puesto inline (`style="background-color: #5d9d0b"` en el layout de empleados). Se unifica en un único tema.
 
-- Un solo fichero de tema (`shared/theme/bootstrap-overrides.scss`, con `sass` como dependencia npm) sobre las variables de Bootstrap 5.3: `--bs-primary`, `--bs-body-font-family`, etc. — aplicado a toda la app, ya no hay "app de clientes" y "app de empleados" con temas distintos, hay una app con una sección de back-office.
+- Un solo tema (`shared/theme/`, con `sass` como dependencia npm) sobre las variables de Bootstrap 5.3: `--bs-primary`, `--bs-body-font-family`, etc. Es un índice (`index.scss`) y parciales por responsabilidad: `_tokens.scss` es la única fuente de la paleta, `_bootstrap.scss` el **único** `@use ... with` que configura Bootstrap, y luego `_fonts`, `_base`, `_utilities` y `components/*`. Aplicado a toda la app, ya no hay "app de clientes" y "app de empleados" con temas distintos, hay una app con una sección de back-office.
 - **Los dos `styles.css` legacy (`ukun-clientes/static/css/styles.css`, `ukun-empleados/static/css/styles.css`, 183 líneas en total) se descartan, no se traducen.** Son exactamente el problema que se está corrigiendo: dos paletas, colores repetidos literalmente en vez de variables, un color de marca puesto inline (`style="background-color: #5d9d0b"`) en el layout de empleados. El tema nuevo se construye desde cero como overrides sobre las variables de Bootstrap, con la paleta fijada abajo.
 - Reutilizar la tipografía ya existente (`AvertaStandard-Regular.otf`, hoy duplicada en ambos `static/`) — se sirve una sola vez.
+
+### El logotipo
+
+El original de marca es `resources/logo/UkunLogo.png` (1200×400) y **no se importa nunca desde el
+frontend**: su tinta ocupa solo `(159,73)→(1041,327)`, así que arrastra un 13 % de aire transparente
+a cada lado que descoloca cualquier alineación, y sus dos verdes (`#365a08` y `#5d9d0b`) son
+ilegibles sobre el verde de la barra. Lo que se sirve es un derivado recortado y en blanco,
+`apps/ukun-web/src/assets/ukun-wordmark-light.png` (882×254), regenerable con:
+
+```python
+from PIL import Image
+src = Image.open('resources/logo/UkunLogo.png').convert('RGBA').crop((159, 73, 1041, 327))
+out = Image.new('RGBA', src.size, (255, 255, 255, 0))
+out.putalpha(src.getchannel('A'))   # el antialias vive en el alfa: se conserva
+out.save('apps/ukun-web/src/assets/ukun-wordmark-light.png', optimize=True)
+```
+
+Ese derivado se usa **solo** en la barra de navegación. En la portada la marca va en tipografía
+(`.hero__eyebrow` con la fuente de la casa), no como imagen: así comparte el borde izquierdo del
+titular sin descontar aire a mano, escala con el viewport y no cuesta ni una petición ni un salto de
+maquetación.
 
 ### Paleta
 
@@ -159,12 +180,15 @@ Hoy hay 7 usos sueltos de Bootstrap Icons repartidos en las plantillas, sin ning
 | Éxito / confirmado | `check_circle` | Error / rechazado | `error` |
 | Advertencia | `warning` | Stock | `inventory_2` |
 | Filtros | `tune` | Quitar / cerrar | `close` |
+| Avanzar / ir a | `arrow_forward` | | |
 
 Ampliar el mapa es añadir una fila aquí, no elegir un icono ad-hoc dentro de una pantalla.
 
 ## Estados que toda pantalla de datos debe cubrir
 
 Carga · vacío (p. ej. "tu carrito está vacío", que hoy sí existe en `carrito.html` pero no en todas las pantallas) · error (con el `code` del `ProblemDetail` — registro completo en `docs/12-error-contract.md` — resuelto vía `t('errors:CODE', {...})`, nunca mostrando `detail` crudo, ver ADR-0019) · éxito. Se implementan una vez en los componentes base y se reutilizan — no se improvisa un `{loading && <p>Cargando...</p>}` por pantalla.
+
+Los cuatro juntos son `<QueryBoundary query={...} data={...} empty={...}>`, que recibe los datos ya resueltos —una lista aplanada, si la consulta es `useInfiniteQuery`— y entrega el caso de éxito por `children`. Una regla que no es negociable y vive dentro del componente: **el estado de error solo sustituye a la pantalla cuando no hay nada que enseñar**. Si una lectura falla después de que parte de sus datos ya haya llegado (el siguiente bloque del catálogo), lo que hay se queda y el fallo se cuenta junto a lo que intentó cargar más — tirar 48 productos para anunciar el 49 es peor que el propio fallo. `LoadingState`, `EmptyState` y `ErrorState` siguen existiendo sueltos para el caso puntual que no es una lista (el error del filtro de tipos en el sidebar del catálogo).
 
 ## i18n: react-i18next (ver ADR-0019)
 

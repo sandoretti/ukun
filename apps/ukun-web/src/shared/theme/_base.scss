@@ -1,0 +1,66 @@
+@use "bootstrap";
+@use "tokens";
+
+// Lo que aplica a la página entera, no a un componente concreto: foco, anclas, iconos y el salto al
+// contenido.
+
+// El anillo de foco se pinta al navegar con teclado, no al hacer clic con el ratón.
+:focus-visible {
+  outline: 2px solid tokens.$primary-hover;
+  outline-offset: 2px;
+}
+
+// Sobre las bandas verdes oscuras ese mismo anillo es invisible: ahí el foco se marca en blanco.
+.site-footer :focus-visible,
+.closing-cta :focus-visible {
+  outline-color: tokens.$on-dark;
+}
+
+// La barra es pegajosa, así que un salto a un ancla dejaría el encabezado debajo de ella.
+section[id] {
+  scroll-margin-top: 5rem;
+}
+
+// El `<span>` de Material Symbols es `inline` y arrastra el interlineado de su propia fuente, así
+// que dentro de un botón el glifo queda alto y pegado a un lado. Como caja flex de línea con
+// `line-height: 1` ocupa exactamente su cuadratín y quien decide dónde va es el contenedor.
+.material-symbols-outlined {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+// Un botón cuyo único contenido es un icono reparte el hueco en los dos ejes en vez de apoyar el
+// glifo en la línea base del texto que no tiene.
+.input-group > .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Tamaños del componente <Icon>. Eran un `style` inline con píxeles sueltos, que es justo lo que el
+// tema centralizado existe para evitar.
+.icon-sm { font-size: 1rem; }
+.icon-md { font-size: 1.5rem; }
+.icon-lg { font-size: 2rem; }
+
+// Primer tabulador de cada ruta: fuera de pantalla hasta que se enfoca. Sin transición — aparecer
+// es instantáneo, que es también lo que pide `prefers-reduced-motion`.
+.skip-link {
+  position: fixed;
+  z-index: bootstrap.$zindex-tooltip;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: bootstrap.$border-radius;
+  background-color: var(--bs-body-bg);
+  box-shadow: bootstrap.$box-shadow;
+  color: tokens.$primary;
+  transform: translateY(-300%);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}

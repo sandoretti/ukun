@@ -14,15 +14,110 @@
   "story": {
     "design": {
       "title": "Find the perfect balance",
-      "body": "Between minimalism and style: a short, carefully chosen range of clean lines and restrained finishes, meant to still make sense in five years' time. A smaller catalogue and a stronger point of view, so that choosing does not turn into work."
+      "body": "Between minimalism and style: a short, carefully chosen range of clean lines and restrained finishes, meant to still make sense in five years' time. A smaller catalogue and a stronger point of view, so that choosing does not turn into work.",
+      "bodySecondary": "Every season a handful of pieces come in and the ones we have stopped believing in go out. Before a design is signed off it goes through the workshop: it gets assembled, taken apart, loaded with more weight than it will ever carry in your home, and left in the test room for a month. If anything creaks, it goes back to the drawing board."
     },
     "price": {
       "title": "Affordable prices, no compromises",
-      "body": "Good design should be within anyone's reach, so we trim the price where it does not show — in the logistics, never in the materials. What you see is what you pay: no hidden fees and no invented discounts on inflated prices."
+      "body": "Good design should be within anyone's reach, so we trim the price where it does not show — in the logistics, never in the materials. What you see is what you pay: no hidden fees and no invented discounts on inflated prices.",
+      "bodySecondary": "We work with few suppliers on long contracts, we pack flat so a lorry carries three times as much, and we print no paper catalogue. That margin does not get lost along the way: it is the difference between a €900 sofa and the same sofa at €1,400 with a different logo stitched into the label."
     },
     "people": {
       "title": "Build rooms that look like you",
-      "body": "Whether you are freshening up the living room, putting together a desk you actually want to work at, or finishing off that corner that has been empty for months, there are people behind this who know the range and help you decide. You bring the style; we bring the pieces and the judgement."
+      "body": "Whether you are freshening up the living room, putting together a desk you actually want to work at, or finishing off that corner that has been empty for months, there are people behind this who know the range and help you decide. You bring the style; we bring the pieces and the judgement.",
+      "bodySecondary": "In store you can take fabric and wood samples home to see them in your own light, which is never the light of a showroom. And if you are torn between two sizes, we hand you the paper template to lay on the floor: cheaper than sending back a wardrobe that will not fit down the hallway."
+    }
+  },
+  "stats": {
+    "years": {
+      "value": "{{value}}",
+      "label": "years furnishing homes"
+    },
+    "stores": {
+      "value": "{{value}}",
+      "label": "stores across the country"
+    },
+    "products": {
+      "value": "{{value}}+",
+      "label": "products in the catalogue"
+    },
+    "orders": {
+      "value": "{{value}}+",
+      "label": "orders delivered"
+    }
+  },
+  "timeline": {
+    "title": "How we got here",
+    "lead": "Twelve years, a workshop that outgrew itself, and a stubborn refusal to drop the quality in order to drop the price.",
+    "milestones": {
+      "workshop": {
+        "year": "2014",
+        "title": "A workshop in Alcalá de Henares",
+        "body": "We started as three people in a rented unit, building tables to order for anyone who could not find the size they needed. Forty-one pieces sold that first year, every one of them delivered in the second-hand van we still keep parked behind the warehouse."
+      },
+      "firstStore": {
+        "year": "2017",
+        "title": "The first store",
+        "body": "We opened a small shop so people could sit on the sofas before buying them. That day we learned something that still rules the catalogue: nobody buys a chair they have not tried, and almost nobody returns one they have."
+      },
+      "online": {
+        "year": "2021",
+        "title": "The catalogue goes online",
+        "body": "We took the shop to the web with an idea the trade finds uncomfortable: showing the real availability of every product, store by store, even when the answer is that there are none left. We would rather lose a sale than have someone drive fifty kilometres for nothing."
+      },
+      "today": {
+        "year": "Today",
+        "title": "Eight stores, the same judgement",
+        "body": "We still bring in few new products a year and drop the ones that stop convincing us. The original workshop is still open: it is where prototypes get built and where pieces returned under warranty get repaired, which is the best way we know of finding out what we designed badly."
+      }
+    }
+  },
+  "materials": {
+    "title": "What it is made of, and how it arrives",
+    "lead": "Three decisions that explain why a piece of furniture lasts ten years or sags in two.",
+    "topics": {
+      "wood": {
+        "title": "Wood with a source",
+        "body": "Oak and beech from certified sustainably managed forests, and plywood — not chipboard — anywhere that carries weight. Joints are glued and dowelled, never merely stapled: slower to build, and the reason a shelf full of books does not pull apart at the corners."
+      },
+      "upholstery": {
+        "title": "Covers that come off and wash",
+        "body": "Every cover is removable and washes at thirty degrees at home. The fabrics pass the Martindale abrasion test above thirty thousand cycles, the threshold for heavy domestic use, and each one can be ordered on its own years later: a sofa should not be thrown out because one arm got stained."
+      },
+      "packaging": {
+        "title": "Flat-packed, no plastic",
+        "body": "Everything ships knocked down in recycled cardboard, corners protected with moulded pulp and not a metre of shrink wrap. Assembly takes a single key, which is in the box, and the instructions are drawings: if you need to read a paragraph to work out where a screw goes, the design is at fault."
+      }
+    }
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "lead": "What people ask most before buying furniture they have not seen in person.",
+    "items": {
+      "delivery": {
+        "question": "How long does delivery take?",
+        "answer": "Two to five working days for anything in the warehouse, and three to six weeks for made-to-order pieces, which are marked as such in the catalogue. The carrier calls the day before with a two-hour window."
+      },
+      "assembly": {
+        "question": "Does the furniture arrive assembled?",
+        "answer": "It arrives flat-packed, with the tools and the instructions inside the box. A table takes about twenty minutes and a large wardrobe a little over an hour. If you would rather not, you can add home assembly at checkout."
+      },
+      "returns": {
+        "question": "Can I return something that does not fit?",
+        "answer": "You have thirty days from delivery to return an order, assembled or not, as long as it is in good condition. We collect from your home at no cost and the money goes back to the same payment method within fourteen days."
+      },
+      "warranty": {
+        "question": "What does the warranty cover?",
+        "answer": "Five years on frames and mechanisms, two on upholstery and finishes. It covers manufacturing and material defects, not normal wear or damage from use the piece was not designed for. Spare parts can be ordered separately even once the warranty has run out."
+      },
+      "stores": {
+        "question": "Can I see a product before buying it?",
+        "answer": "Yes. The catalogue shows availability store by store, so you can check where a product is on display before making the trip. In store you can also take fabric and wood samples home with you."
+      },
+      "payment": {
+        "question": "Which payment methods do you accept?",
+        "answer": "Credit and debit card, and payment in store on collection. We do not keep full card details: the charge is processed by the bank's gateway and we only keep the last four digits to identify the order."
+      }
     }
   },
   "closing": {

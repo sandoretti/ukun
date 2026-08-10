@@ -1,0 +1,78 @@
+@use "../bootstrap";
+@use "../tokens";
+
+// El cascarón: barra de navegación, conmutador de idioma y pie. Lo que rodea a cualquier ruta.
+
+// La marca en la barra es el logotipo, no texto: la altura la fija el tema y el ancho lo deduce el
+// navegador de las dimensiones intrínsecas, así que la proporción no depende de esta regla.
+.navbar-brand__logo {
+  display: block;
+  width: auto;
+  height: 1.75rem;
+}
+
+// --- Conmutador de idioma -------------------------------------------------------------------------
+
+// Control segmentado de dos opciones. Vive sobre el verde de la barra, así que la opción activa se
+// invierte (blanco de fondo, marca en el texto: 6.02:1) y la inactiva es blanco sobre el verde, que
+// es ese mismo ratio al revés. Ninguna de las dos depende del color para decir cuál está activa: eso
+// lo lleva `aria-pressed`.
+.lang-switch {
+  display: inline-flex;
+  overflow: hidden;
+  border: bootstrap.$border-width solid rgba(255, 255, 255, 0.5);
+  border-radius: bootstrap.$border-radius-pill;
+}
+
+.lang-switch__option {
+  padding: 0.125rem 0.6rem;
+  border: 0;
+  background-color: transparent;
+  color: tokens.$on-dark;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.lang-switch__option[aria-pressed="true"] {
+  background-color: tokens.$on-dark;
+  color: tokens.$primary;
+}
+
+// El anillo de foco iría por debajo del borde del grupo, que tiene `overflow: hidden`; hacia dentro
+// se ve entero.
+.lang-switch__option:focus-visible {
+  outline-color: tokens.$on-dark;
+  outline-offset: -3px;
+}
+
+// --- Pie --------------------------------------------------------------------------------------
+
+// $primary-hover y no $primary: el cierre de la portada usa el verde de marca, y con los dos bloques
+// del mismo color se leían como una sola masa verde de siete rem en la que no se sabía dónde acababa
+// la página. Blanco sobre $primary-hover: 8.01:1 (AAA).
+.site-footer {
+  padding-block-start: 1.5rem;
+  background-color: tokens.$primary-hover;
+  color: tokens.$on-dark;
+}
+
+.site-footer__brand {
+  font-family: tokens.$display-font;
+  font-size: 1.5rem;
+}
+
+.site-footer__link {
+  color: tokens.$on-dark;
+  text-decoration: none;
+}
+
+.site-footer__link:hover,
+.site-footer__link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.site-footer__legal {
+  border-top: bootstrap.$border-width solid rgba(255, 255, 255, 0.25);
+}

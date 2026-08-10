@@ -1,0 +1,40 @@
+@use "../bootstrap";
+@use "../tokens";
+
+// Buscador con sugerencias (<SearchBox>): el campo, la lista flotante y la fila activa.
+
+.search-box {
+  position: relative;
+}
+
+// En la barra el buscador crece, pero no sin límite: un campo de 900px en una pantalla ancha
+// separa la marca del selector de idioma sin ganar nada.
+.navbar .search-box {
+  max-width: 32rem;
+}
+
+.search-suggestions {
+  position: absolute;
+  z-index: bootstrap.$zindex-dropdown;
+  inset-inline: 0;
+  top: calc(100% + 0.25rem);
+  max-height: 60vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background-color: var(--bs-body-bg);
+  border: bootstrap.$border-width solid var(--bs-border-color);
+  border-radius: bootstrap.$border-radius;
+  box-shadow: bootstrap.$box-shadow;
+}
+
+.search-suggestion {
+  cursor: pointer;
+}
+
+// La opción activa del combobox se marca con el mismo fondo suave del tema; el teclado y el ratón
+// pintan lo mismo, que es lo que hace que `aria-activedescendant` y lo que se ve coincidan.
+.search-suggestion[aria-selected="true"] {
+  background-color: tokens.$primary-bg;
+}

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card } from 'react-bootstrap';
 
 import { formatMoney } from '../../../shared/format/money';
+import { useLocale } from '../../../shared/hooks/useLocale';
 import type { ProductSummary } from '../api/productKeys';
 
 type ProductCardProps = {
@@ -12,8 +13,8 @@ type ProductCardProps = {
 };
 
 export function ProductCard({ product, available }: ProductCardProps) {
-  const { t, i18n } = useTranslation('catalog');
-  const locale = i18n.resolvedLanguage ?? 'es';
+  const { t } = useTranslation('catalog');
+  const locale = useLocale();
 
   const titleId = `product-${product.id}-title`;
   // Whether the photo actually loads is a property of this render, not of the product: a URL that

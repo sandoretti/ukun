@@ -1,0 +1,16 @@
+// Tokens del tema (docs/07-frontend-ux-ui.md). Ratios de contraste sobre blanco:
+// $primary 6.02:1 (AA) · $primary-hover 8.01:1 (AAA) · $accent 3.34:1 (solo decorativo).
+//
+// Este fichero es la única fuente de la paleta: `_bootstrap.scss` configura Bootstrap con estos
+// mismos valores y el resto de parciales los lee de aquí. Ningún color se escribe dos veces.
+$primary: #456e0f;
+$primary-hover: #365a08;
+$accent: #5d9d0b;
+$primary-bg: #e9f5d8;
+$on-dark: #fff;
+
+// La tipografía de la marca, la misma que ya usaban las dos apps legacy — pero servida una sola vez
+// (docs/07-frontend-ux-ui.md §"Qué se hereda"). Solo hay corte regular, así que se reserva para
+// titulares y marca: ponerla también en el cuerpo obligaría al navegador a fingir la negrita en cada
+// `<strong>`. El cuerpo se queda en la pila del sistema, que no cuesta ninguna descarga.
+$display-font: "Averta Standard", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

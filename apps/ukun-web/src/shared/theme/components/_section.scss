@@ -1,0 +1,30 @@
+@use "../tokens";
+
+// El andamiaje del componente <Section>: una banda a sangre con su ritmo vertical y su fondo. Es lo
+// que evita que cada bloque nuevo de una pantalla vuelva a decidir —un poco distinto cada vez—
+// cuánto aire lleva y de qué color va.
+
+// Los dos ritmos del sitio. Una banda que se lee de un vistazo respira 3rem; una larga, 4rem.
+.section--regular { padding-block: 3rem; }
+.section--spacious { padding-block: 4rem; }
+
+// Los tonos salen de la paleta del tema, nunca de un color escrito en la pantalla.
+.section--muted { background-color: var(--bs-tertiary-bg); }
+.section--soft { background-color: tokens.$primary-bg; }
+
+// Blanco sobre $primary: 6.02:1 (AA).
+.section--brand {
+  background-color: tokens.$primary;
+  color: tokens.$on-dark;
+}
+
+// Ilustración de marca (<Illustration>): crece con su columna en vez de quedarse clavada a 250 px
+// como en el legacy. La alineación la pone quien la coloca, con las utilidades de Bootstrap.
+.illustration {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.illustration--sm { max-width: 8rem; }
+.illustration--md { max-width: 14rem; }

@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 
+import { useLocale } from './useLocale';
+
+/** Keeps `<html lang>` on the active language — an accessibility requirement, not cosmetics. */
 export function useLocaleSync() {
-  const { i18n } = useTranslation();
+  const locale = useLocale();
 
   useEffect(() => {
-    document.documentElement.lang = i18n.resolvedLanguage || 'es';
-  }, [i18n.resolvedLanguage]);
+    document.documentElement.lang = locale;
+  }, [locale]);
 }

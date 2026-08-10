@@ -4,6 +4,7 @@ import { createSearchParams, useNavigate, useSearchParams } from 'react-router-d
 
 import { SUGGEST_MIN_LENGTH, useProductSuggestions } from '../api/products';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useLocale } from '../hooks/useLocale';
 import { formatMoney } from '../format/money';
 import { SearchBox, type SearchSuggestion } from './SearchBox';
 
@@ -23,7 +24,8 @@ type ProductSearchBoxProps = {
  * thing that changes is where `onSelect` navigates to.
  */
 export function ProductSearchBox({ size = 'md', className }: ProductSearchBoxProps) {
-  const { t, i18n } = useTranslation('common');
+  const { t } = useTranslation('common');
+  const locale = useLocale();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -42,7 +44,6 @@ export function ProductSearchBox({ size = 'md', className }: ProductSearchBoxPro
   const debouncedTerm = useDebouncedValue(term);
   const { data } = useProductSuggestions(debouncedTerm);
 
-  const locale = i18n.resolvedLanguage ?? 'es';
   const suggestions = useMemo<SearchSuggestion[]>(
     () =>
       // Guarded by the text on screen, not by the debounced one: emptying the field closes the

@@ -1,9 +1,16 @@
 import type { ReactNode } from 'react';
-import { Col, Container, Row } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
+
+import { Illustration } from '../../../shared/ui/Illustration';
+import { Section } from '../../../shared/ui/Section';
 
 type NarrativeSectionProps = {
   title: string;
-  /** The body copy. `children` rather than a `body` prop, so a block can carry a link later on. */
+  /**
+   * The body copy, rendered as it arrives. `children` rather than a `body` string, and unwrapped
+   * rather than pushed into a `<p>` of the block's choosing: the section owns the layout, the caller
+   * owns the prose — which is what lets a block run to two paragraphs, or carry a link.
+   */
   children: ReactNode;
   illustration: string;
   /**
@@ -18,23 +25,24 @@ type NarrativeSectionProps = {
  * copy on one side, a line drawing on the other — and not the markup: there is one `<h1>` per page
  * and these are `<h2>`s, the drawing scales with the column instead of being pinned at 250 px, and
  * the separator is the section's own spacing rather than an `<hr>` painted in the brand colour.
+ *
+ * Side and background travel together: consecutive blocks alternate both, and that alternation is
+ * what tells one from the next without the coloured rule the legacy page drew between them.
  */
 export function NarrativeSection({ title, children, illustration, layout }: NarrativeSectionProps) {
+  const mediaFirst = layout === 'media-start';
+
   return (
-    <section className={`narrative narrative--${layout}`}>
-      <Container>
-        <Row className="align-items-center g-4 g-lg-5">
-          <Col md={7} className={layout === 'media-start' ? 'order-md-2' : undefined}>
-            <h2 className="h3 mb-3">{title}</h2>
-            <p className="lead mb-0">{children}</p>
-          </Col>
-          <Col md={5} className={layout === 'media-start' ? 'order-md-1' : undefined}>
-            {/* Ilustración de marca, no iconografía de UI: no pasa por `<Icon>` ni entra en el mapa
-                de iconos de docs/07. Decorativa, porque lo que dice ya lo dice el texto de al lado. */}
-            <img src={illustration} alt="" className="narrative__illustration" />
-          </Col>
-        </Row>
-      </Container>
-    </section>
+    <Section tone={mediaFirst ? 'muted' : 'default'}>
+      <Row className="align-items-center g-4 g-lg-5">
+        <Col md={7} className={mediaFirst ? 'order-md-2' : undefined}>
+          <h2 className="h3 mb-3">{title}</h2>
+          <div className="narrative__body">{children}</div>
+        </Col>
+        <Col md={5} className={mediaFirst ? 'order-md-1' : undefined}>
+          <Illustration src={illustration} className="mx-auto" />
+        </Col>
+      </Row>
+    </Section>
   );
 }

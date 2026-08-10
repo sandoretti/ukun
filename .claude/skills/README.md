@@ -136,7 +136,7 @@ Lo que sí sirve, y llena un hueco real: `architecture-avoid-boolean-props` y `p
 
 | Dice | Aquí |
 |---|---|
-| Ejemplos en clases de Tailwind (`focus-visible:ring-*`, `truncate`, `line-clamp-*`, `min-w-0`, `text-pretty`) | La regla se traduce al tema de `shared/theme/bootstrap-overrides.scss`; el nombre de clase **no se copia**. Tailwind no entra (ADR-0002) |
+| Ejemplos en clases de Tailwind (`focus-visible:ring-*`, `truncate`, `line-clamp-*`, `min-w-0`, `text-pretty`) | La regla se traduce al tema de `shared/theme/`; el nombre de clase **no se copia**. Tailwind no entra (ADR-0002) |
 | "Los placeholders acaban en `…`", comillas tipográficas, `&nbsp;` en `10 MB` | Correcto, pero ese texto vive en `i18n/*/*.json` (ADR-0019), no escrito en el JSX. La regla se cumple en el fichero de traducción, no en el componente |
 | "La URL refleja el estado: filtros, pestañas, paginación en query params" | El repo no se había pronunciado. Se adopta, y queda escrito en `docs/07-frontend-ux-ui.md` como convención propia — no como préstamo que haya que ir a consultar fuera |
 

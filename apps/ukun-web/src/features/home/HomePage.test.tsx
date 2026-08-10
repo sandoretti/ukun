@@ -38,7 +38,10 @@ describe('HomePage', () => {
       'Empieza por una categoría',
       'Descubre el equilibrio perfecto',
       'Precios asequibles sin compromisos',
+      'Cómo hemos llegado hasta aquí',
       'Crea ambientes que reflejen tu estilo',
+      'De qué está hecho y cómo llega',
+      'Preguntas frecuentes',
       'Explora nuestra colección',
     ]);
   });

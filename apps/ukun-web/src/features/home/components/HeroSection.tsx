@@ -1,9 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Container } from 'react-bootstrap';
 
 import { ProductSearchBox } from '../../../shared/ui/ProductSearchBox';
-import logo from '../../../assets/ukun-logo.png';
+import { Section } from '../../../shared/ui/Section';
 
 type HeroSectionProps = {
   /** Fragment the secondary call to action jumps to, so the hero does not hardcode the page order. */
@@ -18,36 +17,38 @@ type HeroSectionProps = {
  *
  * The search box is the same component as the navigation bar's, in its `lg` variant: on this screen
  * looking for something *is* the main action, not a corner of the chrome.
+ *
+ * The brand is set in type here rather than dropped in as the logotype. The logo file is a bitmap
+ * with 13 % of transparent air on each side, so aligning it with the line underneath meant undoing
+ * that padding by hand; as type it shares the text's own left edge for free, scales with the
+ * viewport, and costs no image request or layout shift. The logotype itself lives in the bar above.
  */
 export function HeroSection({ exploreTargetId }: HeroSectionProps) {
   const { t } = useTranslation('home');
 
   return (
-    <section className="hero">
-      <Container>
-        <div className="hero__panel">
-          {/* Decorativo: la marca ya la nombran la barra de navegación y el propio encabezado, así
-              que repetirla en el texto alternativo solo añade ruido a un lector de pantalla. */}
-          <img src={logo} alt="" className="hero__logo" width={1200} height={400} />
-          <p className="hero__tagline">{t('hero.tagline')}</p>
-          <h1 className="hero__title">{t('hero.title')}</h1>
-          <p className="lead mb-4">{t('hero.lead')}</p>
+    // La foto y el aire extra a partir de `md` los pone `.hero`; el resto de la banda es el mismo
+    // andamiaje que las demás secciones de la página.
+    <Section className="hero">
+      <div className="hero__panel">
+        <p className="hero__eyebrow">{t('hero.tagline')}</p>
+        <h1 className="hero__title">{t('hero.title')}</h1>
+        <p className="lead mb-4">{t('hero.lead')}</p>
 
-          <ProductSearchBox size="lg" className="mb-4" />
+        <ProductSearchBox size="lg" className="mb-4" />
 
-          <div className="d-flex flex-wrap gap-3">
-            {/* Navegar es cosa de un enlace, nunca de un `button` con `onClick` (docs/07
-                §Accesibilidad): las clases de Bootstrap le dan el aspecto de botón sin quitarle el
-                menú contextual ni el «abrir en otra pestaña». */}
-            <Link to="/products" className="btn btn-primary btn-lg">
-              {t('hero.browse')}
-            </Link>
-            <a href={`#${exploreTargetId}`} className="btn btn-outline-primary btn-lg">
-              {t('hero.explore')}
-            </a>
-          </div>
+        <div className="d-flex flex-wrap gap-3">
+          {/* Navegar es cosa de un enlace, nunca de un `button` con `onClick` (docs/07
+              §Accesibilidad): las clases de Bootstrap le dan el aspecto de botón sin quitarle el
+              menú contextual ni el «abrir en otra pestaña». */}
+          <Link to="/products" className="btn btn-primary btn-lg">
+            {t('hero.browse')}
+          </Link>
+          <a href={`#${exploreTargetId}`} className="btn btn-outline-primary btn-lg">
+            {t('hero.explore')}
+          </a>
         </div>
-      </Container>
-    </section>
+      </div>
+    </Section>
   );
 }

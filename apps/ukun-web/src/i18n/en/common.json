@@ -2,11 +2,19 @@
   "title": "Ukun",
   "loading": "Loading...",
   "empty": "No results found",
-  "error": "An error occurred",
   "nav": {
     "catalog": "Catalogue",
+    "stores": "Stores",
+    "news": "New in",
+    "about": "About Ukun",
+    "comingSoon": "{{label}} (coming soon)",
+    "primary": "Main navigation",
     "toggle": "Open the navigation menu",
     "skipToContent": "Skip to content"
+  },
+  "account": {
+    "signIn": "Sign in",
+    "signUp": "Create account"
   },
   "footer": {
     "claim": "Minimalism and affordable prices. We turn any space around with good design, without it showing on the bill.",
@@ -20,11 +28,11 @@
       "title": "Stores",
       "body": "You can see and try the products in our physical stores before buying them."
     },
-    "legal": "© {{year}} Ukun · Final degree project by Italo Joel Sandoval Amoretti · Computer Engineering, Universidad de Alcalá"
+    "legal": "© {{year}} Ukun · Italo Joel Sandoval Amoretti"
   },
   "search": {
     "label": "Search products",
-    "placeholder": "Sofa, table, bunk bed…",
+    "placeholder": "What are you looking for?",
     "submit": "Search",
     "hint": "Press Enter to see every result",
     "status_one": "{{count}} suggestion",
@@ -33,6 +41,10 @@
   "language": {
     "label": "Language",
     "es": "Spanish",
-    "en": "English"
+    "en": "English",
+    "short": {
+      "es": "ES",
+      "en": "EN"
+    }
   }
 }
