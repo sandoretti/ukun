@@ -1,10 +1,8 @@
 package dev.sandoretti.ukun.api.shared.openapi;
 
-import com.fasterxml.jackson.databind.JavaType;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.converter.ModelConverterContext;
-import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Schema;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -56,10 +54,9 @@ class RecordPropertiesAreRequired implements ModelConverter {
     }
 
     private static boolean isOurRecord(AnnotatedType type) {
-        JavaType resolved = type.getType() == null ? null : Json.mapper().constructType(type.getType());
-        Class<?> raw = resolved == null ? null : resolved.getRawClass();
-
-        return raw != null && raw.isRecord() && raw.getPackageName().startsWith(DTO_PACKAGE);
+        return AnnotatedTypes.rawClassOf(type)
+                .filter(raw -> raw.isRecord() && raw.getPackageName().startsWith(DTO_PACKAGE))
+                .isPresent();
     }
 
     private static String nameOf(String reference) {

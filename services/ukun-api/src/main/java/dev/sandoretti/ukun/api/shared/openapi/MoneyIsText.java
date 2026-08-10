@@ -1,10 +1,8 @@
 package dev.sandoretti.ukun.api.shared.openapi;
 
-import com.fasterxml.jackson.databind.JavaType;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.converter.ModelConverterContext;
-import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Schema;
 import java.math.BigDecimal;
 import java.util.Iterator;
@@ -57,8 +55,6 @@ class MoneyIsText implements ModelConverter {
     }
 
     private static boolean isDecimal(AnnotatedType type) {
-        JavaType resolved = type.getType() == null ? null : Json.mapper().constructType(type.getType());
-
-        return resolved != null && BigDecimal.class.equals(resolved.getRawClass());
+        return AnnotatedTypes.rawClassOf(type).filter(BigDecimal.class::equals).isPresent();
     }
 }

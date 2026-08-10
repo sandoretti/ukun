@@ -2,7 +2,6 @@ package dev.sandoretti.ukun.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
@@ -141,7 +140,8 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
             "listEmployees",
             "createEmployee");
 
-    private static JsonNode contract;
+    /** The frozen contract, read and projected once: it is a file, and it does not change mid-run. */
+    private static OpenApiShape contract;
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
@@ -154,7 +154,7 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
     @BeforeAll
     static void readTheContract() {
         try {
-            contract = new ObjectMapper(new YAMLFactory()).readTree(Files.readString(CONTRACT));
+            contract = OpenApiShape.of(new ObjectMapper(new YAMLFactory()).readTree(Files.readString(CONTRACT)));
         } catch (IOException e) {
             throw new UncheckedIOException("Could not read the frozen contract " + CONTRACT, e);
         }
@@ -169,17 +169,17 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("both documents are OpenAPI 3.1")
     void publishesTheOpenApiVersionOfTheContract() {
-        assertThat(published().path("openapi").asText())
+        assertThat(published().version())
                 .as("the OpenAPI version springdoc emits")
-                .isEqualTo(contract.path("openapi").asText())
+                .isEqualTo(contract.version())
                 .startsWith("3.1");
     }
 
     @Test
     @DisplayName("every operation of the contract that is implemented is published, and no other")
     void publishesExactlyTheImplementedOperationsOfTheContract() {
-        Map<String, String> declared = OpenApiShape.of(contract).operationIds();
-        Map<String, String> published = OpenApiShape.of(published()).operationIds();
+        Map<String, String> declared = contract.operationIds();
+        Map<String, String> published = published().operationIds();
 
         Set<String> expected = new TreeSet<>(declared.entrySet().stream()
                 .filter(operation -> !NOT_IMPLEMENTED_YET.contains(operation.getValue()))
@@ -208,16 +208,13 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
     void namesOnlyContractOperationsAsPending() {
         assertThat(NOT_IMPLEMENTED_YET)
                 .as("operationIds listed as not implemented yet")
-                .isSubsetOf(OpenApiShape.of(contract).operationIds().values());
+                .isSubsetOf(contract.operationIds().values());
     }
 
     @Test
     @DisplayName("the published document has the shape the frozen contract declares")
     void publishesTheContractShapeOfEveryImplementedOperation() {
-        OpenApiShape declared = OpenApiShape.of(contract);
-        OpenApiShape published = OpenApiShape.of(published());
-
-        List<String> divergences = divergences(declared, published);
+        List<String> divergences = divergences(contract, published());
 
         assertThat(divergences)
                 .as(
@@ -266,7 +263,7 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
     }
 
     /** The document the running application generates, read straight off the endpoint CI will read. */
-    private JsonNode published() {
+    private OpenApiShape published() {
         byte[] body = restTestClient
                 .get()
                 .uri("/v3/api-docs")
@@ -278,7 +275,7 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
                 .getResponseBody();
 
         try {
-            return new ObjectMapper().readTree(body);
+            return OpenApiShape.of(new ObjectMapper().readTree(body));
         } catch (IOException e) {
             throw new UncheckedIOException("Could not read the document published at /v3/api-docs", e);
         }

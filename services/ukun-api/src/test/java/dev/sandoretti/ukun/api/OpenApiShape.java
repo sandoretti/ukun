@@ -73,6 +73,11 @@ final class OpenApiShape {
         return shape;
     }
 
+    /** The version of the specification the document declares. */
+    String version() {
+        return document.path("openapi").asText();
+    }
+
     /** Coordinate to value, sorted, for every operation of the document. */
     Map<String, String> facets() {
         return facets;
