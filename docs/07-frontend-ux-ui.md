@@ -130,6 +130,19 @@ El catálogo (v0.3) fija la forma que repiten las demás pantallas de listado �
 
 Las utilidades que esto añade al tema —y que, como el resto, no se escriben inline en una pantalla— son `.product-media` (+ `--dimmed`), `.overline`, `.status-dot` (+ `--in`/`--out`), `.filter-sidebar`, `.filter-section`, `.price-range`, `.search-box`/`.search-suggestions` y `.icon-sm|md|lg`. El único `style` inline de todo esto son los dos porcentajes del tramo seleccionado del slider, que es exactamente el "valor dinámico" que la sección de descartes admite.
 
+## Anatomía de una pantalla de ficha
+
+La ficha de producto (v0.3) fija la forma de las pantallas de **un solo recurso** —tienda, pedido, cliente del back-office—, igual que el catálogo fija la de los listados. Dos columnas desde `lg`: el medio a la izquierda, lo que se lee a la derecha, y debajo el contenido secundario.
+
+- **La foto no se recorta.** El listado usa `object-fit: cover` porque una rejilla necesita todas las celdas iguales; una ficha, no. El hueco es cuadrado y estable —para que la página no salte de un producto al siguiente— pero la imagen va `contain` dentro de él: de las 24 fotos del catálogo demo 19 son cuadradas, y a las verticales (camas, lámparas de pie) el encuadre 4/3 les corta el cabecero. Sin recuadro ni fondo de color: lo que se enseña es el producto, no su marco.
+- **Ampliar la foto tiene dos caminos, y no son alternativos.** Una **lupa** que sigue al ratón (lente sobre la foto + panel ampliado al lado, con las posiciones como variables CSS dinámicas) solo se pinta bajo `@media (hover: hover) and (pointer: fine)` y de `xl` hacia arriba, que es donde hay ratón y hay sitio. El camino que **siempre** existe es el **visor** a pantalla completa que abre el clic o el `Enter`: un `Modal` de react-bootstrap —no un overlay a mano— por la trampa de foco, el `Escape` y la devolución del foco, con niveles fijos (×1 · ×1,5 · ×2 · ×3), el nivel anunciado en `aria-live`, y el desplazamiento resuelto por el `overflow` nativo del marco, que es lo que hace que las flechas del teclado muevan la imagen ampliada. Arrastrar es un atajo encima de eso, nunca el único medio.
+- **La jerarquía de la columna derecha es tipo → nombre → referencia → precio → disponibilidad → descripción.** El **tipo** es un chip que enlaza al catálogo ya filtrado (`/products?typeId=N`, el mismo parámetro que lee la URL del listado): una ficha sin salida lateral es un callejón. El **SKU** se muestra como referencia discreta bajo el título ("Ref. SOFA-CUERO-01") — RF-01 lo exige, pero es un dato de consulta, no el contenido de la pantalla.
+- **La disponibilidad sí es un bloque aquí.** En la rejilla son 24 productos a la vez y por eso va en microtexto; en la ficha es un solo producto y es la respuesta a "¿puedo comprarlo?", así que lleva icono (`check_circle` / `warning`) y **nombra la tienda** ("Disponible en Ukun Online"). Sigue siendo la lectura paralela de siempre: si falla, la nota discreta ocupa su sitio y la ficha no se cae.
+- **Al pie, contenido secundario**: los demás productos del mismo tipo, con la misma tarjeta del listado. Es secundario de verdad — si esa lectura falla o el tipo no tiene más productos, **la sección entera desaparece**; un mensaje de error sobre "también te puede interesar" es ruido encima de una ficha que funciona.
+- **Nada de reclamos inventados** (envíos, devoluciones, garantías): si no hay dato en el contrato que lo respalde, no se escribe en la pantalla.
+
+Utilidades que esto añade al tema: `.product-photo` (+ `--empty`), `.product-zoom` (`__trigger`, `__badge`, `__lens`, `__panel`), `.availability-block` (+ `--out`), `.product-viewer` (`__frame`, `__image`, `__controls`) y `.product-description`. Los únicos `style` inline son valores dinámicos: la posición de la lente y el factor de zoom.
+
 ## Formularios: react-hook-form + zod
 
 Cada formulario define su esquema `zod` una vez; ese esquema valida en el cliente **y** sus tipos se derivan para el payload que se envía. Los errores de validación del servidor (`code: VALIDATION_FAILED` con extensión `errors: [{field, message}]`, ver `docs/12-error-contract.md`) se mapean a los mismos campos del formulario — un solo sitio donde se pinta un error de campo, venga de donde venga.
@@ -180,7 +193,8 @@ Hoy hay 7 usos sueltos de Bootstrap Icons repartidos en las plantillas, sin ning
 | Éxito / confirmado | `check_circle` | Error / rechazado | `error` |
 | Advertencia | `warning` | Stock | `inventory_2` |
 | Filtros | `tune` | Quitar / cerrar | `close` |
-| Avanzar / ir a | `arrow_forward` | | |
+| Avanzar / ir a | `arrow_forward` | Ampliar imagen | `zoom_in` |
+| Reducir imagen | `zoom_out` | | |
 
 Ampliar el mapa es añadir una fila aquí, no elegir un icono ad-hoc dentro de una pantalla.
 

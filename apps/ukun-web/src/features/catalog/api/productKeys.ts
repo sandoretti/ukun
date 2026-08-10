@@ -2,6 +2,8 @@ import type { components } from '../../../types/api';
 
 export type ProductSort = components['schemas']['ProductSort'];
 export type ProductSummary = components['schemas']['ProductSummary'];
+/** What the listing shows plus the long field only the detail screen has room for (RF-01). */
+export type ProductDetail = components['schemas']['ProductDetail'];
 export type ProductPage = components['schemas']['ProductPage'];
 
 /** Everything the listing is filtered and sorted by — the part of the URL that is not the page. */

@@ -9,6 +9,7 @@ import type { components } from '../../types/api';
  */
 
 type ProductSummary = components['schemas']['ProductSummary'];
+type ProductDetail = components['schemas']['ProductDetail'];
 type ProductType = components['schemas']['ProductType'];
 type ProductPage = components['schemas']['ProductPage'];
 type ProductSuggestion = components['schemas']['ProductSuggestion'];
@@ -96,6 +97,19 @@ export const products: ProductSummary[] = [
   ...curated,
   ...Array.from({ length: FILLER_COUNT }, (_, index) => filler(index)),
 ];
+
+/**
+ * The one field the detail carries beyond the summary. Only a few products have one, and the rest
+ * come back with `description: null` — the contract allows it (RF-10 uploads the text later) and the
+ * sheet has to say so instead of leaving a gap. Two lines in one of them, because the description is
+ * free text and its line breaks are content.
+ */
+const descriptions: Record<number, string> = {
+  1: 'Sofá de tres plazas tapizado en cuero curtido al vegetal.\nEstructura de madera maciza.',
+  4: 'Silla de comedor de haya con asiento moldeado.',
+  6: 'Chaise longue reversible: el brazo se monta a izquierda o a derecha.',
+};
+
 
 /**
  * Units per store, keyed by the identifiers of `storeHandlers` (1 is the online one). Product 4 is
@@ -196,6 +210,24 @@ export const catalogHandlers = [
       .slice(0, limit)
       .map(({ id, sku, name, price, imageUrl }) => ({ id, sku, name, price, imageUrl }));
 
+    return HttpResponse.json(body);
+  }),
+
+  /**
+   * The detail sheet. It goes **after** the typeahead on purpose: MSW resolves in registration
+   * order and `:id` also matches `/api/products/suggest`.
+   *
+   * The public catalog only resolves active products, so anything that is not in the list answers
+   * `404` with `code: RESOURCE_NOT_FOUND` — the same reply a discontinued product gets (ADR-0013).
+   */
+  http.get(`${base}/api/products/:id`, ({ params }) => {
+    const found = products.find((item) => item.id === Number(params.id));
+
+    if (!found) {
+      return problem(404, 'RESOURCE_NOT_FOUND', { resource: 'product', id: String(params.id) });
+    }
+
+    const body: ProductDetail = { ...found, description: descriptions[found.id] ?? null };
     return HttpResponse.json(body);
   }),
 

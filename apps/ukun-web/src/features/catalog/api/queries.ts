@@ -1,11 +1,12 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
-import { http } from '../../../shared/api/http';
+import { http, toProblem } from '../../../shared/api/http';
 import {
   CHUNKS_PER_PAGE,
   CHUNK_SIZE,
   productKeys,
   type CatalogFilterInput,
+  type ProductDetail,
   type ProductFilters,
   type ProductPage,
 } from './productKeys';
@@ -53,6 +54,69 @@ export function useCatalogProducts(criteria: CatalogFilterInput, page: number) {
         ? undefined
         : lastChunk.page + 1,
     placeholderData: keepPreviousData,
+  });
+}
+
+/** A 5xx or a dropped connection is worth exactly one more attempt, not the default three. */
+const DETAIL_RETRIES = 1;
+
+/**
+ * A 4xx is the server's final answer, not a hiccup: a product that was discontinued (ADR-0013) does
+ * not come back by asking three more times, and the default `retry: 3` with its backoff would hold a
+ * spinner on screen for seconds before the 404 screen appears.
+ */
+function retryUnlessClientError(failureCount: number, error: unknown) {
+  const { status } = toProblem(error);
+  const isClientError = status >= 400 && status < 500;
+  return !isClientError && failureCount < DETAIL_RETRIES;
+}
+
+/**
+ * One product, by identifier. The public catalog only resolves active products, so a discontinued
+ * one answers `404` with `code: RESOURCE_NOT_FOUND` (RF-01, ADR-0013) — a dedicated screen, never a
+ * dimmed sheet and never the generic "something failed".
+ *
+ * The identifier is optional because it arrives from the URL and may not be one: the caller hands
+ * over `undefined` for `/products/abc`, and nothing is asked.
+ */
+export function useProduct(id: number | undefined) {
+  return useQuery({
+    queryKey: productKeys.detail(id ?? -1),
+    queryFn: ({ signal }) =>
+      http.get<ProductDetail>(`/api/products/${id}`, { signal }).then((response) => response.data),
+    enabled: id !== undefined,
+    retry: retryUnlessClientError,
+  });
+}
+
+/** How many neighbours the sheet shows, and how many are asked for to still have that many. */
+const RELATED_SIZE = 4;
+
+/**
+ * The other products of the same type, for the strip at the foot of the detail sheet. It is the
+ * listing read with one filter and a small page — the same `fetchProducts` and the same key factory,
+ * not an endpoint of its own, so the cache entry is shared with anyone browsing that type.
+ *
+ * The API does not know which product is being looked at, so one extra is requested and the current
+ * one is dropped here: otherwise a type with exactly five products would show four minus itself.
+ */
+export function useRelatedProducts(typeId: number | undefined, excludeId: number | undefined) {
+  const filters: ProductFilters = {
+    name: '',
+    typeId: typeId ?? null,
+    priceMin: '',
+    priceMax: '',
+    sort: 'PRICE_ASC',
+    page: 0,
+    size: RELATED_SIZE + 1,
+  };
+
+  return useQuery({
+    queryKey: productKeys.list(filters),
+    queryFn: ({ signal }) => fetchProducts(filters, signal),
+    enabled: typeId !== undefined,
+    select: (page) =>
+      page.items.filter((item) => item.id !== excludeId).slice(0, RELATED_SIZE),
   });
 }
 

@@ -2,9 +2,8 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Col, Container, Offcanvas, Row } from 'react-bootstrap';
 
-import { useAvailability } from '../../shared/api/availability';
+import { useOnlineAvailability } from '../../shared/api/availability';
 import { useProductTypes } from '../../shared/api/productTypes';
-import { useOnlineStore } from '../../shared/api/stores';
 import { ErrorState } from '../../shared/ui/ErrorState';
 import { QueryBoundary } from '../../shared/ui/QueryBoundary';
 import { ActiveFilters } from './components/ActiveFilters';
@@ -25,7 +24,6 @@ export default function CatalogPage() {
   const productsQuery = useCatalogProducts(criteria, page);
   const typesQuery = useProductTypes();
   const maxPriceQuery = useMaxProductPrice();
-  const onlineStoreQuery = useOnlineStore();
 
   // Every chunk loaded so far, in one flat list: the grid does not know it was fetched in pieces.
   const products = useMemo(
@@ -41,8 +39,7 @@ export default function CatalogPage() {
 
   // Catalog and availability are two separate reads composed on screen (ADR-0017 §3): the grid is
   // painted as soon as the products arrive, without waiting for the stock answer.
-  const availabilityQuery = useAvailability(onlineStoreQuery.data?.id, productIds);
-  const availabilityFailed = onlineStoreQuery.isError || availabilityQuery.isError;
+  const availability = useOnlineAvailability(productIds);
 
   const types = typesQuery.data ?? [];
 
@@ -87,7 +84,7 @@ export default function CatalogPage() {
             totalElements={productsQuery.data ? totalElements : undefined}
             sort={criteria.sort}
             activeFilterCount={countActiveFilters(criteria)}
-            availabilityFailed={availabilityFailed}
+            availabilityFailed={availability.failed}
             onSortChange={(sort) => updateFilters({ sort })}
             onOpenFilters={() => setShowFilters(true)}
           />
@@ -103,7 +100,7 @@ export default function CatalogPage() {
                 <Row xs={2} md={3} xl={4} className="g-4">
                   {items.map((product) => (
                     <Col key={product.id}>
-                      <ProductCard product={product} available={availabilityQuery.data?.get(product.id)} />
+                      <ProductCard product={product} available={availability.available?.get(product.id)} />
                     </Col>
                   ))}
                 </Row>

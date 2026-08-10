@@ -34,6 +34,27 @@
   "product": {
     "noImage": "Sin foto"
   },
+  "detail": {
+    "breadcrumb": "Dónde estás",
+    "reference": "Ref. {{sku}}",
+    "seeAllOfType": "Ver todo en {{type}}",
+    "availableAt": "Disponible en {{store}}",
+    "unavailableAt": "Sin stock en {{store}}",
+    "description": "Descripción",
+    "noDescription": "Este producto todavía no tiene descripción.",
+    "availabilityFailed": "No hemos podido consultar la disponibilidad de este producto.",
+    "backToCatalog": "Volver al catálogo",
+    "zoom": "Ampliar la imagen de {{name}}",
+    "related": "También te puede interesar"
+  },
+  "viewer": {
+    "title": "Imagen de {{name}}",
+    "close": "Cerrar la imagen",
+    "zoomIn": "Ampliar",
+    "zoomOut": "Reducir",
+    "level": "×{{level}}",
+    "hint": "Arrastra la imagen para moverla"
+  },
   "availability": {
     "available": "En stock",
     "unavailable": "Sin stock online",
