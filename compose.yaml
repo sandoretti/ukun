@@ -25,6 +25,17 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      # El mismo `iss` que emite ukun-auth, y por eso el mismo valor y el mismo default: aquí se
+      # compara literalmente contra el claim del token. Si los dos se desalinean, el síntoma es un
+      # 401 en este servicio y la causa está en el de al lado.
+      - UKUN_AUTH_ISSUER=${UKUN_AUTH_ISSUER:-http://localhost:${AUTH_PORT:-9000}}
+      # Estas dos, en cambio, van por el nombre interno del contenedor: no las resuelve ningún
+      # navegador, las resuelve este servicio desde dentro de la red de Docker.
+      - UKUN_AUTH_JWK_SET_URI=${UKUN_AUTH_JWK_SET_URI:-http://ukun-auth:9000/oauth2/jwks}
+      - UKUN_AUTH_TOKEN_URI=${UKUN_AUTH_TOKEN_URI:-http://ukun-auth:9000/oauth2/token}
+      # El secreto del cliente `ukun-api` registrado en ukun-auth: el mismo valor a los dos lados
+      # (.env, ver .env.example). Sin él, AccountsPort no puede pedir su token.
+      - UKUN_OAUTH2_API_SECRET=${UKUN_OAUTH2_API_SECRET}
     volumes:
       # Las fotos de producto, que el módulo `storage` sirve bajo /media/products/** (ADR-0017,
       # docs/08 §9). Es el bind mount que docs/01-arquitectura.md ya dibuja, y desaparece en v1.1

@@ -236,40 +236,47 @@ class ProductCatalogIT extends CatalogIntegrationTest {
     }
 
     /**
-     * A route that does not exist must be a {@code 404}, and this test exists because it was not: a
-     * catch-all {@code @ExceptionHandler(Exception.class)} used to swallow the exceptions Spring MVC
-     * already classifies and answer {@code 500 INTERNAL_ERROR}. Every route scan became a logged
-     * stack trace and an alert.
+     * A route that does not exist answered {@code 500 INTERNAL_ERROR} once, because a catch-all
+     * {@code @ExceptionHandler(Exception.class)} swallowed the exceptions Spring MVC already
+     * classifies — every route scan became a logged stack trace and an alert. That is the defect this
+     * test was written for, and it is still what it guards.
+     *
+     * <p>What changed with the resource server (issue #24) is <em>who</em> gets told what. The filter
+     * chain runs before handler mapping, so an anonymous caller is turned away before anything knows
+     * whether the route exists — and that is the desired answer, not a regression: a {@code 404} here
+     * would tell whoever is scanning which paths are real. The {@code 404} itself did not go anywhere;
+     * {@code ResourceServerIT} holds the other half of this pair and asserts that a caller with a token
+     * still gets it, with its {@code code}.
      */
     @Test
-    @DisplayName("an unknown route is a 404, not a 500")
-    void reportsAnUnknownRouteAsNotFound() {
+    @DisplayName("an unknown route tells an anonymous caller nothing about itself")
+    void reportsAnUnknownRouteAsUnauthenticated() {
         restTestClient
                 .get()
                 .uri("/api/does-not-exist")
                 .exchange()
                 .expectStatus()
-                .isNotFound()
+                .isUnauthorized()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("RESOURCE_NOT_FOUND")
+                .isEqualTo("UNAUTHENTICATED")
                 .jsonPath("$.traceId")
                 .isNotEmpty();
     }
 
-    /** Same defect, the other half: a write verb on a read-only endpoint is a {@code 405}. */
+    /** Same defect and same shift, the other half: a write verb on a read-only endpoint. */
     @Test
-    @DisplayName("a method the endpoint does not support is a 405, not a 500")
-    void reportsAnUnsupportedMethodAsMethodNotAllowed() {
+    @DisplayName("a write verb on a read-only endpoint is turned away before it is classified")
+    void reportsAnUnsupportedMethodAsUnauthenticated() {
         restTestClient
                 .post()
                 .uri(CATALOG)
                 .exchange()
                 .expectStatus()
-                .isEqualTo(405)
+                .isUnauthorized()
                 .expectBody()
                 .jsonPath("$.code")
-                .isEqualTo("METHOD_NOT_ALLOWED")
+                .isEqualTo("UNAUTHENTICATED")
                 .jsonPath("$.traceId")
                 .isNotEmpty();
     }

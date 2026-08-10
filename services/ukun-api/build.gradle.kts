@@ -18,6 +18,13 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.validation)
 
+    // Las dos mitades de la frontera con ukun-auth, que no son la misma dependencia:
+    // resource-server valida los tokens que llegan (issue #24), client pide el suyo por
+    // client_credentials para hablar con /internal/accounts (AccountsPort).
+    implementation(libs.spring.boot.starter.security.oauth2.resource.server)
+    implementation(libs.spring.boot.starter.security.oauth2.client)
+    implementation(libs.spring.boot.restclient)
+
     // Liquibase es el dueño del esquema de ukun_app (skill `liquibase`, regla 3): Hibernate no lo
     // crea nunca, `ddl-auto: validate` solo lo comprueba.
     implementation(libs.spring.boot.starter.data.jpa)
@@ -55,8 +62,10 @@ dependencies {
     annotationProcessor(libs.spring.boot.configuration.processor)
 
     testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.security.test)
     testImplementation(libs.spring.boot.resttestclient)
     testImplementation(libs.spring.boot.testcontainers)
+    testImplementation(libs.spring.boot.webmvc.test)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.spring.modulith.starter.test)

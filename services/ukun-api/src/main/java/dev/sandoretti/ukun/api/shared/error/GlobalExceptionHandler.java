@@ -2,7 +2,6 @@ package dev.sandoretti.ukun.api.shared.error;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
@@ -13,6 +12,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -54,8 +55,6 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /** SQLState of a foreign key violation. {@code docs/12} §2, {@code REFERENTIAL_INTEGRITY}. */
     private static final String FOREIGN_KEY_VIOLATION = "23503";
 
-    private static final String CODE = "code";
-    private static final String TRACE_ID = "traceId";
     private static final String ERRORS = "errors";
 
     /**
@@ -64,7 +63,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(UkunException.class)
     ResponseEntity<ProblemDetail> handleUkunException(UkunException exception) {
-        ProblemDetail body = problem(exception.getCode(), exception.getMessage());
+        ProblemDetail body = ProblemDetails.of(exception.getCode(), exception.getMessage());
         exception.getExtensions().forEach(body::setProperty);
 
         return ResponseEntity.status(body.getStatus()).body(body);
@@ -85,7 +84,41 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 || !FOREIGN_KEY_VIOLATION.equals(cause.getSQLState())) {
             throw exception;
         }
-        ProblemDetail body = problem(ErrorCode.REFERENTIAL_INTEGRITY, "The operation violates a referential constraint");
+        ProblemDetail body = ProblemDetails.of(ErrorCode.REFERENTIAL_INTEGRITY, "The operation violates a referential constraint");
+
+        return ResponseEntity.status(body.getStatus()).body(body);
+    }
+
+    /**
+     * Access denied <em>after</em> authentication: a {@code @PreAuthorize} that did not hold, or a
+     * resource that belongs to somebody else. Without this handler the catch-all below would swallow
+     * it and answer {@code 500 INTERNAL_ERROR} with a stack trace in the log — the same class of
+     * defect that made this advice extend {@link ResponseEntityExceptionHandler} in the first place.
+     *
+     * <p>It does <strong>not</strong> emit {@code auth.authorization.denied}. The role half of that
+     * event is published by Spring Security itself and listened to in the {@code identity} module
+     * ({@code docs/11-observabilidad-y-logging.md} §3); emitting it here as well would double every
+     * denial in the audit. When resource-level authorisation arrives — "this store is not yours",
+     * {@code reason=FOREIGN_RESOURCE} — <em>this</em> is where it gets emitted, because no
+     * {@code AuthorizationDeniedEvent} is published for it.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ProblemDetail> handleAccessDenied(AccessDeniedException exception) {
+        ProblemDetail body = ProblemDetails.of(ErrorCode.FORBIDDEN, "Access to this resource is not allowed");
+
+        return ResponseEntity.status(body.getStatus()).body(body);
+    }
+
+    /**
+     * An authentication that failed once the request was already inside the dispatcher. The common
+     * 401 — no token at all, or one the decoder rejects — never reaches here: it is raised in the
+     * filter chain and answered by the {@code AuthenticationEntryPoint} of the {@code identity}
+     * module. Both paths build the body with {@link ProblemDetails}, so the client cannot tell which
+     * one it hit, and should not have to.
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    ResponseEntity<ProblemDetail> handleAuthenticationFailure(AuthenticationException exception) {
+        ProblemDetail body = ProblemDetails.of(ErrorCode.UNAUTHENTICATED, "Authentication is required");
 
         return ResponseEntity.status(body.getStatus()).body(body);
     }
@@ -98,9 +131,9 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     ResponseEntity<ProblemDetail> handleUnexpectedFailure(Exception exception) {
-        ProblemDetail body = problem(ErrorCode.INTERNAL_ERROR, "Unexpected error");
+        ProblemDetail body = ProblemDetails.of(ErrorCode.INTERNAL_ERROR, "Unexpected error");
 
-        log.error("Unhandled exception, traceId={}", body.getProperties().get(TRACE_ID), exception);
+        log.error("Unhandled exception, traceId={}", ProblemDetails.traceIdOf(body), exception);
 
         return ResponseEntity.status(body.getStatus()).body(body);
     }
@@ -132,7 +165,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status,
             WebRequest request) {
 
-        ProblemDetail body = problem(ErrorCode.MALFORMED_REQUEST, "The request body could not be read");
+        ProblemDetail body = ProblemDetails.of(ErrorCode.MALFORMED_REQUEST, "The request body could not be read");
 
         return handleExceptionInternal(exception, body, headers, status, request);
     }
@@ -195,38 +228,18 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> createResponseEntity(
             Object body, HttpHeaders headers, HttpStatusCode statusCode, WebRequest request) {
 
-        if (body instanceof ProblemDetail problem && !hasCode(problem)) {
-            stamp(problem, ErrorCode.forStatus(statusCode));
+        if (body instanceof ProblemDetail problem && !ProblemDetails.hasCode(problem)) {
+            ProblemDetails.stamp(problem, ErrorCode.forStatus(statusCode));
         }
         return super.createResponseEntity(body, headers, statusCode, request);
     }
 
     private ProblemDetail validationBody(List<ValidationError> errors) {
-        ProblemDetail body = problem(
+        ProblemDetail body = ProblemDetails.of(
                 ErrorCode.VALIDATION_FAILED, "%d field(s) failed validation".formatted(errors.size()));
         body.setProperty(ERRORS, errors);
 
         return body;
-    }
-
-    private static ProblemDetail problem(ErrorCode code, String detail) {
-        return stamp(ProblemDetail.forStatusAndDetail(code.status(), detail), code);
-    }
-
-    /** {@code type}, {@code title}, {@code code} and {@code traceId} — the four fields of §1 no response may miss. */
-    private static ProblemDetail stamp(ProblemDetail body, ErrorCode code) {
-        body.setType(code.type());
-        body.setTitle(code.title());
-        body.setProperty(CODE, code.name());
-        body.setProperty(TRACE_ID, TraceIds.current());
-
-        return body;
-    }
-
-    /** {@code getProperties()} is {@code null} until the first extension is set, hence the guard. */
-    private static boolean hasCode(ProblemDetail problem) {
-        Map<String, Object> properties = problem.getProperties();
-        return properties != null && properties.containsKey(CODE);
     }
 
     private static ValidationError toValidationError(ObjectError error) {
