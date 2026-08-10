@@ -79,9 +79,12 @@ El campo `command:` de Konsole **no admite comillas anidadas**, así que cada pe
 #!/usr/bin/env zsh
 cd /home/sandoretti/developer/repos/ukun-catalog-api || exit 1
 set -a; . ./.env.ports; set +a
+export CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1
 claude --permission-mode auto -n 'v0.3-catalog-api' "$(cat .claude/ENCARGO.md)"
 exec zsh
 ```
+
+El `export` es obligatorio y va **antes** de `claude`, nunca a `0` ni sustituido por `--no-session-persistence`: sin persistencia, salir de la pestaña tira el transcript y el contexto de la slice se pierde entero. Está también en `~/.claude/settings.json` (`env`), pero se repite aquí porque la línea del script es la que sobrevive a que alguien lance el script desde otro entorno.
 
 `.claude/session/tilt.sh` (solo con `--tilt`):
 ```sh
@@ -154,5 +157,7 @@ Las pestañas de Konsole no se cierran solas. Recuérdale al usuario que cierre 
 - **Un worktree por slice, no por fichero.** Si acabas con más de tres activos, el problema es de granularidad del reparto, no de aislamiento.
 - **Sin encargo no se lanza sesión.** Si la skill `slice` no puede generar uno (la slice no está en el roadmap, `docs/api/openapi/` aún no tiene el contrato que necesita), para ahí: el worktree se queda creado y sin sesión. Una sesión arrancada en frío sobre una slice mal acotada es justo el fallo que `slice` existe para evitar.
 - **El punto de sincronización sigue siendo el del roadmap.** Dos worktrees que avanzan en paralelo no eliminan la dependencia de `SINC-1`…`SINC-5`; solo evitan que se estorben mientras tanto.
+- **La persistencia de sesión no se desactiva nunca.** `CLAUDE_CODE_FORCE_SESSION_PERSISTENCE=1` en `claude.sh` y en `~/.claude/settings.json`; ni `=0` ni `--no-session-persistence`. Una sesión de worktree que cierras y no puedes reanudar te deja con el encargo hecho a medias y sin rastro de lo decidido.
+- **Se reanuda desde el mismo worktree.** El historial se guarda por directorio de trabajo, así que `claude --continue` o `/resume` solo ven la sesión de la slice si los lanzas desde `../ukun-<slice>`. Desde el checkout principal esa sesión no aparece — no está perdida, estás mirando en otro sitio. Lo más simple es volver a lanzar `.claude/session/claude.sh` y usar `/resume` ahí.
 - **Cada sesión trabaja en su propio directorio raíz.** Una sesión que hace `cd` a otro worktree acaba con contexto mezclado de dos ramas, que es justo lo que esto evita.
 - **`--tilt` levanta un stack entero por worktree** (cinco contenedores y un Postgres). Con dos worktrees eso son dos bases de datos y dos JVM por servicio. Si la slice no necesita el backend corriendo — un endpoint que aún no existe, trabajo de contrato o de docs — no lo pidas.
