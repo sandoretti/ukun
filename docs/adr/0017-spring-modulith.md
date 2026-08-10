@@ -1,7 +1,7 @@
-# ADR-0017: Spring Modulith en `ukun-api` y `ukun-auth`, revirtiendo el descarte previo
+# ADR-0017: Spring Modulith en `ukun-api` (y en `ukun-auth`, revertido por ADR-0022), revirtiendo el descarte previo
 
 ## Estado
-Aceptado — revierte una decisión previamente aceptada de este mismo repositorio
+Aceptado — revierte una decisión previamente aceptada de este mismo repositorio. **Su §4 (descomposición de `ukun-auth`) está a su vez revertida por ADR-0022**; el resto sigue vigente.
 
 ## Contexto
 `03-analisis-y-patrones.md` §4 descartaba Spring Modulith explícitamente: *"Tentador y barato, pero ArchUnit ya cubre la necesidad real de hacer cumplir fronteras entre paquetes. Reevaluar en v1.x si el monolito crece mucho"*. Esa regla ArchUnit («los paquetes de feature no se importan entre sí salvo a través de `..api..`») sigue siendo cierta hoy en descripción, pero no en verificación: nadie la había hecho ejecutable, y la estructura por feature que la skill `spring-api` ya prescribe (`catalogo/`, `inventario/`, `tiendas/`, ...) no tenía ni un dueño de tabla declarado por módulo ni un grafo de dependencias explícito.
