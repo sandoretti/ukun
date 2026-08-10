@@ -33,9 +33,6 @@ import org.springframework.test.web.servlet.client.RestTestClient;
         })
 abstract class LoginIntegrationTest extends AbstractIntegrationTest {
 
-    /** Must match what the seeder registers, or the authorization request is rejected. */
-    static final String GATEWAY_REDIRECT_URI = "http://localhost:8080/login/oauth2/code/ukun";
-
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
         useDatabase(registry, ACCOUNTS_DATABASE);

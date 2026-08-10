@@ -1,8 +1,11 @@
 package dev.sandoretti.ukun.auth.security;
 
+import static java.util.stream.Collectors.toCollection;
+
 import dev.sandoretti.ukun.auth.application.AccountCredentials;
 import dev.sandoretti.ukun.auth.application.AccountsService;
 import dev.sandoretti.ukun.auth.domain.Role;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
@@ -39,6 +42,10 @@ class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext>
     /**
      * The single audience of a user token. There is one resource server in this system and naming it
      * here is what lets {@code ukun-api} reject a token minted for anybody else.
+     *
+     * <p>It travels in a mutable {@code ArrayList} rather than the obvious {@code List.of(…)}, for the
+     * reason spelled out on {@link #rolesOf}: an immutable list of the JDK cannot be read back out of
+     * {@code oauth2_authorization}, and the breakage surfaces in the logout.
      */
     private static final String RESOURCE_SERVER = "ukun-api";
 
@@ -61,7 +68,7 @@ class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext>
             return;
         }
 
-        context.getClaims().audience(List.of(RESOURCE_SERVER));
+        context.getClaims().audience(new ArrayList<>(List.of(RESOURCE_SERVER)));
 
         accounts.findCredentialsByEmail(context.getPrincipal().getName()).ifPresent(account -> context.getClaims()
                 .subject(account.accountId().toString())
@@ -69,8 +76,24 @@ class TokenClaimsCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext>
                 .claim("roles", rolesOf(account)));
     }
 
-    /** Names, not enum instances: a claim has to survive JSON serialisation unambiguously. */
+    /**
+     * Names, not enum instances: a claim has to survive JSON serialisation unambiguously.
+     *
+     * <p><strong>And an {@code ArrayList}, not the {@code List.of(…)} or {@code Stream.toList()} it
+     * would naturally be</strong> — same reason as the audience above. Every claim set here is stored
+     * with the {@code OAuth2Authorization} in {@code oauth2_authorization}, serialised by the
+     * {@code ObjectMapper} of {@link org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService},
+     * which writes each value's concrete type and reads it back through a {@code PolymorphicTypeValidator}
+     * with a fixed allow-list. The JDK's immutable lists —
+     * {@code java.util.ImmutableCollections$List12}/{@code $ListN} — are not on it, so the write
+     * succeeds and the <em>read</em> fails.
+     *
+     * <p>The failure lands nowhere near here, which is why this comment is long: the first read of that
+     * row is the {@code id_token_hint} of the RP-initiated logout, so the symptom was
+     * {@code /connect/logout} answering 400, the session at this server never ending, and «sign in»
+     * silently returning the previous user (issue #106).
+     */
     private static List<String> rolesOf(AccountCredentials account) {
-        return account.roles().stream().map(Role::name).toList();
+        return account.roles().stream().map(Role::name).collect(toCollection(ArrayList::new));
     }
 }
