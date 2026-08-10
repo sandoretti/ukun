@@ -1,10 +1,28 @@
 import { http as mswHttp, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { server } from '../../test/msw/server';
+import { startSignIn } from '../auth/signIn';
 import { ProblemDetailError, http } from './http';
 
+vi.mock('../auth/signIn', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../auth/signIn')>()),
+  startSignIn: vi.fn(),
+}));
+
+/** A 401 with the body the gateway's entry point answers with. */
+function unauthenticated() {
+  return HttpResponse.json(
+    { type: 'https://ukun.dev/errors/unauthenticated', title: 'UNAUTHENTICATED', status: 401, code: 'UNAUTHENTICATED' },
+    { status: 401 },
+  );
+}
+
 describe('http', () => {
+  beforeEach(() => {
+    vi.mocked(startSignIn).mockClear();
+  });
+
   it('normalises a ProblemDetail into ProblemDetailError, extensions included', async () => {
     server.use(
       mswHttp.get('/api/products', () =>
@@ -41,5 +59,23 @@ describe('http', () => {
 
     expect(error.code).toBe('INTERNAL_ERROR');
     expect(error.status).toBe(500);
+  });
+
+  it('starts the sign-in flow when the session is gone', async () => {
+    server.use(mswHttp.get('/api/products', () => unauthenticated()));
+
+    await http.get('/api/products').catch(() => undefined);
+
+    expect(vi.mocked(startSignIn)).toHaveBeenCalled();
+  });
+
+  it('leaves a request that allows an anonymous answer alone', async () => {
+    server.use(mswHttp.get('/api/me', () => unauthenticated()));
+
+    // The session probe: every visitor of a public screen gets this 401, and redirecting on it would
+    // mean nobody can read the catalogue without signing in first.
+    await http.get('/api/me', { allowAnonymous: true }).catch(() => undefined);
+
+    expect(vi.mocked(startSignIn)).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,21 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
+import { startSignIn } from '../auth/signIn';
 import type { components } from '../../types/api';
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /**
+     * Whether a `401` on this request is an expected answer rather than a dead session. Only the
+     * session probe sets it: `GET /api/me` answers 401 to every anonymous visitor, and the public
+     * screens would otherwise send anyone who opens the home page to authenticate.
+     *
+     * It is declared intent and not a check on the URL: `http.ts` is not the place that knows which
+     * route the probe lives at.
+     */
+    allowAnonymous?: boolean;
+  }
+}
 
 type ProblemDetail = components['schemas']['ProblemDetail'];
 export type ErrorCode = components['schemas']['ErrorCode'];
@@ -47,11 +62,28 @@ export function toProblem(error: unknown): ProblemDetailError {
 
 const MUTATING_METHODS = ['post', 'put', 'patch', 'delete'];
 
+const CSRF_COOKIE = 'XSRF-TOKEN';
+
 function readCookie(name: string): string | undefined {
   return document.cookie
     .split('; ')
     .find((entry) => entry.startsWith(`${name}=`))
     ?.slice(name.length + 1);
+}
+
+/**
+ * The CSRF token the gateway last wrote, as the literal string it expects back. The gateway uses
+ * `ServerCsrfTokenRequestAttributeHandler` instead of the default XOR one precisely so that cookie
+ * and header are the same value, and it leaves the cookie readable (`HttpOnly=false`) on purpose:
+ * this one is meant to be echoed, unlike the session cookie.
+ *
+ * Exported because the sign-out form needs the same string in a hidden field — one cookie reader in
+ * the whole app, not two that can drift apart.
+ */
+export function csrfToken(): string | undefined {
+  const raw = readCookie(CSRF_COOKIE);
+
+  return raw === undefined ? undefined : decodeURIComponent(raw);
 }
 
 /**
@@ -68,9 +100,9 @@ export const http = axios.create({
 http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const method = (config.method ?? 'get').toLowerCase();
   if (MUTATING_METHODS.includes(method)) {
-    const token = readCookie('XSRF-TOKEN');
+    const token = csrfToken();
     if (token) {
-      config.headers.set('X-XSRF-TOKEN', decodeURIComponent(token));
+      config.headers.set('X-XSRF-TOKEN', token);
     }
   }
   return config;
@@ -81,9 +113,14 @@ http.interceptors.response.use(
   (error: AxiosError<ProblemDetail>) => {
     const status = error.response?.status;
 
-    // A 401 is a dead session, not a screen-level error: it is handled once, here.
-    if (status === 401 && window.location.pathname !== '/login') {
-      window.location.assign('/login');
+    // A dead session is not a screen-level error: it is handled once, here, by starting the flow
+    // again from wherever the reader was. The destination is the gateway's own `oauth2Login`
+    // endpoint — `/login` is a reserved prefix that answers 404 to the SPA, never a screen.
+    //
+    // A request that says it can be answered anonymously is exempt: its 401 means "no session",
+    // which is a perfectly good state for a public screen to be in.
+    if (status === 401 && error.config?.allowAnonymous !== true) {
+      startSignIn();
     }
 
     if (status !== undefined) {

@@ -5,7 +5,7 @@ import { renderWithProviders } from '../test/renderWithProviders';
 import { AppLayout } from './AppLayout';
 
 /** Every caption of the shell whose screen is not built yet. */
-const NOT_BUILT_YET = ['Novedades', 'Sobre Ukun', 'Iniciar sesión', 'Crear cuenta'];
+const NOT_BUILT_YET = ['Novedades', 'Sobre Ukun', 'Crear cuenta'];
 
 function renderShell() {
   renderWithProviders(<AppLayout />);
@@ -29,6 +29,15 @@ describe('AppLayout', () => {
 
     const links = bar.getAllByRole('link').map((link) => link.getAttribute('href'));
     expect(links).toEqual(['/', '/products', '/stores']);
+  });
+
+  it('offers the way in to a visitor, and it is not a route of this router', () => {
+    const bar = renderShell();
+
+    // Signing in navigates to the gateway (`/oauth2/authorization/ukun`), so the control is an
+    // enabled button and never a link: `/login` is a reserved prefix and answers 404 to the SPA.
+    const signIn = bar.getByRole('button', { name: 'Iniciar sesión' });
+    expect(signIn.hasAttribute('disabled')).toBe(false);
   });
 
   it.each(NOT_BUILT_YET)('offers %s without turning it into a dead link', (label) => {

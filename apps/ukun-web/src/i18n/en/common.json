@@ -14,7 +14,17 @@
   },
   "account": {
     "signIn": "Sign in",
-    "signUp": "Create account"
+    "signUp": "Create account",
+    "signOut": "Sign out",
+    "title": "My account",
+    "email": "Email",
+    "roles": "Permissions",
+    "backoffice": "Back office",
+    "role": {
+      "CUSTOMER": "Customer",
+      "EMPLOYEE": "Employee",
+      "ADMIN": "Administrator"
+    }
   },
   "footer": {
     "claim": "Minimalism and affordable prices. We turn any space around with good design, without it showing on the bill.",

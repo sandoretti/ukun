@@ -14,7 +14,17 @@
   },
   "account": {
     "signIn": "Iniciar sesión",
-    "signUp": "Crear cuenta"
+    "signUp": "Crear cuenta",
+    "signOut": "Cerrar sesión",
+    "title": "Mi cuenta",
+    "email": "Correo",
+    "roles": "Permisos",
+    "backoffice": "Back office",
+    "role": {
+      "CUSTOMER": "Cliente",
+      "EMPLOYEE": "Empleado",
+      "ADMIN": "Administrador"
+    }
   },
   "footer": {
     "claim": "Minimalismo y precios asequibles. Transformamos cualquier espacio con buen diseño, sin que se note en la factura.",
