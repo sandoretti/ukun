@@ -21,6 +21,12 @@ dependencies {
     implementation(libs.spring.cloud.starter.gateway.server.webflux)
     implementation(libs.spring.boot.starter.actuator)
 
+    // Correlación entre los tres procesos (docs/11 §5). Aquí es donde empieza el trace: este servicio
+    // es el único que habla con el navegador, así que es quien acuña el traceId que auth y api heredan
+    // por la cabecera `traceparent`.
+    implementation(libs.spring.boot.micrometer.tracing.opentelemetry)
+    runtimeOnly(libs.micrometer.tracing.bridge.otel)
+
     // El filtro grueso por rol de ADR-0020 y las cuatro cabeceras de docs/08 §8.
     implementation(libs.spring.boot.starter.security)
 

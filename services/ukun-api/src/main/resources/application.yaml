@@ -117,6 +117,22 @@ management:
       probes:
         enabled: true
 
+  # Correlation across the three processes (docs/11-observabilidad-y-logging.md §5). Nothing here
+  # exports a trace anywhere: what this buys is the traceId in the MDC, which the log pattern prints
+  # and which shared/error/TraceIds hands to every ProblemDetail. The OTLP exporter is v1.0.
+  tracing:
+    sampling:
+      # Boot's default is 0.1, which for this volume means nine out of ten requests are impossible to
+      # follow across services — the exact problem this release exists to fix. docs/11 §5 sets 1.0
+      # both locally and in production "while the volume is this one".
+      probability: 1.0
+    propagation:
+      # Boot already *produces* W3C, but by default it *consumes* W3C, B3 and B3_MULTI. Narrowing it
+      # to one format is deliberate: the only party that talks to this service is the gateway, it
+      # sends `traceparent`, and accepting two more header dialects from anyone else is surface
+      # nobody asked for.
+      type: w3c
+
 springdoc:
   # Swagger UI is a development tool, never exposed by the production profile.
   swagger-ui:

@@ -6,26 +6,22 @@ import org.slf4j.MDC;
 /**
  * Resolves the {@code traceId} that every error response carries.
  *
- * <p>The contract declares it required in {@code ProblemDetail}, but
- * {@code docs/11-observabilidad-y-logging.md} places Micrometer Tracing in <strong>v0.5</strong>, when
- * a browser request first crosses three processes — instrumenting a hop that does not exist yet is
- * cost without signal. So today there is no span, and therefore nothing in the MDC.
+ * <p>Since Micrometer Tracing landed in v0.5 ({@code docs/11-observabilidad-y-logging.md} §5) the
+ * usual answer comes from the MDC, which Boot fills from the {@code traceparent} the gateway sends —
+ * so the value in this response is the same one that identifies the request in the logs of all three
+ * services. That is the whole point of the field, and {@code TraceCorrelationIT} is what says it is
+ * true rather than intended.
  *
- * <p>This reads the MDC anyway and falls back to a fresh W3C-shaped identifier. Two consequences,
- * both deliberate:
+ * <p>The fallback to a fresh W3C-shaped identifier stays, for the case that still exists: this
+ * service listens on its own port and can be called without a trace, or fail before one is
+ * established. An operator handed a {@code traceId} can still find the line the advice logged with
+ * it — the two always match, because both come from this single read.
  *
- * <ul>
- *   <li>The value the client receives is the same one the advice logs the exception with, so an
- *       operator handed a {@code traceId} can still find the stack trace — which is the whole point
- *       of the field.
- *   <li>When v0.5 puts Micrometer Tracing on the classpath, Boot populates the MDC on its own and
- *       this class starts returning the real trace with no change here.
- * </ul>
- *
- * <p>It deliberately does <strong>not</strong> write the generated value back into the MDC. There is
- * no servlet filter clearing it in a {@code finally} yet ({@code docs/11} §"MDC"), and a value left
- * behind on a pooled thread would resurface on the next request under a different one — two
- * unrelated requests reported under the same trace is worse than no trace at all.
+ * <p>It deliberately does <strong>not</strong> write the generated value back into the MDC. Only the
+ * key that a filter removes in a {@code finally} may be written there ({@code docs/11} §5, and see
+ * {@code shared.observability.AccountIdMdcFilter}); a value left behind on a pooled thread would
+ * resurface on the next request under a different one, and two unrelated requests reported under the
+ * same trace is worse than no trace at all.
  */
 final class TraceIds {
 

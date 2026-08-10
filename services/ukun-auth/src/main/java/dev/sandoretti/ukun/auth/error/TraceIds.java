@@ -6,16 +6,18 @@ import org.slf4j.MDC;
 /**
  * Resolves the {@code traceId} that every error response carries.
  *
- * <p>The contract declares it required, but {@code docs/11-observabilidad-y-logging.md} places
- * Micrometer Tracing in <strong>v0.5</strong>, when a browser request first crosses three processes.
- * Until then there is no span and nothing in the MDC, so this falls back to a fresh W3C-shaped
- * identifier — the same value the advice logs the exception with, which is what makes the field
- * useful to an operator handed one. When v0.5 puts tracing on the classpath, Boot fills the MDC and
- * this starts returning the real trace with no change here.
+ * <p>Since Micrometer Tracing landed in v0.5 ({@code docs/11-observabilidad-y-logging.md} §5) the
+ * value normally comes from the MDC, filled from the {@code traceparent} of whoever called. In this
+ * service that caller is {@code ukun-api} running the signup saga, and the trace is what joins a
+ * refusal logged here to the {@code signup.compensation} logged there — see
+ * {@code TraceCorrelationIT}.
  *
- * <p>It deliberately does not write the generated value back into the MDC: nothing clears it in a
- * {@code finally} yet, and a value left on a pooled thread would resurface under an unrelated
- * request.
+ * <p>The fallback to a fresh W3C-shaped identifier stays for a call that arrives without a trace. It
+ * is the same value the advice logs the exception with, which is what makes the field useful to an
+ * operator handed one.
+ *
+ * <p>It deliberately does not write the generated value back into the MDC: nothing removes it in a
+ * {@code finally}, and a value left on a pooled thread would resurface under an unrelated request.
  */
 final class TraceIds {
 

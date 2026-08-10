@@ -18,12 +18,19 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
  * changing it to the account id would buy nothing here while quietly changing where every session's
  * token is filed. The account id is what the audit event uses, and it is available through
  * {@link #accountId()} for exactly that.
+ *
+ * <p>That distinction is why this type is public rather than package private. Everything in this
+ * service that names the person in a log has to reach {@link #accountId()} and must <em>not</em> reach
+ * {@code getName()} — {@code docs/11-observabilidad-y-logging.md} §5 keeps email out of the MDC
+ * precisely because it would otherwise appear on every line of every request. There are two such
+ * callers now, {@code LogoutEventLogger} here and the access log in {@code web}, and the second one
+ * lives in another package.
  */
-final class UkunOidcUser extends DefaultOidcUser {
+public final class UkunOidcUser extends DefaultOidcUser {
 
     private final String accountId;
 
-    UkunOidcUser(
+    public UkunOidcUser(
             Collection<? extends GrantedAuthority> authorities,
             OidcIdToken idToken,
             String nameAttributeKey,
@@ -34,7 +41,7 @@ final class UkunOidcUser extends DefaultOidcUser {
     }
 
     /** The {@code sub} of the access token: the account's UUID, not the email ({@code docs/08} §4). */
-    String accountId() {
+    public String accountId() {
         return accountId;
     }
 }

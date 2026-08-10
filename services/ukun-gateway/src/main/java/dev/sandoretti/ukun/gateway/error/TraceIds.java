@@ -7,15 +7,15 @@ import org.slf4j.MDC;
  * Resolves the {@code traceId} that every error response carries, the same way
  * {@code ukun-api} does — see the class of the same name in that service.
  *
- * <p>The contract declares the field required, and Micrometer Tracing lands in this same release but
- * in a different slice (issue #30). Until it does there is no span and therefore nothing in the MDC,
- * so this falls back to a fresh W3C-shaped identifier: the client still gets a value it can quote to
- * an operator, which is the whole point of the field.
+ * <p>Since issue #30 the value normally comes from the MDC. This being a reactive service, that
+ * depends on one property as much as on the dependency: {@code spring.reactor.context-propagation:
+ * auto} in {@code application.yaml} is what makes Reactor restore the MDC around each signal, and
+ * without it this class would keep inventing an identifier while a perfectly good trace travelled on
+ * towards {@code ukun-api}. The reasoning is written where the property is.
  *
- * <p>Reading the MDC in a reactive service is not the oversight it looks like. When #30 puts
- * {@code micrometer-tracing} on the classpath, Boot enables Reactor's automatic context propagation,
- * which is precisely what restores the MDC around each signal — so this class starts returning the
- * real trace with no change here, exactly as in {@code ukun-api}.
+ * <p>The fallback to a fresh W3C-shaped identifier stays for whatever fails outside a traced
+ * exchange: the client still gets a value it can quote to an operator, which is the whole point of
+ * the field.
  *
  * <p>It deliberately does <strong>not</strong> write the generated value back into the MDC: a value
  * left behind on an event-loop thread would resurface on an unrelated request, and two requests

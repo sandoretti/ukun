@@ -18,6 +18,11 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.validation)
 
+    // Correlación con los otros dos procesos (docs/11 §5). Va con starter-actuator, que es lo que
+    // trae el ObservationRegistry y las propiedades `management.tracing.*` que lo configuran.
+    implementation(libs.spring.boot.micrometer.tracing.opentelemetry)
+    runtimeOnly(libs.micrometer.tracing.bridge.otel)
+
     // Las dos mitades de la frontera con ukun-auth, que no son la misma dependencia:
     // resource-server valida los tokens que llegan (issue #24), client pide el suyo por
     // client_credentials para hablar con /internal/accounts (AccountsPort).
