@@ -69,6 +69,15 @@ public abstract class AbstractIntegrationTest {
      */
     protected static final String STORES_DATABASE = "ukun_app_stores";
 
+    /**
+     * Schema only, for the signup saga. It gets one of its own because {@code SignupIT} is the first
+     * suite that writes {@code customer}, and a profile pins the {@code address} and {@code card} rows
+     * it points at through {@code ON DELETE RESTRICT} — so a suite that truncates those tables would
+     * fail against leftovers of this one, which is exactly the coupling {@link #STORES_DATABASE}
+     * documents.
+     */
+    protected static final String SIGNUP_DATABASE = "ukun_app_signup";
+
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
     static {

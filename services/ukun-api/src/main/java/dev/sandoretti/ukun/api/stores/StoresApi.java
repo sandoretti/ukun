@@ -15,8 +15,10 @@ public interface StoresApi {
     /**
      * Whether a store with this identifier exists.
      *
-     * <p>The caller is {@code GET /api/availability}, which has to answer {@code 404} for a store
-     * nobody has, and the {@code favoriteStoreId} of RF-05 later. It is deliberately a question and
+     * <p>The callers are {@code GET /api/availability}, which has to answer {@code 404} for a store
+     * nobody has, and the signup saga, which validates {@code favoriteStoreId} before writing anything
+     * so that a wrong value is a {@code 400} on the field rather than a foreign key violation
+     * ({@code docs/08-identidad-y-seguridad.md} §3, step 0). It is deliberately a question and
      * not a fetch: an existence check that returns the store invites the caller to read fields it was
      * not given, and every one of those fields would then be a dependency of the other module.
      *

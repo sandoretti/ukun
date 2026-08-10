@@ -76,13 +76,20 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * client still gets the contract shape instead of a raw {@code 500}.
      *
      * <p>Anything else wrapped in a {@code DataIntegrityViolationException} is a bug, not a conflict,
-     * and is rethrown so it reaches {@link #handleUnexpectedFailure} and gets logged as one.
+     * and is <strong>delegated</strong> to {@link #handleUnexpectedFailure} so it is logged as one and
+     * still answers a {@code 500 INTERNAL_ERROR}.
+     *
+     * <p>It used to be rethrown instead, and that was wrong in a way only a unique-key violation
+     * revealed: an exception thrown from inside an {@code @ExceptionHandler} is not re-resolved by the
+     * advice. It propagates to the container, which forwards to {@code /error} — a path
+     * {@code SecurityConfig} does not permit — so the client got a {@code 401} for what was a server
+     * bug. Calling the fallback keeps the intent and drops the round trip through the container.
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ProblemDetail> handleIntegrityViolation(DataIntegrityViolationException exception) {
         if (!(exception.getMostSpecificCause() instanceof SQLException cause)
                 || !FOREIGN_KEY_VIOLATION.equals(cause.getSQLState())) {
-            throw exception;
+            return handleUnexpectedFailure(exception);
         }
         ProblemDetail body = ProblemDetails.of(ErrorCode.REFERENTIAL_INTEGRITY, "The operation violates a referential constraint");
 

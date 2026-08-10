@@ -107,7 +107,6 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
             "getCurrentUser",
             "getMyProfile",
             "updateMyProfile",
-            "signup",
             // v0.6 — cart, checkout and orders.
             "getCart",
             "clearCart",

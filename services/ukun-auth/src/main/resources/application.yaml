@@ -66,6 +66,21 @@ ukun:
       client-id: ukun-api
       secret: ${UKUN_OAUTH2_API_SECRET}
 
+  # The breach-corpus half of the password policy (docs/08 §8), on by default. It is a real HTTPS call
+  # to api.pwnedpasswords.com per signup, k-anonymised: only the first five characters of the SHA-1
+  # leave the process. Spring's checker fails open — if that host is unreachable the signup proceeds
+  # and a WARN is logged — because a third party's availability does not get to decide whether people
+  # can register. The integration suite sets this to false: an *IT does not reach the internet.
+  password:
+    compromised-check:
+      enabled: true
+
+  # Reconciliation of abandoned reservations (skill `spring-auth`, rule 7). This, and not the
+  # best-effort :release, is what guarantees no orphan accounts — see AccountReconciliationJob.
+  reconciliation:
+    retention: PT24H
+    cron: "0 30 3 * * *"
+
 server:
   port: 9000
 

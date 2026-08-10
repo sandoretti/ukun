@@ -76,8 +76,13 @@ class AuthorizationServerConfig {
     }
 
     /**
-     * Everything that is not an Authorization Server endpoint: the login form, and the health probe
-     * that compose's {@code HEALTHCHECK} calls without credentials.
+     * Everything that is neither an Authorization Server endpoint nor part of the internal contract:
+     * the login form, and the health probe that compose's {@code HEALTHCHECK} calls without
+     * credentials.
+     *
+     * <p>Its order is {@code +2} and not {@code +1} because {@link InternalApiSecurityConfig} sits
+     * between the two. This chain matches everything, so whatever comes after it is unreachable —
+     * moving it back up would silently send {@code /internal/accounts} to the login form.
      *
      * <p>The generated login page is the real login UI, and stays so past v0.5: under the BFF of
      * ADR-0003 the browser is redirected <em>here</em> to type its password, and the SPA never sees
@@ -90,7 +95,7 @@ class AuthorizationServerConfig {
      * do repeatedly.
      */
     @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE + 1)
+    @Order(Ordered.HIGHEST_PRECEDENCE + 2)
     SecurityFilterChain defaultFilterChain(HttpSecurity http, LoginAttemptBuckets buckets) throws Exception {
         http.authorizeHttpRequests(requests -> requests.requestMatchers("/actuator/health/**")
                         .permitAll()

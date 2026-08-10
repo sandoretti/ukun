@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.auth.infra;
 
 import dev.sandoretti.ukun.auth.domain.Account;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -19,4 +20,18 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
      */
     @EntityGraph(attributePaths = "roles")
     Optional<Account> findByEmail(String email);
+
+    /**
+     * The reconciliation of rule 7 of the {@code spring-auth} skill: an account still disabled long
+     * after being reserved is an abandoned signup, and deleting it frees the email.
+     *
+     * <p>A derived delete, which loads the rows and removes them one by one, rather than a bulk
+     * {@code @Modifying} statement. Over a table of hundreds of rows once a day the difference is
+     * nothing, and loading them is what lets Hibernate delete {@code account_role} itself instead of
+     * this working only because the database happens to cascade — the cascade is the second belt
+     * (baseline, changeset {@code 001-10}), not the mechanism.
+     *
+     * @return how many were collected, for the job's log line
+     */
+    long deleteByEnabledFalseAndCreatedAtBefore(Instant threshold);
 }
