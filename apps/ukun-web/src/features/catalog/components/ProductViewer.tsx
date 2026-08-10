@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties } from 'react';
+import { useId, useRef, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Modal } from 'react-bootstrap';
 
@@ -19,8 +19,6 @@ const ZOOM_LEVELS = [1, 1.5, 2, 3];
 const FIT = 0;
 const CLICK_LEVEL = 2;
 
-const TITLE_ID = 'product-viewer-title';
-
 /**
  * The photo at full screen, which is the only way of enlarging it that works everywhere: the lens of
  * the sheet needs a mouse, and there is none on a phone or when browsing with the keyboard.
@@ -35,6 +33,7 @@ const TITLE_ID = 'product-viewer-title';
 export function ProductViewer({ show, onHide, imageUrl, name }: ProductViewerProps) {
   const { t } = useTranslation('catalog');
   const locale = useLocale();
+  const titleId = useId();
   const [level, setLevel] = useState(FIT);
 
   const frameRef = useRef<HTMLDivElement>(null);
@@ -48,13 +47,13 @@ export function ProductViewer({ show, onHide, imageUrl, name }: ProductViewerPro
       show={show}
       onHide={onHide}
       fullscreen
-      aria-labelledby={TITLE_ID}
+      aria-labelledby={titleId}
       // Reopening a photo that was left at ×3 and scrolled into a corner is not where anyone wants
       // to start, so the level goes back to "fit" once the modal is gone.
       onExited={() => setLevel(FIT)}
     >
       <Modal.Header closeButton closeLabel={t('viewer.close')}>
-        <Modal.Title as="h2" id={TITLE_ID} className="h6 mb-0">
+        <Modal.Title as="h2" id={titleId} className="h6 mb-0">
           {name}
         </Modal.Title>
       </Modal.Header>

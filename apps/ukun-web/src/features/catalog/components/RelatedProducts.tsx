@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Col, Row } from 'react-bootstrap';
 
@@ -12,8 +12,6 @@ type RelatedProductsProps = {
   excludeId: number;
 };
 
-const TITLE_ID = 'related-products-title';
-
 /**
  * The other products of the same type, at the foot of the sheet — the strip Amazon and IKEA put there
  * so a sheet is not a dead end when this particular sofa is not the one.
@@ -24,6 +22,7 @@ const TITLE_ID = 'related-products-title';
  */
 export function RelatedProducts({ typeId, excludeId }: RelatedProductsProps) {
   const { t } = useTranslation('catalog');
+  const titleId = useId();
 
   const relatedQuery = useRelatedProducts(typeId, excludeId);
 
@@ -40,8 +39,8 @@ export function RelatedProducts({ typeId, excludeId }: RelatedProductsProps) {
   }
 
   return (
-    <section className="mt-5" aria-labelledby={TITLE_ID}>
-      <h2 id={TITLE_ID} className="h5 mb-3">
+    <section className="mt-5" aria-labelledby={titleId}>
+      <h2 id={titleId} className="h5 mb-3">
         {t('detail.related')}
       </h2>
       <Row xs={2} md={3} xl={4} className="g-4">
