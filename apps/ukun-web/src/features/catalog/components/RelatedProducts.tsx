@@ -2,8 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Col, Row } from 'react-bootstrap';
 
-import { useAvailability } from '../../../shared/api/availability';
-import { useOnlineStore } from '../../../shared/api/stores';
+import { useOnlineAvailability } from '../../../shared/api/availability';
 import { useRelatedProducts } from '../api/queries';
 import { ProductCard } from './ProductCard';
 
@@ -27,7 +26,6 @@ export function RelatedProducts({ typeId, excludeId }: RelatedProductsProps) {
   const { t } = useTranslation('catalog');
 
   const relatedQuery = useRelatedProducts(typeId, excludeId);
-  const onlineStoreQuery = useOnlineStore();
 
   const products = relatedQuery.data ?? [];
   const productIds = useMemo(
@@ -35,7 +33,7 @@ export function RelatedProducts({ typeId, excludeId }: RelatedProductsProps) {
     [relatedQuery.data],
   );
   // Same reading as the listing's, so a card in the strip says the same as that card in the grid.
-  const availabilityQuery = useAvailability(onlineStoreQuery.data?.id, productIds);
+  const availability = useOnlineAvailability(productIds);
 
   if (products.length === 0) {
     return null;
@@ -49,7 +47,7 @@ export function RelatedProducts({ typeId, excludeId }: RelatedProductsProps) {
       <Row xs={2} md={3} xl={4} className="g-4">
         {products.map((product) => (
           <Col key={product.id}>
-            <ProductCard product={product} available={availabilityQuery.data?.get(product.id)} />
+            <ProductCard product={product} available={availability.available?.get(product.id)} />
           </Col>
         ))}
       </Row>

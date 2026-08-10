@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { formatMoney } from '../../../shared/format/money';
 import { useLocale } from '../../../shared/hooks/useLocale';
 import type { ProductSummary } from '../api/productKeys';
+import { productPath } from '../routes';
 
 type ProductCardProps = {
   product: ProductSummary;
@@ -34,7 +35,7 @@ export function ProductCard({ product, available }: ProductCardProps) {
     // from the title, so tabbing through the grid announces "Sofá de cuero" and not the card read
     // out whole.
     <Link
-      to={`/products/${product.id}`}
+      to={productPath(product.id)}
       aria-labelledby={titleId}
       className="product-card-link d-block h-100 text-reset text-decoration-none"
     >

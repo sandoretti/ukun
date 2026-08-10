@@ -15,6 +15,31 @@ type ProductPhotoProps = {
 type LensPosition = { x: number; y: number };
 
 /**
+ * Follows the mouse over an element and reports where it is, as a percentage of the element's own
+ * box. Kept apart from the markup because all of it is edge cases: a finger is not a hover, and a
+ * box of zeros —jsdom has no layout— would divide into `NaN` and park the lens in a corner.
+ */
+function useLens() {
+  const [lens, setLens] = useState<LensPosition | null>(null);
+
+  const onPointerMove = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== 'mouse') {
+      return;
+    }
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (bounds.width === 0 || bounds.height === 0) {
+      return;
+    }
+    setLens({
+      x: ((event.clientX - bounds.left) / bounds.width) * 100,
+      y: ((event.clientY - bounds.top) / bounds.height) * 100,
+    });
+  };
+
+  return { lens, handlers: { onPointerMove, onPointerLeave: () => setLens(null) } };
+}
+
+/**
  * The photo of the detail sheet. Unlike the card of the listing, it is **not** cropped: the frame
  * keeps a square footprint so the page does not jump from one product to the next, and the image sits
  * inside it whole. Most of the catalogue is square, but the beds and the floor lamps are portrait and
@@ -31,7 +56,7 @@ export function ProductPhoto({ imageUrl, name }: ProductPhotoProps) {
   const { t } = useTranslation('catalog');
   const [failed, setFailed] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [lens, setLens] = useState<LensPosition | null>(null);
+  const { lens, handlers: lensHandlers } = useLens();
 
   if (imageUrl === null || failed) {
     return (
@@ -40,23 +65,6 @@ export function ProductPhoto({ imageUrl, name }: ProductPhotoProps) {
       </div>
     );
   }
-
-  const trackLens = (event: PointerEvent<HTMLButtonElement>) => {
-    // The lens is a mouse affordance: a finger dragging across the photo is a scroll, not a hover.
-    if (event.pointerType !== 'mouse') {
-      return;
-    }
-    const bounds = event.currentTarget.getBoundingClientRect();
-    // jsdom has no layout and reports a box of zeros; dividing by it would write `NaN` into the
-    // custom properties and paint the lens in a corner.
-    if (bounds.width === 0 || bounds.height === 0) {
-      return;
-    }
-    setLens({
-      x: ((event.clientX - bounds.left) / bounds.width) * 100,
-      y: ((event.clientY - bounds.top) / bounds.height) * 100,
-    });
-  };
 
   return (
     <div
@@ -77,8 +85,7 @@ export function ProductPhoto({ imageUrl, name }: ProductPhotoProps) {
         className="product-zoom__trigger"
         aria-label={t('detail.zoom', { name })}
         onClick={() => setViewerOpen(true)}
-        onPointerMove={trackLens}
-        onPointerLeave={() => setLens(null)}
+        {...lensHandlers}
       >
         <img className="product-photo" src={imageUrl} alt={name} onError={() => setFailed(true)} />
         {/* Visible sign that the photo does something when clicked; what it does is in the label. */}

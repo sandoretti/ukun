@@ -1,8 +1,9 @@
-import { useRef, useState, type CSSProperties, type PointerEvent } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Modal } from 'react-bootstrap';
 
 import { formatNumber } from '../../../shared/format/number';
+import { useDragScroll } from '../../../shared/hooks/useDragScroll';
 import { useLocale } from '../../../shared/hooks/useLocale';
 import { Icon } from '../../../shared/ui/Icon';
 
@@ -35,35 +36,12 @@ export function ProductViewer({ show, onHide, imageUrl, name }: ProductViewerPro
   const { t } = useTranslation('catalog');
   const locale = useLocale();
   const [level, setLevel] = useState(FIT);
+
   const frameRef = useRef<HTMLDivElement>(null);
-  /** Where the pointer went down and where the frame was scrolled to at that moment. */
-  const drag = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
 
   const zoom = ZOOM_LEVELS[level];
   const isZoomed = level > FIT;
-
-  const startDrag = (event: PointerEvent<HTMLDivElement>) => {
-    const frame = frameRef.current;
-    if (!isZoomed || frame === null) {
-      return;
-    }
-    drag.current = { x: event.clientX, y: event.clientY, left: frame.scrollLeft, top: frame.scrollTop };
-    frame.setPointerCapture(event.pointerId);
-  };
-
-  const moveDrag = (event: PointerEvent<HTMLDivElement>) => {
-    const frame = frameRef.current;
-    if (drag.current === null || frame === null) {
-      return;
-    }
-    frame.scrollLeft = drag.current.left - (event.clientX - drag.current.x);
-    frame.scrollTop = drag.current.top - (event.clientY - drag.current.y);
-  };
-
-  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
-    drag.current = null;
-    frameRef.current?.releasePointerCapture(event.pointerId);
-  };
+  const dragHandlers = useDragScroll(frameRef, isZoomed);
 
   return (
     <Modal
@@ -91,10 +69,7 @@ export function ProductViewer({ show, onHide, imageUrl, name }: ProductViewerPro
           // Clicking enlarges only from the fitted state: while zoomed the pointer belongs to the
           // drag, and a click that fired at the end of one would undo what was just being framed.
           onClick={() => !isZoomed && setLevel(CLICK_LEVEL)}
-          onPointerDown={startDrag}
-          onPointerMove={moveDrag}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
+          {...dragHandlers}
         >
           <img className="product-viewer__image" src={imageUrl} alt={name} />
         </div>
