@@ -7,6 +7,7 @@ import { AppLayout } from './AppLayout';
 // React skills describe with `next/dynamic`.
 const HomePage = lazy(() => import('../features/home/HomePage'));
 const CatalogPage = lazy(() => import('../features/catalog/CatalogPage'));
+const StoresPage = lazy(() => import('../features/stores/StoresPage'));
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Route element={<AppLayout />}>
         <Route index element={<HomePage />} />
         <Route path="/products" element={<CatalogPage />} />
+        <Route path="/stores" element={<StoresPage />} />
       </Route>
     </Routes>
   );
