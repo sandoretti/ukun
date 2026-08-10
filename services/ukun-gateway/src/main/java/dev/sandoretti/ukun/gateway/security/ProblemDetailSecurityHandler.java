@@ -36,7 +36,7 @@ class ProblemDetailSecurityHandler implements ServerAuthenticationEntryPoint, Se
         this.problems = problems;
     }
 
-    /** No credentials at all. Today that is everyone: the login flow arrives with issue #28. */
+    /** No session. The SPA reads the {@code code} and decides whether to start a login itself. */
     @Override
     public Mono<Void> commence(ServerWebExchange exchange, AuthenticationException exception) {
         return problems.unauthenticated(exchange);

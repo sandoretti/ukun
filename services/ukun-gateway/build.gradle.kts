@@ -21,9 +21,14 @@ dependencies {
     implementation(libs.spring.cloud.starter.gateway.server.webflux)
     implementation(libs.spring.boot.starter.actuator)
 
-    // El filtro grueso por rol de ADR-0020 y las cuatro cabeceras de docs/08 §8. Lo que NO trae es
-    // oauth2Login ni el relevo de token: eso es cliente OAuth2 y llega con el issue #28.
+    // El filtro grueso por rol de ADR-0020 y las cuatro cabeceras de docs/08 §8.
     implementation(libs.spring.boot.starter.security)
+
+    // El BFF de ADR-0003: oauth2Login, la sesión y el relevo del token hacia ukun-api. Además de las
+    // clases, es lo que enciende dos autoconfiguraciones condicionadas a su presencia — la del
+    // TokenRelayGatewayFilterFactory de Spring Cloud Gateway, que necesita un
+    // ReactiveOAuth2AuthorizedClientManager en el contexto, y la del propio cliente.
+    implementation(libs.spring.boot.starter.security.oauth2.client)
 
     // Genera spring-configuration-metadata.json para GatewayProperties: sin él el IDE marca
     // `ukun.gateway.api-uri` como propiedad no resuelta.

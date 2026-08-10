@@ -18,6 +18,10 @@ import org.springframework.http.MediaType;
  * <p>Nothing needs to exist behind the gateway for the limit to hold — the upload endpoint it was
  * written for arrives in v0.7 — and the assertion that the upstream received nothing is what proves
  * the request was cut here rather than forwarded.
+ *
+ * <p>Every request here carries a CSRF token ({@code csrfProtected}), which is not incidental: since
+ * issue #28 that check runs first, so a mutation without one is refused before the size is ever
+ * looked at. The token is what makes these requests valid in every respect except the one under test.
  */
 class PayloadLimitIT extends GatewayIntegrationTest {
 
@@ -33,7 +37,8 @@ class PayloadLimitIT extends GatewayIntegrationTest {
     @Test
     @DisplayName("answers 413 with the ProblemDetail of the contract when the body is too large")
     void answers413WhenTheBodyIsTooLarge() {
-        http.post()
+        csrfProtected
+                .post()
                 .uri(PUBLIC_POST)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .bodyValue(new byte[(int) MAX_BYTES + 1])
@@ -54,7 +59,8 @@ class PayloadLimitIT extends GatewayIntegrationTest {
     @Test
     @DisplayName("forwards a body at the limit")
     void forwardsABodyAtTheLimit() {
-        http.post()
+        csrfProtected
+                .post()
                 .uri(PUBLIC_POST)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .bodyValue(new byte[(int) MAX_BYTES])
@@ -73,7 +79,8 @@ class PayloadLimitIT extends GatewayIntegrationTest {
     @Test
     @DisplayName("decides authorisation before size on a protected route")
     void decidesAuthorisationBeforeSize() {
-        http.post()
+        csrfProtected
+                .post()
                 .uri("/api/admin/products/42/image")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .bodyValue(new byte[(int) MAX_BYTES + 1])

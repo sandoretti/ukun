@@ -21,6 +21,16 @@ spring:
               uri: ${ukun.gateway.api-uri}
               predicates:
                 - Path=/api/**
+              # El relevo del token de ADR-0003: la sesión del navegador entra por aquí y sale como
+              # `Authorization: Bearer <JWT>` hacia ukun-api. Va SOLO en esta ruta, y las otras cuatro
+              # no lo llevan por razones distintas: /media/** es pública y no lo necesita, y mandarle
+              # un Bearer al Authorization Server (/oauth2/**, /login/oauth2/**, /.well-known/**)
+              # sería un error de diseño, no una redundancia.
+              #
+              # Sin sesión no falla: el filtro solo añade la cabecera si hay principal, que es lo que
+              # deja pasar a GET /api/products anónimo (docs/08 §4).
+              filters:
+                - TokenRelay=
 
             # Las fotos de producto. El gateway es dueño de la RUTA; el adaptador que las sirve vive
             # en el módulo `storage` de ukun-api, porque es lo que pasa a ser un cliente de S3 en
@@ -54,6 +64,18 @@ spring:
 server:
   port: 8080
 
+  reactive:
+    session:
+      cookie:
+        # El único credencial que el navegador maneja (ADR-0003). HttpOnly es lo que lo deja fuera
+        # del alcance de cualquier XSS; SameSite=Lax permite la vuelta del callback de OAuth2, que
+        # es una navegación GET de otro origen, y corta el envío en peticiones de terceros.
+        http-only: true
+        same-site: Lax
+        # Secure NO se fija aquí a propósito: `tilt up` sirve el stack por HTTP y un `Secure`
+        # incondicional dejaría la sesión sin funcionar en el único entorno que se puede probar.
+        # El despliegue con TLS lo activa por entorno (SERVER_REACTIVE_SESSION_COOKIE_SECURE=true).
+
 management:
   endpoints:
     web:
@@ -65,6 +87,32 @@ management:
         enabled: true
 
 ukun:
+  # El cliente OAuth2 que es este servicio (ADR-0003). Prefijo propio y no
+  # spring.security.oauth2.client.*: esas propiedades no pueden expresar este despliegue, y el porqué
+  # está en ClientRegistrationConfig — `issuer-uri` dispara un discovery en el arranque contra una URL
+  # que solo el navegador resuelve.
+  #
+  # La partición importante de este bloque es quién sigue cada URL. Las dos primeras las sigue el
+  # NAVEGADOR y tienen que resolverse desde el host; las dos siguientes las pide ESTE PROCESO desde
+  # dentro de la red de Docker. Son los mismos nombres de variable que ya usa ukun-api, para que un
+  # checkout desplazado se configure una sola vez y los dos servicios coincidan.
+  oauth2:
+    client-id: ukun-gateway
+    # Sin default, igual que en ukun-auth: un servicio que arranca con un secreto conocido es peor
+    # que uno que se niega a arrancar. Los dos lectores tienen que coincidir (.env.example).
+    secret: ${UKUN_OAUTH2_GATEWAY_SECRET}
+
+    issuer: ${UKUN_AUTH_ISSUER:http://localhost:9000}
+    authorization-uri: ${UKUN_AUTH_ISSUER:http://localhost:9000}/oauth2/authorize
+    end-session-uri: ${UKUN_AUTH_ISSUER:http://localhost:9000}/connect/logout
+
+    token-uri: ${UKUN_AUTH_TOKEN_URI:http://ukun-auth:9000/oauth2/token}
+    jwk-set-uri: ${UKUN_AUTH_JWK_SET_URI:http://ukun-auth:9000/oauth2/jwks}
+
+    # Con la barra final, que no sobra: ukun-auth registró esta URI en el issue #22 y compara
+    # post_logout_redirect_uri como una cadena literal.
+    post-logout-redirect-uri: ${UKUN_GATEWAY_BASE_URL:http://localhost:8080}/
+
   gateway:
     # Nombre interno del contenedor por defecto, sobreescribible por entorno: es el patrón que ya
     # usa ukun-api con UKUN_AUTH_JWK_SET_URI, y lo que permite que cada worktree desplace los

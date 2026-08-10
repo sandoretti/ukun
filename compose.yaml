@@ -84,12 +84,25 @@ services:
     environment:
       # Los tres destinos que este servicio enruta, por nombre de contenedor: los resuelve el
       # gateway desde dentro de la red de Docker, nunca el navegador — es la misma distinción que
-      # separa UKUN_AUTH_JWK_SET_URI de UKUN_AUTH_ISSUER en ukun-api, y aquí no hay ningún valor
-      # que el navegador tenga que ver.
+      # separa UKUN_AUTH_JWK_SET_URI de UKUN_AUTH_ISSUER en ukun-api.
       - UKUN_API_URI=${UKUN_API_URI:-http://ukun-api:8081}
       - UKUN_AUTH_URI=${UKUN_AUTH_URI:-http://ukun-auth:9000}
       # El dev server de Vite, al que solo enruta el perfil dev (compose.dev.yaml).
       - UKUN_WEB_URI=${UKUN_WEB_URI:-http://ukun-web:5173}
+
+      # A partir del BFF (issue #28) este servicio SÍ maneja valores que el navegador tiene que ver,
+      # y son otro juego de variables. Las dos de arriba las sigue el navegador: el issuer (que es
+      # también el `iss` que ukun-api valida) y, derivado de él, el authorization endpoint al que se
+      # redirige para teclear la contraseña. Las dos de abajo las pide el propio gateway desde la red
+      # de Docker. Mezclarlas es el fallo que no da un error claro: o el navegador no alcanza el
+      # login, o el arranque no alcanza las claves.
+      - UKUN_AUTH_ISSUER=${UKUN_AUTH_ISSUER:-http://localhost:${AUTH_PORT:-9000}}
+      - UKUN_GATEWAY_BASE_URL=${UKUN_GATEWAY_BASE_URL:-http://localhost:${GATEWAY_PORT:-8080}}
+      - UKUN_AUTH_TOKEN_URI=${UKUN_AUTH_TOKEN_URI:-http://ukun-auth:9000/oauth2/token}
+      - UKUN_AUTH_JWK_SET_URI=${UKUN_AUTH_JWK_SET_URI:-http://ukun-auth:9000/oauth2/jwks}
+      # El mismo secreto con el que ukun-auth registró el cliente, y por eso sin default: si falta,
+      # la propiedad sin default de application.yaml impide arrancar con un mensaje que lo dice.
+      - UKUN_OAUTH2_GATEWAY_SECRET=${UKUN_OAUTH2_GATEWAY_SECRET}
     depends_on:
       - ukun-api
       - ukun-auth

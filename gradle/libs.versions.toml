@@ -46,8 +46,8 @@ spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-
 # El starter de seguridad a secas, solo para ukun-gateway: no es resource server ni authorization
 # server, sino que necesita la cadena reactiva para el filtro grueso por rol y los escritores de
 # cabeceras (docs/08 §8). Boot autoconfigura la variante reactiva porque WebFlux está en el classpath
-# vía el starter de Gateway; las otras tres coordenadas `...-security-oauth2-*` son las que llegarán
-# con el oauth2Login del BFF (issue #28), no esta.
+# vía el starter de Gateway. Para el oauth2Login del BFF hace falta además el starter de cliente de
+# más abajo — no una coordenada propia: es el mismo artefacto que ya usa ukun-api.
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
 # starter-web no arrastra Bean Validation desde Boot 3, y cada query param del listado de catálogo
 # declara sus límites: sin esto las anotaciones compilan y no se aplican nunca.
@@ -67,6 +67,11 @@ spring-boot-starter-security-oauth2-resource-server = { module = "org.springfram
 # El otro lado de la misma frontera: ukun-api llamando a /internal/accounts de ukun-auth con
 # client_credentials y scope accounts:write (AccountsPort, ADR-0017 §1). Es cliente OAuth2, no
 # resource server — son dos starters distintos y hacen falta los dos.
+#
+# Lo comparte ukun-gateway, que es cliente OAuth2 en el otro sentido: authorization_code con PKCE en
+# nombre de una persona (ADR-0003). El mismo artefacto cubre los dos porque la diferencia está en el
+# grant, no en el árbol de dependencias — y es también lo que activa el TokenRelay del gateway, cuya
+# autoconfiguración está condicionada a que haya un ReactiveOAuth2AuthorizedClientManager.
 spring-boot-starter-security-oauth2-client = { module = "org.springframework.boot:spring-boot-starter-security-oauth2-client" }
 # Autoconfiguración de RestClient.Builder: en Boot 4 no viene con starter-web, y sin ella no hay bean
 # que inyectar (AccountsPort habla HTTP con ukun-auth). Importa que sea el builder de Boot y no

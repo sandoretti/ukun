@@ -60,11 +60,15 @@ class GatewayRoutingIT extends GatewayIntegrationTest {
      * container network ({@code docs/08} §3). Both halves are the same fact and belong in one test:
      * the client is told nothing exists, and nothing was forwarded to {@code ukun-auth} — a 404
      * produced by that service would mean the path <em>is</em> reachable through the edge.
+     *
+     * <p>With a CSRF token, so that the 404 is reached on its own merits. Without one the answer is a
+     * 403 from a filter that never gets as far as asking whether the route exists — true, but it
+     * would prove nothing about routing, which is what this class is for.
      */
     @Test
     @DisplayName("does not expose the internal endpoints of ukun-auth")
     void doesNotExposeTheInternalEndpoints() {
-        http.post().uri("/internal/accounts")
+        csrfProtected.post().uri("/internal/accounts")
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.NOT_FOUND);
 
