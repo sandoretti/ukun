@@ -1,0 +1,40 @@
+{
+  "title": "Tu carrito",
+  "lead": "Revisa las unidades antes de tramitar el pedido. La disponibilidad se confirma al confirmarlo.",
+  "empty": "Tu carrito está vacío",
+  "line": {
+    "reference": "Ref. {{sku}}",
+    "unitPrice": "{{price}} / unidad",
+    "remove": "Eliminar {{product}} del carrito",
+    "unavailable": "Ahora mismo no queda ninguna unidad en la tienda online",
+    "onlyLeft_one": "Solo queda {{count}} unidad en la tienda online",
+    "onlyLeft_other": "Solo quedan {{count}} unidades en la tienda online"
+  },
+  "quantity": {
+    "group": "Cantidad de {{product}}",
+    "decrease": "Quitar una unidad de {{product}}",
+    "increase": "Añadir una unidad de {{product}}"
+  },
+  "summary": {
+    "total": "Total",
+    "checkout": "Tramitar pedido"
+  },
+  "clear": {
+    "action": "Vaciar carrito",
+    "title": "¿Vaciar el carrito?",
+    "body": "Se eliminarán todas las líneas. No se puede deshacer.",
+    "confirm": "Sí, vaciar",
+    "cancel": "Cancelar",
+    "close": "Cerrar"
+  },
+  "actions": {
+    "add": "Añadir al carrito",
+    "inCart_one": "Ya tienes {{count}} unidad en el carrito.",
+    "inCart_other": "Ya tienes {{count}} unidades en el carrito.",
+    "goToCart": "Ver el carrito"
+  },
+  "indicator": {
+    "label_one": "Carrito, {{count}} unidad",
+    "label_other": "Carrito, {{count}} unidades"
+  }
+}

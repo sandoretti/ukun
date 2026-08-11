@@ -8,6 +8,7 @@ import { useLocale } from '../../../shared/hooks/useLocale';
 import { Icon } from '../../../shared/ui/Icon';
 import type { ProductDetail } from '../api/productKeys';
 import { catalogByTypePath } from '../routes';
+import { AddToCartButton } from './AddToCartButton';
 import { ProductPhoto } from './ProductPhoto';
 
 type ProductSheetProps = {
@@ -75,6 +76,10 @@ export function ProductSheet({ product, availability }: ProductSheetProps) {
             )
           )}
         </div>
+
+        {/* Adding does not wait for the stock answer: availability informs, it never blocks (RF-03).
+            The button belongs above the description because it is what the reader came to do. */}
+        <AddToCartButton productId={product.id} />
 
         <h2 className="h5">{t('detail.description')}</h2>
         {product.description === null ? (

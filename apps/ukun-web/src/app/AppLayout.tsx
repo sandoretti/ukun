@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom';
 
 import { SessionMenu } from '../features/auth/components/SessionMenu';
 import { useRestoreReturnTo } from '../features/auth/useRestoreReturnTo';
+import { CartIndicator } from '../features/cart/components/CartIndicator';
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
 import { LoadingState } from '../shared/ui/LoadingState';
 import { SiteFooter } from '../shared/ui/SiteFooter';
@@ -34,6 +35,7 @@ export function AppLayout() {
       {/* El bloque de cuenta se compone aquí: la barra vive en `shared/ui/` y no puede importar de
           una feature, pero esta capa sí — es la que ya monta las pantallas. */}
       <SiteHeader>
+        <CartIndicator />
         <SessionMenu />
       </SiteHeader>
 

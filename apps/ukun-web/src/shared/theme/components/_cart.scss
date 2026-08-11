@@ -1,0 +1,24 @@
+@use "../bootstrap";
+
+// La pantalla de carrito. Chrome mínimo, como el perfil: ni tarjetas ni paneles por línea, solo una
+// divisoria entre ellas y aire. Ningún color se escribe aquí — todos salen de las variables que
+// Bootstrap deriva de `_tokens.scss`.
+
+// La divisoria va entre líneas y no debajo de cada una: la última cierra ya contra el resumen, que
+// lleva su propio borde superior.
+.cart-lines li + li .cart-line {
+  border-top: bootstrap.$border-width solid var(--bs-border-color);
+}
+
+// La cifra del contador ocupa siempre lo mismo, tenga una o tres cifras: sin ancho fijo, los dos
+// botones del stepper bailan cada vez que se cruza la decena.
+.cart-quantity {
+  display: inline-block;
+  min-width: 2ch;
+}
+
+// Aviso de disponibilidad. Es informativo —no bloquea el `PUT`, que quien valida de verdad es la
+// confirmación del pedido—, así que se pinta como advertencia y no como error.
+.cart-line__warning {
+  color: var(--bs-warning-text-emphasis);
+}

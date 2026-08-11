@@ -15,6 +15,8 @@ import esStores from './es/stores.json';
 import enStores from './en/stores.json';
 import esProfile from './es/profile.json';
 import enProfile from './en/profile.json';
+import esCart from './es/cart.json';
+import enCart from './en/cart.json';
 
 /**
  * The namespaces of `docs/07-frontend-ux-ui.md §i18n`, one JSON per namespace and language. The
@@ -22,7 +24,7 @@ import enProfile from './en/profile.json';
  * list still gets its own namespace rather than crowding `common` — `home` was the first, `stores`
  * the second.
  */
-export type Namespace = 'common' | 'errors' | 'catalog' | 'home' | 'stores' | 'profile';
+export type Namespace = 'common' | 'errors' | 'catalog' | 'home' | 'stores' | 'profile' | 'cart';
 
 /**
  * Every bundle the app ships with. `satisfies` and not a bare object literal: it is what turns
@@ -40,6 +42,7 @@ export const resources = {
     home: esHome,
     stores: esStores,
     profile: esProfile,
+    cart: esCart,
   },
   en: {
     common: enCommon,
@@ -48,6 +51,7 @@ export const resources = {
     home: enHome,
     stores: enStores,
     profile: enProfile,
+    cart: enCart,
   },
 } satisfies Record<SupportedLanguage, Record<Namespace, Record<string, unknown>>>;
 

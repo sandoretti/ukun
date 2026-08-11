@@ -1,0 +1,40 @@
+{
+  "title": "Your cart",
+  "lead": "Check the units before placing the order. Availability is confirmed when you place it.",
+  "empty": "Your cart is empty",
+  "line": {
+    "reference": "Ref. {{sku}}",
+    "unitPrice": "{{price}} / unit",
+    "remove": "Remove {{product}} from the cart",
+    "unavailable": "There are no units left in the online store right now",
+    "onlyLeft_one": "Only {{count}} unit left in the online store",
+    "onlyLeft_other": "Only {{count}} units left in the online store"
+  },
+  "quantity": {
+    "group": "Quantity of {{product}}",
+    "decrease": "Remove one unit of {{product}}",
+    "increase": "Add one unit of {{product}}"
+  },
+  "summary": {
+    "total": "Total",
+    "checkout": "Place order"
+  },
+  "clear": {
+    "action": "Empty cart",
+    "title": "Empty the cart?",
+    "body": "Every line will be removed. This cannot be undone.",
+    "confirm": "Yes, empty it",
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "actions": {
+    "add": "Add to cart",
+    "inCart_one": "You already have {{count}} unit in the cart.",
+    "inCart_other": "You already have {{count}} units in the cart.",
+    "goToCart": "View the cart"
+  },
+  "indicator": {
+    "label_one": "Cart, {{count}} unit",
+    "label_other": "Cart, {{count}} units"
+  }
+}

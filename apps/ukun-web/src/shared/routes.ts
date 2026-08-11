@@ -10,3 +10,9 @@
  * account screen and the session menu of `features/auth` send the reader to it.
  */
 export const PROFILE_PATH = '/profile';
+
+/**
+ * The cart (RF-03) is the second: it is `features/cart`'s screen, and the bar links to it from every
+ * route while the product sheet of `features/catalog` sends the reader there after adding something.
+ */
+export const CART_PATH = '/cart';
