@@ -2284,7 +2284,7 @@ components:
 
     CartLine:
       type: object
-      required: [productId, sku, productName, unitPrice, quantity, lineTotal, available]
+      required: [productId, sku, productName, imageUrl, unitPrice, quantity, lineTotal, available]
       properties:
         productId:
           type: integer
@@ -2293,6 +2293,14 @@ components:
           $ref: '#/components/schemas/Sku'
         productName:
           type: string
+        imageUrl:
+          type: [string, 'null']
+          format: uri-reference
+          description: |
+            The same servable URL `ProductSummary` carries, composed by the server from the storage
+            key; the photo is optional (RF-10), so it may be `null`. It is read from the catalogue on
+            every request and **not** frozen into the line: unlike an order, a cart holds no snapshot
+            of the product (ADR-0011 applies to `orders`, not here).
         unitPrice:
           $ref: '#/components/schemas/Money'
         quantity:

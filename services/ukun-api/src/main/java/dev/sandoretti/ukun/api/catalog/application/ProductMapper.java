@@ -57,12 +57,18 @@ public interface ProductMapper {
      * What another module sees of a product ({@link ProductSummary}), and the only method here whose
      * target is not a response of this module's own endpoints.
      *
-     * <p>Five fields mapped by name and not one {@code @Mapping}: the record was named after the entity's
-     * properties on purpose, so that a column renamed tomorrow breaks the build here rather than
-     * silently mapping to {@code null} — which {@code unmappedTargetPolicy = ERROR} guarantees only for
-     * targets nobody wrote. It touches neither {@code productType} nor {@code imageKey}: the crossing is
-     * a batch read of many rows, and an association fetched per row is the N+1 that ADR-0017 §2 asks
-     * this boundary to make impossible.
+     * <p>Five of its six fields are mapped by name and without a {@code @Mapping}: the record was named
+     * after the entity's properties on purpose, so that a column renamed tomorrow breaks the build here
+     * rather than silently mapping to {@code null} — which {@code unmappedTargetPolicy = ERROR}
+     * guarantees only for targets nobody wrote.
+     *
+     * <p>The sixth is the photo, and it is the same {@code image_key} to URL conversion the three
+     * responses above do, for the same reason they do it: the key never leaves the service. It does
+     * <strong>not</strong> touch {@code productType} — that is the one association this method must keep
+     * away from, because the crossing is a batch read of many rows and a join fetched per row is the N+1
+     * ADR-0017 §2 asks this boundary to make impossible. A column of the row already loaded is free;
+     * an association is not.
      */
+    @Mapping(target = "imageUrl", source = "imageKey", qualifiedByName = "toImageUrl")
     ProductSummary toModuleSummary(Product product);
 }

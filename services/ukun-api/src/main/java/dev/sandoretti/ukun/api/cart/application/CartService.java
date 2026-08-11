@@ -193,6 +193,7 @@ public class CartService implements CartApi {
                 productId,
                 product.sku(),
                 product.name(),
+                product.imageUrl(),
                 product.price(),
                 line.getQuantity(),
                 lineTotal,
