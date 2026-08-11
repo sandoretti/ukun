@@ -8,6 +8,8 @@ import dev.sandoretti.ukun.api.AbstractIntegrationTest;
 import dev.sandoretti.ukun.api.JwksTestServer;
 import dev.sandoretti.ukun.api.cart.application.CartLineResponse;
 import dev.sandoretti.ukun.api.cart.application.CartResponse;
+import dev.sandoretti.ukun.api.catalog.ProductMother;
+import dev.sandoretti.ukun.api.catalog.domain.ProductType;
 import dev.sandoretti.ukun.api.customers.CustomerMother;
 import dev.sandoretti.ukun.api.inventory.domain.StoreStock;
 import dev.sandoretti.ukun.api.stores.StoreMother;
@@ -15,6 +17,7 @@ import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,11 +112,17 @@ class CartIT extends AbstractIntegrationTest {
                     entityManager.persist(store);
                 }));
 
-        jdbc.update("INSERT INTO product_type (name) VALUES ('Sofás')");
-        insertProduct(IN_STOCK, "Sofá de cuero", "399.99", true);
-        insertProduct(OUT_OF_STOCK, "Litera infantil", "399.99", true);
-        insertProduct(ONLY_IN_BARCELONA, "Mesa de café", "129.75", true);
-        insertProduct(DISCONTINUED, "Silla retirada", "19.99", false);
+        inATransaction(() -> {
+            ProductType furniture = ProductMother.type("Muebles");
+            entityManager.persist(furniture);
+
+            List.of(
+                            ProductMother.leatherSofa(furniture),
+                            ProductMother.bunkBed(furniture),
+                            ProductMother.coffeeTable(furniture),
+                            ProductMother.discontinuedChair(furniture))
+                    .forEach(entityManager::persist);
+        });
 
         long online = storeIdOf("Ukun Online");
         long barcelona = storeIdOf("Ukun Barcelona");
@@ -465,24 +474,37 @@ class CartIT extends AbstractIntegrationTest {
     @DisplayName("reading a cart costs the same five statements with one line and with ten")
     void readsTheWholeCartInAConstantNumberOfStatements() {
         putItem(ADA, productIdOf(IN_STOCK), 1);
+        long withOneLine = statementsToRead(ADA, 1);
 
-        Statistics one = freshStatistics();
-        assertThat(cartOf(ADA).items()).hasSize(1);
-        long withOneLine = one.getPrepareStatementCount();
-
-        for (int i = 0; i < 9; i++) {
-            insertProduct("BATCH-%d".formatted(i), "Producto %d".formatted(i), "10.00", true);
-            putItem(ADA, productIdOf("BATCH-%d".formatted(i)), 1);
-        }
-
-        Statistics ten = freshStatistics();
-        assertThat(cartOf(ADA).items()).hasSize(10);
-        long withTenLines = ten.getPrepareStatementCount();
+        fillTheCartOfAdaWithNineMoreProducts();
+        long withTenLines = statementsToRead(ADA, 10);
 
         assertSoftly(softly -> {
             softly.assertThat(withOneLine).isEqualTo(5);
             softly.assertThat(withTenLines).isEqualTo(withOneLine);
         });
+    }
+
+    /** Reads the cart and reports what it cost, having checked it really held the lines it was meant to. */
+    private long statementsToRead(UUID accountId, int expectedLines) {
+        Statistics statistics = freshStatistics();
+
+        assertThat(cartOf(accountId).items()).hasSize(expectedLines);
+
+        return statistics.getPrepareStatementCount();
+    }
+
+    private void fillTheCartOfAdaWithNineMoreProducts() {
+        inATransaction(() -> {
+            ProductType filler = ProductMother.type("Relleno");
+            entityManager.persist(filler);
+
+            IntStream.range(0, 9)
+                    .mapToObj(index -> ProductMother.filler(index, filler))
+                    .forEach(entityManager::persist);
+        });
+
+        IntStream.range(0, 9).forEach(index -> putItem(ADA, productIdOf("FILLER-%d".formatted(index)), 1));
     }
 
     /**
@@ -588,19 +610,6 @@ class CartIT extends AbstractIntegrationTest {
 
     private static String bearer(String token) {
         return "Bearer " + token;
-    }
-
-    private void insertProduct(String sku, String name, String price, boolean active) {
-        jdbc.update(
-                """
-                INSERT INTO product (sku, name, description, price, product_type_id, is_active)
-                     VALUES (?, ?, ?, CAST(? AS DECIMAL), (SELECT id FROM product_type WHERE name = 'Sofás'), ?)
-                """,
-                sku,
-                name,
-                name + ", for testing purposes.",
-                price,
-                active);
     }
 
     private long productIdOf(String sku) {
