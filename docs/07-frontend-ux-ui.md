@@ -216,7 +216,7 @@ Los cuatro juntos son `<QueryBoundary query={...} data={...} empty={...}>`, que 
 
 Con el backend emitiendo solo `code`s (`docs/12-error-contract.md`) y ningún texto de usuario, **todo** el texto de la aplicación vive aquí, en los dos idiomas soportados (`es`/`en`).
 
-- **Namespaces por feature**: `common`, `catalog`, `cart`, `checkout`, `profile`, `backoffice`, `errors` — un fichero JSON por namespace y por idioma en `src/i18n/{es,en}/`, cargados perezosamente por ruta.
+- **Namespaces por feature**: `common`, `catalog`, `cart`, `checkout`, `orders`, `profile`, `signup`, `backoffice`, `errors` — un fichero JSON por namespace y por idioma en `src/i18n/{es,en}/`, cargados perezosamente por ruta. Una pantalla que no es ninguna de estas features estrena namespace propio (así entraron `home` y `stores`) en vez de engordar `common`; lo que sí vive en `common` es el vocabulario que **comparten** dos pantallas — la dirección, la tarjeta y sus mensajes de validación los piden por igual el perfil y el alta.
 - **`errors.json` indexado por `code`**, con las extensiones del `ProblemDetail` como parámetros de interpolación: `t('errors:INSUFFICIENT_STOCK', { sku, available, requested })`. Todo `code` del registro tiene entrada en los dos idiomas — verificado por el test de paridad de traducciones (`docs/13-testing.md`).
 - **Selector de idioma en la barra de navegación**, siempre visible. Idioma activo: `customer.locale` si hay sesión (viaja entre dispositivos), `localStorage` ?? `navigator.language` ?? `es` si es anónimo.
 - **`<html lang>`** se actualiza al cambiar de idioma — requisito de accesibilidad, no cosmética; entra en la revisión de a11y de cada componente base junto al resto de criterios de la sección de arriba.
