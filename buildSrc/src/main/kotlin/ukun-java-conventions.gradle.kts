@@ -72,14 +72,15 @@ val integrationTest = tasks.register<Test>("integrationTest") {
     shouldRunAfter(tasks.test)
 }
 
-// Cobertura informativa sobre las dos tandas, sin umbral global — invita a tests basura rellenando
-// líneas. Los umbrales obligatorios llegan con `orders` e `inventory`, que es donde está el dinero y
-// la concurrencia (docs/03-analisis-y-patrones.md §3).
+// Un solo informe a partir de los .exec de todas las tandas, como el jacoco.exec compartido que
+// producía Maven. Se leen como fichero y no como dependencia de tarea para no forzar que las dos
+// tandas corran siempre juntas.
+val coverageData = fileTree(layout.buildDirectory.dir("jacoco")) { include("*.exec") }
+
+// Cobertura informativa en todo el backend, sin umbral global — invita a tests basura rellenando
+// líneas (docs/03-analisis-y-patrones.md §3).
 tasks.jacocoTestReport {
-    // Un solo informe a partir de los .exec de todas las tandas, como el jacoco.exec compartido que
-    // producía Maven. Se leen como fichero y no como dependencia de tarea para no forzar que las dos
-    // tandas corran siempre juntas.
-    executionData.setFrom(fileTree(layout.buildDirectory.dir("jacoco")) { include("*.exec") })
+    executionData.setFrom(coverageData)
     mustRunAfter(tasks.withType<Test>())
     reports {
         html.required = true
@@ -87,8 +88,18 @@ tasks.jacocoTestReport {
     }
 }
 
+// El umbral obligatorio existe, pero **qué** se mide lo declara cada servicio en su propio
+// build.gradle.kts: sólo `ukun-api` tiene `orders` e `inventory`, que es donde docs/13-testing.md §3
+// pone la barra. Aquí se decide únicamente que la verificación corra — un servicio sin reglas la pasa
+// sin hacer nada, y así el día que gane un módulo con dinero dentro sólo tiene que añadir la regla,
+// no acordarse también de engancharla a `check`.
+tasks.jacocoTestCoverageVerification {
+    executionData.setFrom(coverageData)
+    mustRunAfter(tasks.withType<Test>())
+}
+
 tasks.check {
-    dependsOn(integrationTest, tasks.jacocoTestReport)
+    dependsOn(integrationTest, tasks.jacocoTestReport, tasks.jacocoTestCoverageVerification)
 }
 
 // Reemplazo de `dependency:copy-dependencies`: deja el classpath de runtime en build/dependency para

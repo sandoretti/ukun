@@ -45,6 +45,8 @@ Y tres donde este repo ya decidió lo contrario: `@Testcontainers`/`@Container` 
 
 ## CI
 
-`./gradlew test` y Vitest en cada push · `./gradlew integrationTest` (Testcontainers) y Playwright (los tres recorridos de `03` §3) antes de merge · Jacoco informativo en todo el backend sobre las dos tandas, **umbral obligatorio solo en `orders` e `inventory`** · sin umbral global de cobertura.
+`./gradlew test` y Vitest en cada push · `./gradlew integrationTest` (Testcontainers) y Playwright (los tres recorridos de `03` §3) antes de merge · Jacoco informativo en todo el backend sobre las dos tandas, **umbral obligatorio solo en `orders` e `inventory`** (90% de línea y 75% de rama por paquete, vía `jacocoTestCoverageVerification`) · sin umbral global de cobertura.
+
+El umbral **excluye `..domain..`**, y no por comodidad: la prohibición de `@Data` obliga a escribir `equals`/`hashCode`/`toString` a mano, ese código pesa más que la lógica y no lo ejercita ningún test de negocio. Contarlo haría que **añadir una entidad correcta rompiera el build**, empujando a escribir tests de `equals`. Si vas a tocar las barras, lee antes `docs/13-testing.md` §3 — llevan las cifras medidas y están por debajo de ellas a propósito.
 
 Detalle completo, ejemplos de código y la tabla de reparto por fase: `docs/13-testing.md`.
