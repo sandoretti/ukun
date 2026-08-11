@@ -14,5 +14,8 @@ databaseChangeLog:
       file: releases/v0.3/002-unaccent.yaml
       relativeToChangelogFile: true
   - include:
+      file: releases/v0.6/003-checkout-attempt.yaml
+      relativeToChangelogFile: true
+  - include:
       file: demo/001-datos-demo.yaml
       relativeToChangelogFile: true

@@ -1,0 +1,168 @@
+# v0.6 — the checkout attempt, discovered while implementing POST /api/checkout/attempts.
+#
+# The baseline is complete but not clairvoyant (skill `liquibase`), and this is the second thing a
+# feature has discovered it does not cover. ADR-0016 requires the attempt to *freeze* each line's
+# unit price and to carry an `expiresAt`, and requires `POST /api/orders` to answer
+# `410 CHECKOUT_EXPIRED` when the attempt does not exist or has expired. The only table the
+# baseline created for this endpoint is `idempotency_key`, whose row — per the ADR's own table — is
+# inserted when the order is *confirmed*: it has nowhere to put the frozen lines, and nothing to
+# look up when deciding whether an attempt exists. Hence a table of the attempt's own.
+#
+# The baseline is not edited: an applied changeset is immutable (rule 1 of the skill).
+#
+# Why the attempt is a table and not a cache entry: it is the record of what the customer was shown
+# and agreed to pay. A restart of the service, or a second instance answering the confirmation,
+# must reach the same answer — and an in-memory attempt would turn both into `CHECKOUT_EXPIRED`
+# for a customer who did nothing wrong.
+#
+# What is deliberately NOT here:
+#
+#   * No reserved stock, no TTL job, no reconciliation. ADR-0016 rules the whole mechanism out by
+#     name: the attempt informs about availability, it does not hold any.
+#   * No index. The only query over these two tables is by primary key, and the daily purge of
+#     expired attempts is a sequential scan of a page or two — the same argument docs/10 §4 already
+#     makes, in writing, for idempotency_key(created_at).
+#   * No `status` column. An attempt is not a state machine: it exists, and it is either within its
+#     `expires_at` or it is not. Whether it ended up as an order is what `idempotency_key.order_id`
+#     records.
+#
+# CHECKs go in raw `sql` for the reason the baseline states at length: AddCheckConstraintChange is
+# Liquibase Pro, and the OSS `checkConstraint` attribute is accepted, reported as applied, and then
+# silently discarded.
+databaseChangeLog:
+
+  # `id` is the attemptId of the contract: a UUID the *server* issues (ADR-0016 — the browser never
+  # invents this key) and that comes back as the `Idempotency-Key` header of POST /api/orders.
+  #
+  # `total` is frozen with the lines and repeats the `total > 0` invariant of customer_order: an
+  # attempt that adds up to zero is the empty cart of RF-04 arriving through another door.
+  #
+  # ON DELETE CASCADE from customer, unlike the RESTRICT the profile tables get: an attempt is a
+  # 30-minute draft, not a record of anything that happened, so there is nothing to preserve when
+  # the customer it belongs to is gone (docs/10 §6 draws that line at cart_item, which cascades for
+  # the same reason).
+  - changeSet:
+      id: 003-01-table-checkout-attempt
+      author: sandoretti
+      comment: checkout_attempt — the server-issued attempt with its frozen total (ADR-0016)
+      changes:
+        - createTable:
+            tableName: checkout_attempt
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints: {primaryKey: true, primaryKeyName: pk_checkout_attempt}
+              - column: {name: customer_id, type: BIGINT, constraints: {nullable: false}}
+              - column: {name: total, type: 'DECIMAL(10,2)', constraints: {nullable: false}}
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: now()
+                  constraints: {nullable: false}
+              - column: {name: expires_at, type: TIMESTAMPTZ, constraints: {nullable: false}}
+
+  # The frozen line. `product_name` and `unit_price` are here for the same reason order_line carries
+  # them (docs/10 §5): what the customer was shown must not change under them, and a rename or a
+  # reprice between opening the checkout and confirming it would otherwise do exactly that.
+  #
+  # `sku` is the one field that is neither a snapshot nor a foreign key's worth of data: it is what
+  # the `INSUFFICIENT_STOCK` extension of docs/12 has to name when confirmation fails, and keeping
+  # it here is what lets that path answer without a second look-up into the catalogue.
+  #
+  # Composite primary key (attempt_id, product_id), like cart_item and order_line: one line per
+  # product, enforced by the database rather than by whoever remembers it.
+  - changeSet:
+      id: 003-02-table-checkout-attempt-line
+      author: sandoretti
+      comment: checkout_attempt_line — price and name frozen when the checkout was opened (ADR-0016)
+      changes:
+        - createTable:
+            tableName: checkout_attempt_line
+            columns:
+              - column:
+                  name: attempt_id
+                  type: UUID
+                  constraints: {nullable: false, primaryKey: true, primaryKeyName: pk_checkout_attempt_line}
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints: {nullable: false, primaryKey: true, primaryKeyName: pk_checkout_attempt_line}
+              - column: {name: sku, type: VARCHAR(32), constraints: {nullable: false}}
+              - column: {name: product_name, type: VARCHAR(255), constraints: {nullable: false}}
+              - column: {name: unit_price, type: 'DECIMAL(10,2)', constraints: {nullable: false}}
+              - column: {name: quantity, type: INTEGER, constraints: {nullable: false}}
+
+  - changeSet:
+      id: 003-03-check-constraints
+      author: sandoretti
+      comment: the CHECKs of the two tables — no OSS change type can express them (see the baseline)
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE checkout_attempt
+                  ADD CONSTRAINT ck_checkout_attempt_total   CHECK (total > 0),
+                  ADD CONSTRAINT ck_checkout_attempt_expires CHECK (expires_at > created_at);
+              ALTER TABLE checkout_attempt_line
+                  ADD CONSTRAINT ck_checkout_attempt_line_sku          CHECK (sku ~ '^[A-Z0-9-]{3,32}$'),
+                  ADD CONSTRAINT ck_checkout_attempt_line_product_name CHECK (length(btrim(product_name)) > 0),
+                  ADD CONSTRAINT ck_checkout_attempt_line_unit_price   CHECK (unit_price >= 0),
+                  ADD CONSTRAINT ck_checkout_attempt_line_quantity     CHECK (quantity > 0);
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE checkout_attempt
+                  DROP CONSTRAINT ck_checkout_attempt_total,
+                  DROP CONSTRAINT ck_checkout_attempt_expires;
+              ALTER TABLE checkout_attempt_line
+                  DROP CONSTRAINT ck_checkout_attempt_line_sku,
+                  DROP CONSTRAINT ck_checkout_attempt_line_product_name,
+                  DROP CONSTRAINT ck_checkout_attempt_line_unit_price,
+                  DROP CONSTRAINT ck_checkout_attempt_line_quantity;
+
+  # CASCADE on both, and they are not the same decision twice. From `customer` because an attempt is
+  # a draft with nothing to preserve; from `checkout_attempt` because a line has no existence at all
+  # outside its attempt — it is the aggregate, not a reference to one.
+  - changeSet:
+      id: 003-04-foreign-keys
+      author: sandoretti
+      comment: the ON DELETE policy of these two tables, in the style of docs/10 §6
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_checkout_attempt_customer
+            baseTableName: checkout_attempt
+            baseColumnNames: customer_id
+            referencedTableName: customer
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            constraintName: fk_checkout_attempt_line_attempt
+            baseTableName: checkout_attempt_line
+            baseColumnNames: attempt_id
+            referencedTableName: checkout_attempt
+            referencedColumnNames: id
+            onDelete: CASCADE
+        # RESTRICT, matching order_line and cart_item: a product with an open checkout attempt
+        # pointing at it cannot be deleted (ADR-0013). Discontinuing it is always available and is
+        # what the back-office actually does.
+        - addForeignKeyConstraint:
+            constraintName: fk_checkout_attempt_line_product
+            baseTableName: checkout_attempt_line
+            baseColumnNames: product_id
+            referencedTableName: product
+            referencedColumnNames: id
+            onDelete: RESTRICT
+
+  # The second column of the composite primary key, which is the FK that is genuinely uncovered —
+  # the same reasoning docs/10 §4 applies to cart_item.product_id and order_line.product_id, and
+  # for the same consumer: the referential check Postgres runs on every DELETE FROM product.
+  - changeSet:
+      id: 003-05-index-checkout-attempt-line-product
+      author: sandoretti
+      comment: ix_checkout_attempt_line_product — the uncovered half of the composite PK (docs/10 §4)
+      changes:
+        - createIndex:
+            indexName: ix_checkout_attempt_line_product
+            tableName: checkout_attempt_line
+            columns:
+              - column: {name: product_id}

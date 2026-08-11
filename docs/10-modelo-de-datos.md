@@ -305,6 +305,7 @@ Después del baseline, un changeset nuevo solo entra si el diseño **descubre** 
 
 | Release | Cambio | Motivo |
 |:-:|---|---|
+| **v0.6** | `checkout_attempt` + `checkout_attempt_line` (`releases/v0.6/003-checkout-attempt.yaml`) | **descubierto al implementar el checkout**, que es exactamente el caso que esta tabla contempla: ADR-0016 exige que el intento congele el precio de cada línea y lleve un `expiresAt`, y que confirmar con un `attemptId` inexistente o caducado sea `410 CHECKOUT_EXPIRED`. La única tabla que el baseline creó para ese endpoint es `idempotency_key`, cuya fila —según la tabla del propio ADR— se inserta **al confirmar**: no tiene dónde guardar las líneas congeladas ni qué buscar para decidir si el intento existe. Sin índice propio (única consulta, por PK) y con `ON DELETE CASCADE` en ambas FK: un intento es un borrador de 30 minutos, no historia |
 | v1.1+ | valores nuevos de `status` (`PAID`/`SHIPPED`/`DELIVERED`) + `order_status_history` | llegan con la pasarela de pago real (`04-roadmap.md`) |
 | v1.1+ | `pg_trgm` + `ix_product_name_trgm` | solo si se cruza el umbral de §4 |
 | v1.1+ | token de pasarela de pago en `card` | sustituye a `last4`/`brand` como dato de negocio |

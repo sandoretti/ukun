@@ -1,5 +1,6 @@
 package dev.sandoretti.ukun.api.customers.application;
 
+import dev.sandoretti.ukun.api.customers.CustomerSnapshot;
 import dev.sandoretti.ukun.api.customers.domain.Customer;
 import dev.sandoretti.ukun.api.customers.domain.CustomerAddress;
 import dev.sandoretti.ukun.api.customers.domain.CustomerCard;
@@ -34,6 +35,24 @@ public interface ProfileMapper {
      */
     @Mapping(target = "email", source = "email")
     CustomerProfileResponse toResponse(Customer customer, String email);
+
+    /**
+     * The profile as checkout copies it (RF-04, ADR-0011). Flattening two associations into eight
+     * values is exactly what the {@code source} paths say, and {@code unmappedTargetPolicy = ERROR}
+     * is what would break the build if the record grew a ninth nobody wired.
+     *
+     * <p>{@code cardBrand} crosses as its {@code name()}: {@link CustomerSnapshot} explains why the
+     * enum itself does not cross a module boundary.
+     */
+    @Mapping(target = "street", source = "address.street")
+    @Mapping(target = "city", source = "address.city")
+    @Mapping(target = "province", source = "address.province")
+    @Mapping(target = "postalCode", source = "address.postalCode")
+    @Mapping(target = "cardLast4", source = "card.last4")
+    @Mapping(target = "cardBrand", source = "card.brand")
+    @Mapping(target = "cardExpMonth", source = "card.expMonth")
+    @Mapping(target = "cardExpYear", source = "card.expYear")
+    CustomerSnapshot toSnapshot(Customer customer);
 
     ProfileAddress toAddress(CustomerAddress address);
 

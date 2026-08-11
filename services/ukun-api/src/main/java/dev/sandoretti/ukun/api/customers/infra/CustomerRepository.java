@@ -34,4 +34,17 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
      */
     @Query("select customer.id from Customer customer where customer.accountId = :accountId")
     Optional<Long> findIdByAccountId(@Param("accountId") UUID accountId);
+
+    /**
+     * The profile by its own identifier, with the address and the card in the same statement — what
+     * {@code CustomersApi.snapshotOf(Long)} reads when checkout copies them into an order.
+     *
+     * <p>Named {@code findWithProfileById} rather than overriding {@code findById}: the inherited
+     * method is used by anything that wants the row alone, and putting the graph on it would fetch two
+     * associations for every caller that does not need them. The graph is not optional here — with
+     * {@code open-in-view: false}, reading the address outside the transaction fails, and inside it
+     * the two lazy loads would be defect #12 on the checkout path.
+     */
+    @EntityGraph(attributePaths = {"address", "card"})
+    Optional<Customer> findWithProfileById(Long id);
 }

@@ -1,5 +1,6 @@
 package dev.sandoretti.ukun.api.customers.application;
 
+import dev.sandoretti.ukun.api.customers.CustomerSnapshot;
 import dev.sandoretti.ukun.api.customers.CustomersApi;
 import dev.sandoretti.ukun.api.customers.domain.Customer;
 import dev.sandoretti.ukun.api.customers.domain.ProfileLocale;
@@ -72,6 +73,22 @@ public class CurrentUserService implements CustomersApi {
         return customers
                 .findIdByAccountId(account.accountId())
                 .orElseThrow(() -> new MissingProfileException(account.accountId()));
+    }
+
+    /**
+     * {@link CustomersApi#snapshotOf(Long)}: the address and card checkout freezes into an order.
+     *
+     * <p>{@link IllegalStateException} and not a {@code 404}: the caller resolved this identifier from
+     * the token one method call ago, so a row that is not there means this service lost a profile
+     * between two statements of the same request. A stack trace is what gets that fixed; a {@code 404}
+     * would tell the customer their own order does not exist.
+     */
+    @Override
+    public CustomerSnapshot snapshotOf(Long customerId) {
+        return customers
+                .findWithProfileById(customerId)
+                .map(mapper::toSnapshot)
+                .orElseThrow(() -> new IllegalStateException("Customer %d has no profile".formatted(customerId)));
     }
 
     /**

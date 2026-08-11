@@ -31,4 +31,23 @@ public interface CustomersApi {
      *     chain's protected set.
      */
     Long requireCurrentCustomerId();
+
+    /**
+     * The address and payment method to freeze into an order (RF-04, ADR-0011).
+     *
+     * <p>It takes the identifier instead of resolving it from the token, the same exception
+     * {@code CartApi} documents and for the same reason: checkout runs as one transaction over several
+     * aggregates and resolves the customer once, through {@link #requireCurrentCustomerId()}. The value
+     * still never comes from the request.
+     *
+     * <p>What comes back is a {@link CustomerSnapshot} — values, not the rows they were read from.
+     * Handing over the {@code address} and {@code card} entities is precisely how the legacy produced
+     * defect #19: the order kept a reference to the profile's own rows, so moving house rewrote the
+     * shipping address of every order ever placed.
+     *
+     * @throws IllegalStateException if the customer does not exist. The caller has just resolved the
+     *     identifier from the token, so a missing row here is a broken invariant of this service and
+     *     not a client error — same judgement as {@link #requireCurrentCustomerId()}.
+     */
+    CustomerSnapshot snapshotOf(Long customerId);
 }

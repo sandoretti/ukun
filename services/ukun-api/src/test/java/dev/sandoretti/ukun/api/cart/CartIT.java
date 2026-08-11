@@ -587,11 +587,6 @@ class CartIT extends AbstractIntegrationTest {
         return "{\"quantity\": %d}".formatted(quantity);
     }
 
-    /** Nobody here asserts on the email, so it follows from the account rather than being one more constant. */
-    private static String customerToken(UUID accountId) {
-        return customerToken(accountId, accountId + "@ukun.dev");
-    }
-
     private static String employeeToken() {
         return employeeToken(EMPLOYEE, "employee@ukun.dev");
     }

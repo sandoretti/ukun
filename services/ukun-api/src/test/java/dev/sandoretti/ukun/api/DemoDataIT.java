@@ -56,8 +56,11 @@ class DemoDataIT extends AbstractIntegrationTest {
             "Ukun Torrejón de Ardoz", 60L,
             "Ukun Barcelona", 50L);
 
-    /** The nineteen of the baseline, the one of the v0.3 release folder, and the eight demo ones. */
-    private static final int EXPECTED_CHANGESETS = 28;
+    /**
+     * The nineteen of the baseline, the one of the v0.3 release folder, the five of the v0.6 one and
+     * the eight demo ones.
+     */
+    private static final int EXPECTED_CHANGESETS = 33;
 
     @Test
     @DisplayName("the catalogue has ten types with ten products each")
