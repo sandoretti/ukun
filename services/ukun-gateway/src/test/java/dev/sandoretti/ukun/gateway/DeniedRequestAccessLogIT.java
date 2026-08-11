@@ -2,12 +2,14 @@ package dev.sandoretti.ukun.gateway;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.awaitility.Awaitility.await;
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockUser;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +59,8 @@ class DeniedRequestAccessLogIT extends FilterChainIntegrationTest {
     void logsTheAnonymousDenial() {
         http.get().uri(ADMIN_SURFACE).exchange().expectStatus().isUnauthorized();
 
+        awaitLineFor(ADMIN_SURFACE);
+
         assertThat(linesFor(ADMIN_SURFACE)).singleElement().satisfies(line -> assertSoftly(softly -> {
             softly.assertThat(line.getFormattedMessage()).contains("401");
             softly.assertThat(line.getLevel()).isEqualTo(Level.WARN);
@@ -67,9 +71,9 @@ class DeniedRequestAccessLogIT extends FilterChainIntegrationTest {
     /**
      * The 403 of the coarse role filter, which is a denial with somebody behind it.
      *
-     * <p>Only the status is asserted here, and not the {@code accountId}: {@code mockUser()} injects
-     * its principal through a mutator that rebuilds the client's filter chain, so what reaches the
-     * log in this setup is not what a real session would leave. Where the caller's id is deposited —
+     * <p>The line is asserted, but not its {@code accountId}: {@code mockUser()} injects its principal
+     * through a mutator that rebuilds the client's filter chain, so what reaches the log in this setup
+     * is not what a real session would leave. Where the caller's id is deposited —
      * {@code ProblemDetailSecurityHandler}, the only place that still knows it once the chain has
      * decided to stop — is asserted directly in {@code ProblemDetailSecurityHandlerTest}.
      */
@@ -82,6 +86,27 @@ class DeniedRequestAccessLogIT extends FilterChainIntegrationTest {
                 .exchange()
                 .expectStatus()
                 .isForbidden();
+
+        awaitLineFor(ADMIN_SURFACE);
+
+        assertThat(linesFor(ADMIN_SURFACE)).singleElement().satisfies(line -> assertSoftly(softly -> {
+            softly.assertThat(line.getFormattedMessage()).contains("403");
+            softly.assertThat(line.getLevel()).isEqualTo(Level.WARN);
+        }));
+    }
+
+    /**
+     * The line is written from {@code doFinally}, which fires when the exchange completes — and that
+     * is not ordered against {@code expectStatus()} returning: the client can have the status in hand
+     * while the outermost filter has not yet seen the completion signal. Asserting straight after the
+     * call passed on its own and failed inside the full suite, which is the shape of a race, not of a
+     * broken filter.
+     *
+     * <p>Awaitility and not a sleep, per {@code docs/13-testing.md}: it returns as soon as the line
+     * lands, and the timeout is a failure mode rather than a fixed cost paid by every run.
+     */
+    private void awaitLineFor(String path) {
+        await().atMost(Duration.ofSeconds(2)).until(() -> !linesFor(path).isEmpty());
     }
 
     private List<ILoggingEvent> linesFor(String path) {
