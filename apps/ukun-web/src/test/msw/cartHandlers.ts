@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
 import type { components } from '../../types/api';
+import { problem } from './problem';
 
 /**
  * Test-only stand-in for the cart endpoints of `ukun-api` (RF-03), typed from the same generated
@@ -67,22 +68,6 @@ function cartOf(lines: readonly CartLine[]): Cart {
     items: [...lines],
     total: toMoney(lines.reduce((cents, line) => cents + toCents(line.lineTotal), 0)),
   };
-}
-
-/** An error of this contract, shaped like the real ones — `detail` in fixed English for the operator. */
-function problem(code: ErrorCode, status: number, extensions: Record<string, unknown> = {}) {
-  return HttpResponse.json(
-    {
-      type: `https://ukun.dev/errors/${code.toLowerCase().replaceAll('_', '-')}`,
-      title: code,
-      status,
-      detail: 'Fixed English detail nobody should ever read on screen',
-      code,
-      traceId: `trace-${status}`,
-      ...extensions,
-    },
-    { status, headers: { 'Content-Type': 'application/problem+json' } },
-  );
 }
 
 /** An empty cart is a `200` with no lines and a total of zero, never a `404`. */

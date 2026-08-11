@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
 import type { components } from '../../types/api';
+import { problem } from './problem';
 
 /**
  * Test-only stand-in for `GET`/`PUT /api/me/profile` (RF-05), typed from the same generated OpenAPI
@@ -49,31 +50,12 @@ export const profileHandlers = [
   }),
 ];
 
-/**
- * An error of this contract, shaped like the real ones: `type` derived from the `code` exactly as
- * `docs/12-error-contract.md` §2 derives it, and a `detail` in fixed English for the operator — if
- * that sentence ever shows up on screen, something is broken.
- */
-function problem(code: ErrorCode, status: number, extensions: Record<string, unknown> = {}) {
-  return {
-    type: `https://ukun.dev/errors/${code.toLowerCase().replaceAll('_', '-')}`,
-    title: code,
-    status,
-    detail: 'Fixed English detail nobody should ever read on screen',
-    code,
-    traceId: `trace-${status}`,
-    ...extensions,
-  };
-}
-
 /** A `400 VALIDATION_FAILED` on the save, with the field paths the API really produces. */
 export function profileValidationFailed(errors: ValidationError[]) {
-  return http.put(`${base}/api/me/profile`, () =>
-    HttpResponse.json(problem('VALIDATION_FAILED', 400, { errors }), { status: 400 }),
-  );
+  return http.put(`${base}/api/me/profile`, () => problem('VALIDATION_FAILED', 400, { errors }));
 }
 
 /** Any other failure of the read, by `code` — an employee opening the screen gets `403 FORBIDDEN`. */
 export function profileFails(code: ErrorCode, status: number) {
-  return http.get(`${base}/api/me/profile`, () => HttpResponse.json(problem(code, status), { status }));
+  return http.get(`${base}/api/me/profile`, () => problem(code, status));
 }

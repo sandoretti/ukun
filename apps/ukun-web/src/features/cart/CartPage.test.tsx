@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import i18n from '../../i18n/config';
 import { cartFails, cartState, lamp, lineOf, putCartItemFails, sofa } from '../../test/msw/cartHandlers';
+import { OPERATOR_DETAIL } from '../../test/msw/problem';
 import { signedIn } from '../../test/msw/sessionHandlers';
 import { server } from '../../test/msw/server';
 import { renderWithProviders } from '../../test/renderWithProviders';
@@ -129,7 +130,7 @@ describe('CartPage', () => {
     renderCart();
 
     expect(await screen.findByText('Tu cuenta no tiene acceso a esto')).toBeDefined();
-    expect(screen.queryByText('Fixed English detail nobody should ever read on screen')).toBeNull();
+    expect(screen.queryByText(OPERATOR_DETAIL)).toBeNull();
   });
 
   it('reports a failed write without wiping the cart that is already on screen', async () => {

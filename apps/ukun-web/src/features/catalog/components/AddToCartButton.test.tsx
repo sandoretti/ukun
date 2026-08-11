@@ -1,11 +1,12 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http as mswHttp, HttpResponse } from 'msw';
+import { http as mswHttp } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { navigateTo } from '../../../shared/browser/navigateTo';
 import { SIGN_IN_URL, takeReturnTo } from '../../../shared/auth/signIn';
 import { cartState, lineOf, sofa } from '../../../test/msw/cartHandlers';
+import { OPERATOR_DETAIL, problem } from '../../../test/msw/problem';
 import { signedIn } from '../../../test/msw/sessionHandlers';
 import { server } from '../../../test/msw/server';
 import { renderWithProviders } from '../../../test/renderWithProviders';
@@ -74,18 +75,7 @@ describe('AddToCartButton', () => {
   it('reports a failed add by its code without losing the sheet', async () => {
     server.use(
       mswHttp.put('/api/cart/items/:productId', () =>
-        HttpResponse.json(
-          {
-            type: 'https://ukun.dev/errors/resource-not-found',
-            title: 'RESOURCE_NOT_FOUND',
-            status: 404,
-            detail: 'Fixed English detail nobody should ever read on screen',
-            code: 'RESOURCE_NOT_FOUND',
-            resource: 'Product',
-            id: '1',
-          },
-          { status: 404 },
-        ),
+        problem('RESOURCE_NOT_FOUND', 404, { resource: 'Product', id: '1' }),
       ),
       signedIn(),
       ...cartState(),
@@ -97,7 +87,7 @@ describe('AddToCartButton', () => {
 
     // A discontinued product answers the same 404 as one that never existed.
     expect(await screen.findByText('No encontramos lo que buscas')).toBeDefined();
-    expect(screen.queryByText('Fixed English detail nobody should ever read on screen')).toBeNull();
+    expect(screen.queryByText(OPERATOR_DETAIL)).toBeNull();
     expect(addButton()).toBeDefined();
   });
 });
