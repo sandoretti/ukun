@@ -45,13 +45,13 @@ export function CheckoutLineRow({ line }: CheckoutLineRowProps) {
           <ProductImage
             imageUrl={line.imageUrl}
             alt=""
-            className="order-line__photo"
+            className="product-thumb"
             fallback={<Icon name="image" size="sm" />}
           />
 
-          {/* `min-width: 0` en el tema: sin él, un ítem flex no baja de lo que mide su contenido y
-              el recorte del nombre no se dispara nunca. */}
-          <div className="order-line__identity">
+          {/* `min-w-0` es la utilidad del tema: sin ella un ítem flex no baja de lo que mide su
+              contenido y el recorte del nombre no se dispara nunca. */}
+          <div className="min-w-0">
             <p className="order-line__name mb-0">{line.productName}</p>
             <p className="small text-body-secondary mb-0">{t('lines.reference', { sku: line.sku })}</p>
           </div>

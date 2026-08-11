@@ -1,0 +1,19 @@
+@use "../bootstrap";
+
+// --- Miniatura de producto -------------------------------------------------------------------------
+
+// El marco que lleva `ProductImage` cuando acompaña al nombre en una fila: la línea del carrito y la
+// del checkout, que son la misma compra leída dos veces y tienen que verse igual. Vive aquí y no en
+// la hoja de una de las dos pantallas por lo mismo que `_payment-card.scss`: su componente es de
+// `shared/ui/` y las features no se copian recetas entre sí.
+//
+// El alto y el ancho fijos son lo que hace que la fila mida lo mismo con foto y sin ella — el hueco
+// vacío que deja un producto sin foto (RF-10) es exactamente este cuadrado.
+.product-thumb {
+  flex: 0 0 auto;
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: bootstrap.$border-radius;
+  background-color: var(--bs-tertiary-bg);
+}
