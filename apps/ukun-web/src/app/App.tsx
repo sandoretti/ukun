@@ -2,7 +2,7 @@ import { lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import { RequireAuth } from '../features/auth/RequireAuth';
-import { ACCOUNT_PATH } from '../features/auth/routes';
+import { ACCOUNT_PATH, SIGN_UP_PATH } from '../features/auth/routes';
 import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
 import { CART_PATH, CATALOG_PATH, CHECKOUT_PATH, ORDERS_PATH, PROFILE_PATH } from '../shared/routes';
@@ -22,6 +22,7 @@ const CheckoutPage = lazy(() => import('../features/orders/CheckoutPage'));
 const OrdersPage = lazy(() => import('../features/orders/OrdersPage'));
 const OrderDetailPage = lazy(() => import('../features/orders/OrderDetailPage'));
 const SignInPage = lazy(() => import('../features/auth/SignInPage'));
+const SignUpPage = lazy(() => import('../features/auth/SignUpPage'));
 
 function App() {
   return (
@@ -97,6 +98,9 @@ function App() {
           cuanto el bundle lo sirve el gateway. */}
       <Route element={<AuthLayout />}>
         <Route path={SIGN_IN_PATH} element={<SignInPage />} />
+        {/* El alta comparte el marco desnudo de la entrada, y a diferencia de ella sí es una
+            pantalla de este router: la cuenta la crea `ukun-api`, no el servidor de autorización. */}
+        <Route path={SIGN_UP_PATH} element={<SignUpPage />} />
       </Route>
     </Routes>
   );

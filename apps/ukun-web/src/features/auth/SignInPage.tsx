@@ -4,9 +4,9 @@ import { Alert, Button } from 'react-bootstrap';
 
 import { continueToAuthorizationServer, readReason } from '../../shared/auth/signIn';
 import { useAuth } from '../../shared/hooks/useAuth';
-import { ComingSoonButton } from '../../shared/ui/ComingSoon';
 import { Icon } from '../../shared/ui/Icon';
 import { LoadingState } from '../../shared/ui/LoadingState';
+import { SIGN_UP_PATH } from './routes';
 
 /**
  * The way in, as a screen of its own: one card, centred, with a single action.
@@ -73,7 +73,11 @@ export default function SignInPage() {
       <hr className="auth-card__divider" />
 
       <p className="text-body-secondary small mb-2">{t('account.signInPage.noAccount')}</p>
-      <ComingSoonButton label={t('account.signUp')} variant="outline-primary" />
+      {/* El alta sí es una ruta de este router — la cuenta la crea `ukun-api` (docs/08 §3) —, así
+          que es un enlace y no un botón que se lleva el navegador fuera como el de arriba. */}
+      <Link to={SIGN_UP_PATH} className="btn btn-outline-primary w-100">
+        {t('account.signUp')}
+      </Link>
 
       {/* La salida: este layout no tiene navegación, y una pantalla sin vuelta atrás es una trampa
           para quien llegó aquí por un 401 sin pedirlo. */}

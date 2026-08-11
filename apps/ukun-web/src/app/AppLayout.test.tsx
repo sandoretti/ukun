@@ -5,7 +5,7 @@ import { renderWithProviders } from '../test/renderWithProviders';
 import { AppLayout } from './AppLayout';
 
 /** Every caption of the shell whose screen is not built yet. */
-const NOT_BUILT_YET = ['Novedades', 'Sobre Ukun', 'Crear cuenta'];
+const NOT_BUILT_YET = ['Novedades', 'Sobre Ukun'];
 
 function renderShell() {
   renderWithProviders(<AppLayout />);
@@ -28,7 +28,7 @@ describe('AppLayout', () => {
     const bar = renderShell();
 
     const links = bar.getAllByRole('link').map((link) => link.getAttribute('href'));
-    expect(links).toEqual(['/', '/products', '/stores']);
+    expect(links).toEqual(['/', '/products', '/stores', '/signup']);
   });
 
   it('offers the way in to a visitor, and it is not a route of this router', () => {
@@ -39,6 +39,15 @@ describe('AppLayout', () => {
     // someone who was thrown out and is owed a reason, not for someone who just asked.
     const signIn = bar.getByRole('button', { name: 'Iniciar sesión' });
     expect(signIn.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('offers the way up next to it, and that one is a route', () => {
+    const bar = renderShell();
+
+    // Signing up is the other half of the pair and behaves the opposite way: the customer is
+    // created by `ukun-api` (RF-06, `docs/08` §3), so the screen belongs to this router and the
+    // control is a link with an `href`.
+    expect(bar.getByRole('link', { name: 'Crear cuenta' }).getAttribute('href')).toBe('/signup');
   });
 
   it.each(NOT_BUILT_YET)('offers %s without turning it into a dead link', (label) => {
