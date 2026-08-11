@@ -46,16 +46,15 @@ public class MyProfileService {
 
     /**
      * <strong>Why a missing profile is a {@code 500} here and a {@code 404} in {@link #update}.</strong>
-     * The contract declares no {@code 404} for the read, and it is right not to: the signup saga
-     * activates the account only after the profile exists, so a token with {@code CUSTOMER} and no row
-     * behind it means this service's own invariant is broken, not that the caller asked for something
-     * that is not there. A broken invariant is a {@code 500} with a stack trace in the log, which is
-     * what gets it fixed. The write declares its {@code 404} and answers it.
+     * The contract declares no {@code 404} for the read, and it is right not to: a token with
+     * {@code CUSTOMER} and no row behind it is a broken invariant of this service rather than something
+     * the caller asked for and did not get — the reasoning lives on {@link MissingProfileException}, now
+     * that the cart reaches the same conclusion by another route. The write declares its {@code 404} in
+     * the contract and can therefore answer it.
      */
     public CustomerProfileResponse view(CurrentAccount account) {
         Customer customer = customers.findByAccountId(account.accountId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Account %s holds the CUSTOMER role with no profile behind it".formatted(account.accountId())));
+                .orElseThrow(() -> new MissingProfileException(account.accountId()));
 
         return mapper.toResponse(customer, account.email());
     }

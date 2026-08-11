@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * {@code GET /api/me}: who is holding this token, and in what language to talk to them.
+ * {@code GET /api/me}: who is holding this token, and in what language to talk to them. Since the cart,
+ * also the module's {@link CustomersApi} — the same crossing from {@code account_id} to the row this
+ * module owns, answered for the modules that may not talk to {@code identity} themselves.
  *
  * <p><strong>Why this lives in {@code customers} and not in {@code identity}</strong>, even though it
  * serves employees too. The answer carries {@code locale}, which is a column of {@code customer}, and
@@ -69,8 +71,7 @@ public class CurrentUserService implements CustomersApi {
 
         return customers
                 .findIdByAccountId(account.accountId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Account %s holds the CUSTOMER role with no profile behind it".formatted(account.accountId())));
+                .orElseThrow(() -> new MissingProfileException(account.accountId()));
     }
 
     /**

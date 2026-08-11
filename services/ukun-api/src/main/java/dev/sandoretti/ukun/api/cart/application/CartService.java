@@ -86,7 +86,7 @@ public class CartService implements CartApi {
         }
 
         CartItemId id = new CartItemId(customerId, productId);
-        CartItem item = items.findById(id).orElseGet(() -> new CartItem(id, quantity));
+        CartItem item = items.findById(id).orElseGet(() -> new CartItem(id));
         item.setQuantity(quantity);
         items.save(item);
 
@@ -107,7 +107,7 @@ public class CartService implements CartApi {
         CartItemId id = new CartItemId(customers.requireCurrentCustomerId(), productId);
 
         if (!items.existsById(id)) {
-            throw new ResourceNotFoundException("Cart line", productId);
+            throw new ResourceNotFoundException("CartItem", productId);
         }
 
         items.deleteById(id);

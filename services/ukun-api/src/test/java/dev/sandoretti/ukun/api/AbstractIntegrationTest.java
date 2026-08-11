@@ -5,9 +5,12 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.UUID;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -119,8 +122,22 @@ public abstract class AbstractIntegrationTest {
 
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
+    /**
+     * The single JWKS of the whole suite, next to the single container and for the same reasons.
+     *
+     * <p>It used to be three: {@code ResourceServerIT}, the profile fixture and the cart each started one
+     * of their own, and each answered the lifecycle question differently — an {@code @AfterAll} in the
+     * first, a shutdown hook in the second, and the second's javadoc explaining why the first is wrong
+     * for a server more than one class relies on. Both cannot be right, and the disagreement was only
+     * harmless because no two of them shared a server. One instance, closed by the JVM, removes the
+     * question: {@code @AfterAll} would stop it after whichever class finished first while the contexts
+     * that point at it stay cached and alive.
+     */
+    private static final JwksTestServer AUTH = JwksTestServer.start();
+
     static {
         POSTGRES.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(AbstractIntegrationTest::stopAuth));
     }
 
     @Autowired
@@ -128,6 +145,14 @@ public abstract class AbstractIntegrationTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    /**
+     * Declared once here rather than in each fixture, where it was repeated seven times. Every suite
+     * needs it for the same two jobs — the ordered truncation of its own tables, and reading back a
+     * column no endpoint exposes — and neither is worth an {@code @Autowired} field per class.
+     */
+    @Autowired
+    protected JdbcTemplate jdbc;
 
     /**
      * Creates {@code database} if this is the first class to ask for it and points the context's
@@ -141,6 +166,67 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add("spring.datasource.hikari.maximum-pool-size", () -> TEST_POOL_SIZE);
+    }
+
+    /**
+     * Points the context's resource server at the suite's JWKS, so its tokens are validated the way
+     * production validates them — signature, issuer and audience, over HTTP.
+     *
+     * <p>Called from the fixture's own {@code @DynamicPropertySource} rather than declared here as one:
+     * the context cache key is built from those methods, so a single inherited one would hand two
+     * fixtures the same key and, with it, each other's database.
+     */
+    protected static void useJwks(DynamicPropertyRegistry registry) {
+        registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", AUTH::jwkSetUri);
+        registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri", () -> JwksTestServer.ISSUER);
+    }
+
+    /** The suite's token mint, for the tests that need a claim set nobody else asks for. */
+    protected static JwksTestServer auth() {
+        return AUTH;
+    }
+
+    /**
+     * The identifier of a row a fixture seeded, found by the business key the object mother named it
+     * with — {@code sku} for a product, {@code name} for a store.
+     *
+     * <p>Both were written out three times, in the catalogue, the stores, the profile, the availability
+     * and the cart suites, always as the same single statement. They live here, next to the databases
+     * each of those suites uses, because the thing they have in common is not the domain: it is that
+     * every fixture inserts rows whose keys are generated and then needs to name one of them in a URL.
+     * The mothers stay pure builders, which is what makes them usable outside a Spring context.
+     *
+     * <p>Not a generic {@code idOf(table, column, value)}: the two tables that need it are the two that
+     * have a business key at all, and a helper that took a table name would be an invitation to build
+     * SQL from strings in a test.
+     */
+    protected long productIdOf(String sku) {
+        return jdbc.queryForObject("SELECT id FROM product WHERE sku = ?", Long.class, sku);
+    }
+
+    /** @see #productIdOf(String) */
+    protected long storeIdOf(String name) {
+        return jdbc.queryForObject("SELECT id FROM store WHERE name = ?", Long.class, name);
+    }
+
+    protected static String customerToken(UUID accountId, String email) {
+        return AUTH.validToken(accountId, email, List.of("CUSTOMER"));
+    }
+
+    protected static String employeeToken(UUID accountId, String email) {
+        return AUTH.validToken(accountId, email, List.of("EMPLOYEE"));
+    }
+
+    protected static String bearer(String token) {
+        return "Bearer " + token;
+    }
+
+    private static void stopAuth() {
+        try {
+            AUTH.close();
+        } catch (Exception e) {
+            // Nothing to recover on the way out of the JVM; the port goes with the process.
+        }
     }
 
     protected static String jdbcUrlOf(String database) {

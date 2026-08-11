@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -60,9 +58,6 @@ class DemoDataIT extends AbstractIntegrationTest {
 
     /** The nineteen of the baseline, the one of the v0.3 release folder, and the eight demo ones. */
     private static final int EXPECTED_CHANGESETS = 28;
-
-    @Autowired
-    private JdbcTemplate jdbc;
 
     @Test
     @DisplayName("the catalogue has ten types with ten products each")

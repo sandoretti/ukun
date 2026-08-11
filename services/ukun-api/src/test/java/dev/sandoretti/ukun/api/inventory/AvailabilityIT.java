@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sandoretti.ukun.api.inventory.application.AvailabilityItem;
 import dev.sandoretti.ukun.api.inventory.application.AvailabilityResponse;
-import dev.sandoretti.ukun.api.inventory.domain.StoreStock;
 import dev.sandoretti.ukun.api.stores.StoresIntegrationTest;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,8 +47,8 @@ class AvailabilityIT extends StoresIntegrationTest {
         long online = storeIdOf("Ukun Online");
 
         inATransaction(() -> {
-            entityManager.persist(stock(productIdOf(IN_STOCK), online, 7));
-            entityManager.persist(stock(productIdOf(OUT_OF_STOCK), online, 0));
+            entityManager.persist(StoreStockMother.stock(productIdOf(IN_STOCK), online, 7));
+            entityManager.persist(StoreStockMother.outOfStock(productIdOf(OUT_OF_STOCK), online));
         });
     }
 
@@ -306,16 +305,4 @@ class AvailabilityIT extends StoresIntegrationTest {
                 price);
     }
 
-    private long productIdOf(String sku) {
-        return jdbc.queryForObject("SELECT id FROM product WHERE sku = ?", Long.class, sku);
-    }
-
-    private StoreStock stock(long productId, long storeId, int quantity) {
-        StoreStock stock = new StoreStock();
-        stock.setProductId(productId);
-        stock.setStoreId(storeId);
-        stock.setQuantity(quantity);
-
-        return stock;
-    }
 }

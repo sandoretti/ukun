@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
@@ -56,9 +55,6 @@ abstract class CatalogIntegrationTest extends AbstractIntegrationTest {
     protected RestTestClient restTestClient;
 
     @Autowired
-    protected JdbcTemplate jdbc;
-
-    @Autowired
     private EntityManager entityManager;
 
     /** Persisted in a transaction of its own that commits before any request is made. */
@@ -90,7 +86,4 @@ abstract class CatalogIntegrationTest extends AbstractIntegrationTest {
         return jdbc.queryForObject("SELECT id FROM product_type WHERE name = ?", Long.class, name);
     }
 
-    protected long productIdOf(String sku) {
-        return jdbc.queryForObject("SELECT id FROM product WHERE sku = ?", Long.class, sku);
-    }
 }

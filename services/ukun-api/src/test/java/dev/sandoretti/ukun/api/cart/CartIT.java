@@ -5,13 +5,12 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import dev.sandoretti.ukun.api.AbstractIntegrationTest;
-import dev.sandoretti.ukun.api.JwksTestServer;
 import dev.sandoretti.ukun.api.cart.application.CartLineResponse;
 import dev.sandoretti.ukun.api.cart.application.CartResponse;
 import dev.sandoretti.ukun.api.catalog.ProductMother;
 import dev.sandoretti.ukun.api.catalog.domain.ProductType;
 import dev.sandoretti.ukun.api.customers.CustomerMother;
-import dev.sandoretti.ukun.api.inventory.domain.StoreStock;
+import dev.sandoretti.ukun.api.inventory.StoreStockMother;
 import dev.sandoretti.ukun.api.stores.StoreMother;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
@@ -28,7 +27,6 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTe
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
@@ -77,25 +75,14 @@ class CartIT extends AbstractIntegrationTest {
     /** Discontinued, and stocked online all the same — discontinuing empties no warehouse (ADR-0013). */
     private static final String DISCONTINUED = "SILLA-RETIRADA";
 
-    private static final JwksTestServer AUTH = JwksTestServer.start();
-
-    static {
-        Runtime.getRuntime().addShutdownHook(new Thread(CartIT::stopAuth));
-    }
-
     @DynamicPropertySource
     static void cartEnvironment(DynamicPropertyRegistry registry) {
         useDatabase(registry, CART_DATABASE);
-
-        registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", AUTH::jwkSetUri);
-        registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri", () -> JwksTestServer.ISSUER);
+        useJwks(registry);
     }
 
     @Autowired
     private RestTestClient restTestClient;
-
-    @Autowired
-    private JdbcTemplate jdbc;
 
     @Autowired
     private EntityManager entityManager;
@@ -128,10 +115,10 @@ class CartIT extends AbstractIntegrationTest {
         long barcelona = storeIdOf("Ukun Barcelona");
 
         inATransaction(() -> {
-            entityManager.persist(stock(productIdOf(IN_STOCK), online, 7));
-            entityManager.persist(stock(productIdOf(OUT_OF_STOCK), online, 0));
-            entityManager.persist(stock(productIdOf(ONLY_IN_BARCELONA), barcelona, 5));
-            entityManager.persist(stock(productIdOf(DISCONTINUED), online, 4));
+            entityManager.persist(StoreStockMother.stock(productIdOf(IN_STOCK), online, 7));
+            entityManager.persist(StoreStockMother.outOfStock(productIdOf(OUT_OF_STOCK), online));
+            entityManager.persist(StoreStockMother.stock(productIdOf(ONLY_IN_BARCELONA), barcelona, 5));
+            entityManager.persist(StoreStockMother.stock(productIdOf(DISCONTINUED), online, 4));
         });
 
         inATransaction(() -> {
@@ -600,24 +587,13 @@ class CartIT extends AbstractIntegrationTest {
         return "{\"quantity\": %d}".formatted(quantity);
     }
 
+    /** Nobody here asserts on the email, so it follows from the account rather than being one more constant. */
     private static String customerToken(UUID accountId) {
-        return AUTH.validToken(accountId, accountId + "@ukun.dev", List.of("CUSTOMER"));
+        return customerToken(accountId, accountId + "@ukun.dev");
     }
 
     private static String employeeToken() {
-        return AUTH.validToken(EMPLOYEE, "employee@ukun.dev", List.of("EMPLOYEE"));
-    }
-
-    private static String bearer(String token) {
-        return "Bearer " + token;
-    }
-
-    private long productIdOf(String sku) {
-        return jdbc.queryForObject("SELECT id FROM product WHERE sku = ?", Long.class, sku);
-    }
-
-    private long storeIdOf(String name) {
-        return jdbc.queryForObject("SELECT id FROM store WHERE name = ?", Long.class, name);
+        return employeeToken(EMPLOYEE, "employee@ukun.dev");
     }
 
     /**
@@ -627,22 +603,5 @@ class CartIT extends AbstractIntegrationTest {
      */
     private long customerIdOf(UUID accountId) {
         return jdbc.queryForObject("SELECT id FROM customer WHERE account_id = ?", Long.class, accountId);
-    }
-
-    private static StoreStock stock(long productId, long storeId, int quantity) {
-        StoreStock stock = new StoreStock();
-        stock.setProductId(productId);
-        stock.setStoreId(storeId);
-        stock.setQuantity(quantity);
-
-        return stock;
-    }
-
-    private static void stopAuth() {
-        try {
-            AUTH.close();
-        } catch (Exception e) {
-            // Nothing to recover on the way out of the JVM; the port goes with the process.
-        }
     }
 }

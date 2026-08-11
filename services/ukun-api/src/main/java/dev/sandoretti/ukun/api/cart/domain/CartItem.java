@@ -50,9 +50,13 @@ public class CartItem {
     /** For JPA only. */
     protected CartItem() {}
 
-    public CartItem(CartItemId id, int quantity) {
+    /**
+     * A new line, empty. The quantity is set right afterwards by whoever creates it, because the upsert
+     * of {@code PUT} applies the very same {@code setQuantity} to a line it just found — a constructor
+     * taking it would only make the two paths look different than they are.
+     */
+    public CartItem(CartItemId id) {
         this.id = id;
-        this.quantity = quantity;
     }
 
     /**
