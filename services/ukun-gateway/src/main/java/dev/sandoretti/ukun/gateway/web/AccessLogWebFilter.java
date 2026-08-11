@@ -48,15 +48,26 @@ import reactor.core.publisher.SignalType;
  * exchange is not one. Keeping them apart is what lets production run {@code ukun.business} at INFO
  * without also keeping every proxied request.
  *
- * <h2>{@code @Order(1)} — behind the size limit, behind security</h2>
+ * <h2>{@code @Order(-101)} — in front of everything, including security</h2>
  *
- * The security chain is {@code @Order(-100)} and {@link RequestSizeLimitWebFilter} is {@code @Order(0)}
- * for the reason its javadoc gives. Running after both means the status logged here is the final one,
- * including the 401 the security chain produced and the 413 the size limit produced — a filter placed
- * first would report the status of a response nobody had written yet.
+ * The security chain is {@code @Order(-100)} and {@link RequestSizeLimitWebFilter} is {@code @Order(0)}.
+ * This filter used to run behind both, at {@code @Order(1)}, so that it could read the principal — and
+ * the price, unnoticed until somebody went looking for a denied request in the logs, was that it never
+ * saw one. A chain that rejects a request writes the response and completes without calling the
+ * filters below it, so every 401 and every 403 of the coarse route filter passed through the single
+ * point of entry leaving no line at all. A scan of protected routes was invisible in the one service
+ * that sees every request.
+ *
+ * <p>Sitting in front is what makes "one line per request" true for requests that were refused. The
+ * status is still the final one: it is read in {@code doFinally}, when the exchange is over and
+ * whoever wrote the response — the security chain above, {@link RequestSizeLimitWebFilter}, or
+ * {@code ukun-api} at the far end — has already set it.
+ *
+ * <p>What moving out costs is the principal, which is only reachable inside the chain. It arrives
+ * instead as an exchange attribute left by {@link AccountIdAttributeWebFilter}.
  */
 @Component
-@Order(1)
+@Order(-101)
 class AccessLogWebFilter implements WebFilter {
 
     private static final Logger log = LoggerFactory.getLogger("ukun.access");
@@ -70,25 +81,22 @@ class AccessLogWebFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         long startedAt = System.nanoTime();
 
-        // The principal is resolved before the chain runs rather than after it, and that is not an
-        // optimisation: by the time `doFinally` fires, the exchange has completed and reaching for a
-        // reactive lookup there would be a subscription nobody is going to wait for. Resolving it up
-        // front costs nothing — the security chain, which runs before this filter, already loaded the
-        // session's context, so this Mono is already valued.
+        // Read in `doFinally` and not here: at this point nobody has authenticated yet, and the whole
+        // reason this filter sits in front of the security chain is to outlive the requests that never
+        // get past it. By the time the exchange completes, whoever knew the caller has left it on the
+        // exchange — AccountIdAttributeWebFilter for a request that went through, and
+        // ProblemDetailSecurityHandler for one the chain refused.
         //
         // Absence stays an Optional all the way to `emit` instead of collapsing into a sentinel
         // string: there are two ways to have no account here — an anonymous request and a principal
         // this service does not recognise — and neither is an account whose id happens to be empty.
-        return exchange.getPrincipal()
-                .map(UkunOidcUser::accountIdOf)
-                .defaultIfEmpty(Optional.empty())
-                .flatMap(accountId ->
-                        chain.filter(exchange).doFinally(signal -> emit(exchange, accountId, startedAt, signal)));
+        return chain.filter(exchange).doFinally(signal -> emit(exchange, startedAt, signal));
     }
 
-    private static void emit(
-            ServerWebExchange exchange, Optional<String> accountId, long startedAt, SignalType signal) {
+    private static void emit(ServerWebExchange exchange, long startedAt, SignalType signal) {
 
+        Optional<String> accountId =
+                Optional.ofNullable(exchange.getAttribute(AccessLogAttributes.ACCOUNT_ID));
         HttpStatusCode status = exchange.getResponse().getStatusCode();
         long millis = Duration.ofNanos(System.nanoTime() - startedAt).toMillis();
 
