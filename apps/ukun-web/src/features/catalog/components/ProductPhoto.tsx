@@ -53,7 +53,9 @@ function useLens() {
  * to load. Neither of them offers zoom, because there is nothing to enlarge.
  */
 export function ProductPhoto({ imageUrl, name }: ProductPhotoProps) {
-  const { t } = useTranslation('catalog');
+  // Two namespaces: the zoom labels are the sheet's own, but "no photo" is the one string this
+  // shares with the card and the cart line, and it lives in `common` for that reason (ADR-0019).
+  const { t } = useTranslation(['catalog', 'common']);
   const [failed, setFailed] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const { lens, handlers: lensHandlers } = useLens();
@@ -61,7 +63,7 @@ export function ProductPhoto({ imageUrl, name }: ProductPhotoProps) {
   if (imageUrl === null || failed) {
     return (
       <div className="product-photo product-photo--empty d-flex align-items-center justify-content-center text-body-secondary">
-        {t('product.noImage')}
+        {t('common:product.noImage')}
       </div>
     );
   }

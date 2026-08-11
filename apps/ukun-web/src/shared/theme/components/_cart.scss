@@ -21,12 +21,39 @@
 // superior con un vacío debajo. Con una altura mínima que da de sobra para el caso peor —nombre,
 // referencia y aviso— la fila no crece al pulsar «+» (que es lo que movía la lista bajo el cursor)
 // y, cuando no hay aviso, lo que hay queda centrado en vez de arriba.
+// El relleno lateral existe para que la foto no se apoye en el borde de la columna, y es bastante
+// menor que el hueco que la separa del nombre (`gap-5`, 3rem): el aire de dentro de la línea manda
+// sobre el del borde, y es lo que mantiene la miniatura pegada a lo que describe y no al margen.
+//
+// La divisoria sigue yendo de lado a lado: el `border-top` se pinta sobre la caja de relleno, así
+// que el `padding` no la acorta.
 .cart-line {
   display: flex;
   flex-direction: column;
   justify-content: center;
   min-height: 6.5rem;
-  padding: 1rem 0;
+  padding: 1rem;
+}
+
+// La miniatura del producto (issue #120). Cuadrada y `cover`, como la tarjeta del catálogo: en una
+// lista, lo que se reconoce de un vistazo es la forma, y un alto variable por producto convertiría
+// la columna del nombre en una escalera. `flex-shrink: 0` porque lo que cede sitio cuando el nombre
+// es largo es el nombre —que ya recorta—, nunca la foto.
+//
+// El mismo tamaño para la foto y para el hueco vacío: la línea mide lo mismo tenga foto o no.
+.cart-line__photo {
+  flex: 0 0 auto;
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: bootstrap.$border-radius;
+  background-color: var(--bs-tertiary-bg);
+}
+
+// Lo que cede sitio. Sin `min-width: 0` un ítem flex no baja de lo que mide su contenido, y el
+// `text-overflow` del nombre no llega a dispararse nunca: la columna se desborda en vez de recortar.
+.cart-line__identity {
+  min-width: 0;
 }
 
 // El nombre ocupa **una** línea y recorta con puntos suspensivos. Reservar dos —como se hizo

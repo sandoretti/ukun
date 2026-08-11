@@ -31,9 +31,6 @@
     "PRICE_ASC": "Precio: de menor a mayor",
     "PRICE_DESC": "Precio: de mayor a menor"
   },
-  "product": {
-    "noImage": "Sin foto"
-  },
   "detail": {
     "breadcrumb": "Dónde estás",
     "reference": "Ref. {{sku}}",

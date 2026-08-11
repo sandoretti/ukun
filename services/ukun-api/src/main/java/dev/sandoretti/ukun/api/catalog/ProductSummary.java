@@ -16,9 +16,21 @@ import java.math.BigDecimal;
  * be added to a cart, and a line already holding it reports nothing available. Asking a second
  * question to find that out would be a query per line, which is the shape this API exists to prevent.
  *
+ * <p><strong>Why {@code imageUrl} travels.</strong> Because a caller shows the product to a person,
+ * and a line without a photo is identified by its name and its SKU alone. {@code cart} is the case
+ * that settled it (issue #120): the alternative from the browser is one {@code GET /api/products/
+ * {id}} per line, which is the N+1 this whole API exists to make impossible — and for a thumbnail.
+ * It costs no extra statement here: the photo is {@code product.image_key}, a column of the row
+ * already being read, not an association.
+ *
+ * <p>The URL and never the key ({@code docs/08-identidad-y-seguridad.md} §9): the key is an internal
+ * detail of {@code FileStoragePort}, and composing a URL out of an identifier is not something a
+ * caller — in another module or in the browser — is allowed to know how to do.
+ *
  * <p>The name is the one {@code ProductSummaryResponse} was already deferring to: that class is the
  * row of {@code GET /api/products}, and its javadoc reserves {@code ProductSummary} for exactly this
- * type. The two are not interchangeable — the response carries {@code typeName} and {@code imageUrl},
- * which are of interest to a screen and to nobody else.
+ * type. The two are still not interchangeable — the response carries {@code typeName}, which no
+ * module outside {@code catalog} has ever needed.
  */
-public record ProductSummary(Long id, String sku, String name, BigDecimal price, boolean active) {}
+public record ProductSummary(
+        Long id, String sku, String name, String imageUrl, BigDecimal price, boolean active) {}

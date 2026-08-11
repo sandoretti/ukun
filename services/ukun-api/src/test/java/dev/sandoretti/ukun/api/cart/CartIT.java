@@ -164,6 +164,8 @@ class CartIT extends AbstractIntegrationTest {
                 .isEqualTo(IN_STOCK)
                 .jsonPath("$.items[0].productName")
                 .isEqualTo("Sofá de cuero")
+                .jsonPath("$.items[0].imageUrl")
+                .isEqualTo("/media/products/sofa-cuero.jpg")
                 // Text and never a JSON number: the contract's Money schema, and defect #5.
                 .jsonPath("$.items[0].unitPrice")
                 .isEqualTo("399.99")
@@ -206,6 +208,28 @@ class CartIT extends AbstractIntegrationTest {
             softly.assertThat(cart.items()).isEmpty();
             softly.assertThat(cart.total()).isEqualByComparingTo(BigDecimal.ZERO);
         });
+    }
+
+    /**
+     * The photo comes down with the line (issue #120) and it is optional (RF-10), which is why both
+     * cases are asserted together: what a screen needs to know is which of the two it got, and a
+     * product with no photo has to say {@code null} rather than a URL pointing nowhere.
+     *
+     * <p>It arrives in the same read as everything else. The alternative from the browser would be one
+     * {@code GET /api/products/{id}} per line to fetch a thumbnail, which is the N+1 that
+     * {@link #readsTheWholeCartInAConstantNumberOfStatements()} exists to keep out of the server and
+     * that {@code CatalogApi}'s batch-only signature keeps out of this module.
+     */
+    @Test
+    @DisplayName("every line carries the product's photo, and null when the product has none")
+    void carriesThePhotoOfEveryProduct() {
+        putItem(ADA, productIdOf(IN_STOCK), 1);
+        putItem(ADA, productIdOf(OUT_OF_STOCK), 1);
+
+        assertThat(cartOf(ADA).items())
+                .extracting(CartLineResponse::sku, CartLineResponse::imageUrl)
+                .containsExactlyInAnyOrder(
+                        tuple(IN_STOCK, "/media/products/sofa-cuero.jpg"), tuple(OUT_OF_STOCK, null));
     }
 
     /**

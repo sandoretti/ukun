@@ -61,6 +61,9 @@
     "status_one": "{{count}} sugerencia",
     "status_other": "{{count}} sugerencias"
   },
+  "product": {
+    "noImage": "Sin foto"
+  },
   "language": {
     "label": "Idioma",
     "es": "Español",

@@ -127,8 +127,10 @@ public class ProductQueryService implements CatalogApi {
      * <p>{@code findAllById} rather than a query of this module's own. It is one statement for the whole
      * batch, it is served by the primary key, and it does not carry the {@code @EntityGraph} the two
      * overrides in {@link ProductRepository} do — which here is the point rather than an omission:
-     * {@link ProductSummary} has no type and no image, so fetching the association would be a join
-     * nobody reads on the one read that runs over a whole cart.
+     * {@link ProductSummary} has no product type, so fetching that association would be a join nobody
+     * reads on the one read that runs over a whole cart. Its photo does not change that, and this is the
+     * distinction worth keeping straight: {@code image_key} is a column of the row {@code findAllById}
+     * already brings back, so it costs nothing; {@code product_type} is a second table.
      *
      * <p>An empty request is answered without touching the database. Spring Data would return an empty
      * list anyway, but the caller that has nothing to ask about is the commonest one there is — an empty

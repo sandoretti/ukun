@@ -57,7 +57,8 @@ public interface CatalogApi {
     Map<Long, ProductSummary> summariesByIds(Set<Long> productIds);
 }
 
-public record ProductSummary(Long id, String sku, String name, BigDecimal price) {}
+public record ProductSummary(
+    Long id, String sku, String name, String imageUrl, BigDecimal price, boolean active) {}
 ```
 
 ```java

@@ -1091,6 +1091,14 @@ export interface components {
             productId: number;
             sku: components["schemas"]["Sku"];
             productName: string;
+            /**
+             * Format: uri-reference
+             * @description The same servable URL `ProductSummary` carries, composed by the server from the storage
+             *     key; the photo is optional (RF-10), so it may be `null`. It is read from the catalogue on
+             *     every request and **not** frozen into the line: unlike an order, a cart holds no snapshot
+             *     of the product (ADR-0011 applies to `orders`, not here).
+             */
+            imageUrl: string | null;
             unitPrice: components["schemas"]["Money"];
             /**
              * Format: int32
