@@ -1,10 +1,23 @@
 {
-  "VALIDATION_FAILED": "Validation failed",
+  "VALIDATION_FAILED": "Check the details: something does not add up",
   "MALFORMED_REQUEST": "We could not read the request",
+  "UNAUTHENTICATED": "You need to be signed in to do this",
+  "FORBIDDEN": "Your account does not have access to this",
   "RESOURCE_NOT_FOUND": "We could not find what you are looking for",
   "METHOD_NOT_ALLOWED": "That operation is not allowed on this resource",
   "NOT_ACCEPTABLE": "The requested format is not available",
+  "CHECKOUT_EXPIRED": "Your checkout took too long and we released the reservation. Please start again",
+  "INSUFFICIENT_STOCK": "Only {{available}} units of {{sku}} left",
+  "PRODUCT_IN_USE": "It cannot be deleted: the product is in {{inOrders}} orders, {{inStock}} stores and {{inCarts}} carts",
+  "PRODUCT_TYPE_IN_USE": "It cannot be deleted: {{inProducts}} products still have this type",
+  "DUPLICATE_VALUE": "That value already exists. Please choose another one",
+  "VERSION_CONFLICT": "Someone changed this while you were editing it. Please reload it",
+  "IDEMPOTENCY_IN_PROGRESS": "We are already processing this purchase. Please wait a moment",
+  "IDEMPOTENCY_MISMATCH": "This purchase was already sent with different details. Please start again",
+  "EMPTY_CART": "Your cart is empty",
+  "EMAIL_ALREADY_EXISTS": "There is already an account with that email address",
   "REFERENTIAL_INTEGRITY": "This cannot be done: other data depends on it",
-  "INTERNAL_ERROR": "Something went wrong on our side. Please try again",
-  "INSUFFICIENT_STOCK": "Only {{available}} units of {{sku}} left"
+  "UNSUPPORTED_MEDIA_TYPE": "That kind of file is not supported",
+  "PAYLOAD_TOO_LARGE": "The file is too large",
+  "INTERNAL_ERROR": "Something went wrong on our side. Please try again"
 }

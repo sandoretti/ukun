@@ -5,6 +5,7 @@ import { RequireAuth } from '../features/auth/RequireAuth';
 import { ACCOUNT_PATH } from '../features/auth/routes';
 import { CATALOG_PATH, PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
+import { PROFILE_PATH } from '../shared/routes';
 import { AppLayout } from './AppLayout';
 import { AuthLayout } from './AuthLayout';
 
@@ -15,6 +16,7 @@ const CatalogPage = lazy(() => import('../features/catalog/CatalogPage'));
 const ProductDetailPage = lazy(() => import('../features/catalog/ProductDetailPage'));
 const StoresPage = lazy(() => import('../features/stores/StoresPage'));
 const AccountPage = lazy(() => import('../features/auth/AccountPage'));
+const ProfilePage = lazy(() => import('../features/profile/ProfilePage'));
 const SignInPage = lazy(() => import('../features/auth/SignInPage'));
 
 function App() {
@@ -27,12 +29,21 @@ function App() {
         <Route path={CATALOG_PATH} element={<CatalogPage />} />
         <Route path={PRODUCT_ROUTE} element={<ProductDetailPage />} />
         <Route path="/stores" element={<StoresPage />} />
-        {/* La única ruta con sesión por ahora. */}
+        {/* Las rutas con sesión. La cuenta dice quién eres y cómo salir; el perfil son los datos de
+            cliente de RF-05, que son otro recurso (`/api/me/profile`) y otra pantalla. */}
         <Route
           path={ACCOUNT_PATH}
           element={
             <RequireAuth>
               <AccountPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={PROFILE_PATH}
+          element={
+            <RequireAuth>
+              <ProfilePage />
             </RequireAuth>
           }
         />

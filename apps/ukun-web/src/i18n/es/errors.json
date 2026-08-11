@@ -1,10 +1,23 @@
 {
-  "VALIDATION_FAILED": "Error de validación",
+  "VALIDATION_FAILED": "Revisa los datos: hay algo que no cuadra",
   "MALFORMED_REQUEST": "No hemos podido leer la petición",
+  "UNAUTHENTICATED": "Necesitas una sesión abierta para hacer esto",
+  "FORBIDDEN": "Tu cuenta no tiene acceso a esto",
   "RESOURCE_NOT_FOUND": "No encontramos lo que buscas",
   "METHOD_NOT_ALLOWED": "Esa operación no está permitida sobre este recurso",
   "NOT_ACCEPTABLE": "El formato solicitado no está disponible",
+  "CHECKOUT_EXPIRED": "Tu compra ha tardado demasiado y hemos liberado la reserva. Vuelve a empezar",
+  "INSUFFICIENT_STOCK": "Solo quedan {{available}} unidades de {{sku}}",
+  "PRODUCT_IN_USE": "No se puede eliminar: el producto está en {{inOrders}} pedidos, {{inStock}} tiendas y {{inCarts}} carritos",
+  "PRODUCT_TYPE_IN_USE": "No se puede eliminar: quedan {{inProducts}} productos de este tipo",
+  "DUPLICATE_VALUE": "Ese valor ya existe. Elige otro",
+  "VERSION_CONFLICT": "Alguien ha cambiado esto mientras lo editabas. Vuelve a cargarlo",
+  "IDEMPOTENCY_IN_PROGRESS": "Ya estamos procesando esta compra. Espera un momento",
+  "IDEMPOTENCY_MISMATCH": "Esta compra ya se envió con otros datos. Vuelve a empezar",
+  "EMPTY_CART": "Tu carrito está vacío",
+  "EMAIL_ALREADY_EXISTS": "Ya hay una cuenta con ese correo",
   "REFERENTIAL_INTEGRITY": "No se puede hacer: hay datos que dependen de esto",
-  "INTERNAL_ERROR": "Algo ha fallado por nuestra parte. Inténtalo de nuevo",
-  "INSUFFICIENT_STOCK": "Solo quedan {{available}} unidades de {{sku}}"
+  "UNSUPPORTED_MEDIA_TYPE": "Ese tipo de fichero no se admite",
+  "PAYLOAD_TOO_LARGE": "El fichero es demasiado grande",
+  "INTERNAL_ERROR": "Algo ha fallado por nuestra parte. Inténtalo de nuevo"
 }

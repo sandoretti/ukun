@@ -116,6 +116,10 @@ Plan en dos pasos:
 - **v0.6**: `card` nace sin CVV y sin PAN. Solo se persiste `last4`, marca y fecha de expiración (`10-modelo-de-datos.md` §2); el CVV se pide en cada compra y nunca se escribe a disco.
 - **v1.x**: integración con una pasarela real (Stripe/Redsys u otra) en modo test, guardando únicamente el token que la pasarela devuelve — `ukun-api` deja de tocar datos de tarjeta en ningún formato.
 
+**Dónde se teclea el número, mientras tanto.** La regla de arriba es sobre lo que se guarda y lo que se registra, no sobre lo que se pide: cambiar de tarjeta en el perfil (RF-05) pide el número completo, porque nadie conoce «sus cuatro últimos dígitos» sueltos —los lee del plástico entero— y la marca está escrita en las primeras cifras del propio número (el IIN), así que preguntarla es preguntar algo que ya se sabe. De ese número el frontend deriva `last4` y la marca, comprueba la suma de Luhn antes de derivar nada, y **el resto no sale del navegador**: `toRequest` lo descarta y devuelve el `UpdateProfileRequest` del contrato, que no tiene dónde ponerlo. El CVV no se pide en ningún punto de esta pantalla, porque no hay nada para lo que recogerlo.
+
+Eso tiene un coste que conviene tener anotado: una página que **toca** un PAN cae en un alcance de PCI-DSS más pesado (SAQ A-EP) que una donde lo recoge el iframe de la pasarela (SAQ A). Es la razón de más para que en v1.x ese campo lo sustituya el componente de la pasarela, y no solo el token que devuelve.
+
 ## 6. Otras correcciones de seguridad heredadas del legacy
 
 - Contraseñas: hash BCrypt/Argon2 desde el primer día de `ukun-auth`; no existe el `VARCHAR(16)` del legacy ni ningún límite máximo artificial.

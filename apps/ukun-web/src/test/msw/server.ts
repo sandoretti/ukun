@@ -1,6 +1,7 @@
 import { setupServer } from 'msw/node';
 
 import { catalogHandlers } from './catalogHandlers';
+import { profileHandlers } from './profileHandlers';
 import { sessionHandlers } from './sessionHandlers';
 import { storeHandlers } from './storeHandlers';
 
@@ -12,4 +13,9 @@ import { storeHandlers } from './storeHandlers';
  * One module per group of endpoints, all registered here: the stores are read by two screens, so
  * their doubles do not belong to either one's file.
  */
-export const server = setupServer(...catalogHandlers, ...storeHandlers, ...sessionHandlers);
+export const server = setupServer(
+  ...catalogHandlers,
+  ...storeHandlers,
+  ...sessionHandlers,
+  ...profileHandlers,
+);

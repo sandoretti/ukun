@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Dropdown } from 'react-bootstrap';
 
 import { useAuth } from '../../../shared/hooks/useAuth';
+import { PROFILE_PATH } from '../../../shared/routes';
 import { ComingSoonButton } from '../../../shared/ui/ComingSoon';
 import { ACCOUNT_PATH } from '../routes';
 import { SignOutForm } from './SignOutForm';
@@ -25,7 +26,7 @@ import { SignOutForm } from './SignOutForm';
  * from the gateway without being asked for anything.
  */
 export function SessionMenu() {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation(['common', 'profile']);
   const { user, hasRole, signIn } = useAuth();
 
   if (user === undefined) {
@@ -55,6 +56,10 @@ export function SessionMenu() {
       <Dropdown.Menu>
         <Dropdown.Item as={Link} to={ACCOUNT_PATH}>
           {t('account.title')}
+        </Dropdown.Item>
+
+        <Dropdown.Item as={Link} to={PROFILE_PATH}>
+          {t('profile:link')}
         </Dropdown.Item>
 
         {isStaff && (

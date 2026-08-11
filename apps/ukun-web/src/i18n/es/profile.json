@@ -1,0 +1,79 @@
+{
+  "title": "Mi perfil",
+  "lead": "Tus datos de envío, tu forma de pago y cómo quieres que te hablemos.",
+  "link": "Mi perfil",
+  "empty": "Todavía no hay un perfil que mostrar",
+  "personal": {
+    "legend": "Datos personales",
+    "description": "Cómo te llamamos y con qué cuenta entras.",
+    "name": "Nombre",
+    "lastName": "Apellidos",
+    "email": "Correo",
+    "emailHint": "El correo y la contraseña se cambian en tu cuenta Ukun, no aquí."
+  },
+  "address": {
+    "legend": "Dirección de envío",
+    "description": "A dónde llevamos tus pedidos.",
+    "street": "Calle y número",
+    "city": "Ciudad",
+    "province": "Provincia",
+    "postalCode": "Código postal"
+  },
+  "card": {
+    "legend": "Tarjeta",
+    "description": "Con qué se cobran tus pedidos.",
+    "summaryLabel": "Tarjeta {{brand}} terminada en {{last4}}, caduca en {{expiry}}",
+    "expires": "Caduca {{expiry}}",
+    "noCvv": "Nunca pedimos el CVV, y del número solo guardamos los cuatro últimos dígitos y la marca.",
+    "change": "Cambiar tarjeta",
+    "done": "Hecho",
+    "number": "Número de la nueva tarjeta",
+    "numberPlaceholder": "0000 0000 0000 0000",
+    "numberHint": "El número no sale de este navegador: de él solo se guardan los cuatro últimos dígitos.",
+    "detected": "{{brand}} · guardaremos solo los cuatro últimos dígitos",
+    "expiry": "Caducidad",
+    "expMonth": "Mes de caducidad",
+    "expYear": "Año de caducidad",
+    "brands": {
+      "VISA": "Visa",
+      "MASTERCARD": "Mastercard",
+      "AMEX": "American Express",
+      "OTHER": "Otra"
+    }
+  },
+  "preferences": {
+    "legend": "Preferencias",
+    "description": "La tienda que te proponemos y el idioma en el que te hablamos.",
+    "favoriteStore": "Tienda favorita",
+    "favoriteStoreNone": "Ninguna",
+    "favoriteStoreHint": "La tienda que te proponemos por defecto al mirar disponibilidad.",
+    "favoriteStoreUnavailable": "No hemos podido cargar las tiendas. Inténtalo más tarde.",
+    "locale": "Idioma",
+    "localeHint": "Se guarda con tu cuenta, así que te acompaña a cualquier dispositivo.",
+    "locales": {
+      "es": "Español",
+      "en": "Inglés"
+    }
+  },
+  "ordersNotice": "Cambiar la dirección o la tarjeta no toca tus pedidos anteriores: cada pedido guarda su propia copia de a dónde se envió y con qué se pagó.",
+  "submit": "Guardar cambios",
+  "submitting": "Guardando...",
+  "discard": "Descartar cambios",
+  "saved": "Cambios guardados",
+  "unchanged": "No había nada que cambiar",
+  "validation": {
+    "name": "Escribe un nombre de 1 a 100 caracteres",
+    "lastName": "Escribe unos apellidos de 1 a 100 caracteres",
+    "locale": "Elige uno de los idiomas disponibles",
+    "street": "Escribe la calle, de 1 a 255 caracteres",
+    "city": "Escribe la ciudad, de 1 a 255 caracteres",
+    "province": "Escribe la provincia, de 1 a 255 caracteres",
+    "postalCode": "El código postal son exactamente cinco cifras",
+    "cardNumber": "Ese número de tarjeta no es válido. Revísalo",
+    "last4": "No hemos podido leer los cuatro últimos dígitos. Vuelve a escribir el número",
+    "brand": "No reconocemos esa marca de tarjeta",
+    "expMonth": "El mes de caducidad va del 1 al 12",
+    "expYear": "El año de caducidad va de 2024 a 2100",
+    "favoriteStore": "Esa tienda ya no existe. Elige otra"
+  }
+}

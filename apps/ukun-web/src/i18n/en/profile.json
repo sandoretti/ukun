@@ -1,0 +1,79 @@
+{
+  "title": "My profile",
+  "lead": "Your delivery details, your payment method and how you want us to talk to you.",
+  "link": "My profile",
+  "empty": "There is no profile to show yet",
+  "personal": {
+    "legend": "Personal details",
+    "description": "What we call you, and the account you sign in with.",
+    "name": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "emailHint": "Your email address and password are changed in your Ukun account, not here."
+  },
+  "address": {
+    "legend": "Delivery address",
+    "description": "Where we take your orders.",
+    "street": "Street and number",
+    "city": "City",
+    "province": "Province",
+    "postalCode": "Postcode"
+  },
+  "card": {
+    "legend": "Card",
+    "description": "What your orders are charged to.",
+    "summaryLabel": "{{brand}} card ending in {{last4}}, expires {{expiry}}",
+    "expires": "Expires {{expiry}}",
+    "noCvv": "We never ask for the CVV, and of the number we only keep the last four digits and the brand.",
+    "change": "Change card",
+    "done": "Done",
+    "number": "New card number",
+    "numberPlaceholder": "0000 0000 0000 0000",
+    "numberHint": "The number does not leave this browser: only its last four digits are kept.",
+    "detected": "{{brand}} · we will only keep the last four digits",
+    "expiry": "Expiry",
+    "expMonth": "Expiry month",
+    "expYear": "Expiry year",
+    "brands": {
+      "VISA": "Visa",
+      "MASTERCARD": "Mastercard",
+      "AMEX": "American Express",
+      "OTHER": "Other"
+    }
+  },
+  "preferences": {
+    "legend": "Preferences",
+    "description": "The store we suggest and the language we speak to you in.",
+    "favoriteStore": "Favourite store",
+    "favoriteStoreNone": "None",
+    "favoriteStoreHint": "The store we suggest by default when you check availability.",
+    "favoriteStoreUnavailable": "We could not load the stores. Please try again later.",
+    "locale": "Language",
+    "localeHint": "It is saved with your account, so it follows you to any device.",
+    "locales": {
+      "es": "Spanish",
+      "en": "English"
+    }
+  },
+  "ordersNotice": "Changing your address or your card does not touch your past orders: each order keeps its own copy of where it was sent and what it was paid with.",
+  "submit": "Save changes",
+  "submitting": "Saving...",
+  "discard": "Discard changes",
+  "saved": "Changes saved",
+  "unchanged": "There was nothing to change",
+  "validation": {
+    "name": "Enter a first name between 1 and 100 characters",
+    "lastName": "Enter a last name between 1 and 100 characters",
+    "locale": "Choose one of the available languages",
+    "street": "Enter the street, between 1 and 255 characters",
+    "city": "Enter the city, between 1 and 255 characters",
+    "province": "Enter the province, between 1 and 255 characters",
+    "postalCode": "The postcode is exactly five digits",
+    "cardNumber": "That card number is not valid. Please check it",
+    "last4": "We could not read the last four digits. Please type the number again",
+    "brand": "We do not recognise that card brand",
+    "expMonth": "The expiry month goes from 1 to 12",
+    "expYear": "The expiry year goes from 2024 to 2100",
+    "favoriteStore": "That store no longer exists. Please choose another one"
+  }
+}

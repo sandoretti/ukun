@@ -1,18 +1,21 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { Col, Container, Row } from 'react-bootstrap';
 
 import { useAuth } from '../../shared/hooks/useAuth';
+import { PROFILE_PATH } from '../../shared/routes';
+import { Icon } from '../../shared/ui/Icon';
 import { SignOutForm } from './components/SignOutForm';
 
 /**
  * What the browser is signed in as, at `/account`: the identity half of `GET /api/me`, and the way
- * out. The profile —name, address, card, favourite store— is a different screen against a different
- * endpoint (`GET /api/me/profile`) and belongs to its own release.
+ * out. The customer profile —name, address, card, favourite store— is a different screen against a
+ * different endpoint (`GET /api/me/profile`, RF-05), linked from here.
  *
  * It reads nothing of its own: the session probe is already in the cache, asked for by the shell.
  */
 export default function AccountPage() {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation(['common', 'profile']);
   const { user } = useAuth();
 
   // `RequireAuth` is what guarantees there is a user; this is the type narrowing, not a state.
@@ -38,7 +41,15 @@ export default function AccountPage() {
             </dd>
           </dl>
 
-          <SignOutForm variant="primary" />
+          {/* Los datos de cliente son otro recurso y otra pantalla; desde aquí solo se va a ella. */}
+          <Link to={PROFILE_PATH} className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2 mb-4">
+            <Icon name="edit" size="sm" />
+            {t('profile:link')}
+          </Link>
+
+          <div>
+            <SignOutForm variant="primary" />
+          </div>
         </Col>
       </Row>
     </Container>

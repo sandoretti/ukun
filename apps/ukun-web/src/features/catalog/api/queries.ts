@@ -1,6 +1,7 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
-import { http, toProblem } from '../../../shared/api/http';
+import { http } from '../../../shared/api/http';
+import { retryUnlessClientError } from '../../../shared/api/retry';
 import {
   CHUNKS_PER_PAGE,
   CHUNK_SIZE,
@@ -55,20 +56,6 @@ export function useCatalogProducts(criteria: CatalogFilterInput, page: number) {
         : lastChunk.page + 1,
     placeholderData: keepPreviousData,
   });
-}
-
-/** A 5xx or a dropped connection is worth exactly one more attempt, not the default three. */
-const DETAIL_RETRIES = 1;
-
-/**
- * A 4xx is the server's final answer, not a hiccup: a product that was discontinued (ADR-0013) does
- * not come back by asking three more times, and the default `retry: 3` with its backoff would hold a
- * spinner on screen for seconds before the 404 screen appears.
- */
-function retryUnlessClientError(failureCount: number, error: unknown) {
-  const { status } = toProblem(error);
-  const isClientError = status >= 400 && status < 500;
-  return !isClientError && failureCount < DETAIL_RETRIES;
 }
 
 /**
