@@ -4,7 +4,7 @@ import { cartUnitCount, type Cart } from '../../../shared/api/cart';
 import { formatMoney } from '../../../shared/format/money';
 import { useLocale } from '../../../shared/hooks/useLocale';
 import { ComingSoonButton } from '../../../shared/ui/ComingSoon';
-import { Icon } from '../../../shared/ui/Icon';
+import { StockWarning } from './StockWarning';
 
 type CartSummaryProps = {
   /**
@@ -58,13 +58,10 @@ export function CartSummary({ cart }: CartSummaryProps) {
       </dl>
 
       {/* Appears and disappears as quantities change, so it is announced rather than silent. */}
-      <div aria-live="polite">
-        {short && (
-          <p className="cart-summary__notice small d-flex align-items-start gap-2 mt-3 mb-0">
-            <Icon name="warning" size="sm" />
-            {t('summary.stockNotice')}
-          </p>
-        )}
+      {/* El margen lo pone el CSS solo cuando hay aviso: en un `div` siempre presente, un `mt-3`
+          aquí separaría el botón del total también cuando no hay nada que decir. */}
+      <div className="cart-summary__notice" aria-live="polite">
+        {short && <StockWarning>{t('summary.stockNotice')}</StockWarning>}
       </div>
 
       <div className="d-grid mt-4">

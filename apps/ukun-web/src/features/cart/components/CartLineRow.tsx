@@ -8,6 +8,7 @@ import { useLocale } from '../../../shared/hooks/useLocale';
 import { productPath } from '../../../shared/routes';
 import { Icon } from '../../../shared/ui/Icon';
 import { QuantityStepper } from './QuantityStepper';
+import { StockWarning } from './StockWarning';
 
 type CartLineRowProps = {
   line: CartLine;
@@ -100,12 +101,11 @@ export function CartLineRow({ line, busy, onQuantityChange, onRemove }: CartLine
           aquí. */}
       <div className="cart-line__notice" aria-live="polite">
         {short && (
-          <p className="cart-line__warning small d-flex align-items-center gap-1 mb-0">
-            <Icon name="warning" size="sm" />
+          <StockWarning>
             {line.available === 0
               ? t('line.unavailable')
               : t('line.onlyLeft', { count: line.available })}
-          </p>
+          </StockWarning>
         )}
       </div>
     </div>

@@ -49,14 +49,9 @@
 }
 
 // El aviso ya no reserva hueco: la altura mínima de la fila lo contempla, así que aparecer y
-// desaparecer no cambia lo que mide la línea.
+// desaparecer no cambia lo que mide la línea. El margen, solo cuando hay algo que separar.
 .cart-line__notice:not(:empty) {
   margin-top: 0.25rem;
-}
-
-// Informativo, no bloqueante: quien valida el stock de verdad es la confirmación del pedido.
-.cart-line__warning {
-  color: var(--bs-warning-text-emphasis);
 }
 
 // La cifra del contador ocupa siempre lo mismo, tenga una o tres cifras: sin ancho fijo, los dos
@@ -85,6 +80,15 @@
   }
 }
 
-.cart-summary__notice {
+.cart-summary__notice:not(:empty) {
+  margin-top: 1rem;
+}
+
+// --- Aviso de disponibilidad ------------------------------------------------------------------
+
+// El mismo aviso lo dan la línea y el resumen, así que su color y su forma se escriben una vez.
+// Advertencia y no error: `available` no reserva nada y quien valida el stock de verdad es la
+// confirmación del pedido (RF-04).
+.cart-warning {
   color: var(--bs-warning-text-emphasis);
 }
