@@ -48,60 +48,65 @@ export function CartLineRow({ line, busy, onQuantityChange, onRemove }: CartLine
   const short = line.quantity > line.available;
 
   return (
-    <Row className="cart-line align-items-center g-3 py-3">
-      <Col xs={12} md={5}>
-        {/* The way back to the product: the line carries its name precisely so it can be read
-            again, and there is no other route to it from here that is not the search box. */}
-        <Link to={productPath(line.productId)} className="cart-line__name">
-          {line.productName}
-        </Link>
-        <p className="small text-body-secondary mb-0">{t('line.reference', { sku: line.sku })}</p>
+    <div className="cart-line py-3">
+      <Row className="align-items-center g-3">
+        <Col xs={12} md={5}>
+          {/* The way back to the product: the line carries its name precisely so it can be read
+              again, and there is no other route to it from here that is not the search box. */}
+          <Link to={productPath(line.productId)} className="cart-line__name">
+            {line.productName}
+          </Link>
+          <p className="small text-body-secondary mb-0">{t('line.reference', { sku: line.sku })}</p>
+        </Col>
 
-        {/* Reserved whether or not there is a warning: this is what keeps the row from resizing
-            under the stepper. Announced, because it lands after the answer does. */}
-        <div className="cart-line__notice" aria-live="polite">
-          {short && (
-            <p className="cart-line__warning small d-flex align-items-center gap-1 mb-0">
-              <Icon name="warning" size="sm" />
-              {line.available === 0
-                ? t('line.unavailable')
-                : t('line.onlyLeft', { count: line.available })}
-            </p>
-          )}
-        </div>
-      </Col>
+        {/* Las cuatro columnas de la derecha van centradas en su ancho: con anchos fijos y
+            contenidos de longitud dispar —«149,05 € / unidad» frente a «2.984,25 €»—, alinear cada
+            una por su lado deja la fila descuadrada aunque las columnas sí estén alineadas entre
+            filas. */}
+        <Col xs={6} md={2} className="text-body-secondary text-tabular-nums small text-center">
+          {t('line.unitPrice', { price: formatMoney(line.unitPrice, locale) })}
+        </Col>
 
-      {/* Las tres columnas de la derecha van centradas en su ancho: con anchos fijos y contenidos de
-          longitud dispar —«149,05 € / unidad» frente a «2.984,25 €»—, alinear cada una por su lado
-          deja la fila descuadrada aunque las columnas sí estén alineadas entre filas. */}
-      <Col xs={6} md={2} className="text-body-secondary text-tabular-nums small text-center">
-        {t('line.unitPrice', { price: formatMoney(line.unitPrice, locale) })}
-      </Col>
+        <Col xs={6} md={2} className="text-center">
+          <QuantityStepper
+            quantity={line.quantity}
+            productName={line.productName}
+            busy={busy}
+            onChange={onQuantityChange}
+          />
+        </Col>
 
-      <Col xs={6} md={2} className="text-center">
-        <QuantityStepper
-          quantity={line.quantity}
-          productName={line.productName}
-          busy={busy}
-          onChange={onQuantityChange}
-        />
-      </Col>
+        <Col xs={6} md={2} className="fw-semibold text-tabular-nums text-center cart-line__total">
+          {formatMoney(line.lineTotal, locale)}
+        </Col>
 
-      <Col xs={6} md={2} className="fw-semibold text-tabular-nums text-center cart-line__total">
-        {formatMoney(line.lineTotal, locale)}
-      </Col>
+        <Col xs={6} md={1} className="text-center">
+          <Button
+            variant="link"
+            className="link-secondary p-1"
+            disabled={busy}
+            aria-label={t('line.remove', { product: line.productName })}
+            onClick={onRemove}
+          >
+            <Icon name="delete" />
+          </Button>
+        </Col>
+      </Row>
 
-      <Col xs={6} md={1} className="text-center">
-        <Button
-          variant="link"
-          className="link-secondary p-1"
-          disabled={busy}
-          aria-label={t('line.remove', { product: line.productName })}
-          onClick={onRemove}
-        >
-          <Icon name="delete" />
-        </Button>
-      </Col>
-    </Row>
+      {/* El aviso es una banda propia bajo la fila, y no un tercer párrafo dentro de la columna del
+          nombre: ahí dentro, su hueco reservado bajaba el centro vertical de la fila y descuadraba
+          las cuatro columnas respecto al texto que sí se ve. El hueco sigue existiendo siempre —es
+          lo que impide que la fila crezca al pulsar «+»— pero ya no arrastra a nadie. */}
+      <div className="cart-line__notice" aria-live="polite">
+        {short && (
+          <p className="cart-line__warning small d-flex align-items-center gap-1 mb-0">
+            <Icon name="warning" size="sm" />
+            {line.available === 0
+              ? t('line.unavailable')
+              : t('line.onlyLeft', { count: line.available })}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
