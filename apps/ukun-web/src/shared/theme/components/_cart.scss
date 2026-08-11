@@ -35,27 +35,6 @@
   padding: 1rem;
 }
 
-// La miniatura del producto (issue #120). Cuadrada y `cover`, como la tarjeta del catálogo: en una
-// lista, lo que se reconoce de un vistazo es la forma, y un alto variable por producto convertiría
-// la columna del nombre en una escalera. `flex-shrink: 0` porque lo que cede sitio cuando el nombre
-// es largo es el nombre —que ya recorta—, nunca la foto.
-//
-// El mismo tamaño para la foto y para el hueco vacío: la línea mide lo mismo tenga foto o no.
-.cart-line__photo {
-  flex: 0 0 auto;
-  width: 4rem;
-  height: 4rem;
-  object-fit: cover;
-  border-radius: bootstrap.$border-radius;
-  background-color: var(--bs-tertiary-bg);
-}
-
-// Lo que cede sitio. Sin `min-width: 0` un ítem flex no baja de lo que mide su contenido, y el
-// `text-overflow` del nombre no llega a dispararse nunca: la columna se desborda en vez de recortar.
-.cart-line__identity {
-  min-width: 0;
-}
-
 // El nombre ocupa **una** línea y recorta con puntos suspensivos. Reservar dos —como se hizo
 // primero— iguala la altura pero abre un hueco entre el nombre y su referencia en cuanto el nombre
 // cabe en una, y ese hueco se lee como un error de maquetación. Con una línea, la altura es
@@ -109,13 +88,4 @@
 
 .cart-summary__notice:not(:empty) {
   margin-top: 1rem;
-}
-
-// --- Aviso de disponibilidad ------------------------------------------------------------------
-
-// El mismo aviso lo dan la línea y el resumen, así que su color y su forma se escriben una vez.
-// Advertencia y no error: `available` no reserva nada y quien valida el stock de verdad es la
-// confirmación del pedido (RF-04).
-.cart-warning {
-  color: var(--bs-warning-text-emphasis);
 }

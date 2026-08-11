@@ -24,24 +24,3 @@
   border-top: bootstrap.$border-width solid var(--bs-border-color);
   padding-top: 1.5rem;
 }
-
-// --- La tarjeta ---------------------------------------------------------------------------------
-
-// Misma receta que `.auth-card`, que es el otro panel de la aplicación: borde, radio grande y el
-// fondo del cuerpo. Nada de degradados ni de colores de marca de la red — un rectángulo azul con
-// «VISA» encima sería el logotipo de otro, y aquí la marca es texto.
-.payment-card {
-  max-width: 20rem;
-  padding: 1.25rem 1.5rem;
-  border: bootstrap.$border-width solid var(--bs-border-color);
-  border-radius: bootstrap.$border-radius-lg;
-  background-color: var(--bs-body-bg);
-  box-shadow: bootstrap.$box-shadow-sm;
-}
-
-// El número ocupa el centro de la tarjeta, como en la de verdad. Cifras tabulares —la utilidad del
-// tema— y algo de tracking, que es lo que separa las bolitas de los cuatro dígitos legibles.
-.payment-card__number {
-  font-size: 1.25rem;
-  letter-spacing: 0.12em;
-}

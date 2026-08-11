@@ -5,7 +5,7 @@ import { RequireAuth } from '../features/auth/RequireAuth';
 import { ACCOUNT_PATH } from '../features/auth/routes';
 import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
-import { CART_PATH, CATALOG_PATH, PROFILE_PATH } from '../shared/routes';
+import { CART_PATH, CATALOG_PATH, CHECKOUT_PATH, ORDERS_PATH, PROFILE_PATH } from '../shared/routes';
 import { AppLayout } from './AppLayout';
 import { AuthLayout } from './AuthLayout';
 
@@ -18,6 +18,9 @@ const StoresPage = lazy(() => import('../features/stores/StoresPage'));
 const AccountPage = lazy(() => import('../features/auth/AccountPage'));
 const ProfilePage = lazy(() => import('../features/profile/ProfilePage'));
 const CartPage = lazy(() => import('../features/cart/CartPage'));
+const CheckoutPage = lazy(() => import('../features/orders/CheckoutPage'));
+const OrdersPage = lazy(() => import('../features/orders/OrdersPage'));
+const OrderDetailPage = lazy(() => import('../features/orders/OrderDetailPage'));
 const SignInPage = lazy(() => import('../features/auth/SignInPage'));
 
 function App() {
@@ -55,6 +58,34 @@ function App() {
           element={
             <RequireAuth>
               <CartPage />
+            </RequireAuth>
+          }
+        />
+        {/* El checkout y los pedidos, con la misma condición y por la misma razón: el servidor
+            resuelve de quién es el carrito y de quién es el pedido desde `account_id`, así que
+            ninguna de estas rutas lleva identificador de cliente. El de `/orders/:id` identifica el
+            pedido y no autoriza a verlo. */}
+        <Route
+          path={CHECKOUT_PATH}
+          element={
+            <RequireAuth>
+              <CheckoutPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={ORDERS_PATH}
+          element={
+            <RequireAuth>
+              <OrdersPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={`${ORDERS_PATH}/:id`}
+          element={
+            <RequireAuth>
+              <OrderDetailPage />
             </RequireAuth>
           }
         />

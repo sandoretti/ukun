@@ -22,8 +22,6 @@
   "card": {
     "legend": "Tarjeta",
     "description": "Con qué se cobran tus pedidos.",
-    "summaryLabel": "Tarjeta {{brand}} terminada en {{last4}}, caduca en {{expiry}}",
-    "expires": "Caduca {{expiry}}",
     "noCvv": "Nunca pedimos el CVV, y del número solo guardamos los cuatro últimos dígitos y la marca.",
     "change": "Cambiar tarjeta",
     "done": "Hecho",
@@ -33,13 +31,7 @@
     "detected": "{{brand}} · guardaremos solo los cuatro últimos dígitos",
     "expiry": "Caducidad",
     "expMonth": "Mes de caducidad",
-    "expYear": "Año de caducidad",
-    "brands": {
-      "VISA": "Visa",
-      "MASTERCARD": "Mastercard",
-      "AMEX": "American Express",
-      "OTHER": "Otra"
-    }
+    "expYear": "Año de caducidad"
   },
   "preferences": {
     "legend": "Preferencias",

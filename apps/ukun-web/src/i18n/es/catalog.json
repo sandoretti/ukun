@@ -63,9 +63,6 @@
     "failed": "No hemos podido cargar más productos. Inténtalo de nuevo."
   },
   "pagination": {
-    "label": "Paginación del catálogo",
-    "status": "Página {{page}} de {{totalPages}}",
-    "previous": "Anterior",
-    "next": "Siguiente"
+    "label": "Paginación del catálogo"
   }
 }

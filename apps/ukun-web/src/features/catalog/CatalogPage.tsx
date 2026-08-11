@@ -5,11 +5,11 @@ import { Col, Container, Offcanvas, Row } from 'react-bootstrap';
 import { useOnlineAvailability } from '../../shared/api/availability';
 import { useProductTypes } from '../../shared/api/productTypes';
 import { ErrorState } from '../../shared/ui/ErrorState';
+import { Pagination } from '../../shared/ui/Pagination';
 import { QueryBoundary } from '../../shared/ui/QueryBoundary';
 import { ActiveFilters } from './components/ActiveFilters';
 import { CatalogFilters } from './components/CatalogFilters';
 import { CatalogLoadMore } from './components/CatalogLoadMore';
-import { CatalogPagination } from './components/CatalogPagination';
 import { CatalogToolbar } from './components/CatalogToolbar';
 import { ProductCard } from './components/ProductCard';
 import { PAGE_SIZE } from './api/productKeys';
@@ -113,7 +113,12 @@ export default function CatalogPage() {
                   failed={productsQuery.isFetchNextPageError}
                   onLoadMore={() => void productsQuery.fetchNextPage()}
                 />
-                <CatalogPagination page={page} totalPages={totalPages} onPageChange={goToPage} />
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  label={t('pagination.label')}
+                  onPageChange={goToPage}
+                />
               </>
             )}
           </QueryBoundary>

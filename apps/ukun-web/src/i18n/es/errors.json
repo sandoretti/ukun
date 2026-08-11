@@ -6,7 +6,7 @@
   "RESOURCE_NOT_FOUND": "No encontramos lo que buscas",
   "METHOD_NOT_ALLOWED": "Esa operación no está permitida sobre este recurso",
   "NOT_ACCEPTABLE": "El formato solicitado no está disponible",
-  "CHECKOUT_EXPIRED": "Tu compra ha tardado demasiado y hemos liberado la reserva. Vuelve a empezar",
+  "CHECKOUT_EXPIRED": "Tu compra ha tardado demasiado y este resumen ya no vale. Vuelve a empezar",
   "INSUFFICIENT_STOCK": "Solo quedan {{available}} unidades de {{sku}}",
   "PRODUCT_IN_USE": "No se puede eliminar: el producto está en {{inOrders}} pedidos, {{inStock}} tiendas y {{inCarts}} carritos",
   "PRODUCT_TYPE_IN_USE": "No se puede eliminar: quedan {{inProducts}} productos de este tipo",

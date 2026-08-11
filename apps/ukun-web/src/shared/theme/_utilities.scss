@@ -23,3 +23,11 @@
   text-transform: uppercase;
   color: var(--bs-secondary-color);
 }
+
+// Un ítem flex no baja de lo que mide su contenido, así que dentro de una fila el `text-overflow` de
+// un nombre largo no llega a dispararse nunca: la columna se desborda en vez de recortar. Lo piden
+// las dos filas que llevan miniatura y nombre — la del carrito y la del checkout—, y Bootstrap no
+// trae la utilidad.
+.min-w-0 {
+  min-width: 0;
+}

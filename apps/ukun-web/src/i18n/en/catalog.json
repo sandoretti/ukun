@@ -63,9 +63,6 @@
     "failed": "We could not load more products. Try again."
   },
   "pagination": {
-    "label": "Catalogue pagination",
-    "status": "Page {{page}} of {{totalPages}}",
-    "previous": "Previous",
-    "next": "Next"
+    "label": "Catalogue pagination"
   }
 }

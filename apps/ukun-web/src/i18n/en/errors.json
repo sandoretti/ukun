@@ -6,7 +6,7 @@
   "RESOURCE_NOT_FOUND": "We could not find what you are looking for",
   "METHOD_NOT_ALLOWED": "That operation is not allowed on this resource",
   "NOT_ACCEPTABLE": "The requested format is not available",
-  "CHECKOUT_EXPIRED": "Your checkout took too long and we released the reservation. Please start again",
+  "CHECKOUT_EXPIRED": "Your checkout took too long and this summary is no longer valid. Please start again",
   "INSUFFICIENT_STOCK": "Only {{available}} units of {{sku}} left",
   "PRODUCT_IN_USE": "It cannot be deleted: the product is in {{inOrders}} orders, {{inStock}} stores and {{inCarts}} carts",
   "PRODUCT_TYPE_IN_USE": "It cannot be deleted: {{inProducts}} products still have this type",

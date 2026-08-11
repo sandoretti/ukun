@@ -1,0 +1,34 @@
+{
+  "title": "Confirm order",
+  "lead": "Check what you are about to buy. The order is charged and shipped with the details currently in your profile.",
+  "lines": {
+    "title": "What you are buying",
+    "unitPrice": "{{price}} each",
+    "quantity": "{{count}} units",
+    "quantity_one": "{{count}} unit",
+    "reference": "Ref. {{sku}}",
+    "shortStock": "Only {{count}} units of this product are left.",
+    "shortStock_one": "Only {{count}} unit of this product is left."
+  },
+  "summary": {
+    "title": "Purchase total",
+    "total": "Total",
+    "priceNotice": "The prices on this screen are fixed until you confirm.",
+    "validUntil": "Valid until {{time}}.",
+    "stockNotice": "Some line asks for more units than the online store has right now. If they are still missing when you confirm, the order is not placed."
+  },
+  "shipping": {
+    "title": "Shipping to"
+  },
+  "payment": {
+    "title": "Paying with",
+    "expires": "Expires {{expiry}}"
+  },
+  "editProfile": "Change in my profile",
+  "confirm": "Place order",
+  "confirming": "Placing order…",
+  "retry": "Try again",
+  "reopen": "Start again",
+  "backToCart": "Back to the cart",
+  "empty": "There is nothing to buy."
+}

@@ -2,6 +2,7 @@ import { setupServer } from 'msw/node';
 
 import { cartHandlers } from './cartHandlers';
 import { catalogHandlers } from './catalogHandlers';
+import { orderHandlers } from './orderHandlers';
 import { profileHandlers } from './profileHandlers';
 import { sessionHandlers } from './sessionHandlers';
 import { storeHandlers } from './storeHandlers';
@@ -20,4 +21,5 @@ export const server = setupServer(
   ...sessionHandlers,
   ...profileHandlers,
   ...cartHandlers,
+  ...orderHandlers,
 );

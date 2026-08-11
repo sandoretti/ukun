@@ -1,0 +1,46 @@
+{
+  "title": "Mis pedidos",
+  "lead": "Todo lo que has comprado en Ukun, del más reciente al más antiguo.",
+  "link": "Mis pedidos",
+  "empty": "Todavía no has hecho ningún pedido.",
+  "filters": {
+    "title": "Filtrar por fecha",
+    "from": "Desde",
+    "to": "Hasta",
+    "clear": "Quitar filtros"
+  },
+  "pagination": "Paginación de mis pedidos",
+  "status": {
+    "CONFIRMED": "Confirmado"
+  },
+  "card": {
+    "number": "Pedido n.º {{id}}",
+    "placedAt": "Realizado el {{date}}",
+    "units": "{{count}} unidades",
+    "units_one": "{{count}} unidad",
+    "detail": "Ver el pedido n.º {{id}}"
+  },
+  "detail": {
+    "back": "Volver a mis pedidos",
+    "placedAt": "Realizado el {{date}}",
+    "confirmed": "Pedido confirmado",
+    "confirmedLead": "Ya lo tenemos. Este es tu pedido, y lo tienes siempre disponible en «Mis pedidos».",
+    "empty": "Ese pedido no está disponible."
+  },
+  "lines": {
+    "title": "Líneas del pedido",
+    "product": "Producto",
+    "unitPrice": "Precio unitario",
+    "quantity": "Unidades",
+    "total": "Importe"
+  },
+  "total": "Total",
+  "shipping": {
+    "title": "Dirección de envío"
+  },
+  "payment": {
+    "title": "Pago",
+    "expires": "Caduca {{expiry}}"
+  },
+  "snapshotNotice": "Estos son los datos de envío y pago que tenías al confirmar el pedido: cambiar tu perfil no los altera."
+}

@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next';
 
-import { formatCardExpiry, maskedCardNumber } from '../../../shared/payments/card';
-import type { CustomerProfile } from '../api/profileKeys';
+import type { components } from '../../types/api';
+import { formatCardExpiry, maskedCardNumber } from '../payments/card';
+
+type Card = components['schemas']['Card'];
 
 type PaymentMethodCardProps = {
-  card: CustomerProfile['card'];
+  card: Card;
 };
 
 /**
@@ -21,9 +23,13 @@ type PaymentMethodCardProps = {
  * **Everything visible is hidden from assistive technology, and one sentence replaces it.** A row of
  * bullets read out loud is noise: "bullet bullet bullet bullet…" says nothing, while "Visa card
  * ending in 4242, expires 12/27" says all of it in one breath.
+ *
+ * It lives in `shared/ui/` because three screens paint the same card — the profile edits it, checkout
+ * shows what the order is about to freeze, and an order shows the snapshot it froze (ADR-0011) — and
+ * features never import each other. Its strings are in `common` for the same reason.
  */
 export function PaymentMethodCard({ card }: PaymentMethodCardProps) {
-  const { t } = useTranslation('profile');
+  const { t } = useTranslation('common');
 
   const brand = t(`card.brands.${card.brand}`);
   const expiry = formatCardExpiry(card);

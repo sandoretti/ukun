@@ -6,10 +6,10 @@ import { Button, Col, Form, Row } from 'react-bootstrap';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
 import { cardDigits, detectCardBrand, isPlausibleCardNumber } from '../../../shared/payments/card';
 import { Fieldset } from '../../../shared/ui/Fieldset';
+import { PaymentMethodCard } from '../../../shared/ui/PaymentMethodCard';
 import { SelectField } from '../../../shared/ui/SelectField';
 import { TextField } from '../../../shared/ui/TextField';
 import { MONTH_MAX, MONTH_MIN, YEAR_MAX, cardToSave, type ProfileFormValues } from '../profileSchema';
-import { PaymentMethodCard } from './PaymentMethodCard';
 
 const MONTHS = Array.from({ length: MONTH_MAX }, (_, index) => index + MONTH_MIN);
 
@@ -39,7 +39,7 @@ const NUMBER_MAX_LENGTH = 23;
  * number field, because that is where a reader can do something about it.
  */
 export function CardFieldset() {
-  const { t } = useTranslation('profile');
+  const { t } = useTranslation(['profile', 'common']);
   const messageOf = useFieldMessages('profile');
   const {
     control,
@@ -144,7 +144,7 @@ export function CardFieldset() {
                 hint={
                   typedBrand === undefined
                     ? t('card.numberHint')
-                    : t('card.detected', { brand: t(`card.brands.${typedBrand}`) })
+                    : t('card.detected', { brand: t(`common:card.brands.${typedBrand}`) })
                 }
                 type="text"
                 inputMode="numeric"

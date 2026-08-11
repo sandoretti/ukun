@@ -1,0 +1,8 @@
+// --- Aviso de disponibilidad ----------------------------------------------------------------------
+
+// El mismo aviso lo dan la línea del carrito, su resumen y el checkout, así que su color y su forma
+// se escriben una vez. Advertencia y no error: `available` no reserva nada y quien valida el stock de
+// verdad es la confirmación del pedido (RF-04).
+.stock-warning {
+  color: var(--bs-warning-text-emphasis);
+}

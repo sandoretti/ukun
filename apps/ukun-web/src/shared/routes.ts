@@ -28,3 +28,17 @@ export const CART_PATH = '/cart';
 export const CATALOG_PATH = '/products';
 
 export const productPath = (id: number) => `${CATALOG_PATH}/${id}`;
+
+/**
+ * Checkout (RF-04) and the order history. They are `features/orders`' screens, and both are reached
+ * from outside it: the cart's summary is where a purchase moves forward, and the account screen is
+ * where a customer looks for what they have already bought.
+ *
+ * `orderPath` is up here too because the confirmation screen a fresh order lands on is the same
+ * `/orders/{id}` the history links to — it is one screen with two ways in, not two.
+ */
+export const CHECKOUT_PATH = '/checkout';
+
+export const ORDERS_PATH = '/orders';
+
+export const orderPath = (id: number) => `${ORDERS_PATH}/${id}`;

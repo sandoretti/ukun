@@ -1,5 +1,5 @@
 import { afterAll, afterEach, beforeAll } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 
 import i18n from '../i18n/config';
 import { server } from './msw/server';
@@ -31,6 +31,16 @@ Object.defineProperty(window, 'matchMedia', {
  * one. The listing scrolls back to the top on every page change; here that is a no-op.
  */
 Object.defineProperty(window, 'scrollTo', { writable: true, value: () => {} });
+
+/**
+ * How long a `findBy*` waits before giving up. The default second is not enough for the tests that
+ * mount the whole router: a screen behind `React.lazy` has to load its chunk before it can answer,
+ * and with the suite's files running in parallel that lands over the line often enough to fail a run
+ * that has nothing wrong with it.
+ *
+ * It does not weaken any assertion — what is wrong still fails, it just takes longer to say so.
+ */
+configure({ asyncUtilTimeout: 4000 });
 
 installIntersectionObserverStub();
 

@@ -1,0 +1,46 @@
+{
+  "title": "My orders",
+  "lead": "Everything you have bought at Ukun, most recent first.",
+  "link": "My orders",
+  "empty": "You have not placed any order yet.",
+  "filters": {
+    "title": "Filter by date",
+    "from": "From",
+    "to": "To",
+    "clear": "Clear filters"
+  },
+  "pagination": "My orders pagination",
+  "status": {
+    "CONFIRMED": "Confirmed"
+  },
+  "card": {
+    "number": "Order #{{id}}",
+    "placedAt": "Placed on {{date}}",
+    "units": "{{count}} units",
+    "units_one": "{{count}} unit",
+    "detail": "See order #{{id}}"
+  },
+  "detail": {
+    "back": "Back to my orders",
+    "placedAt": "Placed on {{date}}",
+    "confirmed": "Order confirmed",
+    "confirmedLead": "We have it. This is your order, and it is always available under “My orders”.",
+    "empty": "That order is not available."
+  },
+  "lines": {
+    "title": "Order lines",
+    "product": "Product",
+    "unitPrice": "Unit price",
+    "quantity": "Units",
+    "total": "Amount"
+  },
+  "total": "Total",
+  "shipping": {
+    "title": "Shipping address"
+  },
+  "payment": {
+    "title": "Payment",
+    "expires": "Expires {{expiry}}"
+  },
+  "snapshotNotice": "These are the shipping and payment details you had when you confirmed the order: changing your profile does not alter them."
+}

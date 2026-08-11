@@ -66,6 +66,18 @@ describe('CartPage', () => {
     expect(within(summary()).getAllByText(/1447,47/).length).toBe(2);
   });
 
+  it('sends the reader to the checkout, which is where a purchase moves forward', async () => {
+    server.use(signedIn(), ...cartState(twoLines));
+
+    renderCart();
+    await screen.findByText('Sofá Nordic 3 plazas');
+
+    // Un enlace y no un botón: lo que hay al otro lado es una pantalla, y abrir el intento de
+    // checkout (ADR-0016) es cosa suya, no del carrito.
+    const checkout = within(summary()).getByRole('link', { name: 'Tramitar pedido' });
+    expect(checkout.getAttribute('href')).toBe('/checkout');
+  });
+
   it('stops the stepper at one unit, where removing is the way out', async () => {
     server.use(signedIn(), ...cartState([lineOf(sofa, 1)]));
 
