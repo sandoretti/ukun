@@ -371,14 +371,19 @@ public class CheckoutService {
             CheckoutAttempt attempt, Map<Long, ProductSummary> products, Map<Long, Integer> available) {
 
         return attempt.getLines().stream()
-                .map(line -> new CheckoutAttemptLineResponse(
-                        line.getSku(),
-                        line.getProductName(),
-                        line.getUnitPrice(),
-                        line.getQuantity(),
-                        products.get(line.getProductId()).active()
-                                ? available.getOrDefault(line.getProductId(), 0)
-                                : 0))
+                .map(line -> {
+                    // The catalogue's view of the product, which the caller already read to compute
+                    // availability: the photo rides along with it, at no extra statement.
+                    ProductSummary product = products.get(line.getProductId());
+
+                    return new CheckoutAttemptLineResponse(
+                            line.getSku(),
+                            line.getProductName(),
+                            product.imageUrl(),
+                            line.getUnitPrice(),
+                            line.getQuantity(),
+                            product.active() ? available.getOrDefault(line.getProductId(), 0) : 0);
+                })
                 .toList();
     }
 
