@@ -12,6 +12,7 @@ import dev.sandoretti.ukun.api.stores.StoreMother;
 import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,10 +69,39 @@ abstract class OrdersIntegrationTest extends AbstractIntegrationTest {
     /** Discontinued and stocked online: discontinuing empties no warehouse (ADR-0013). */
     protected static final String DISCONTINUED = "SILLA-RETIRADA";
 
+    /**
+     * Buyers contending for the same unit in {@code CheckoutConcurrencyIT}, and therefore the number of
+     * connections this context has to be able to hand out at once.
+     *
+     * <p>Eight rather than two because the issue asks for the exhaustive version, and eight rather than
+     * twenty because the number is not a knob to turn until something breaks: what is under test is an
+     * invariant, and a count tuned until it fails is how a flaky suite is born.
+     */
+    protected static final int BUYERS = 8;
+
+    /**
+     * This context is the one exception to {@code AbstractIntegrationTest.TEST_POOL_SIZE}, and the
+     * reason is {@code CheckoutConcurrencyIT}.
+     *
+     * <p>Four connections are plenty for a suite whose tests run one request at a time — which every
+     * other fixture does. Here {@link #BUYERS} checkouts are in flight together and all but one of them
+     * are <em>blocked inside</em> {@code SELECT … FOR UPDATE}, holding their connection while they wait
+     * for the winner to commit. With the shared limit they would not be waiting on the row at all, they
+     * would be waiting on the pool, and the loser of the race would be answered
+     * {@code 500 INTERNAL_ERROR} after Hikari's acquisition timeout instead of
+     * {@code 409 INSUFFICIENT_STOCK} — the suite would be testing the pool size.
+     *
+     * <p>Twelve leaves room for the fixture's own transaction and the request that wins. It is one
+     * context out of the dozen the suite caches, so the total stays far below the container's
+     * {@code max_connections} of 100 — which is the ceiling the shared limit exists to respect.
+     */
+    private static final int ORDERS_POOL_SIZE = BUYERS + 4;
+
     @DynamicPropertySource
     static void ordersEnvironment(DynamicPropertyRegistry registry) {
         useDatabase(registry, ORDERS_DATABASE);
         useJwks(registry);
+        registry.add("spring.datasource.hikari.maximum-pool-size", () -> ORDERS_POOL_SIZE);
     }
 
     @Autowired
@@ -134,6 +164,28 @@ abstract class OrdersIntegrationTest extends AbstractIntegrationTest {
                     store, address
                 RESTART IDENTITY CASCADE
                 """);
+    }
+
+    /**
+     * A crowd of {@code count} customers, seeded on demand and returned in a stable order.
+     *
+     * <p>Not part of {@link #seedTheShop()}: only the concurrency suite needs them, and the other four
+     * would pay for the inserts in every test of theirs. The identifiers are derived from the index
+     * rather than random so that a failure names the same account twice running.
+     *
+     * <p>It lives here because {@code entityManager} is this class's, and it seeds through a mother for
+     * the reason the skill {@code testing} gives: data a test depends on is built where the test can
+     * read it, not in a script nobody opens next to the assertion.
+     */
+    protected List<UUID> seedBuyers(int count) {
+        List<UUID> accountIds = IntStream.rangeClosed(1, count)
+                .mapToObj(index -> UUID.fromString("8f2c1e40-0000-4000-8000-%012d".formatted(index)))
+                .toList();
+
+        inATransaction(() -> IntStream.range(0, count)
+                .forEach(index -> entityManager.persist(CustomerMother.buyer(accountIds.get(index), index + 1))));
+
+        return accountIds;
     }
 
     protected CheckoutAttemptResponse openAttempt(UUID accountId) {
