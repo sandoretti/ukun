@@ -23,7 +23,7 @@ type CartLineRowProps = {
  * **The row is the same height whatever it holds**, which is a correctness matter and not a
  * cosmetic one: the quantity stepper sits inside it, and a row that grows when the availability
  * warning appears pushes the next one under the cursor mid-click. Two things guarantee it without
- * pinning a height per breakpoint — the name clamps to two lines and reserves them
+ * pinning a height per breakpoint — the name takes exactly one line and clips with an ellipsis
  * (`docs/07-frontend-ux-ui.md` §a11y: every container decides what it does when the text does not
  * fit), and the warning lives in a slot that is reserved whether or not there is anything to say.
  *
@@ -71,11 +71,14 @@ export function CartLineRow({ line, busy, onQuantityChange, onRemove }: CartLine
         </div>
       </Col>
 
-      <Col xs={6} md={2} className="text-body-secondary text-tabular-nums small">
+      {/* Las tres columnas de la derecha van centradas en su ancho: con anchos fijos y contenidos de
+          longitud dispar —«149,05 € / unidad» frente a «2.984,25 €»—, alinear cada una por su lado
+          deja la fila descuadrada aunque las columnas sí estén alineadas entre filas. */}
+      <Col xs={6} md={2} className="text-body-secondary text-tabular-nums small text-center">
         {t('line.unitPrice', { price: formatMoney(line.unitPrice, locale) })}
       </Col>
 
-      <Col xs={6} md={2}>
+      <Col xs={6} md={2} className="text-center">
         <QuantityStepper
           quantity={line.quantity}
           productName={line.productName}
@@ -84,11 +87,11 @@ export function CartLineRow({ line, busy, onQuantityChange, onRemove }: CartLine
         />
       </Col>
 
-      <Col xs={6} md={2} className="fw-semibold text-tabular-nums text-md-end cart-line__total">
+      <Col xs={6} md={2} className="fw-semibold text-tabular-nums text-center cart-line__total">
         {formatMoney(line.lineTotal, locale)}
       </Col>
 
-      <Col xs={6} md={1} className="text-end">
+      <Col xs={6} md={1} className="text-center">
         <Button
           variant="link"
           className="link-secondary p-1"
