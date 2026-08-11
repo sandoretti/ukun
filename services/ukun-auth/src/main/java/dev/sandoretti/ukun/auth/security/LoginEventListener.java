@@ -12,7 +12,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.event.AbstractAuthenticationFailureEvent;
-import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
+import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -44,8 +44,24 @@ class LoginEventListener {
         this.accounts = accounts;
     }
 
+    /**
+     * The event is the <em>interactive</em> one, and that is the difference between one line per
+     * login and two.
+     *
+     * <p>{@code AuthenticationSuccessEvent} is published by {@code ProviderManager} every time it
+     * authenticates anything, and in this service a single login authenticates twice: once at
+     * {@code POST /login}, and again when the Authorization Server authenticates the
+     * {@code GET /oauth2/authorize} that follows it. Both carry the same principal, so both used to
+     * emit an identical {@code auth.login.succeeded} — with a different {@code traceId} each,
+     * because they are two requests, which is what made the pair look like two logins in the audit
+     * trail rather than one logged twice.
+     *
+     * <p>{@code InteractiveAuthenticationSuccessEvent} is published only by
+     * {@code AbstractAuthenticationProcessingFilter}, i.e. only where a person actually submitted
+     * credentials. It is the event this registry entry has always meant.
+     */
     @EventListener
-    void onSuccess(AuthenticationSuccessEvent event) {
+    void onSuccess(InteractiveAuthenticationSuccessEvent event) {
         String email = event.getAuthentication().getName();
 
         accounts.findCredentialsByEmail(email)
