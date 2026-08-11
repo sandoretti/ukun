@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Form } from 'react-bootstrap';
 
-import { useFieldAria } from './useFieldAria';
+import { useFieldAria } from '../hooks/useFieldAria';
 
 type SelectFieldProps = Omit<ComponentProps<typeof Form.Select>, 'id' | 'isInvalid'> & {
   label: string;

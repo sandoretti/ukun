@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import { Form } from 'react-bootstrap';
 
-import { useFieldAria } from './useFieldAria';
+import { useFieldAria } from '../hooks/useFieldAria';
 
 type TextFieldProps = Omit<ComponentProps<typeof Form.Control>, 'id' | 'isInvalid'> & {
   /** Visible label, always. A placeholder is not a label and never replaces one. */
