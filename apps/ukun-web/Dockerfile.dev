@@ -1,6 +1,23 @@
 FROM node:24-alpine
 WORKDIR /app
 
+# Las dependencias se instalan DENTRO de la imagen, y en su propia capa antes de copiar el código.
+#
+# Antes no se instalaban en ninguna parte: el `COPY . /app/` de abajo se traía el node_modules del
+# host y el contenedor tiraba de él. Eso solo funciona mientras host e imagen compartan libc, y no la
+# comparten — el host es glibc y esta imagen es Alpine (musl), así que los binarios nativos de
+# rolldown no valían y Vite moría al arrancar con `Cannot find native binding`. Desde v0.5 el gateway
+# enruta `/` hacia este dev server, de modo que el síntoma no era un frontend caído sino un 500 en la
+# raíz de la aplicación (docs/06-entorno-local-tilt.md).
+#
+# El `.dockerignore` de al lado es la otra mitad del arreglo y no es opcional: sin él, el `COPY` de
+# abajo vuelve a pisar este node_modules con el del host.
+#
+# Va en su propia capa para que reinstalar solo ocurra cuando cambien los manifiestos, no en cada
+# cambio de `src/`.
+COPY package.json package-lock.json ./
+RUN npm ci
+
 # Permitir que el contenedor arranque aunque package.json todavía no exista
 COPY . /app/
 EXPOSE 5173
