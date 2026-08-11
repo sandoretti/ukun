@@ -34,4 +34,29 @@ public interface InventoryApi {
      * decision about that, not a detail.
      */
     Map<Long, Integer> onlineQuantitiesByProductIds(Set<Long> productIds);
+
+    /**
+     * Takes the units of an order out of the online store, all of them or none.
+     *
+     * <p><strong>This is where defect #2 is fixed.</strong> The legacy reads the stock, subtracts in
+     * Java and writes it back with nothing holding the row in between, so two customers buying the
+     * last unit at the same time both get it. Here the rows are locked with {@code SELECT … FOR
+     * UPDATE} <strong>ordered by {@code store_stock.id}</strong> before anything is read: the lock is
+     * what makes the check-then-write atomic, and the ordering is what stops two orders sharing
+     * products in different sequences from deadlocking each other (ADR-0008, with the ordering
+     * criterion updated to the surrogate key by ADR-0015).
+     *
+     * <p><strong>The online store is not a parameter here either</strong>, for the reason the method
+     * above gives at length: RF-04 makes it a business rule that the shop sells from the online store
+     * and from nowhere else, and this module is the one place that gets to resolve it.
+     *
+     * <p>The quantities arrive keyed by product and are read <strong>in the map's iteration
+     * order</strong>, which is why the caller passes an ordered map: it decides which line a
+     * {@link StockDecrement.Rejected} names when more than one is short.
+     *
+     * <p>It does not throw when there is not enough — see {@link StockDecrement}. What it does not do
+     * either is reserve, hold or expire anything: ADR-0016 rules a TTL reservation out by name, so
+     * the units are taken at confirmation time and never a moment earlier.
+     */
+    StockDecrement decrementOnlineStock(Map<Long, Integer> quantitiesByProductId);
 }

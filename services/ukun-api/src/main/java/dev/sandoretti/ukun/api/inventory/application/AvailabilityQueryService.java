@@ -1,15 +1,11 @@
 package dev.sandoretti.ukun.api.inventory.application;
 
-import dev.sandoretti.ukun.api.inventory.InventoryApi;
 import dev.sandoretti.ukun.api.inventory.infra.StoreStockRepository;
-import dev.sandoretti.ukun.api.inventory.infra.StoreStockRepository.ProductQuantity;
 import dev.sandoretti.ukun.api.shared.error.ResourceNotFoundException;
 import dev.sandoretti.ukun.api.stores.StoresApi;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,10 +27,15 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>{@code @Transactional(readOnly = true)} at class level and no work in the constructor, like every
  * other query service here (rule 6 of the skill {@code spring-api}, defect #6).
+ *
+ * <p><strong>It no longer implements {@code InventoryApi}.</strong> Checkout gave this module a
+ * writer — the pessimistic decrement of ADR-0008 — and a class whose name ends in {@code QueryService}
+ * and whose transaction is {@code readOnly} is not where that belongs. {@link InventoryService} holds
+ * the two methods other modules call; this one serves the endpoint of RF-01 and nothing else.
  */
 @Service
 @Transactional(readOnly = true)
-public class AvailabilityQueryService implements InventoryApi {
+public class AvailabilityQueryService {
 
     private final StoreStockRepository stock;
     private final StoresApi stores;
@@ -77,27 +78,5 @@ public class AvailabilityQueryService implements InventoryApi {
                 .toList();
 
         return new AvailabilityResponse(storeId, items);
-    }
-
-    /**
-     * {@link InventoryApi#onlineQuantitiesByProductIds(Set)}: the same batch read, with the figure, for
-     * the modules that are allowed to show it.
-     *
-     * <p>Two statements and never more — one to resolve the online store, one for the whole batch —
-     * whatever the number of products asked about. The store is resolved here rather than taken as a
-     * parameter because the caller may not know what an online store is; RF-04 makes it the only store
-     * the shop sells from, and this is the module that gets to say so.
-     *
-     * <p>An empty request short-circuits before either statement. The empty cart is the commonest case
-     * this method sees, and it has nothing to look up.
-     */
-    @Override
-    public Map<Long, Integer> onlineQuantitiesByProductIds(Set<Long> productIds) {
-        if (productIds.isEmpty()) {
-            return Map.of();
-        }
-
-        return stock.quantitiesOf(stores.onlineStoreId(), productIds).stream()
-                .collect(Collectors.toMap(ProductQuantity::getProductId, ProductQuantity::getQuantity));
     }
 }

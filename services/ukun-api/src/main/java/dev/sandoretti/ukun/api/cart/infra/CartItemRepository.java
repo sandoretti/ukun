@@ -44,8 +44,16 @@ public interface CartItemRepository extends JpaRepository<CartItem, CartItemId> 
      * {@code clearAutomatically} keeps the context from serving a stale line afterwards, which matters
      * here because the transaction of {@code POST /api/orders} will go on to do more work after
      * emptying the cart.
+     *
+     * <p><strong>{@code flushAutomatically} is not decoration, and it was missing.</strong> Clearing a
+     * persistence context throws away everything it had not written yet, and checkout calls this method
+     * from a transaction holding exactly that: the order's lines, queued behind an identifier the
+     * database has already generated, and the decremented stock rows. Without the flush they were
+     * silently discarded — an order with no lines and a warehouse that never moved, committed without a
+     * single error. Found by {@code PlaceOrderIT}; the pair belongs together on any bulk statement that
+     * runs inside somebody else's unit of work.
      */
-    @Modifying(clearAutomatically = true)
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from CartItem item where item.id.customerId = :customerId")
     void deleteByCustomerId(@Param("customerId") Long customerId);
 }

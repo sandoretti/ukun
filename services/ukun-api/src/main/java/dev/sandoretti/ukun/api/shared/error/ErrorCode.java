@@ -49,6 +49,55 @@ public enum ErrorCode {
     /** Extension: {@code allowed} — the media types this service can produce. */
     NOT_ACCEPTABLE(HttpStatus.NOT_ACCEPTABLE),
 
+    /**
+     * The checkout attempt does not exist or its {@code expiresAt} has passed (ADR-0016). Extensions:
+     * {@code attemptId} and {@code expiredAt}, the second one absent when there was never an attempt
+     * to expire.
+     *
+     * <p>{@code 410} rather than {@code 404} because the frontend has to tell it from every other
+     * missing resource: this one it recovers from on its own, by reopening the checkout with
+     * {@code POST /api/checkout/attempts}.
+     */
+    CHECKOUT_EXPIRED(HttpStatus.GONE),
+
+    /**
+     * Some line of the order has no stock left in the online store (RF-04, ADR-0008). Extensions:
+     * {@code stockLineId}, {@code productId}, {@code sku}, {@code available} and {@code requested} —
+     * the first one null when the product has no stock row at all, which is a different fact from a
+     * row sitting at zero and the only place in this service that says so.
+     *
+     * <p>It names <strong>one</strong> line, not all of them: the order is rejected whole (there are
+     * no partial orders), and the customer needs to know which product to fix.
+     */
+    INSUFFICIENT_STOCK(HttpStatus.CONFLICT),
+
+    /**
+     * Another request is already confirming this attempt (ADR-0016). Extension: {@code key}.
+     *
+     * <p>It is the honest answer to a double submit that arrived twice in the same instant: the first
+     * request is still inside its transaction, so there is no stored response to replay yet and
+     * inventing one would be guessing at an outcome that has not happened.
+     */
+    IDEMPOTENCY_IN_PROGRESS(HttpStatus.CONFLICT),
+
+    /**
+     * The key was already used against a different cart (ADR-0016). Extension: {@code key}.
+     *
+     * <p>Normal use of the SPA cannot produce it — the attempt is issued by the server and sent
+     * straight back — so it means somebody is reusing an {@code attemptId} for a different order, and
+     * an explicit rejection beats serving whichever of the two answers came first.
+     */
+    IDEMPOTENCY_MISMATCH(HttpStatus.UNPROCESSABLE_CONTENT),
+
+    /**
+     * There is nothing in the cart to buy (RF-04). No extensions.
+     *
+     * <p>The legacy creates an order with no lines and a total of zero here. That is the bug this
+     * code exists to refuse, and {@code ck_customer_order_total} makes it impossible to reintroduce
+     * even if this check were removed.
+     */
+    EMPTY_CART(HttpStatus.UNPROCESSABLE_CONTENT),
+
     REFERENTIAL_INTEGRITY(HttpStatus.CONFLICT),
 
     /** Generic fallback. No detail ever reaches the client. */

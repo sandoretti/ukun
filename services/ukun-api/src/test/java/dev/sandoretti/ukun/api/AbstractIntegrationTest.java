@@ -104,6 +104,14 @@ public abstract class AbstractIntegrationTest {
     protected static final String CART_DATABASE = "ukun_app_cart";
 
     /**
+     * Schema only, for checkout and orders. It touches everything the cart does and then writes on top
+     * of it — {@code customer_order}, {@code order_line}, {@code checkout_attempt} and
+     * {@code idempotency_key} — and it is the one suite that <em>decrements</em> stock, so sharing a
+     * database with the cart's would leave each of them buying rows the other counted.
+     */
+    protected static final String ORDERS_DATABASE = "ukun_app_orders";
+
+    /**
      * Connections per application context, against Hikari's default of ten.
      *
      * <p>The contexts of this suite are <strong>cached, not closed</strong>: every one of them keeps its

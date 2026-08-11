@@ -43,12 +43,19 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
         useDatabase(registry, SCHEMA_ONLY_DATABASE);
     }
 
-    /** docs/10-modelo-de-datos.md §8. Thirteen, and the baseline creates all of them at once. */
+    /**
+     * docs/10-modelo-de-datos.md §8. Thirteen, and the baseline creates all of them at once — plus the
+     * two of {@code releases/v0.6}, which are the schema checkout discovered it needed: ADR-0016
+     * requires the attempt to freeze its lines and to carry an expiry, and the baseline has nowhere to
+     * put either ({@code checkout_attempt/003-checkout-attempt.yaml} explains it in full).
+     */
     private static final List<String> EXPECTED_TABLES = List.of(
             "address",
             "audit_log",
             "card",
             "cart_item",
+            "checkout_attempt",
+            "checkout_attempt_line",
             "customer",
             "customer_order",
             "employee",
@@ -83,7 +90,10 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
             "ix_employee_store",
             "ix_product_type",
             "ix_audit_log_resource",
-            "ix_audit_log_actor");
+            "ix_audit_log_actor",
+            // v0.6: the second column of checkout_attempt_line's composite key, the same uncovered FK
+            // §4 already names for cart_item.product_id and order_line.product_id.
+            "ix_checkout_attempt_line_product");
 
     /**
      * docs/10-modelo-de-datos.md §6, transcribed. CASCADE only where the child is not history —
@@ -105,7 +115,13 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
             Map.entry("fk_order_line_order", "CASCADE"),
             Map.entry("fk_order_line_product", "RESTRICT"),
             Map.entry("fk_idempotency_key_customer", "RESTRICT"),
-            Map.entry("fk_idempotency_key_order", "RESTRICT"));
+            Map.entry("fk_idempotency_key_order", "RESTRICT"),
+            // v0.6. CASCADE on both halves of the attempt: it is a thirty-minute draft, not history,
+            // so there is nothing to preserve when its customer is gone — the same call cart_item
+            // makes — and a line has no existence at all outside its attempt.
+            Map.entry("fk_checkout_attempt_customer", "CASCADE"),
+            Map.entry("fk_checkout_attempt_line_attempt", "CASCADE"),
+            Map.entry("fk_checkout_attempt_line_product", "RESTRICT"));
 
     /**
      * How many {@code ck_*} constraints each table carries, per docs/10 §1 (every mandatory text is
@@ -124,19 +140,22 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
             Map.entry("cart_item", 1L),
             Map.entry("customer_order", 10L),
             Map.entry("order_line", 5L),
-            Map.entry("idempotency_key", 1L));
+            Map.entry("idempotency_key", 1L),
+            Map.entry("checkout_attempt", 2L),
+            Map.entry("checkout_attempt_line", 4L));
 
     private static final String CHANGE_LOG = "classpath:db/changelog/db.changelog-master.yaml";
 
     /**
-     * The nineteen changesets of {@code baseline/001-esquema-inicial.yaml} plus the one of
-     * {@code releases/v0.3/002-unaccent.yaml}, which carries no context and therefore applies here
-     * too. Schema is schema, whichever context is active — only data is filtered.
+     * The nineteen changesets of {@code baseline/001-esquema-inicial.yaml}, the one of
+     * {@code releases/v0.3/002-unaccent.yaml} and the five of
+     * {@code releases/v0.6/003-checkout-attempt.yaml}. None of them carries a context, so all of them
+     * apply here: schema is schema, whichever context is active — only data is filtered.
      */
-    private static final int EXPECTED_CHANGESETS = 20;
+    private static final int EXPECTED_CHANGESETS = 25;
 
     @Test
-    @DisplayName("the baseline creates the thirteen tables of docs/10 §8 and nothing else")
+    @DisplayName("the changelog creates the tables of docs/10 §8 plus the checkout attempt, and nothing else")
     void createsEveryTableOfTheDataModel() {
         List<String> tables = jdbc.queryForList(
                 """
