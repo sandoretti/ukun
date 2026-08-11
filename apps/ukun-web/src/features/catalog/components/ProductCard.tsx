@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { formatMoney } from '../../../shared/format/money';
 import { useLocale } from '../../../shared/hooks/useLocale';
 import type { ProductSummary } from '../api/productKeys';
-import { productPath } from '../routes';
+import { productPath } from '../../../shared/routes';
 
 type ProductCardProps = {
   product: ProductSummary;

@@ -39,17 +39,23 @@ type ComingSoonButtonProps = ComingSoonProps & {
    * are for the green of the bar; `outline-primary` is for the white of a card.
    */
   variant: 'light' | 'outline-light' | 'outline-primary';
+  /**
+   * Small by default, which is the size of everything in the navigation bar. `lg` is for the one
+   * place this is not a secondary action of the shell but the main button of a panel — the cart's
+   * "place order", waiting for checkout.
+   */
+  size?: 'sm' | 'lg';
 };
 
 /** An action of the shell — signing in, signing up — with no flow behind it yet. */
-export function ComingSoonButton({ label, variant }: ComingSoonButtonProps) {
+export function ComingSoonButton({ label, variant, size = 'sm' }: ComingSoonButtonProps) {
   const { t } = useTranslation('common');
 
   return (
     <Button
       type="button"
       variant={variant}
-      size="sm"
+      size={size}
       disabled
       aria-label={t('nav.comingSoon', { label })}
     >

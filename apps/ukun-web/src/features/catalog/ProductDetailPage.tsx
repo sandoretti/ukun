@@ -10,7 +10,7 @@ import { LoadingState } from '../../shared/ui/LoadingState';
 import { useProduct } from './api/queries';
 import { ProductSheet } from './components/ProductSheet';
 import { RelatedProducts } from './components/RelatedProducts';
-import { CATALOG_PATH } from './routes';
+import { CATALOG_PATH } from '../../shared/routes';
 
 /**
  * An identifier that is not a positive integer never existed as a product, so it is answered like a

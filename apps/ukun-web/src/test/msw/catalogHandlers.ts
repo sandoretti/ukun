@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
 import type { components } from '../../types/api';
+import { problem } from './problem';
 
 /**
  * Test-only stand-in for the catalog endpoints of `ukun-api`, typed from the same generated OpenAPI
@@ -14,7 +15,6 @@ type ProductType = components['schemas']['ProductType'];
 type ProductPage = components['schemas']['ProductPage'];
 type ProductSuggestion = components['schemas']['ProductSuggestion'];
 type AvailabilityResponse = components['schemas']['AvailabilityResponse'];
-type ProblemDetail = components['schemas']['ProblemDetail'];
 
 const base = import.meta.env.VITE_API_URL || '';
 
@@ -135,19 +135,6 @@ const stock: Record<number, Record<number, number>> = {
 /** The mock's stand-in for the database's `unaccent(lower(...))` (defect #22). */
 const normalise = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
-const problem = (status: number, code: ProblemDetail['code'], extra: Partial<ProblemDetail> = {}) =>
-  HttpResponse.json<ProblemDetail>(
-    {
-      type: `https://ukun.dev/errors/${code.toLowerCase().replaceAll('_', '-')}`,
-      title: code,
-      status,
-      code,
-      traceId: '00000000000000000000000000000000',
-      ...extra,
-    },
-    { status, headers: { 'Content-Type': 'application/problem+json' } },
-  );
-
 export const catalogHandlers = [
   http.get(`${base}/api/products`, ({ request }) => {
     const params = new URL(request.url).searchParams;
@@ -162,7 +149,7 @@ export const catalogHandlers = [
     // The same ceiling `PaginationParams` enforces: without it a listing is an unbounded `findAll()`
     // again, and a frontend asking for a page of ten thousand would only find out in production.
     if (size > 100) {
-      return problem(400, 'VALIDATION_FAILED', {
+      return problem('VALIDATION_FAILED', 400, {
         errors: [{ field: 'size', message: 'must be less than or equal to 100' }],
       });
     }
@@ -199,7 +186,7 @@ export const catalogHandlers = [
     const limit = Number(params.get('limit') ?? 8);
 
     if (term.trim() === '') {
-      return problem(400, 'VALIDATION_FAILED', {
+      return problem('VALIDATION_FAILED', 400, {
         errors: [{ field: 'q', message: 'must not be blank' }],
       });
     }
@@ -224,7 +211,7 @@ export const catalogHandlers = [
     const found = products.find((item) => item.id === Number(params.id));
 
     if (!found) {
-      return problem(404, 'RESOURCE_NOT_FOUND', { resource: 'product', id: String(params.id) });
+      return problem('RESOURCE_NOT_FOUND', 404, { resource: 'product', id: String(params.id) });
     }
 
     const body: ProductDetail = { ...found, description: descriptions[found.id] ?? null };
@@ -242,10 +229,10 @@ export const catalogHandlers = [
       .map(Number);
 
     if (!stock[storeId]) {
-      return problem(404, 'RESOURCE_NOT_FOUND', { resource: 'store', id: String(storeId) });
+      return problem('RESOURCE_NOT_FOUND', 404, { resource: 'store', id: String(storeId) });
     }
     if (requested.length === 0) {
-      return problem(400, 'VALIDATION_FAILED', {
+      return problem('VALIDATION_FAILED', 400, {
         errors: [{ field: 'products', message: 'must not be empty' }],
       });
     }

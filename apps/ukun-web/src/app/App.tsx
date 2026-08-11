@@ -3,9 +3,9 @@ import { Route, Routes } from 'react-router-dom';
 
 import { RequireAuth } from '../features/auth/RequireAuth';
 import { ACCOUNT_PATH } from '../features/auth/routes';
-import { CATALOG_PATH, PRODUCT_ROUTE } from '../features/catalog/routes';
+import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
-import { PROFILE_PATH } from '../shared/routes';
+import { CART_PATH, CATALOG_PATH, PROFILE_PATH } from '../shared/routes';
 import { AppLayout } from './AppLayout';
 import { AuthLayout } from './AuthLayout';
 
@@ -17,6 +17,7 @@ const ProductDetailPage = lazy(() => import('../features/catalog/ProductDetailPa
 const StoresPage = lazy(() => import('../features/stores/StoresPage'));
 const AccountPage = lazy(() => import('../features/auth/AccountPage'));
 const ProfilePage = lazy(() => import('../features/profile/ProfilePage'));
+const CartPage = lazy(() => import('../features/cart/CartPage'));
 const SignInPage = lazy(() => import('../features/auth/SignInPage'));
 
 function App() {
@@ -44,6 +45,16 @@ function App() {
           element={
             <RequireAuth>
               <ProfilePage />
+            </RequireAuth>
+          }
+        />
+        {/* El carrito exige sesión en las cuatro operaciones de su contrato, y lo resuelve el
+            servidor desde `account_id`: la ruta no lleva ningún identificador de cliente. */}
+        <Route
+          path={CART_PATH}
+          element={
+            <RequireAuth>
+              <CartPage />
             </RequireAuth>
           }
         />

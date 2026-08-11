@@ -1,0 +1,94 @@
+@use "../bootstrap";
+
+// La pantalla de carrito: la lista a la izquierda y el resumen a la derecha.
+//
+// La **línea** no es una tarjeta —chrome mínimo, como el perfil: solo una divisoria entre líneas y
+// aire—, pero el **resumen** sí es un panel, y a propósito: es el bloque que no se edita, el que
+// cierra la pantalla, y separarlo visualmente es lo que evita leerlo como una fila más de la lista.
+//
+// Ningún color se escribe aquí; todos salen de las variables que Bootstrap deriva de `_tokens.scss`.
+
+// --- Líneas ---------------------------------------------------------------------------------
+
+// La divisoria va entre líneas y no debajo de cada una: la última cierra ya contra el resumen o
+// contra el final de la lista.
+.cart-lines li + li .cart-line {
+  border-top: bootstrap.$border-width solid var(--bs-border-color);
+}
+
+// **La altura constante es de la fila, y el contenido se centra dentro de ella.** Antes la
+// garantizaba un hueco reservado bajo el aviso, y eso dejaba lo que se ve apoyado en el borde
+// superior con un vacío debajo. Con una altura mínima que da de sobra para el caso peor —nombre,
+// referencia y aviso— la fila no crece al pulsar «+» (que es lo que movía la lista bajo el cursor)
+// y, cuando no hay aviso, lo que hay queda centrado en vez de arriba.
+.cart-line {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 6.5rem;
+  padding: 1rem 0;
+}
+
+// El nombre ocupa **una** línea y recorta con puntos suspensivos. Reservar dos —como se hizo
+// primero— iguala la altura pero abre un hueco entre el nombre y su referencia en cuanto el nombre
+// cabe en una, y ese hueco se lee como un error de maquetación. Con una línea, la altura es
+// constante sin reservar nada y los dos datos del producto quedan juntos, que es como se leen.
+// El nombre completo está a un clic: esto es un enlace a la ficha.
+.cart-line__name {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// El aviso ya no reserva hueco: la altura mínima de la fila lo contempla, así que aparecer y
+// desaparecer no cambia lo que mide la línea. El margen, solo cuando hay algo que separar.
+.cart-line__notice:not(:empty) {
+  margin-top: 0.25rem;
+}
+
+// La cifra del contador ocupa siempre lo mismo, tenga una o tres cifras: sin ancho fijo, los dos
+// botones del stepper bailan cada vez que se cruza la decena.
+.cart-quantity {
+  display: inline-block;
+  min-width: 2ch;
+}
+
+// --- Resumen --------------------------------------------------------------------------------
+
+.cart-summary {
+  border: bootstrap.$border-width solid var(--bs-border-color);
+  border-radius: bootstrap.$border-radius-lg;
+  padding: 1.5rem;
+  background-color: var(--bs-body-bg);
+}
+
+// El importe no se aleja del ojo en una lista larga. Igual que `.filter-sidebar`, solo desde `lg`:
+// por debajo el resumen va apilado bajo la lista, donde `sticky` no significa nada. `top` deja el
+// mismo hueco que el sidebar del catálogo, por debajo de la barra pegajosa.
+@include bootstrap.media-breakpoint-up(lg) {
+  .cart-summary {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+.cart-summary__notice:not(:empty) {
+  margin-top: 1rem;
+}
+
+// --- Aviso de disponibilidad ------------------------------------------------------------------
+
+// El mismo aviso lo dan la línea y el resumen, así que su color y su forma se escriben una vez.
+// Advertencia y no error: `available` no reserva nada y quien valida el stock de verdad es la
+// confirmación del pedido (RF-04).
+.cart-warning {
+  color: var(--bs-warning-text-emphasis);
+}
