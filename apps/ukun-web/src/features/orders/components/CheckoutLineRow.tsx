@@ -3,6 +3,8 @@ import { Col, Row } from 'react-bootstrap';
 
 import { formatMoney } from '../../../shared/format/money';
 import { useLocale } from '../../../shared/hooks/useLocale';
+import { Icon } from '../../../shared/ui/Icon';
+import { ProductImage } from '../../../shared/ui/ProductImage';
 import { StockWarning } from '../../../shared/ui/StockWarning';
 import type { CheckoutAttemptLine } from '../api/orderKeys';
 
@@ -15,7 +17,12 @@ type CheckoutLineRowProps = {
  * not edit one. Changing a quantity here would change what the attempt froze, and the way back is
  * the cart, which is one link away in the summary.
  *
- * There is no link to the product either: the attempt carries the `sku`, not the `productId` the
+ * The photo is the same one the cart line shows, and it is here for continuity: the reader arrives
+ * from a list of pictures, and a confirmation screen of bare names reads like a different purchase.
+ * Unlike the price, it is not frozen — the attempt stores no photo, it reads it from the catalogue
+ * (`CheckoutAttemptLine.imageUrl`).
+ *
+ * There is no link to the product: the attempt carries the `sku`, not the `productId` the
  * catalogue's route is built from, and inventing an id the contract did not send is how a screen
  * starts guessing.
  *
@@ -31,9 +38,23 @@ export function CheckoutLineRow({ line }: CheckoutLineRowProps) {
   return (
     <div className="order-line">
       <Row className="align-items-center g-2">
-        <Col xs={12} md={6}>
-          <p className="order-line__name mb-0">{line.productName}</p>
-          <p className="small text-body-secondary mb-0">{t('lines.reference', { sku: line.sku })}</p>
+        <Col xs={12} md={6} className="d-flex align-items-center gap-3">
+          {/* La misma miniatura que la línea del carrito, de la que se viene: decorativa —el nombre
+              está al lado, y repetirlo haría que un lector de pantalla leyese la línea dos veces— y
+              con un icono por reserva, porque «Sin foto» no cabe a este tamaño. */}
+          <ProductImage
+            imageUrl={line.imageUrl}
+            alt=""
+            className="order-line__photo"
+            fallback={<Icon name="image" size="sm" />}
+          />
+
+          {/* `min-width: 0` en el tema: sin él, un ítem flex no baja de lo que mide su contenido y
+              el recorte del nombre no se dispara nunca. */}
+          <div className="order-line__identity">
+            <p className="order-line__name mb-0">{line.productName}</p>
+            <p className="small text-body-secondary mb-0">{t('lines.reference', { sku: line.sku })}</p>
+          </div>
         </Col>
 
         <Col xs={6} md={3} className="text-body-secondary text-tabular-nums small text-md-center">

@@ -56,6 +56,21 @@ describe('CheckoutPage', () => {
     expect(screen.getByText('Tarjeta Visa terminada en 4242, caduca en 12/27')).toBeDefined();
   });
 
+  it('shows the same photos the cart showed, and an empty frame where there is none', async () => {
+    server.use(signedIn(), ...checkoutFlow([sofaLine, lampLine]).handlers);
+
+    renderCheckout();
+    await screen.findByText('Sofá Nordic 3 plazas');
+
+    // Decorative, so it has no accessible name: the name beside it is what identifies the line, and
+    // the image is queried as the presentation-role element it is.
+    const photo = screen.getByRole('presentation') as HTMLImageElement;
+    expect(photo.getAttribute('src')).toBe('/media/products/sofa-nordic.jpg');
+    // The line with no photo (RF-10) shows the frame's fallback instead of a broken image.
+    expect(screen.getAllByRole('presentation').length).toBe(1);
+    expect(screen.queryByRole('img')).toBeNull();
+  });
+
   it('warns about a line short of stock without blocking the purchase', async () => {
     server.use(signedIn(), ...checkoutFlow([lampLine]).handlers);
 

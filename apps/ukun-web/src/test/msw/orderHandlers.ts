@@ -37,19 +37,24 @@ function toMoney(cents: number): Money {
 
 export const ATTEMPT_ID = '4f1b0d5e-9c2a-4f3b-8f1a-1c2d3e4f5a6b';
 
-/** Comfortably in stock. */
+/** Comfortably in stock, and with a photo. */
 export const sofaLine: CheckoutAttemptLine = {
   sku: 'SOFA-NORDIC-3P',
   productName: 'Sofá Nordic 3 plazas',
+  imageUrl: '/media/products/sofa-nordic.jpg',
   unitPrice: '399.99',
   quantity: 2,
   available: 7,
 };
 
-/** Asking for more units than the online store has: this is the one that triggers the warning. */
+/**
+ * Asking for more units than the online store has: this is the one that triggers the warning. It has
+ * no photo either — optional by contract (RF-10), so both cases live in the fixtures.
+ */
 export const lampLine: CheckoutAttemptLine = {
   sku: 'LAMP-OSLO',
   productName: 'Lámpara Oslo',
+  imageUrl: null,
   unitPrice: '49.50',
   quantity: 5,
   available: 3,

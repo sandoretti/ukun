@@ -18,6 +18,23 @@
   padding: 0.875rem 0;
 }
 
+// La miniatura es la del carrito, del que se viene: mismo tamaño y mismo marco, para que la lista de
+// confirmar se lea como la misma lista y no como otra cosa.
+.order-line__photo {
+  flex: 0 0 auto;
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: bootstrap.$border-radius;
+  background-color: var(--bs-tertiary-bg);
+}
+
+// Lo que cede sitio. Sin `min-width: 0` un ítem flex no baja de lo que mide su contenido, y el
+// `text-overflow` del nombre no llega a dispararse nunca.
+.order-line__identity {
+  min-width: 0;
+}
+
 // El nombre ocupa una línea y recorta con puntos suspensivos, igual que en el carrito: es lo que
 // mantiene la altura de la fila constante sin reservar un hueco que se lea como un error.
 .order-line__name {
