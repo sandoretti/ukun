@@ -2,8 +2,9 @@ import { z } from 'zod';
 
 import { SUPPORTED_LANGUAGES } from '../../i18n/languages';
 import type { FieldMessageKeys } from '../../shared/forms/applyServerErrors';
+import { cardDigits, detectCardBrand, isPlausibleCardNumber } from '../../shared/payments/cardNumber';
 import type { components } from '../../types/api';
-import type { CustomerProfile } from './api/profileKeys';
+import type { CustomerProfile, UpdateProfileRequest } from './api/profileKeys';
 
 type Locale = components['schemas']['Locale'];
 type CardBrand = components['schemas']['Card']['brand'];
@@ -44,6 +45,9 @@ export const FIELD_MESSAGE_KEYS = {
   name: 'validation.name',
   lastName: 'validation.lastName',
   locale: 'validation.locale',
+  // Client-side only: the API never sees this field, so it can never send an error for it. It is in
+  // the map because the map is also what the schema builds its messages from.
+  cardNumber: 'validation.cardNumber',
   'address.street': 'validation.street',
   'address.city': 'validation.city',
   'address.province': 'validation.province',
@@ -105,6 +109,17 @@ export const profileSchema = z.object({
   }),
   // `null` is a value here and not a missing field: it is how the favourite store is cleared.
   favoriteStoreId: z.number().int().nullable(),
+  /**
+   * The number of a **new** card, and the only field of this form that never reaches the API.
+   *
+   * It is empty unless somebody is replacing their card, and what survives it is `last4` and the
+   * brand — see `cardToSave`. Empty is valid: most saves of this form have nothing to do with the
+   * card.
+   */
+  cardNumber: z
+    .string()
+    .trim()
+    .refine((value) => value === '' || isPlausibleCardNumber(cardDigits(value)), key.cardNumber),
 });
 
 /**
@@ -128,5 +143,37 @@ export function toFormValues(profile: CustomerProfile): ProfileFormValues {
     address: { ...profile.address },
     card: { ...profile.card },
     favoriteStoreId: profile.favoriteStoreId,
+    // Always empty, and emptied again on every save: there is no card number to show back, because
+    // nobody kept one.
+    cardNumber: '',
   };
+}
+
+/**
+ * The card that will be saved: the one already on file, or what a newly typed number says about
+ * itself.
+ *
+ * Nothing is derived from a number that does not check out — a half-typed one, or one with a mistyped
+ * digit that fails Luhn — so a wrong `last4` never replaces a right one, neither on screen nor in the
+ * request.
+ */
+export function cardToSave(card: ProfileFormValues['card'], cardNumber: string): ProfileFormValues['card'] {
+  const digits = cardDigits(cardNumber);
+
+  return isPlausibleCardNumber(digits)
+    ? { ...card, last4: digits.slice(-4), brand: detectCardBrand(digits) }
+    : card;
+}
+
+/**
+ * The form, turned into the body of the `PUT`.
+ *
+ * **This is the one place the card number stops.** It is destructured out here and the return type is
+ * the contract's own `UpdateProfileRequest`, so a number typed into this screen cannot reach the
+ * network by accident: it would have to be added to a type that has nowhere to put it. What travels
+ * is what the contract has always carried — four digits, a brand and an expiry — and the rest of the
+ * number does not leave the browser.
+ */
+export function toRequest({ cardNumber, ...profile }: ProfileFormValues): UpdateProfileRequest {
+  return { ...profile, card: cardToSave(profile.card, cardNumber) };
 }

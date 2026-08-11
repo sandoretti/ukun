@@ -20,6 +20,7 @@ import {
   NAME_MAX,
   profileSchema,
   toFormValues,
+  toRequest,
   type ProfileFormValues,
 } from '../profileSchema';
 import { CardFieldset } from './CardFieldset';
@@ -87,7 +88,9 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     setFormError(null);
 
     try {
-      await update.mutateAsync(values);
+      // `toRequest` is where a typed card number stops: what goes on the wire is the contract's own
+      // request, which has nowhere to carry it.
+      await update.mutateAsync(toRequest(values));
       setOutcome(hadChanges ? 'saved' : 'unchanged');
     } catch (error) {
       if (!applyServerErrors(error, setError, FIELD_MESSAGE_KEYS)) {

@@ -84,35 +84,87 @@ describe('ProfilePage', () => {
     const user = userEvent.setup();
     await renderProfile();
 
-    expect(screen.queryByLabelText('Cuatro últimos dígitos')).toBeNull();
+    expect(screen.queryByLabelText('Número de la nueva tarjeta')).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Cambiar tarjeta' }));
 
-    expect(field('Cuatro últimos dígitos')).toHaveProperty('value', '4242');
+    // Empty, because there is no number to show back: nobody kept one.
+    expect(field('Número de la nueva tarjeta')).toHaveProperty('value', '');
     expect(field('Mes de caducidad')).toHaveProperty('value', '12');
     expect(field('Año de caducidad')).toHaveProperty('value', '2027');
     // Opening a block and leaving the reader at the top of the page is half a job.
-    expect(document.activeElement).toBe(field('Cuatro últimos dígitos'));
+    expect(document.activeElement).toBe(field('Número de la nueva tarjeta'));
   });
 
-  it('never asks for the card number or the CVV, says so, and does not let the browser offer one', async () => {
+  it('reads the brand off the number instead of asking for it', async () => {
+    const sent: UpdateProfileRequest[] = [];
+    server.use(capturingSave(sent));
     const user = userEvent.setup();
     await renderProfile();
 
-    // Said out loud instead of left to be deduced from a missing field — the whole point of the
-    // masked card (`docs/08-identidad-y-seguridad.md` §5).
+    await user.click(screen.getByRole('button', { name: 'Cambiar tarjeta' }));
+    // Nothing to choose from: the brand is in the first digits of the number.
+    expect(screen.queryByLabelText('Marca')).toBeNull();
+
+    await user.type(field('Número de la nueva tarjeta'), '378282246310005');
+
+    // American Express: fifteen digits, its own 4-6-5 grouping, and the card above already says so.
+    expect(screen.getByText('•••• •••••• •0005')).toBeDefined();
+    expect(screen.getByText('Tarjeta American Express terminada en 0005, caduca en 12/27')).toBeDefined();
+
+    await user.click(save());
+
+    await screen.findByText('Cambios guardados');
+    // And what travels is what the contract carries — no full number anywhere in the request.
+    expect(sent[0].card).toEqual({ last4: '0005', brand: 'AMEX', expMonth: 12, expYear: 2027 });
+    expect(JSON.stringify(sent[0])).not.toContain('378282246310005');
+  });
+
+  it('refuses a mistyped number before deriving anything from it', async () => {
+    const sent: UpdateProfileRequest[] = [];
+    server.use(capturingSave(sent));
+    const user = userEvent.setup();
+    await renderProfile();
+
+    await user.click(screen.getByRole('button', { name: 'Cambiar tarjeta' }));
+    // One digit off: the Luhn checksum every card number carries is what catches it.
+    await user.type(field('Número de la nueva tarjeta'), '4242 4242 4242 4243');
+    await user.click(save());
+
+    expect(await screen.findByText('Ese número de tarjeta no es válido. Revísalo')).toBeDefined();
+    expect(sent).toEqual([]);
+    // The card on file is untouched: a wrong number never replaces a right `last4`.
+    expect(screen.getByText('•••• •••• •••• 4242')).toBeDefined();
+  });
+
+  it('never asks for the CVV, and keeps the number it does ask for out of the request', async () => {
+    const sent: UpdateProfileRequest[] = [];
+    server.use(capturingSave(sent));
+    const user = userEvent.setup();
+    await renderProfile();
+
+    // Said out loud instead of left to be deduced from a missing field.
     expect(
       screen.getByText(
-        'No pedimos ni guardamos el número completo ni el CVV: solo los cuatro últimos dígitos y la caducidad.',
+        'Nunca pedimos el CVV, y del número solo guardamos los cuatro últimos dígitos y la marca.',
       ),
     ).toBeDefined();
 
-    // And with the editor open, where a PAN field would have to live, there is still none.
     await user.click(screen.getByRole('button', { name: 'Cambiar tarjeta' }));
+    // There is a field for the number — and there is none for the CVV, which is the one that may
+    // never be stored under any circumstance (`docs/08-identidad-y-seguridad.md` §5).
     expect(screen.queryByLabelText(/cvv/i)).toBeNull();
-    expect(screen.queryByLabelText(/número de tarjeta/i)).toBeNull();
     // No accessible query can assert the absence of an autofill hint, so this one goes by attribute.
-    expect(document.querySelectorAll('[autocomplete="cc-number"], [autocomplete="cc-csc"]')).toHaveLength(0);
+    expect(document.querySelectorAll('[autocomplete="cc-csc"]')).toHaveLength(0);
+
+    await user.type(field('Número de la nueva tarjeta'), '4242424242424242');
+    await user.click(save());
+
+    // What was typed stays in the browser: the request carries four digits and a brand, and there is
+    // nowhere in the contract to put the rest even by accident.
+    await screen.findByText('Cambios guardados');
+    expect(JSON.stringify(sent[0])).not.toContain('4242424242424242');
+    expect(sent[0].card.last4).toBe('4242');
   });
 
   it('shows the email as a value, not as a field that refuses every keystroke', async () => {
@@ -241,10 +293,13 @@ describe('ProfilePage', () => {
 
     // The reason the block can be folded at all: an error inside it opens it and takes the caret
     // there. Folded away, this would be a form that refuses to save and never says why.
+    //
+    // `last4` has no control of its own — it is read off the number — so the rejection is shown and
+    // focused on the field that can actually fix it.
     expect(
-      await screen.findByText('Son los cuatro últimos dígitos de la tarjeta, cuatro cifras'),
+      await screen.findByText('No hemos podido leer los cuatro últimos dígitos. Vuelve a escribir el número'),
     ).toBeDefined();
-    expect(document.activeElement).toBe(field('Cuatro últimos dígitos'));
+    expect(document.activeElement).toBe(field('Número de la nueva tarjeta'));
     // And it cannot be folded back over the error.
     expect(screen.queryByRole('button', { name: 'Cambiar tarjeta' })).toBeNull();
   });
