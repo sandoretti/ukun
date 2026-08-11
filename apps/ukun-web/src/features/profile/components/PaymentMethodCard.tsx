@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { formatCardExpiry, maskedCardNumber } from '../../../shared/format/card';
+import { formatCardExpiry, maskedCardNumber } from '../../../shared/payments/card';
 import type { CustomerProfile } from '../api/profileKeys';
 
 type PaymentMethodCardProps = {

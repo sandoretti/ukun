@@ -4,7 +4,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import { Button, Col, Form, Row } from 'react-bootstrap';
 
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
-import { cardDigits, detectCardBrand, isPlausibleCardNumber } from '../../../shared/payments/cardNumber';
+import { cardDigits, detectCardBrand, isPlausibleCardNumber } from '../../../shared/payments/card';
 import { Fieldset } from '../../../shared/ui/Fieldset';
 import { SelectField } from '../../../shared/ui/SelectField';
 import { TextField } from '../../../shared/ui/TextField';

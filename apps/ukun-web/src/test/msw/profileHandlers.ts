@@ -49,38 +49,31 @@ export const profileHandlers = [
   }),
 ];
 
+/**
+ * An error of this contract, shaped like the real ones: `type` derived from the `code` exactly as
+ * `docs/12-error-contract.md` §2 derives it, and a `detail` in fixed English for the operator — if
+ * that sentence ever shows up on screen, something is broken.
+ */
+function problem(code: ErrorCode, status: number, extensions: Record<string, unknown> = {}) {
+  return {
+    type: `https://ukun.dev/errors/${code.toLowerCase().replaceAll('_', '-')}`,
+    title: code,
+    status,
+    detail: 'Fixed English detail nobody should ever read on screen',
+    code,
+    traceId: `trace-${status}`,
+    ...extensions,
+  };
+}
+
 /** A `400 VALIDATION_FAILED` on the save, with the field paths the API really produces. */
 export function profileValidationFailed(errors: ValidationError[]) {
   return http.put(`${base}/api/me/profile`, () =>
-    HttpResponse.json(
-      {
-        type: 'https://ukun.dev/errors/validation-failed',
-        title: 'VALIDATION_FAILED',
-        status: 400,
-        // Fixed English for the operator. If this ever reaches the screen, something is broken.
-        detail: 'Validation failed for the request body',
-        code: 'VALIDATION_FAILED',
-        traceId: 'trace-validation',
-        errors,
-      },
-      { status: 400 },
-    ),
+    HttpResponse.json(problem('VALIDATION_FAILED', 400, { errors }), { status: 400 }),
   );
 }
 
 /** Any other failure of the read, by `code` — an employee opening the screen gets `403 FORBIDDEN`. */
 export function profileFails(code: ErrorCode, status: number) {
-  return http.get(`${base}/api/me/profile`, () =>
-    HttpResponse.json(
-      {
-        type: `https://ukun.dev/errors/${code.toLowerCase().replaceAll('_', '-')}`,
-        title: code,
-        status,
-        detail: 'Fixed English detail nobody should ever read on screen',
-        code,
-        traceId: 'trace-failure',
-      },
-      { status },
-    ),
-  );
+  return http.get(`${base}/api/me/profile`, () => HttpResponse.json(problem(code, status), { status }));
 }

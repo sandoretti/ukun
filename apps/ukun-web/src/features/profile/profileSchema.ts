@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { SUPPORTED_LANGUAGES } from '../../i18n/languages';
 import type { FieldMessageKeys } from '../../shared/forms/applyServerErrors';
-import { cardDigits, detectCardBrand, isPlausibleCardNumber } from '../../shared/payments/cardNumber';
+import { cardDigits, detectCardBrand, isPlausibleCardNumber } from '../../shared/payments/card';
 import type { components } from '../../types/api';
 import type { CustomerProfile, UpdateProfileRequest } from './api/profileKeys';
 
@@ -70,10 +70,11 @@ const text = (message: string, max: number) => z.string().trim().min(1, message)
  * lengths, the same patterns and the same bounds as `UpdateProfileRequest` in
  * `docs/api/openapi/ukun-api.yaml`. A rule invented here would be a rule the API does not enforce.
  *
- * There is no field for the card number or the CVV, here or anywhere else in this feature: storing
- * them is the PCI-DSS violation of the legacy schema (`docs/08-identidad-y-seguridad.md` §5), and a
- * field that collects a PAN "just to discard it" still puts it in memory, in the DOM and one bug
- * away from a log.
+ * There is no field for the CVV, here or anywhere else: storing it is forbidden under any
+ * circumstance (`docs/08-identidad-y-seguridad.md` §5), so there is nothing to collect it for. The
+ * card number **is** asked for —somebody replacing their card types the number, not its last four
+ * digits— and it is the one field of this schema that never becomes part of a request: `toRequest`
+ * is where it stops.
  */
 export const profileSchema = z.object({
   name: text(key.name, NAME_MAX),
