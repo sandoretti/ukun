@@ -1,5 +1,7 @@
 package dev.sandoretti.ukun.api.catalog.application;
 
+import dev.sandoretti.ukun.api.catalog.CatalogApi;
+import dev.sandoretti.ukun.api.catalog.ProductSummary;
 import dev.sandoretti.ukun.api.catalog.domain.Product;
 import dev.sandoretti.ukun.api.catalog.infra.ProductRepository;
 import dev.sandoretti.ukun.api.catalog.infra.ProductSpecifications;
@@ -8,6 +10,10 @@ import dev.sandoretti.ukun.api.shared.web.PageResponse;
 import dev.sandoretti.ukun.api.shared.web.PaginationParams;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,7 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional(readOnly = true)
-public class ProductQueryService {
+public class ProductQueryService implements CatalogApi {
 
     /**
      * The order of the typeahead: by name, so the dropdown does not reshuffle between two keystrokes
@@ -112,6 +118,32 @@ public class ProductQueryService {
                 .stream()
                 .map(mapper::toSuggestion)
                 .toList();
+    }
+
+    /**
+     * {@link CatalogApi#summariesByIds(Set)}: what the modules that hold a {@code product_id} are
+     * allowed to know about it.
+     *
+     * <p>{@code findAllById} rather than a query of this module's own. It is one statement for the whole
+     * batch, it is served by the primary key, and it does not carry the {@code @EntityGraph} the two
+     * overrides in {@link ProductRepository} do — which here is the point rather than an omission:
+     * {@link ProductSummary} has no type and no image, so fetching the association would be a join
+     * nobody reads on the one read that runs over a whole cart.
+     *
+     * <p>An empty request is answered without touching the database. Spring Data would return an empty
+     * list anyway, but the caller that has nothing to ask about is the commonest one there is — an empty
+     * cart — and a statement issued to learn nothing is a statement the counter in {@code CartIT} would
+     * be right to complain about.
+     */
+    @Override
+    public Map<Long, ProductSummary> summariesByIds(Set<Long> productIds) {
+        if (productIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return products.findAllById(productIds).stream()
+                .map(mapper::toModuleSummary)
+                .collect(Collectors.toMap(ProductSummary::id, Function.identity()));
     }
 
     /**

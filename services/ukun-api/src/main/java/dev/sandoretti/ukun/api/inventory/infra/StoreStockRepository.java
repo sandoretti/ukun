@@ -2,6 +2,7 @@ package dev.sandoretti.ukun.api.inventory.infra;
 
 import dev.sandoretti.ukun.api.inventory.domain.StoreStock;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -41,4 +42,42 @@ public interface StoreStockRepository extends JpaRepository<StoreStock, Long> {
                and stock.quantity > 0
             """)
     Set<Long> availableProductIds(@Param("storeId") Long storeId, @Param("productIds") Collection<Long> productIds);
+
+    /**
+     * The same batch, with the number of units instead of the bare identifier — what
+     * {@code InventoryApi.onlineQuantitiesByProductIds} answers.
+     *
+     * <p><strong>Why the quantity travels here and not above.</strong> The javadoc of
+     * {@link #availableProductIds} argues that a method returning rows would put the figure one getter
+     * away from a public, cacheable response, and that still holds: this one exists because the cart and
+     * the checkout attempt <em>are</em> the two places the contract shows the figure, and only to the
+     * customer it belongs to. Two methods rather than one shared method used carefully — the caller of
+     * the public endpoint has no way to reach the number even by accident.
+     *
+     * <p>Rows at zero are filtered out for the same reason they are above: a line at zero and no line
+     * at all mean the same thing to whoever reads this, and leaving the distinction in would invite
+     * somebody to act on it.
+     *
+     * <p>A closed interface projection rather than {@code Object[]}: the two columns keep their names and
+     * their types, and it stays inside {@code infra} — the pair is a shape this query needs, not a
+     * concept the rest of the application should learn.
+     */
+    @Query(
+            """
+            select stock.productId as productId, stock.quantity as quantity
+              from StoreStock stock
+             where stock.storeId = :storeId
+               and stock.productId in :productIds
+               and stock.quantity > 0
+            """)
+    List<ProductQuantity> quantitiesOf(
+            @Param("storeId") Long storeId, @Param("productIds") Collection<Long> productIds);
+
+    /** How many units of one product a store holds. See {@link #quantitiesOf}. */
+    interface ProductQuantity {
+
+        Long getProductId();
+
+        int getQuantity();
+    }
 }

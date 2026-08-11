@@ -1,9 +1,11 @@
 package dev.sandoretti.ukun.api.customers.application;
 
+import dev.sandoretti.ukun.api.customers.CustomersApi;
 import dev.sandoretti.ukun.api.customers.domain.Customer;
 import dev.sandoretti.ukun.api.customers.domain.ProfileLocale;
 import dev.sandoretti.ukun.api.customers.infra.CustomerRepository;
 import dev.sandoretti.ukun.api.identity.CurrentAccount;
+import dev.sandoretti.ukun.api.identity.IdentityApi;
 import dev.sandoretti.ukun.api.identity.Role;
 import java.util.Comparator;
 import java.util.List;
@@ -25,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional(readOnly = true)
-public class CurrentUserService {
+public class CurrentUserService implements CustomersApi {
 
     /**
      * What an employee gets. {@code employee} has no {@code locale} column and that is deliberate
@@ -36,10 +38,12 @@ public class CurrentUserService {
 
     private final CustomerRepository customers;
     private final ProfileMapper mapper;
+    private final IdentityApi identity;
 
-    public CurrentUserService(CustomerRepository customers, ProfileMapper mapper) {
+    public CurrentUserService(CustomerRepository customers, ProfileMapper mapper, IdentityApi identity) {
         this.customers = customers;
         this.mapper = mapper;
+        this.identity = identity;
     }
 
     public CurrentUserResponse current(CurrentAccount account) {
@@ -49,6 +53,24 @@ public class CurrentUserService {
                 .orElse(DEFAULT_LOCALE);
 
         return new CurrentUserResponse(account.accountId(), account.email(), rolesOf(account), locale);
+    }
+
+    /**
+     * {@link CustomersApi#requireCurrentCustomerId()}: the crossing from the account in the token to the
+     * row this module owns, for the modules that may not talk to {@code identity}.
+     *
+     * <p>It lives in this class for the same reason {@code GET /api/me} does — this is where the
+     * {@code account_id} look-up already happens — and reads the token through {@link IdentityApi} so
+     * that no caller ever touches a claim name itself.
+     */
+    @Override
+    public Long requireCurrentCustomerId() {
+        CurrentAccount account = identity.requireCurrentAccount();
+
+        return customers
+                .findIdByAccountId(account.accountId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Account %s holds the CUSTOMER role with no profile behind it".formatted(account.accountId())));
     }
 
     /**

@@ -26,4 +26,23 @@ public interface StoresApi {
      * validation problem, not this module's, and the callers all reject it before asking.
      */
     boolean exists(Long storeId);
+
+    /**
+     * The identifier of the store the shop sells from online.
+     *
+     * <p>RF-04 makes it a business rule rather than a default: an order is placed against the online
+     * store's stock and never against the customer's favourite one. {@code inventory} asks for it to
+     * answer what a cart line has available, and checkout will ask for the same reason.
+     *
+     * <p><strong>Resolved by {@code store.is_online}, never by name.</strong> The legacy looks it up as
+     * {@code tienda.nombre = 'Ukun Online'} from inside a bean constructor and refuses to start when the
+     * row is missing — defect #6, and both halves of it are wrong. The flag carries the invariant
+     * ({@code ux_store_online}, a partial unique index, makes a second online store impossible), and the
+     * look-up happens inside the business transaction that needs it.
+     *
+     * @throws IllegalStateException if no store is marked online. It is not a client error and not a
+     *     {@code 404}: a shop with nowhere to sell from is an installation that was never finished, so
+     *     it is a {@code 500} with a stack trace, which is what gets it fixed.
+     */
+    Long onlineStoreId();
 }

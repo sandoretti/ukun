@@ -1,5 +1,6 @@
 package dev.sandoretti.ukun.api.catalog.application;
 
+import dev.sandoretti.ukun.api.catalog.ProductSummary;
 import dev.sandoretti.ukun.api.catalog.domain.Product;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -51,4 +52,17 @@ public interface ProductMapper {
      */
     @Mapping(target = "imageUrl", source = "imageKey", qualifiedByName = "toImageUrl")
     ProductSuggestionResponse toSuggestion(Product product);
+
+    /**
+     * What another module sees of a product ({@link ProductSummary}), and the only method here whose
+     * target is not a response of this module's own endpoints.
+     *
+     * <p>Five fields mapped by name and not one {@code @Mapping}: the record was named after the entity's
+     * properties on purpose, so that a column renamed tomorrow breaks the build here rather than
+     * silently mapping to {@code null} — which {@code unmappedTargetPolicy = ERROR} guarantees only for
+     * targets nobody wrote. It touches neither {@code productType} nor {@code imageKey}: the crossing is
+     * a batch read of many rows, and an association fetched per row is the N+1 that ADR-0017 §2 asks
+     * this boundary to make impossible.
+     */
+    ProductSummary toModuleSummary(Product product);
 }

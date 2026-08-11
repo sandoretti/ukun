@@ -92,6 +92,31 @@ public abstract class AbstractIntegrationTest {
      */
     protected static final String PROFILE_DATABASE = "ukun_app_profile";
 
+    /**
+     * Schema only, for the cart. It touches more tables than any suite before it — {@code cart_item}
+     * over {@code customer}, {@code product} and {@code store_stock} at once — so it is the one that
+     * would collide with everybody: the catalogue's truncation cascades into its stock, and the profile
+     * suites pin the {@code address} and {@code card} rows its customers point at.
+     */
+    protected static final String CART_DATABASE = "ukun_app_cart";
+
+    /**
+     * Connections per application context, against Hikari's default of ten.
+     *
+     * <p>The contexts of this suite are <strong>cached, not closed</strong>: every one of them keeps its
+     * pool open until the JVM exits, so the connections add up across classes while the container's
+     * {@code max_connections} stays at Postgres' default of 100. At ten apiece the ceiling is a dozen
+     * contexts, and the suite reached it the day the cart added one — as
+     * {@code FATAL: sorry, too many clients already} in a class that had nothing to do with the change
+     * and passed on its own. Four is comfortable: the tests are sequential, so a context serves one
+     * request at a time plus the fixture's own transaction.
+     *
+     * <p>It is set here rather than in each {@code @SpringBootTest} because this is the method every
+     * fixture already calls to get a datasource, and a limit that has to be remembered per class is one
+     * that will be missing from the next one.
+     */
+    private static final int TEST_POOL_SIZE = 4;
+
     private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
     static {
@@ -115,6 +140,7 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.datasource.url", () -> jdbcUrlOf(database));
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("spring.datasource.hikari.maximum-pool-size", () -> TEST_POOL_SIZE);
     }
 
     protected static String jdbcUrlOf(String database) {
