@@ -22,10 +22,11 @@ type CartLineRowProps = {
  *
  * **The row is the same height whatever it holds**, which is a correctness matter and not a
  * cosmetic one: the quantity stepper sits inside it, and a row that grows when the availability
- * warning appears pushes the next one under the cursor mid-click. Two things guarantee it without
- * pinning a height per breakpoint — the name takes exactly one line and clips with an ellipsis
- * (`docs/07-frontend-ux-ui.md` §a11y: every container decides what it does when the text does not
- * fit), and the warning lives in a slot that is reserved whether or not there is anything to say.
+ * warning appears pushes the next one under the cursor mid-click. A minimum height on the row
+ * covers the worst case —name, reference and warning— and its content is centred inside it, so the
+ * warning coming and going changes nothing. The name takes exactly one line and clips with an
+ * ellipsis, which is this container deciding what it does when the text does not fit
+ * (`docs/07-frontend-ux-ui.md` §a11y).
  *
  * The columns are fixed widths from `md` instead of `auto` so that price, quantity and subtotal
  * line up down the whole list. Below `md` they stack, which is the only honest layout at that
@@ -48,7 +49,7 @@ export function CartLineRow({ line, busy, onQuantityChange, onRemove }: CartLine
   const short = line.quantity > line.available;
 
   return (
-    <div className="cart-line py-3">
+    <div className="cart-line">
       <Row className="align-items-center g-3">
         <Col xs={12} md={5}>
           {/* The way back to the product: the line carries its name precisely so it can be read
@@ -94,9 +95,9 @@ export function CartLineRow({ line, busy, onQuantityChange, onRemove }: CartLine
       </Row>
 
       {/* El aviso es una banda propia bajo la fila, y no un tercer párrafo dentro de la columna del
-          nombre: ahí dentro, su hueco reservado bajaba el centro vertical de la fila y descuadraba
-          las cuatro columnas respecto al texto que sí se ve. El hueco sigue existiendo siempre —es
-          lo que impide que la fila crezca al pulsar «+»— pero ya no arrastra a nadie. */}
+          nombre: ahí dentro descuadraba las cuatro columnas de la derecha respecto al texto que sí
+          se ve. Quien mantiene la altura de la línea es su `min-height`, no un hueco reservado
+          aquí. */}
       <div className="cart-line__notice" aria-live="polite">
         {short && (
           <p className="cart-line__warning small d-flex align-items-center gap-1 mb-0">

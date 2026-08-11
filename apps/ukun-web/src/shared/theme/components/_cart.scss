@@ -16,6 +16,19 @@
   border-top: bootstrap.$border-width solid var(--bs-border-color);
 }
 
+// **La altura constante es de la fila, y el contenido se centra dentro de ella.** Antes la
+// garantizaba un hueco reservado bajo el aviso, y eso dejaba lo que se ve apoyado en el borde
+// superior con un vacío debajo. Con una altura mínima que da de sobra para el caso peor —nombre,
+// referencia y aviso— la fila no crece al pulsar «+» (que es lo que movía la lista bajo el cursor)
+// y, cuando no hay aviso, lo que hay queda centrado en vez de arriba.
+.cart-line {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 6.5rem;
+  padding: 1rem 0;
+}
+
 // El nombre ocupa **una** línea y recorta con puntos suspensivos. Reservar dos —como se hizo
 // primero— iguala la altura pero abre un hueco entre el nombre y su referencia en cuanto el nombre
 // cabe en una, y ese hueco se lee como un error de maquetación. Con una línea, la altura es
@@ -35,11 +48,9 @@
   }
 }
 
-// El hueco del aviso de disponibilidad existe siempre, haya aviso o no. Es lo que impide que la fila
-// crezca al pulsar «+» y empuje a la siguiente bajo el cursor: el aviso aparece y desaparece con la
-// cantidad, y la altura de la lista no puede depender de eso.
-.cart-line__notice {
-  min-height: calc(1em * #{bootstrap.$line-height-base});
+// El aviso ya no reserva hueco: la altura mínima de la fila lo contempla, así que aparecer y
+// desaparecer no cambia lo que mide la línea.
+.cart-line__notice:not(:empty) {
   margin-top: 0.25rem;
 }
 
