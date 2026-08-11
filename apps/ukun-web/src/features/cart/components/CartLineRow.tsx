@@ -8,8 +8,8 @@ import { useLocale } from '../../../shared/hooks/useLocale';
 import { productPath } from '../../../shared/routes';
 import { Icon } from '../../../shared/ui/Icon';
 import { ProductImage } from '../../../shared/ui/ProductImage';
+import { StockWarning } from '../../../shared/ui/StockWarning';
 import { QuantityStepper } from './QuantityStepper';
-import { StockWarning } from './StockWarning';
 
 type CartLineRowProps = {
   line: CartLine;

@@ -1,28 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { http } from '../../../shared/api/http';
-import { retryUnlessClientError } from '../../../shared/api/retry';
+import { profileKeys, type CustomerProfile, type UpdateProfileRequest } from '../../../shared/api/profile';
 import { sessionKeys } from '../../../shared/api/session';
-import { profileKeys, type CustomerProfile, type UpdateProfileRequest } from './profileKeys';
 
 /**
- * The signed-in customer's profile (RF-05). The route is behind `RequireAuth` and the endpoint
- * requires a token, so there is no anonymous case to answer here: a `401` is a dead session and the
- * axios interceptor already deals with it, and a `403` —an employee opening this screen— is a real
- * error state with its own translated `code`.
- */
-export function useMyProfile() {
-  return useQuery({
-    queryKey: profileKeys.me(),
-    queryFn: ({ signal }) =>
-      http.get<CustomerProfile>('/api/me/profile', { signal }).then((response) => response.data),
-    retry: retryUnlessClientError,
-  });
-}
-
-/**
- * Saving the profile.
+ * Saving the profile — the write only this screen makes, hanging off the same `profileKeys` the
+ * shared read declares: one key, one owner, invalidated by prefix.
  *
  * The response is the updated profile, which the contract returns precisely so the SPA does not need
  * a second round trip — it is written into the cache and the form resyncs from it. The invalidation

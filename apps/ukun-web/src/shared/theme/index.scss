@@ -17,4 +17,8 @@
 @use "components/auth";
 @use "components/profile";
 @use "components/cart";
+// Los dos componentes de `shared/ui/` con estilo propio: los pintan varias pantallas, así que su
+// receta no vive en la hoja de ninguna de ellas.
+@use "components/payment-card";
+@use "components/stock-warning";
 @use "components/home";

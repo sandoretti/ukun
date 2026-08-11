@@ -72,5 +72,20 @@
       "es": "ES",
       "en": "EN"
     }
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "status": "Page {{page}} of {{totalPages}}"
+  },
+  "card": {
+    "brands": {
+      "VISA": "Visa",
+      "MASTERCARD": "Mastercard",
+      "AMEX": "American Express",
+      "OTHER": "Other"
+    },
+    "expires": "Expires {{expiry}}",
+    "summaryLabel": "{{brand}} card ending in {{last4}}, expires {{expiry}}"
   }
 }

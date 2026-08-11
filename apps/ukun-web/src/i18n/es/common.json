@@ -72,5 +72,20 @@
       "es": "ES",
       "en": "EN"
     }
+  },
+  "pagination": {
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "status": "Página {{page}} de {{totalPages}}"
+  },
+  "card": {
+    "brands": {
+      "VISA": "Visa",
+      "MASTERCARD": "Mastercard",
+      "AMEX": "American Express",
+      "OTHER": "Otra"
+    },
+    "expires": "Caduca {{expiry}}",
+    "summaryLabel": "Tarjeta {{brand}} terminada en {{last4}}, caduca en {{expiry}}"
   }
 }

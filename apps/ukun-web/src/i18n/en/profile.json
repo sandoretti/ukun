@@ -22,8 +22,6 @@
   "card": {
     "legend": "Card",
     "description": "What your orders are charged to.",
-    "summaryLabel": "{{brand}} card ending in {{last4}}, expires {{expiry}}",
-    "expires": "Expires {{expiry}}",
     "noCvv": "We never ask for the CVV, and of the number we only keep the last four digits and the brand.",
     "change": "Change card",
     "done": "Done",
@@ -33,13 +31,7 @@
     "detected": "{{brand}} · we will only keep the last four digits",
     "expiry": "Expiry",
     "expMonth": "Expiry month",
-    "expYear": "Expiry year",
-    "brands": {
-      "VISA": "Visa",
-      "MASTERCARD": "Mastercard",
-      "AMEX": "American Express",
-      "OTHER": "Other"
-    }
+    "expYear": "Expiry year"
   },
   "preferences": {
     "legend": "Preferences",

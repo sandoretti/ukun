@@ -4,7 +4,7 @@ import { cartUnitCount, type Cart } from '../../../shared/api/cart';
 import { formatMoney } from '../../../shared/format/money';
 import { useLocale } from '../../../shared/hooks/useLocale';
 import { ComingSoonButton } from '../../../shared/ui/ComingSoon';
-import { StockWarning } from './StockWarning';
+import { StockWarning } from '../../../shared/ui/StockWarning';
 
 type CartSummaryProps = {
   /**
@@ -65,7 +65,7 @@ export function CartSummary({ cart }: CartSummaryProps) {
       </div>
 
       <div className="d-grid mt-4">
-        <ComingSoonButton label={t('summary.checkout')} variant="outline-primary" size="lg" />
+        <ComingSoonButton label={t('summary.checkout')} variant="outline-primary" />
       </div>
     </aside>
   );

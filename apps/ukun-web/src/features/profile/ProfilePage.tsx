@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Col, Container, Row } from 'react-bootstrap';
 
+import { useMyProfile } from '../../shared/api/profile';
 import { ResourceBoundary } from '../../shared/ui/ResourceBoundary';
-import { useMyProfile } from './api/queries';
 import { ProfileForm } from './components/ProfileForm';
 
 /**

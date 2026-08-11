@@ -4,7 +4,7 @@ import { SUPPORTED_LANGUAGES } from '../../i18n/languages';
 import type { FieldMessageKeys } from '../../shared/forms/applyServerErrors';
 import { cardDigits, detectCardBrand, isPlausibleCardNumber } from '../../shared/payments/card';
 import type { components } from '../../types/api';
-import type { CustomerProfile, UpdateProfileRequest } from './api/profileKeys';
+import type { CustomerProfile, UpdateProfileRequest } from '../../shared/api/profile';
 
 type Locale = components['schemas']['Locale'];
 type CardBrand = components['schemas']['Card']['brand'];
@@ -14,7 +14,7 @@ type CardBrand = components['schemas']['Card']['brand'];
  *
  * `satisfies` ties the list to the generated type: a brand renamed or dropped from the contract stops
  * this file from compiling. A brand *added* to the contract does not — that one shows up as a missing
- * key under `card.brands` in `profile.json`.
+ * key under `card.brands` in `common.json`.
  */
 export const CARD_BRANDS = ['VISA', 'MASTERCARD', 'AMEX', 'OTHER'] as const satisfies readonly CardBrand[];
 

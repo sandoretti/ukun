@@ -13,7 +13,7 @@ import { ReadOnlyField } from '../../../shared/ui/ReadOnlyField';
 import { SelectField } from '../../../shared/ui/SelectField';
 import { TextField } from '../../../shared/ui/TextField';
 import { useUpdateMyProfile } from '../api/queries';
-import type { CustomerProfile } from '../api/profileKeys';
+import type { CustomerProfile } from '../../../shared/api/profile';
 import {
   ADDRESS_MAX,
   FIELD_MESSAGE_KEYS,
