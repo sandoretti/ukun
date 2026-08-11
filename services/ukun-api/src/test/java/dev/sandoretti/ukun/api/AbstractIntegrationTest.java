@@ -221,6 +221,15 @@ public abstract class AbstractIntegrationTest {
         return AUTH.validToken(accountId, email, List.of("CUSTOMER"));
     }
 
+    /**
+     * The same token for a suite that does not assert on the email — most of them, since the claim
+     * only matters to {@code /api/me}. Written privately in the cart suite first and then again in the
+     * checkout one, which is the second use that earns it a place here.
+     */
+    protected static String customerToken(UUID accountId) {
+        return customerToken(accountId, accountId + "@ukun.dev");
+    }
+
     protected static String employeeToken(UUID accountId, String email) {
         return AUTH.validToken(accountId, email, List.of("EMPLOYEE"));
     }

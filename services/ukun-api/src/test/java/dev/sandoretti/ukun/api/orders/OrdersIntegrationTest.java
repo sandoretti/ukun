@@ -193,11 +193,6 @@ abstract class OrdersIntegrationTest extends AbstractIntegrationTest {
                 sku);
     }
 
-    /** Nobody here asserts on the email, so it follows from the account rather than being one more constant. */
-    protected static String customerToken(UUID accountId) {
-        return customerToken(accountId, accountId + "@ukun.dev");
-    }
-
     protected static String employeeToken() {
         return employeeToken(EMPLOYEE, "employee@ukun.dev");
     }
