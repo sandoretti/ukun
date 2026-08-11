@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "target": "ES2023",
+    /* Node 24 corre estos ficheros, pero el `page` de Playwright evalúa código en el navegador. */
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    /* Mismo motivo que en tsconfig.node.json: nada de .js emitido junto a la configuración. */
+    "outDir": "./node_modules/.tmp/tsconfig.e2e"
+  },
+  "include": ["e2e", "playwright.config.ts"]
+}

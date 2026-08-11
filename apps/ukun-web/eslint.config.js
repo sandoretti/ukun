@@ -10,7 +10,7 @@ export default tseslint.config({
     js.configs.recommended,
     ...tseslint.configs.recommended,
   ],
-  files: ['src/**/*.{ts,tsx}'],
+  files: ['src/**/*.{ts,tsx}', 'e2e/**/*.ts', 'playwright.config.ts'],
   ignores: ['dist', 'node_modules', 'src/types/api.d.ts'],
   languageOptions: {
     ecmaVersion: 2020,

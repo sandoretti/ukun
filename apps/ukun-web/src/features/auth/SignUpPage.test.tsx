@@ -97,6 +97,20 @@ describe('SignUpPage', () => {
     expect(screen.queryByLabelText(/CVV/iu)).toBeNull();
   });
 
+  it('sends no favourite store when none was chosen', async () => {
+    const user = userEvent.setup();
+    renderSignUp();
+
+    await fillTheForm(user);
+    await user.click(submit());
+
+    // `null` y no `0`: el campo es opcional y su valor inicial pasa por el mismo `setValueAs` que el
+    // elegido a mano, donde `Number(null)` daría un identificador que no existe y el API contestaría
+    // un `400` sobre este campo.
+    await waitFor(() => expect(signupRequests).toHaveLength(1));
+    expect(signupRequests[0].favoriteStoreId).toBeNull();
+  });
+
   it('says the account is created when the activation has not been confirmed yet', async () => {
     server.use(signupActivationPending());
     const user = userEvent.setup();

@@ -18,6 +18,16 @@ dist
 dist-ssr
 *.tsbuildinfo
 
+# El smoke de Playwright, que corre en el host contra el stack ya levantado y no entra en ninguna
+# imagen. Está aquí por algo más que por tamaño: el contexto de build es este directorio, así que sin
+# estas líneas cada ejecución del smoke escribe `test-results/` dentro del contexto, Tilt lo ve como
+# un cambio y reconstruye —y reinicia— el mismo dev server contra el que está corriendo el test.
+e2e
+playwright.config.ts
+playwright-report
+test-results
+blob-report
+
 # Nada de esto influye en el build y sí invalida la caché de capas en cada cambio.
 .git
 .gitignore

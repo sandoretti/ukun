@@ -34,6 +34,10 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       globals: true,
       setupFiles: ['./src/test/setup.ts'],
+      // Solo `src/`. El patrón por defecto de Vitest recoge cualquier `*.spec.ts` del proyecto, y
+      // los de `e2e/` son de Playwright: ejecutados aquí fallarían por importar `@playwright/test`,
+      // sin navegador y sin stack detrás.
+      include: ['src/**/*.{test,spec}.{ts,tsx}'],
     },
   } as UserConfig & { test: any };
 });

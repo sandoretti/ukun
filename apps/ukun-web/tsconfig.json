@@ -22,5 +22,7 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  /* El smoke de Playwright es su propio proyecto: corre en Node, no entra en el bundle, y aun así
+     tiene que compilar en cada `tsc -b` como todo lo demás. */
+  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.e2e.json" }]
 }

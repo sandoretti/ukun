@@ -42,7 +42,14 @@ export function FavoriteStoreField() {
       hint={stores.isError ? t('favoriteStore.unavailable') : t('favoriteStore.hint')}
       disabled={stores.isError}
       {...register('favoriteStoreId', {
-        setValueAs: (value: string) => (value === '' ? null : Number(value)),
+        /**
+         * `null` tiene que sobrevivir, y por eso se comprueba aparte de la cadena vacía: react-hook-form
+         * pasa por aquí también el valor **inicial** del campo, y `Number(null)` es `0` —un
+         * identificador que no existe—. Con un cliente que ya tenía tienda el fallo no se veía, porque
+         * el inicial era un número; con uno que no la tiene, el formulario mandaba `0` y el API lo
+         * rechazaba con un `400` sobre este mismo campo.
+         */
+        setValueAs: (value: string | null) => (value === '' || value === null ? null : Number(value)),
       })}
       value={favoriteStoreId ?? ''}
     >

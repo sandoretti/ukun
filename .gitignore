@@ -15,6 +15,12 @@ target/
 node_modules/
 dist/
 
+# Playwright: el informe y las trazas del smoke son de una ejecución, no del repo. Los navegadores
+# viven en ~/.cache/ms-playwright y no aquí.
+test-results/
+playwright-report/
+blob-report/
+
 # IDE
 .idea/
 *.iml
