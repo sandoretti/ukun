@@ -1,0 +1,24 @@
+# Lo que NO entra en la imagen del frontend. Sin este fichero, el `COPY . /app/` de Dockerfile.dev
+# se lleva dentro el node_modules del host, y ese es el fallo que mata el dev server:
+#
+#   Error: Cannot find module '@rolldown/binding-linux-x64-musl'
+#
+# El host es glibc (`binding-linux-x64-gnu`) y la imagen es node:24-alpine, que es musl. Los binarios
+# nativos de rolldown/esbuild no son intercambiables, así que Vite muere al arrancar y el contenedor
+# sale con código 1. Desde v0.5 eso no se queda en el frontend: el gateway es el único punto de
+# entrada y enruta `/` hacia este dev server, de modo que un `node_modules` copiado convierte la raíz
+# de la aplicación en un 500 (docs/06-entorno-local-tilt.md).
+#
+# Con node_modules fuera, el `npm ci` del live update del Tiltfile lo instala DENTRO del contenedor y
+# resuelve el binario musl que le toca.
+node_modules
+
+# Artefactos de build: la imagen de desarrollo sirve desde el dev server, no desde dist/.
+dist
+dist-ssr
+*.tsbuildinfo
+
+# Nada de esto influye en el build y sí invalida la caché de capas en cada cambio.
+.git
+.gitignore
+*.log
