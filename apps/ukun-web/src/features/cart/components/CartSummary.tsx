@@ -1,41 +1,75 @@
 import { useTranslation } from 'react-i18next';
 
-import type { Cart } from '../../../shared/api/cart';
+import { cartUnitCount, type Cart } from '../../../shared/api/cart';
 import { formatMoney } from '../../../shared/format/money';
 import { useLocale } from '../../../shared/hooks/useLocale';
 import { ComingSoonButton } from '../../../shared/ui/ComingSoon';
-import { ClearCartButton } from './ClearCartButton';
+import { Icon } from '../../../shared/ui/Icon';
 
 type CartSummaryProps = {
-  /** The server's total. Never the sum of the lines done here — money is not added in the browser. */
-  total: Cart['total'];
-  busy: boolean;
-  onClear: () => void;
+  /**
+   * The whole cart and not just its total: what a summary says — how many units, how much, whether
+   * anything is short of stock — is derived from the same object the screen already has.
+   */
+  cart: Cart;
 };
 
 /**
- * What closes the cart: the way to empty it on one side, what it adds up to and the way forward on
- * the other.
+ * What the cart adds up to, as a panel of its own beside the lines.
  *
- * «Place order» is a disabled button and not a link: checkout is issue #35 and its route does not
- * exist yet, and this repo never points an `<a>` at a screen that is not there (`ComingSoon`). When
- * that slice lands, this is one line to change.
+ * **Every figure here comes from the server.** The amount is `cart.total` as it arrived, printed
+ * twice because it is the only line item this contract has: there is no VAT to break out, no
+ * shipping, no discount. Inventing those rows —or a "free delivery over 50 €" band— would be
+ * exactly the made-up claim `docs/07-frontend-ux-ui.md` forbids: no data in the contract, no
+ * sentence on the screen. The unit count is the one thing computed here, and counting is not
+ * money arithmetic.
+ *
+ * The availability notice is the aggregate of what each line already says on its own, so that the
+ * reader who scrolled past it still learns before pressing the button. It reports, it does not
+ * block: what validates stock is confirming the order (RF-04).
  */
-export function CartSummary({ total, busy, onClear }: CartSummaryProps) {
+export function CartSummary({ cart }: CartSummaryProps) {
   const { t } = useTranslation('cart');
   const locale = useLocale();
 
-  return (
-    <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 pt-3 border-top">
-      <ClearCartButton busy={busy} onConfirm={onClear} />
+  const units = cartUnitCount(cart);
+  const total = formatMoney(cart.total, locale);
+  const short = cart.items.some((line) => line.quantity > line.available);
 
-      <div className="d-flex align-items-center gap-3">
-        <p className="mb-0">
-          <span className="text-body-secondary me-2">{t('summary.total')}</span>
-          <span className="fs-4 fw-semibold text-tabular-nums">{formatMoney(total, locale)}</span>
-        </p>
-        <ComingSoonButton label={t('summary.checkout')} variant="outline-primary" />
+  return (
+    <aside className="cart-summary" aria-labelledby="cart-summary-title">
+      <h2 id="cart-summary-title" className="h5 mb-3">
+        {t('summary.title')}
+      </h2>
+
+      {/* Pairs of label and amount are a description list, not two spans in a flex row. */}
+      <dl className="cart-summary__lines mb-0">
+        <div className="d-flex justify-content-between align-items-baseline gap-3">
+          <dt className="fw-normal text-body-secondary">{t('summary.items', { count: units })}</dt>
+          <dd className="mb-0 text-tabular-nums">{total}</dd>
+        </div>
+
+        <hr className="my-3" />
+
+        <div className="d-flex justify-content-between align-items-baseline gap-3">
+          <dt className="fw-semibold">{t('summary.total')}</dt>
+          <dd className="mb-0 fs-4 fw-semibold text-tabular-nums">{total}</dd>
+        </div>
+      </dl>
+
+      {/* Appears and disappears as quantities change, so it is announced rather than silent. */}
+      <div aria-live="polite">
+        {short && (
+          <p className="cart-summary__notice small d-flex align-items-start gap-2 mt-3 mb-0">
+            <Icon name="warning" size="sm" />
+            {t('summary.stockNotice')}
+          </p>
+        )}
       </div>
-    </div>
+
+      <div className="d-grid mt-4">
+        <ComingSoonButton label={t('summary.checkout')} variant="outline-primary" size="lg" />
+      </div>
+    </aside>
   );
 }

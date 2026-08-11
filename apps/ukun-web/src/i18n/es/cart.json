@@ -16,7 +16,11 @@
     "increase": "Añadir una unidad de {{product}}"
   },
   "summary": {
+    "title": "Resumen del pedido",
+    "items_one": "Artículos ({{count}} unidad)",
+    "items_other": "Artículos ({{count}} unidades)",
     "total": "Total",
+    "stockNotice": "Alguna línea pide más unidades de las que hay en la tienda online. Se comprueba al tramitar el pedido.",
     "checkout": "Tramitar pedido"
   },
   "clear": {

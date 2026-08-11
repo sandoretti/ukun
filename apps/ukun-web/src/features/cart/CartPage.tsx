@@ -7,11 +7,17 @@ import { QueryBoundary } from '../../shared/ui/QueryBoundary';
 import { useClearCart, useRemoveCartItem } from './api/queries';
 import { CartLineRow } from './components/CartLineRow';
 import { CartSummary } from './components/CartSummary';
+import { ClearCartButton } from './components/ClearCartButton';
 
 /**
  * The cart (RF-03), at `/cart` and behind `RequireAuth` — every operation of this contract requires
  * a session, and the cart is resolved server-side from `account_id`: no customer identifier travels
  * in any of these requests (`docs/08-identidad-y-seguridad.md` §4).
+ *
+ * **Two columns from `lg`**: what is edited on the left, what it adds up to on the right, stacked in
+ * that order below. It is the same split `CatalogPage` already makes with its filter sidebar, and
+ * the summary is sticky from `lg` for the same reason the sidebar is — a long list should not leave
+ * the total behind.
  *
  * The four states are the boundary's, over the **lines** and not over the cart: an empty cart is a
  * perfectly valid `Cart` (`{items: [], total: "0.00"}`, never a `404`), so handing the whole object
@@ -21,6 +27,9 @@ import { CartSummary } from './components/CartSummary';
  * **A failed write never wipes the cart.** The rule inside `QueryBoundary` — the error state only
  * takes over when there is nothing to show — extends to the mutations here: their failure is told
  * above the lines, by `code`, while everything that was on screen stays on screen.
+ *
+ * Emptying the cart lives in the header of the list and not in the panel: the panel is where the
+ * purchase moves forward, and putting a destructive button next to it invites the wrong click.
  */
 export default function CartPage() {
   const { t } = useTranslation('cart');
@@ -31,6 +40,7 @@ export default function CartPage() {
   const clearCart = useClearCart();
 
   const cart = cartQuery.data;
+  const hasLines = cart !== undefined && cart.items.length > 0;
 
   // Only the line being written to is frozen, so a slow request does not lock the whole cart.
   const busyProductId = putItem.isPending
@@ -54,17 +64,30 @@ export default function CartPage() {
 
   return (
     <Container className="py-5">
-      <Row>
-        <Col lg={11} xl={10}>
-          <h1 className="h2 mb-2">{t('title')}</h1>
-          <p className="text-body-secondary mb-4">{t('lead')}</p>
+      <Row className="g-4 g-lg-5">
+        <Col lg={8}>
+          <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+            <div>
+              <h1 className="h2 mb-2">{t('title')}</h1>
+              <p className="text-body-secondary mb-0">{t('lead')}</p>
+            </div>
+            {hasLines && (
+              <ClearCartButton
+                busy={clearCart.isPending}
+                onConfirm={() => {
+                  forgetPreviousFailure();
+                  clearCart.mutate();
+                }}
+              />
+            )}
+          </div>
 
           {/* What failed while writing shows up here, next to what is still there. */}
           <div aria-live="polite">{actionError !== null && <ErrorState error={actionError} />}</div>
 
           <QueryBoundary query={cartQuery} data={cart?.items} empty={t('empty')}>
             {(lines) => (
-              <ul className="cart-lines list-unstyled mb-4">
+              <ul className="cart-lines list-unstyled mb-0">
                 {lines.map((line) => (
                   <li key={line.productId}>
                     <CartLineRow
@@ -84,21 +107,12 @@ export default function CartPage() {
               </ul>
             )}
           </QueryBoundary>
-
-          {/* Outside the boundary, because the total belongs to the cart and not to its lines: the
-              boundary hands over the list it painted, and there is nothing to add up when it is
-              empty. */}
-          {cart !== undefined && cart.items.length > 0 && (
-            <CartSummary
-              total={cart.total}
-              busy={clearCart.isPending}
-              onClear={() => {
-                forgetPreviousFailure();
-                clearCart.mutate();
-              }}
-            />
-          )}
         </Col>
+
+        {/* Outside the boundary, because the total belongs to the cart and not to its lines: the
+            boundary hands over the list it painted, and there is nothing to summarise when it is
+            empty. */}
+        <Col lg={4}>{hasLines && <CartSummary cart={cart} />}</Col>
       </Row>
     </Container>
   );

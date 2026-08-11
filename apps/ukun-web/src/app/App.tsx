@@ -3,9 +3,9 @@ import { Route, Routes } from 'react-router-dom';
 
 import { RequireAuth } from '../features/auth/RequireAuth';
 import { ACCOUNT_PATH } from '../features/auth/routes';
-import { CATALOG_PATH, PRODUCT_ROUTE } from '../features/catalog/routes';
+import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
-import { CART_PATH, PROFILE_PATH } from '../shared/routes';
+import { CART_PATH, CATALOG_PATH, PROFILE_PATH } from '../shared/routes';
 import { AppLayout } from './AppLayout';
 import { AuthLayout } from './AuthLayout';
 

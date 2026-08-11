@@ -16,7 +16,11 @@
     "increase": "Add one unit of {{product}}"
   },
   "summary": {
+    "title": "Order summary",
+    "items_one": "Items ({{count}} unit)",
+    "items_other": "Items ({{count}} units)",
     "total": "Total",
+    "stockNotice": "Some line asks for more units than the online store has. It is checked when you place the order.",
     "checkout": "Place order"
   },
   "clear": {
