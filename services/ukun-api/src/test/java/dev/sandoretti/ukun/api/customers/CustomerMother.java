@@ -44,6 +44,36 @@ public final class CustomerMother {
                 card("1881", CardBrand.MASTERCARD, (short) 6, (short) 2029));
     }
 
+    /**
+     * The {@code index}-th of a crowd of interchangeable buyers, for the tests that need more customers
+     * than there are people worth naming — today only {@code CheckoutConcurrencyIT}, where what matters
+     * is that eight distinct accounts contend for one unit.
+     *
+     * <p><strong>It is the opposite of {@link #ada} and {@link #grace} and must not be used in their
+     * place.</strong> Those two share no field value precisely so that a test can tell "the profile of
+     * the token holder" from "a profile that looks right"; these deliberately share everything except
+     * the account and the email, because a test that asserts anything about a buyer's address has
+     * picked the wrong mother.
+     *
+     * <p>The address and the card are one shape reused, and a shape that is neither Ada's nor Grace's:
+     * a crowd that happened to live at Ada's address would make an ownership assertion pass for the
+     * wrong reason if one ever pointed here by mistake.
+     *
+     * <p>{@code email} carries the index only so a failure message names a row. The column is
+     * {@code CITEXT NOT NULL} and deliberately <em>not</em> unique (baseline {@code 001-esquema-inicial},
+     * with the reason written there): it is a projection, not an identity. {@code account_id} is what is
+     * unique, and it comes from the caller.
+     */
+    public static Customer buyer(UUID accountId, int index) {
+        return customer(
+                accountId,
+                "Buyer",
+                "Number " + index,
+                "buyer%d@ukun.dev".formatted(index),
+                address("Gran Vía 7", "Madrid", "Madrid", "28013"),
+                card("9000", CardBrand.VISA, (short) 3, (short) 2031));
+    }
+
     private static Customer customer(
             UUID accountId, String name, String lastName, String email, CustomerAddress address, CustomerCard card) {
 

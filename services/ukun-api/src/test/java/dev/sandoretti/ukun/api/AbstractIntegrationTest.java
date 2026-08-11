@@ -125,6 +125,12 @@ public abstract class AbstractIntegrationTest {
      * <p>It is set here rather than in each {@code @SpringBootTest} because this is the method every
      * fixture already calls to get a datasource, and a limit that has to be remembered per class is one
      * that will be missing from the next one.
+     *
+     * <p><strong>One context overrides it</strong>, and only one: {@code OrdersIntegrationTest}, whose
+     * concurrency suite has several checkouts in flight at once and every one of them holding its
+     * connection while it waits on a row lock. "A context serves one request at a time" is what makes
+     * four enough, and that is exactly what that suite exists not to do. Its own javadoc has the
+     * arithmetic.
      */
     private static final int TEST_POOL_SIZE = 4;
 

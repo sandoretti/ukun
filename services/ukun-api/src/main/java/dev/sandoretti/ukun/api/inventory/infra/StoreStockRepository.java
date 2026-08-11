@@ -91,6 +91,13 @@ public interface StoreStockRepository extends JpaRepository<StoreStock, Long> {
      * {@code product_id}, and any deterministic order over the same rows would do: what matters is
      * that everybody uses the same one.
      *
+     * <p><strong>It is the second of two normalisations, not the only one.</strong> {@code
+     * CheckoutAttempt.lines} is mapped {@code @OrderBy("id.productId ASC")}, so confirmations already
+     * reach this query with their products in an agreed sequence whatever order the carts were filled
+     * in. That is why {@code CheckoutConcurrencyIT} carries no deadlock test — through the API the
+     * opposing sequence cannot be built, and its javadoc says so at length. The {@code order by} stays
+     * because this query is reachable from anything that decrements stock, not only from an attempt.
+     *
      * <p><strong>Rows at zero are <em>not</em> filtered out</strong>, unlike everywhere else in this
      * interface. A line at zero is a line that has to be locked: leaving it out would let the check
      * "is there enough?" run against a row another transaction is topping up at that very moment.
