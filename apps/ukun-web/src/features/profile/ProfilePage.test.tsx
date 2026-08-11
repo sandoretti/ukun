@@ -68,29 +68,60 @@ describe('ProfilePage', () => {
     expect(field('Ciudad')).toHaveProperty('value', 'Oviedo');
     expect(field('Provincia')).toHaveProperty('value', 'Asturias');
     expect(field('Código postal')).toHaveProperty('value', '33003');
+  });
+
+  it('shows the card as a card, and says it in one sentence for whoever cannot see it', async () => {
+    await renderProfile();
+
+    // Sixteen digits' worth of shape for a Visa, and the four the contract actually carries.
+    expect(screen.getByText('•••• •••• •••• 4242')).toBeDefined();
+    expect(screen.getByText('Caduca 12/27')).toBeDefined();
+    // A row of bullets read out loud says nothing; this is what replaces it.
+    expect(screen.getByText('Tarjeta Visa terminada en 4242, caduca en 12/27')).toBeDefined();
+  });
+
+  it('keeps the card controls folded away until you mean to change it', async () => {
+    const user = userEvent.setup();
+    await renderProfile();
+
+    expect(screen.queryByLabelText('Cuatro últimos dígitos')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Cambiar tarjeta' }));
+
     expect(field('Cuatro últimos dígitos')).toHaveProperty('value', '4242');
     expect(field('Mes de caducidad')).toHaveProperty('value', '12');
     expect(field('Año de caducidad')).toHaveProperty('value', '2027');
+    // Opening a block and leaving the reader at the top of the page is half a job.
+    expect(document.activeElement).toBe(field('Cuatro últimos dígitos'));
   });
 
-  it('never asks for the card number or the CVV, and does not let the browser offer one', async () => {
+  it('never asks for the card number or the CVV, says so, and does not let the browser offer one', async () => {
+    const user = userEvent.setup();
     await renderProfile();
 
-    // The whole point of the masked card (`docs/08-identidad-y-seguridad.md` §5): there is no field
-    // for a PAN or a CVV, not even one that would be thrown away afterwards.
+    // Said out loud instead of left to be deduced from a missing field — the whole point of the
+    // masked card (`docs/08-identidad-y-seguridad.md` §5).
+    expect(
+      screen.getByText(
+        'No pedimos ni guardamos el número completo ni el CVV: solo los cuatro últimos dígitos y la caducidad.',
+      ),
+    ).toBeDefined();
+
+    // And with the editor open, where a PAN field would have to live, there is still none.
+    await user.click(screen.getByRole('button', { name: 'Cambiar tarjeta' }));
     expect(screen.queryByLabelText(/cvv/i)).toBeNull();
     expect(screen.queryByLabelText(/número de tarjeta/i)).toBeNull();
     // No accessible query can assert the absence of an autofill hint, so this one goes by attribute.
     expect(document.querySelectorAll('[autocomplete="cc-number"], [autocomplete="cc-csc"]')).toHaveLength(0);
   });
 
-  it('shows the email without letting it be edited here', async () => {
+  it('shows the email as a value, not as a field that refuses every keystroke', async () => {
     await renderProfile();
 
-    const email = field('Correo');
-    expect(email).toHaveProperty('value', 'customer@ukun.dev');
     // It is a projection of the token claim; the credential is changed in `ukun-auth` (RF-06).
-    expect(email).toHaveProperty('readOnly', true);
+    expect(screen.getByRole('group', { name: 'Correo' }).textContent).toBe('customer@ukun.dev');
+    // Named like a field, but there is no control there to type into.
+    expect(screen.queryByRole('textbox', { name: 'Correo' })).toBeNull();
     expect(screen.getByText('El correo y la contraseña se cambian en tu cuenta Ukun, no aquí.')).toBeDefined();
   });
 
@@ -196,6 +227,44 @@ describe('ProfilePage', () => {
     expect(screen.queryByText('must be five digits')).toBeNull();
     expect(screen.queryByText('Validation failed for the request body')).toBeNull();
     expect(document.activeElement).toBe(field('Código postal'));
+  });
+
+  it('unfolds the card block when the server rejects one of its fields', async () => {
+    server.use(
+      profileValidationFailed([{ field: 'card.last4', message: 'must be four digits' }]),
+    );
+    const user = userEvent.setup();
+    await renderProfile();
+
+    await user.type(field('Nombre'), 'a');
+    await user.click(save());
+
+    // The reason the block can be folded at all: an error inside it opens it and takes the caret
+    // there. Folded away, this would be a form that refuses to save and never says why.
+    expect(
+      await screen.findByText('Son los cuatro últimos dígitos de la tarjeta, cuatro cifras'),
+    ).toBeDefined();
+    expect(document.activeElement).toBe(field('Cuatro últimos dígitos'));
+    // And it cannot be folded back over the error.
+    expect(screen.queryByRole('button', { name: 'Cambiar tarjeta' })).toBeNull();
+  });
+
+  it('discards the changes back to what the server has', async () => {
+    const user = userEvent.setup();
+    await renderProfile();
+
+    const discard = () => screen.getByRole('button', { name: 'Descartar cambios' });
+    // Nothing to discard yet, and a button that does nothing is worse than no button.
+    expect(discard()).toHaveProperty('disabled', true);
+
+    await user.clear(field('Ciudad'));
+    await user.type(field('Ciudad'), 'Gijón');
+    expect(discard()).toHaveProperty('disabled', false);
+
+    await user.click(discard());
+
+    expect(field('Ciudad')).toHaveProperty('value', 'Oviedo');
+    expect(discard()).toHaveProperty('disabled', true);
   });
 
   it('paints the rule only the server knows: a favourite store that no longer exists', async () => {

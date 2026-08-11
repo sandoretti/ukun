@@ -5,6 +5,7 @@
   "empty": "There is no profile to show yet",
   "personal": {
     "legend": "Personal details",
+    "description": "What we call you, and the account you sign in with.",
     "name": "First name",
     "lastName": "Last name",
     "email": "Email",
@@ -12,6 +13,7 @@
   },
   "address": {
     "legend": "Delivery address",
+    "description": "Where we take your orders.",
     "street": "Street and number",
     "city": "City",
     "province": "Province",
@@ -19,7 +21,12 @@
   },
   "card": {
     "legend": "Card",
-    "description": "We only keep the last four digits and the expiry date. The full number and the CVV are neither asked for nor stored.",
+    "description": "What your orders are charged to.",
+    "summaryLabel": "{{brand}} card ending in {{last4}}, expires {{expiry}}",
+    "expires": "Expires {{expiry}}",
+    "noCvv": "We neither ask for nor store the full number or the CVV: only the last four digits and the expiry date.",
+    "change": "Change card",
+    "done": "Done",
     "last4": "Last four digits",
     "brand": "Brand",
     "expMonth": "Expiry month",
@@ -33,6 +40,7 @@
   },
   "preferences": {
     "legend": "Preferences",
+    "description": "The store we suggest and the language we speak to you in.",
     "favoriteStore": "Favourite store",
     "favoriteStoreNone": "None",
     "favoriteStoreHint": "The store we suggest by default when you check availability.",
@@ -47,6 +55,7 @@
   "ordersNotice": "Changing your address or your card does not touch your past orders: each order keeps its own copy of where it was sent and what it was paid with.",
   "submit": "Save changes",
   "submitting": "Saving...",
+  "discard": "Discard changes",
   "saved": "Changes saved",
   "unchanged": "There was nothing to change",
   "validation": {

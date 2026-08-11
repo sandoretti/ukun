@@ -5,6 +5,8 @@ type FieldsetProps = {
   legend: string;
   /** A line under the legend explaining the group — why a card only keeps four digits, say. */
   description?: string;
+  /** Extra classes, for the rhythm a particular form gives its groups. Same escape hatch as `Section`. */
+  className?: string;
   children: ReactNode;
 };
 
@@ -16,9 +18,9 @@ type FieldsetProps = {
  * `legend`. A heading over a stack of inputs looks the same and says nothing — the legend is what a
  * screen reader repeats when the reader tabs into each field of the group.
  */
-export function Fieldset({ legend, description, children }: FieldsetProps) {
+export function Fieldset({ legend, description, className = '', children }: FieldsetProps) {
   return (
-    <fieldset className="mb-4">
+    <fieldset className={`mb-4 ${className}`.trim()}>
       <legend className="h5 mb-1">{legend}</legend>
       {description !== undefined && <p className="text-body-secondary small mb-3">{description}</p>}
       {children}

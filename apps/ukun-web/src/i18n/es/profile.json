@@ -5,6 +5,7 @@
   "empty": "Todavía no hay un perfil que mostrar",
   "personal": {
     "legend": "Datos personales",
+    "description": "Cómo te llamamos y con qué cuenta entras.",
     "name": "Nombre",
     "lastName": "Apellidos",
     "email": "Correo",
@@ -12,6 +13,7 @@
   },
   "address": {
     "legend": "Dirección de envío",
+    "description": "A dónde llevamos tus pedidos.",
     "street": "Calle y número",
     "city": "Ciudad",
     "province": "Provincia",
@@ -19,7 +21,12 @@
   },
   "card": {
     "legend": "Tarjeta",
-    "description": "Solo guardamos los cuatro últimos dígitos y la caducidad. El número completo y el CVV no se piden ni se almacenan.",
+    "description": "Con qué se cobran tus pedidos.",
+    "summaryLabel": "Tarjeta {{brand}} terminada en {{last4}}, caduca en {{expiry}}",
+    "expires": "Caduca {{expiry}}",
+    "noCvv": "No pedimos ni guardamos el número completo ni el CVV: solo los cuatro últimos dígitos y la caducidad.",
+    "change": "Cambiar tarjeta",
+    "done": "Hecho",
     "last4": "Cuatro últimos dígitos",
     "brand": "Marca",
     "expMonth": "Mes de caducidad",
@@ -33,6 +40,7 @@
   },
   "preferences": {
     "legend": "Preferencias",
+    "description": "La tienda que te proponemos y el idioma en el que te hablamos.",
     "favoriteStore": "Tienda favorita",
     "favoriteStoreNone": "Ninguna",
     "favoriteStoreHint": "La tienda que te proponemos por defecto al mirar disponibilidad.",
@@ -47,6 +55,7 @@
   "ordersNotice": "Cambiar la dirección o la tarjeta no toca tus pedidos anteriores: cada pedido guarda su propia copia de a dónde se envió y con qué se pagó.",
   "submit": "Guardar cambios",
   "submitting": "Guardando...",
+  "discard": "Descartar cambios",
   "saved": "Cambios guardados",
   "unchanged": "No había nada que cambiar",
   "validation": {

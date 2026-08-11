@@ -9,8 +9,10 @@ import { ProfileForm } from './components/ProfileForm';
  * The customer profile (RF-05), at `/profile` and behind `RequireAuth`.
  *
  * The screen's own job is small on purpose: read one resource, cover the four states with the base
- * components, and hand the profile over to the form. The measure is capped to a single column —a
- * form read at arm's length is a column, not a page — and everything else is the form's business.
+ * components, and hand the profile over to the form. Everything else is the form's business.
+ *
+ * The heading is not separated from the first group by a rule of its own: the groups already carry
+ * one on top, so the first of them draws it. One less element that means nothing.
  */
 export default function ProfilePage() {
   const { t } = useTranslation('profile');
@@ -19,7 +21,7 @@ export default function ProfilePage() {
   return (
     <Container className="py-5">
       <Row>
-        <Col lg={9} xl={8}>
+        <Col lg={9} xl={7}>
           <h1 className="h2 mb-2">{t('title')}</h1>
           <p className="text-body-secondary mb-4">{t('lead')}</p>
 
