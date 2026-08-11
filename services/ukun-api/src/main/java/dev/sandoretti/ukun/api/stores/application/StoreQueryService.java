@@ -70,4 +70,15 @@ public class StoreQueryService implements StoresApi {
     public boolean exists(Long storeId) {
         return storeId != null && stores.existsById(storeId);
     }
+
+    /**
+     * {@link StoresApi#onlineStoreId()}. One indexed look-up, inside whatever transaction the caller is
+     * already in — not a field resolved once at startup, which is the constructor query of defect #6
+     * wearing a different hat.
+     */
+    @Override
+    public Long onlineStoreId() {
+        return stores.findOnlineStoreId()
+                .orElseThrow(() -> new IllegalStateException("No store is marked as the online one"));
+    }
 }

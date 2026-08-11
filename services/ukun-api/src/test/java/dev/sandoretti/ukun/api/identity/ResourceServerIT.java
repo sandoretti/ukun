@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,21 +41,14 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @Import(ProbeSecuredEndpoints.class)
 class ResourceServerIT extends AbstractIntegrationTest {
 
-    private static final JwksTestServer AUTH = JwksTestServer.start();
+    private static final JwksTestServer AUTH = auth();
 
     private static final UUID ACCOUNT_ID = UUID.fromString("8f2c1e40-0000-4000-8000-000000000001");
 
     @DynamicPropertySource
     static void resourceServer(DynamicPropertyRegistry registry) {
         useDatabase(registry, SCHEMA_ONLY_DATABASE);
-
-        registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", AUTH::jwkSetUri);
-        registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri", () -> JwksTestServer.ISSUER);
-    }
-
-    @AfterAll
-    static void stopAuth() throws Exception {
-        AUTH.close();
+        useJwks(registry);
     }
 
     @Autowired

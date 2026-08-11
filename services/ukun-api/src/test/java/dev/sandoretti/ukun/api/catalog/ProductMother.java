@@ -18,41 +18,60 @@ import java.math.BigDecimal;
  *   <li>{@link #coffeeTable()} and {@link #floorLamp()} carry accents that a customer will not type.
  *       Searching {@code "cafe"} or {@code "lampara"} has to find them — defect #22.
  * </ul>
+ *
+ * <p>Public, like {@code StoreMother} and {@code CustomerMother}, because the catalogue is not only the
+ * catalogue's business: {@code CartIT} prices its lines with these very products, and a suite that
+ * inserted four rows of its own would be maintaining a second, drifting copy of this one — the
+ * scattered literals the {@code testing} skill rules out.
  */
-final class ProductMother {
+public final class ProductMother {
 
     private ProductMother() {}
 
-    static ProductType type(String name) {
+    public static ProductType type(String name) {
         ProductType type = new ProductType();
         type.setName(name);
         return type;
     }
 
     /** {@code 399.99} — one half of the price tie of defect #23. */
-    static Product leatherSofa(ProductType type) {
+    public static Product leatherSofa(ProductType type) {
         return product("SOFA-CUERO", "Sofá de cuero", "399.99", type).imageKey("sofa-cuero.jpg").build();
     }
 
     /** {@code 399.99} — the other half of the tie, under a different type. */
-    static Product bunkBed(ProductType type) {
+    public static Product bunkBed(ProductType type) {
         return product("LITERA-INFANTIL", "Litera infantil", "399.99", type).build();
     }
 
     /** Accented name, cheap. The product {@code "cafe"} must find (defect #22). */
-    static Product coffeeTable(ProductType type) {
+    public static Product coffeeTable(ProductType type) {
         return product("MESA-CAFE", "Mesa de café", "129.75", type).imageKey("mesa-cafe.jpg").build();
     }
 
     /** Accented name, cheapest of the active ones — the lower bound of the price range tests. */
-    static Product floorLamp(ProductType type) {
+    public static Product floorLamp(ProductType type) {
         return product("LAMPARA-PIE", "Lámpara de pie", "49.90", type).build();
     }
 
     /** Discontinued (ADR-0013): it exists in the table and must never reach the public catalogue. */
-    static Product discontinuedChair(ProductType type) {
+    public static Product discontinuedChair(ProductType type) {
         return product("SILLA-RETIRADA", "Silla retirada", "19.99", type)
                 .active(false)
+                .build();
+    }
+
+    /**
+     * A product that exists only to make a batch bigger, numbered so that {@code n} of them are
+     * {@code n} distinct rows.
+     *
+     * <p>The one case where the mother deliberately does not name a case: a statement-count assertion
+     * needs a cart of ten lines and does not care what is in them, and naming ten pieces of furniture
+     * would suggest a meaning none of them has. The name says what it is for, which is the part that
+     * matters when the test is read later.
+     */
+    public static Product filler(int index, ProductType type) {
+        return product("FILLER-%d".formatted(index), "Producto de relleno %d".formatted(index), "10.00", type)
                 .build();
     }
 

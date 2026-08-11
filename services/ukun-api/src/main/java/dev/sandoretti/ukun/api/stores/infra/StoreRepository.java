@@ -2,11 +2,13 @@ package dev.sandoretti.ukun.api.stores.infra;
 
 import dev.sandoretti.ukun.api.stores.domain.Store;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
 /**
  * {@code store}, the table the {@code stores} module owns, plus the {@code address} row hanging off
@@ -28,4 +30,18 @@ public interface StoreRepository extends JpaRepository<Store, Long>, JpaSpecific
     @Override
     @EntityGraph(attributePaths = "address")
     List<Store> findAll(Specification<Store> specification, Sort sort);
+
+    /**
+     * The identifier of the online store, for {@code StoresApi.onlineStoreId()}.
+     *
+     * <p>It projects the identifier and not the {@code Store}: the callers are other modules, which get
+     * a {@code Long} and nothing else ({@code docs/14-modules.md} §2), and a method returning the row
+     * would pull its address along for a question that is about neither.
+     *
+     * <p>{@link Optional} rather than a single result that may or may not be there. There is at most one
+     * such row — {@code ux_store_online} is a partial unique index, so the database enforces it — and
+     * whether zero is acceptable is the caller's call to make, not this method's.
+     */
+    @Query("select store.id from Store store where store.isOnline = true")
+    Optional<Long> findOnlineStoreId();
 }

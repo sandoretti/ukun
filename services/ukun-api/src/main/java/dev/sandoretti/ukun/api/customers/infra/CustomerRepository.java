@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * {@code customer}, and through its cascade the profile's {@code address} and {@code card}.
@@ -19,4 +21,17 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     @EntityGraph(attributePaths = {"address", "card"})
     Optional<Customer> findByAccountId(UUID accountId);
+
+    /**
+     * The same look-up on the same index, projecting only the identifier — what
+     * {@code CustomersApi.requireCurrentCustomerId()} answers.
+     *
+     * <p>A method of its own rather than {@code findByAccountId(...).map(Customer::getId)}: the graph
+     * above fetches the address and the card in the same statement, which is right for a profile read
+     * and pure waste for a caller that wants a number. It is the first rung of the reading ladder of
+     * {@code docs/03-analisis-y-patrones.md} §2 — a projection, when the projection is all that is
+     * used.
+     */
+    @Query("select customer.id from Customer customer where customer.accountId = :accountId")
+    Optional<Long> findIdByAccountId(@Param("accountId") UUID accountId);
 }

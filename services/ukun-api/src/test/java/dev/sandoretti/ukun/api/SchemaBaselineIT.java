@@ -11,11 +11,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.postgresql.Driver;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -136,9 +134,6 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
      * too. Schema is schema, whichever context is active — only data is filtered.
      */
     private static final int EXPECTED_CHANGESETS = 20;
-
-    @Autowired
-    private JdbcTemplate jdbc;
 
     @Test
     @DisplayName("the baseline creates the thirteen tables of docs/10 §8 and nothing else")

@@ -1,11 +1,15 @@
 package dev.sandoretti.ukun.api.inventory.application;
 
+import dev.sandoretti.ukun.api.inventory.InventoryApi;
 import dev.sandoretti.ukun.api.inventory.infra.StoreStockRepository;
+import dev.sandoretti.ukun.api.inventory.infra.StoreStockRepository.ProductQuantity;
 import dev.sandoretti.ukun.api.shared.error.ResourceNotFoundException;
 import dev.sandoretti.ukun.api.stores.StoresApi;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional(readOnly = true)
-public class AvailabilityQueryService {
+public class AvailabilityQueryService implements InventoryApi {
 
     private final StoreStockRepository stock;
     private final StoresApi stores;
@@ -73,5 +77,27 @@ public class AvailabilityQueryService {
                 .toList();
 
         return new AvailabilityResponse(storeId, items);
+    }
+
+    /**
+     * {@link InventoryApi#onlineQuantitiesByProductIds(Set)}: the same batch read, with the figure, for
+     * the modules that are allowed to show it.
+     *
+     * <p>Two statements and never more — one to resolve the online store, one for the whole batch —
+     * whatever the number of products asked about. The store is resolved here rather than taken as a
+     * parameter because the caller may not know what an online store is; RF-04 makes it the only store
+     * the shop sells from, and this is the module that gets to say so.
+     *
+     * <p>An empty request short-circuits before either statement. The empty cart is the commonest case
+     * this method sees, and it has nothing to look up.
+     */
+    @Override
+    public Map<Long, Integer> onlineQuantitiesByProductIds(Set<Long> productIds) {
+        if (productIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return stock.quantitiesOf(stores.onlineStoreId(), productIds).stream()
+                .collect(Collectors.toMap(ProductQuantity::getProductId, ProductQuantity::getQuantity));
     }
 }

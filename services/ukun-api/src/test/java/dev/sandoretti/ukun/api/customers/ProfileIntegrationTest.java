@@ -1,7 +1,6 @@
 package dev.sandoretti.ukun.api.customers;
 
 import dev.sandoretti.ukun.api.AbstractIntegrationTest;
-import dev.sandoretti.ukun.api.JwksTestServer;
 import dev.sandoretti.ukun.api.customers.domain.Customer;
 import dev.sandoretti.ukun.api.customers.domain.ProfileLocale;
 import dev.sandoretti.ukun.api.stores.StoreMother;
@@ -13,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
@@ -45,30 +43,14 @@ abstract class ProfileIntegrationTest extends AbstractIntegrationTest {
     protected static final String ME = "/api/me";
     protected static final String MY_PROFILE = "/api/me/profile";
 
-    /**
-     * Started once and stopped by a shutdown hook rather than by an {@code @AfterAll}, for the reason
-     * the Postgres container of {@link AbstractIntegrationTest} is: it is shared by every subclass, and
-     * the first suite to finish would otherwise close it under the feet of the next one.
-     */
-    private static final JwksTestServer AUTH = JwksTestServer.start();
-
-    static {
-        Runtime.getRuntime().addShutdownHook(new Thread(ProfileIntegrationTest::stopAuth));
-    }
-
     @DynamicPropertySource
     static void profileEnvironment(DynamicPropertyRegistry registry) {
         useDatabase(registry, PROFILE_DATABASE);
-
-        registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", AUTH::jwkSetUri);
-        registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri", () -> JwksTestServer.ISSUER);
+        useJwks(registry);
     }
 
     @Autowired
     protected RestTestClient restTestClient;
-
-    @Autowired
-    protected JdbcTemplate jdbc;
 
     @Autowired
     private EntityManager entityManager;
@@ -110,27 +92,4 @@ abstract class ProfileIntegrationTest extends AbstractIntegrationTest {
         jdbc.update("UPDATE customer SET locale = ? WHERE account_id = ?", locale.code(), accountId);
     }
 
-    protected String customerToken(UUID accountId, String email) {
-        return AUTH.validToken(accountId, email, List.of("CUSTOMER"));
-    }
-
-    protected String employeeToken(UUID accountId, String email) {
-        return AUTH.validToken(accountId, email, List.of("EMPLOYEE"));
-    }
-
-    protected long storeIdOf(String name) {
-        return jdbc.queryForObject("SELECT id FROM store WHERE name = ?", Long.class, name);
-    }
-
-    protected static String bearer(String token) {
-        return "Bearer " + token;
-    }
-
-    private static void stopAuth() {
-        try {
-            AUTH.close();
-        } catch (Exception e) {
-            // Nothing to recover on the way out of the JVM; the port goes with the process.
-        }
-    }
 }
