@@ -14,7 +14,29 @@
   },
   "account": {
     "signIn": "Iniciar sesión",
-    "signUp": "Crear cuenta"
+    "signUp": "Crear cuenta",
+    "signOut": "Cerrar sesión",
+    "title": "Mi cuenta",
+    "email": "Correo",
+    "roles": "Permisos",
+    "backoffice": "Back office",
+    "signInPage": {
+      "title": "Vuelve a entrar",
+      "lead": "Necesitas una sesión abierta para seguir. Te llevamos a identificarte y te devolvemos donde estabas.",
+      "continue": "Continuar con tu cuenta Ukun",
+      "hint": "Te llevamos al servidor de identidad de Ukun, que es donde se teclea la contraseña.",
+      "noAccount": "¿Todavía no tienes cuenta?",
+      "backHome": "Volver a la tienda",
+      "reason": {
+        "expired": "Tu sesión ha caducado. Vuelve a entrar para seguir donde estabas.",
+        "required": "Necesitas una sesión para ver esta página."
+      }
+    },
+    "role": {
+      "CUSTOMER": "Cliente",
+      "EMPLOYEE": "Empleado",
+      "ADMIN": "Administrador"
+    }
   },
   "footer": {
     "claim": "Minimalismo y precios asequibles. Transformamos cualquier espacio con buen diseño, sin que se note en la factura.",

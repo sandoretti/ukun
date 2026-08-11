@@ -1,11 +1,12 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 import { Container, Nav, Navbar } from 'react-bootstrap';
 
-import { ComingSoonButton, ComingSoonNavItem } from './ComingSoon';
+import { BrandMark } from './BrandMark';
+import { ComingSoonNavItem } from './ComingSoon';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ProductSearchBox } from './ProductSearchBox';
-import wordmark from '../../assets/ukun-wordmark-light.png';
 
 /**
  * The entries of the navigation bar, in order. A `to` that is missing means the screen does not
@@ -20,17 +21,21 @@ const NAV_ITEMS = [
   { key: 'about' },
 ] as const satisfies readonly { key: string; to?: string }[];
 
-/** Same idea for the account actions, which are the whole of v0.4 and have no route either. */
-const ACCOUNT_ACTIONS = [
-  { key: 'signIn', variant: 'outline-light' },
-  { key: 'signUp', variant: 'light' },
-] as const satisfies readonly { key: string; variant: 'light' | 'outline-light' }[];
+type SiteHeaderProps = {
+  /**
+   * What closes the bar, after the language switcher: the account block. It arrives composed from
+   * `AppLayout` instead of being imported here, because that block belongs to `features/auth/` and
+   * this file is `shared/ui/` — the shell does not reach down into a feature. Composition also keeps
+   * the bar free of the session: it knows nothing about who is looking at it.
+   */
+  children?: ReactNode;
+};
 
 /**
  * The navigation bar of every route, mounted once from `AppLayout`. It lives in `shared/ui/` next to
  * `SiteFooter` and for the same reason: it is part of the shell, not of any one feature.
  */
-export function SiteHeader() {
+export function SiteHeader({ children }: SiteHeaderProps) {
   const { t } = useTranslation('common');
 
   return (
@@ -43,17 +48,7 @@ export function SiteHeader() {
     <Navbar bg="primary" data-bs-theme="dark" expand="lg" sticky="top" aria-label={t('nav.primary')}>
       <Container>
         <Navbar.Brand as={Link} to="/">
-          {/* La silueta del logotipo en blanco, no el original bicolor: los dos verdes de la marca
-              sobre el verde de la barra no se distinguirían. El `alt` sí nombra la marca — es el
-              enlace a inicio, y sin texto el enlace se queda sin nombre accesible. Las dimensiones
-              intrínsecas van en los atributos para que la barra no salte al cargar la imagen. */}
-          <img
-            src={wordmark}
-            alt={t('title')}
-            className="navbar-brand__logo"
-            width={882}
-            height={254}
-          />
+          <BrandMark />
         </Navbar.Brand>
         <Navbar.Toggle aria-label={t('nav.toggle')} />
         <Navbar.Collapse>
@@ -78,13 +73,7 @@ export function SiteHeader() {
               primero lo que cambia cómo se lee la página, después lo que lleva a la sesión. */}
           <div className="navbar-tail d-flex align-items-center gap-2">
             <LanguageSwitcher />
-            {ACCOUNT_ACTIONS.map((action) => (
-              <ComingSoonButton
-                key={action.key}
-                label={t(`account.${action.key}`)}
-                variant={action.variant}
-              />
-            ))}
+            {children}
           </div>
         </Navbar.Collapse>
       </Container>

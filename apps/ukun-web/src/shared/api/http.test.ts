@@ -1,10 +1,21 @@
 import { http as mswHttp, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { server } from '../../test/msw/server';
+import { unauthenticated } from '../../test/msw/sessionHandlers';
+import { sendToSignIn } from '../auth/signIn';
 import { ProblemDetailError, http } from './http';
 
+vi.mock('../auth/signIn', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../auth/signIn')>()),
+  sendToSignIn: vi.fn(),
+}));
+
 describe('http', () => {
+  beforeEach(() => {
+    vi.mocked(sendToSignIn).mockClear();
+  });
+
   it('normalises a ProblemDetail into ProblemDetailError, extensions included', async () => {
     server.use(
       mswHttp.get('/api/products', () =>
@@ -41,5 +52,25 @@ describe('http', () => {
 
     expect(error.code).toBe('INTERNAL_ERROR');
     expect(error.status).toBe(500);
+  });
+
+  it('sends the reader to the sign-in screen, told why, when the session is gone', async () => {
+    server.use(mswHttp.get('/api/products', () => unauthenticated()));
+
+    await http.get('/api/products').catch(() => undefined);
+
+    // The reason travels with the redirect: a session that dies mid-visit is a surprise, and the
+    // screen is the only place that can say so.
+    expect(vi.mocked(sendToSignIn)).toHaveBeenCalledWith('expired');
+  });
+
+  it('leaves a request that allows an anonymous answer alone', async () => {
+    server.use(mswHttp.get('/api/me', () => unauthenticated()));
+
+    // The session probe: every visitor of a public screen gets this 401, and redirecting on it would
+    // mean nobody can read the catalogue without signing in first.
+    await http.get('/api/me', { allowAnonymous: true }).catch(() => undefined);
+
+    expect(vi.mocked(sendToSignIn)).not.toHaveBeenCalled();
   });
 });

@@ -45,6 +45,9 @@ afterEach(() => {
   cleanup();
   server.resetHandlers();
   resetIntersectionObservers();
+  // Where to come back to after signing in lives in session storage, and it outlives a test the way
+  // it outlives a page load — which is the point of it, and a leak between tests if left behind.
+  sessionStorage.clear();
 });
 
 afterAll(() => {

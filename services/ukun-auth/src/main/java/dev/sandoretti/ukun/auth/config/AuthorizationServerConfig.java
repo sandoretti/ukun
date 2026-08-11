@@ -84,10 +84,25 @@ class AuthorizationServerConfig {
      * between the two. This chain matches everything, so whatever comes after it is unreachable —
      * moving it back up would silently send {@code /internal/accounts} to the login form.
      *
-     * <p>The generated login page is the real login UI, and stays so past v0.5: under the BFF of
-     * ADR-0003 the browser is redirected <em>here</em> to type its password, and the SPA never sees
-     * the credentials any more than it sees the token. Replacing it with a branded page is a v1.0
-     * concern, not a missing piece of this one.
+     * <p>The login page is <strong>this service's own</strong>, and that is not a detail of styling.
+     * Under the BFF of ADR-0003 the browser is redirected <em>here</em> to type its password, and the
+     * SPA never sees the credentials any more than it sees the token — so this page, on this origin,
+     * is the only screen of the whole system where a password is ever typed. It used to be the one
+     * Spring Security generates, which said nothing about whose shop it belongs to; it is now
+     * {@code templates/login.html}, with the palette of {@code docs/07-frontend-ux-ui.md}.
+     *
+     * <p>Two consequences of naming a login page that the generated one handled silently, and that
+     * are the whole reason the two {@code permitAll} below exist: the page itself stops being
+     * permitted automatically, and so does its stylesheet — which, being permitted or not, is the
+     * difference between a branded card and an unstyled form.
+     *
+     * <p>{@code /login} is permitted <strong>by path, here</strong>, and not left to the
+     * {@code permitAll()} of the form login configurer, which is not the same thing: that one
+     * registers a {@code PermitAllSupport.ExactUrlRequestMatcher}, so it permits {@code /login} and
+     * nothing else — {@code /login?lang=en} falls through to {@code anyRequest().authenticated()}
+     * and the entry point bounces it back to {@code /login}, stripping the very parameter it was
+     * sent with. That is the language switch of the page, and it fails as a redirect loop that looks
+     * like nothing in particular.
      *
      * <p>The rate limiter goes in front of the authentication filter rather than reacting to a
      * failure event, because the point is to stop the attempt before it costs a BCrypt verification —
@@ -97,11 +112,11 @@ class AuthorizationServerConfig {
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE + 2)
     SecurityFilterChain defaultFilterChain(HttpSecurity http, LoginAttemptBuckets buckets) throws Exception {
-        http.authorizeHttpRequests(requests -> requests.requestMatchers("/actuator/health/**")
+        http.authorizeHttpRequests(requests -> requests.requestMatchers("/actuator/health/**", "/css/**", LOGIN_PATH)
                         .permitAll()
                         .anyRequest()
                         .authenticated())
-                .formLogin(Customizer.withDefaults())
+                .formLogin(form -> form.loginPage(LOGIN_PATH).permitAll())
                 .addFilterBefore(new LoginRateLimiter(buckets), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

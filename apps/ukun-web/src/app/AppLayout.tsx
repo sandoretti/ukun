@@ -2,6 +2,8 @@ import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router-dom';
 
+import { SessionMenu } from '../features/auth/components/SessionMenu';
+import { useRestoreReturnTo } from '../features/auth/useRestoreReturnTo';
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
 import { LoadingState } from '../shared/ui/LoadingState';
 import { SiteFooter } from '../shared/ui/SiteFooter';
@@ -15,6 +17,9 @@ import { SiteHeader } from '../shared/ui/SiteHeader';
 export function AppLayout() {
   const { t } = useTranslation('common');
   useLocaleSync();
+  // Volver de autenticarse aterriza en `/`, siempre: el destino lo guarda y lo restaura el cliente,
+  // y este es el único sitio que lo hace.
+  useRestoreReturnTo();
 
   return (
     // Columna a toda la altura para que el pie quede abajo también en las pantallas cortas, y no
@@ -26,7 +31,11 @@ export function AppLayout() {
         {t('nav.skipToContent')}
       </a>
 
-      <SiteHeader />
+      {/* El bloque de cuenta se compone aquí: la barra vive en `shared/ui/` y no puede importar de
+          una feature, pero esta capa sí — es la que ya monta las pantallas. */}
+      <SiteHeader>
+        <SessionMenu />
+      </SiteHeader>
 
       {/* Sin `Container` aquí: el ancho lo decide cada pantalla, porque la de inicio va a sangre. */}
       <main id="main-content" className="flex-grow-1">

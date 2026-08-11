@@ -1,0 +1,282 @@
+/*
+ * La página de login de ukun-auth, con la tarjeta centrada del SPA.
+ *
+ * ---------------------------------------------------------------------------------------------
+ * LA PALETA ES LA DE `apps/ukun-web/src/shared/theme/_tokens.scss`, COPIADA.
+ *
+ * No es un descuido y tampoco es negociable a la ligera: `docs/07-frontend-ux-ui.md` dice que ese
+ * fichero es la única fuente de la paleta, y aquí no se puede leer — este servicio se construye con
+ * Gradle y aquel con npm, y acoplar los dos builds para ahorrar cuatro valores rompería
+ * `./gradlew :ukun-auth:build` en solitario. Lo que sí se impide es la deriva: PaletteParityTest
+ * lee los dos ficheros y falla si algún color deja de coincidir. Si estás cambiando un color aquí,
+ * cámbialo allí primero.
+ * ---------------------------------------------------------------------------------------------
+ *
+ * Sin Bootstrap, que es lo que usa el SPA: esta página es un formulario de dos campos y una alerta,
+ * y traerse el framework entero para eso serían 230 KB por una tarjeta. Lo que sigue es lo mínimo
+ * de su reboot más los cuatro componentes que la tarjeta usa.
+ */
+
+:root {
+  --primary: #456e0f; /* 6.02:1 sobre blanco (AA) — texto de enlace y fondo del botón */
+  --primary-hover: #365a08; /* 8.01:1 (AAA) — hover/active y anillo de foco */
+  --accent: #5d9d0b; /* 3.34:1 — solo decorativo, nunca texto */
+  --primary-bg: #e9f5d8; /* fondo suave */
+  --on-dark: #fff;
+
+  --body: #212529;
+  --muted: #6c757d;
+  --border: #dee2e6;
+  --surface: #fff;
+
+  --danger: #842029;
+  --danger-bg: #f8d7da;
+  --danger-border: #f5c2c7;
+
+  /* Solo el corte regular de la marca existe, y no se sirve desde aquí: `docs/07` fija que el
+     .woff2 se sirve una sola vez y vive en el SPA. La pila cae en system-ui, que a 0.875rem en
+     versalitas muy espaciadas es una diferencia que casi no se lee. */
+  --display-font: "Averta Standard", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --body-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--body-font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--body);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* El anillo de foco es el mismo de `_base.scss`. Nunca `outline: none` sin sustituto. */
+:focus-visible {
+  outline: 2px solid var(--primary-hover);
+  outline-offset: 2px;
+}
+
+/* Lo que se oye pero no se ve. Misma definición que la utilidad homónima de Bootstrap, que el SPA
+   usa para lo mismo: dar nombre completo a un control cuya etiqueta visible es una abreviatura. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* --- Marco ------------------------------------------------------------------------------------ */
+
+.auth-shell {
+  display: flex;
+  flex-direction: column;
+  /* `dvh` y no `vh`: en el móvil la barra del navegador se retrae y con `vh` la tarjeta queda
+     descentrada por la altura de una barra que ya no está. */
+  min-height: 100dvh;
+  background-color: var(--primary-bg);
+}
+
+.auth-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--primary);
+}
+
+.auth-bar__brand {
+  font-family: var(--display-font);
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-dark);
+  text-decoration: none;
+}
+
+.auth-bar__brand:hover,
+.auth-bar__brand:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.auth-bar__brand:focus-visible,
+.lang-switch__option:focus-visible {
+  outline-color: var(--on-dark);
+}
+
+.auth-shell__main {
+  flex: 1;
+  display: grid;
+  /* `safe` es lo que impide que un viewport bajo —o la tarjeta con el aviso de error— recorte el
+     titular por arriba: cuando no cabe, deja de centrar y ancla al principio. */
+  place-content: safe center;
+  padding: 2rem 1rem;
+}
+
+.auth-shell__back {
+  margin: 1.5rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.auth-shell__back a {
+  color: var(--primary);
+}
+
+/* --- Conmutador de idioma --------------------------------------------------------------------- */
+
+/* Control segmentado sobre el verde de la barra: el activo se invierte (blanco de fondo, marca en
+   el texto) y el inactivo es blanco sobre verde, que es el mismo ratio al revés. Cuál está activo
+   no lo dice el color, lo dice `aria-current`. */
+.lang-switch {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 50%);
+  border-radius: 50rem;
+}
+
+.lang-switch__option {
+  padding: 0.125rem 0.6rem;
+  color: var(--on-dark);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.lang-switch__option[aria-current="true"] {
+  background-color: var(--on-dark);
+  color: var(--primary);
+}
+
+/* El anillo de foco iría por debajo del borde del grupo, que tiene `overflow: hidden`; hacia
+   dentro se ve entero. */
+.lang-switch__option:focus-visible {
+  outline-offset: -3px;
+}
+
+/* --- Tarjeta ---------------------------------------------------------------------------------- */
+
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
+  /* El centrado horizontal no depende solo del `place-content` de arriba: un navegador que no
+     entienda la palabra clave `safe` descarta esa declaración entera. */
+  margin-inline: auto;
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background-color: var(--surface);
+  box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 7.5%);
+}
+
+.auth-card__brand {
+  margin: 0 0 1.5rem;
+  font-family: var(--display-font);
+  font-size: 0.875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.auth-card__title {
+  margin: 0 0 0.5rem;
+  font-family: var(--display-font);
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.auth-card__lead {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+}
+
+/* --- Campos ----------------------------------------------------------------------------------- */
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.field__control {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--body);
+  background-color: var(--surface);
+}
+
+.field__control:focus {
+  border-color: var(--accent);
+  outline: 2px solid var(--primary-hover);
+  outline-offset: 0;
+}
+
+/* --- Botón ------------------------------------------------------------------------------------ */
+
+.button {
+  display: block;
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  font-family: inherit;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.button--primary {
+  background-color: var(--primary);
+  color: var(--on-dark);
+}
+
+.button--primary:hover,
+.button--primary:focus-visible {
+  background-color: var(--primary-hover);
+}
+
+/* --- Alertas ---------------------------------------------------------------------------------- */
+
+.alert {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  font-size: 0.9375rem;
+}
+
+.alert--danger {
+  border-color: var(--danger-border);
+  background-color: var(--danger-bg);
+  color: var(--danger);
+}
+
+.alert--info {
+  border-color: var(--accent);
+  background-color: var(--primary-bg);
+  color: var(--primary-hover);
+}

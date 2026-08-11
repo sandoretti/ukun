@@ -14,7 +14,29 @@
   },
   "account": {
     "signIn": "Sign in",
-    "signUp": "Create account"
+    "signUp": "Create account",
+    "signOut": "Sign out",
+    "title": "My account",
+    "email": "Email",
+    "roles": "Permissions",
+    "backoffice": "Back office",
+    "signInPage": {
+      "title": "Sign in again",
+      "lead": "You need an open session to carry on. We will take you to identify yourself and bring you back to where you were.",
+      "continue": "Continue with your Ukun account",
+      "hint": "We will take you to Ukun's identity server, which is where the password is typed.",
+      "noAccount": "Don't have an account yet?",
+      "backHome": "Back to the store",
+      "reason": {
+        "expired": "Your session has expired. Sign in again to pick up where you left off.",
+        "required": "You need a session to see this page."
+      }
+    },
+    "role": {
+      "CUSTOMER": "Customer",
+      "EMPLOYEE": "Employee",
+      "ADMIN": "Administrator"
+    }
   },
   "footer": {
     "claim": "Minimalism and affordable prices. We turn any space around with good design, without it showing on the bill.",

@@ -23,6 +23,17 @@ spring:
     # apply, whichever value is active here.
     contexts: prod
 
+  # El texto de la página de login (messages.properties, en español, y messages_en.properties).
+  #
+  # `fallback-to-system-locale: false` no es afinado: con el valor por defecto (`true`), un idioma
+  # sin bundle exacto —`es`, que se sirve desde el fichero base— cae al locale del SISTEMA antes que
+  # al fichero base. La imagen trae `LANG=en_US.UTF-8`, así que la página salía en inglés para todo
+  # el mundo, con cualquier `Accept-Language` y hasta con `?lang=es`. Y no lo veía ningún test,
+  # porque en una máquina con el locale en español el mismo código responde en español: el idioma
+  # de quien construye decidía el de quien lee.
+  messages:
+    fallback-to-system-locale: false
+
   jpa:
     hibernate:
       # `validate`, never `create`/`update`: Hibernate checks the schema Liquibase created and never
@@ -52,6 +63,12 @@ spring:
 # There is no default for either secret on purpose: a service that starts with a well-known client
 # secret is worse than one that refuses to start.
 ukun:
+  # A dónde vuelve el enlace «Volver a la tienda» de la página de login. Es la dirección del gateway
+  # y no la de este servicio: aquí solo se teclea la contraseña, la tienda está al otro lado. Misma
+  # variable de entorno que las redirect URIs de abajo, porque es literalmente el mismo sitio.
+  store:
+    url: ${UKUN_GATEWAY_BASE_URL:http://localhost:8080}
+
   oauth2:
     gateway:
       client-id: ukun-gateway
