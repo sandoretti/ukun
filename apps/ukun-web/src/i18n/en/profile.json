@@ -1,0 +1,66 @@
+{
+  "title": "My profile",
+  "lead": "Your delivery details, your payment method and how you want us to talk to you.",
+  "link": "My profile",
+  "empty": "There is no profile to show yet",
+  "personal": {
+    "legend": "Personal details",
+    "name": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "emailHint": "Your email address and password are changed in your Ukun account, not here."
+  },
+  "address": {
+    "legend": "Delivery address",
+    "street": "Street and number",
+    "city": "City",
+    "province": "Province",
+    "postalCode": "Postcode"
+  },
+  "card": {
+    "legend": "Card",
+    "description": "We only keep the last four digits and the expiry date. The full number and the CVV are neither asked for nor stored.",
+    "last4": "Last four digits",
+    "brand": "Brand",
+    "expMonth": "Expiry month",
+    "expYear": "Expiry year",
+    "brands": {
+      "VISA": "Visa",
+      "MASTERCARD": "Mastercard",
+      "AMEX": "American Express",
+      "OTHER": "Other"
+    }
+  },
+  "preferences": {
+    "legend": "Preferences",
+    "favoriteStore": "Favourite store",
+    "favoriteStoreNone": "None",
+    "favoriteStoreHint": "The store we suggest by default when you check availability.",
+    "favoriteStoreUnavailable": "We could not load the stores. Please try again later.",
+    "locale": "Language",
+    "localeHint": "It is saved with your account, so it follows you to any device.",
+    "locales": {
+      "es": "Spanish",
+      "en": "English"
+    }
+  },
+  "ordersNotice": "Changing your address or your card does not touch your past orders: each order keeps its own copy of where it was sent and what it was paid with.",
+  "submit": "Save changes",
+  "submitting": "Saving...",
+  "saved": "Changes saved",
+  "unchanged": "There was nothing to change",
+  "validation": {
+    "name": "Enter a first name between 1 and 100 characters",
+    "lastName": "Enter a last name between 1 and 100 characters",
+    "locale": "Choose one of the available languages",
+    "street": "Enter the street, between 1 and 255 characters",
+    "city": "Enter the city, between 1 and 255 characters",
+    "province": "Enter the province, between 1 and 255 characters",
+    "postalCode": "The postcode is exactly five digits",
+    "last4": "These are the last four digits of the card, four digits",
+    "brand": "Choose one of the available brands",
+    "expMonth": "The expiry month goes from 1 to 12",
+    "expYear": "The expiry year goes from 2024 to 2100",
+    "favoriteStore": "That store no longer exists. Please choose another one"
+  }
+}

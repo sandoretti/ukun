@@ -1,0 +1,66 @@
+{
+  "title": "Mi perfil",
+  "lead": "Tus datos de envío, tu forma de pago y cómo quieres que te hablemos.",
+  "link": "Mi perfil",
+  "empty": "Todavía no hay un perfil que mostrar",
+  "personal": {
+    "legend": "Datos personales",
+    "name": "Nombre",
+    "lastName": "Apellidos",
+    "email": "Correo",
+    "emailHint": "El correo y la contraseña se cambian en tu cuenta Ukun, no aquí."
+  },
+  "address": {
+    "legend": "Dirección de envío",
+    "street": "Calle y número",
+    "city": "Ciudad",
+    "province": "Provincia",
+    "postalCode": "Código postal"
+  },
+  "card": {
+    "legend": "Tarjeta",
+    "description": "Solo guardamos los cuatro últimos dígitos y la caducidad. El número completo y el CVV no se piden ni se almacenan.",
+    "last4": "Cuatro últimos dígitos",
+    "brand": "Marca",
+    "expMonth": "Mes de caducidad",
+    "expYear": "Año de caducidad",
+    "brands": {
+      "VISA": "Visa",
+      "MASTERCARD": "Mastercard",
+      "AMEX": "American Express",
+      "OTHER": "Otra"
+    }
+  },
+  "preferences": {
+    "legend": "Preferencias",
+    "favoriteStore": "Tienda favorita",
+    "favoriteStoreNone": "Ninguna",
+    "favoriteStoreHint": "La tienda que te proponemos por defecto al mirar disponibilidad.",
+    "favoriteStoreUnavailable": "No hemos podido cargar las tiendas. Inténtalo más tarde.",
+    "locale": "Idioma",
+    "localeHint": "Se guarda con tu cuenta, así que te acompaña a cualquier dispositivo.",
+    "locales": {
+      "es": "Español",
+      "en": "Inglés"
+    }
+  },
+  "ordersNotice": "Cambiar la dirección o la tarjeta no toca tus pedidos anteriores: cada pedido guarda su propia copia de a dónde se envió y con qué se pagó.",
+  "submit": "Guardar cambios",
+  "submitting": "Guardando...",
+  "saved": "Cambios guardados",
+  "unchanged": "No había nada que cambiar",
+  "validation": {
+    "name": "Escribe un nombre de 1 a 100 caracteres",
+    "lastName": "Escribe unos apellidos de 1 a 100 caracteres",
+    "locale": "Elige uno de los idiomas disponibles",
+    "street": "Escribe la calle, de 1 a 255 caracteres",
+    "city": "Escribe la ciudad, de 1 a 255 caracteres",
+    "province": "Escribe la provincia, de 1 a 255 caracteres",
+    "postalCode": "El código postal son exactamente cinco cifras",
+    "last4": "Son los cuatro últimos dígitos de la tarjeta, cuatro cifras",
+    "brand": "Elige una de las marcas disponibles",
+    "expMonth": "El mes de caducidad va del 1 al 12",
+    "expYear": "El año de caducidad va de 2024 a 2100",
+    "favoriteStore": "Esa tienda ya no existe. Elige otra"
+  }
+}
