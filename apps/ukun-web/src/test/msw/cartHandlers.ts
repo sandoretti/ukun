@@ -43,15 +43,21 @@ export const sofa: KnownProduct = {
   productId: 1,
   sku: 'SOFA-NORDIC-3P',
   productName: 'Sofá Nordic 3 plazas',
+  imageUrl: '/media/products/sofa-nordic.jpg',
   unitPrice: '399.99',
   available: 7,
 };
 
-/** Fewer units available than a test will ask for: this is the one that triggers the warning. */
+/**
+ * Fewer units available than a test will ask for: this is the one that triggers the warning. It is
+ * also **the one with no photo** — the two cases of `imageUrl` are shared out between the two known
+ * products so that any test showing both lines shows both, and neither has to be set up for it.
+ */
 export const lamp: KnownProduct = {
   productId: 2,
   sku: 'LAMP-OSLO',
   productName: 'Lámpara Oslo',
+  imageUrl: null,
   unitPrice: '49.50',
   available: 3,
 };

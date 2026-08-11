@@ -31,9 +31,6 @@
     "PRICE_ASC": "Price: low to high",
     "PRICE_DESC": "Price: high to low"
   },
-  "product": {
-    "noImage": "No photo"
-  },
   "detail": {
     "breadcrumb": "Where you are",
     "reference": "Ref. {{sku}}",

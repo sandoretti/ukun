@@ -192,6 +192,25 @@ describe('CartPage', () => {
     expect(panel.queryByText(/Se comprueba al tramitar el pedido/)).toBeNull();
   });
 
+  it('shows each line its own photo, and an empty frame for the product that has none', async () => {
+    server.use(signedIn(), ...cartState(twoLines));
+
+    renderCart();
+
+    await screen.findByText('Sofá Nordic 3 plazas');
+
+    // The photo travels in the line itself (issue #120): one read paints the whole cart, with no
+    // request per line to go and fetch a thumbnail.
+    const photo = lineOfProduct('Sofá Nordic 3 plazas').querySelector('img');
+    expect(photo?.getAttribute('src')).toBe(sofa.imageUrl);
+    // Decoration, and the link beside it is what names the product.
+    expect(photo?.getAttribute('alt')).toBe('');
+
+    // The photo is optional (RF-10): what stands in for it is an empty frame of the same size, so
+    // the two lines still measure the same.
+    expect(lineOfProduct('Lámpara Oslo').querySelector('img')).toBeNull();
+  });
+
   it('links each line back to the product sheet', async () => {
     server.use(signedIn(), ...cartState([lineOf(sofa, 2)]));
 

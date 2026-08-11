@@ -7,6 +7,7 @@ import { formatMoney } from '../../../shared/format/money';
 import { useLocale } from '../../../shared/hooks/useLocale';
 import { productPath } from '../../../shared/routes';
 import { Icon } from '../../../shared/ui/Icon';
+import { ProductImage } from '../../../shared/ui/ProductImage';
 import { QuantityStepper } from './QuantityStepper';
 import { StockWarning } from './StockWarning';
 
@@ -52,13 +53,31 @@ export function CartLineRow({ line, busy, onQuantityChange, onRemove }: CartLine
   return (
     <div className="cart-line">
       <Row className="align-items-center g-3">
-        <Col xs={12} md={5}>
-          {/* The way back to the product: the line carries its name precisely so it can be read
-              again, and there is no other route to it from here that is not the search box. */}
-          <Link to={productPath(line.productId)} className="cart-line__name">
-            {line.productName}
-          </Link>
-          <p className="small text-body-secondary mb-0">{t('line.reference', { sku: line.sku })}</p>
+        <Col xs={12} md={5} className="d-flex align-items-center gap-5">
+          {/* The thumbnail is decoration, hence `alt=""`: the link beside it already says which
+              product this is, and repeating the name would have a screen reader read the line
+              twice. Its fallback is an icon and not the words the card uses — at this size "Sin
+              foto" does not fit, and a frame that has to grow to hold its own placeholder is the
+              one thing this row cannot afford. */}
+          <ProductImage
+            imageUrl={line.imageUrl}
+            alt=""
+            className="cart-line__photo"
+            fallback={<Icon name="image" size="sm" />}
+          />
+
+          {/* `min-width: 0` in the theme: without it the ellipsis of a long name never triggers,
+              because a flex item refuses to shrink below its content. */}
+          <div className="cart-line__identity">
+            {/* The way back to the product: the line carries its name precisely so it can be read
+                again, and there is no other route to it from here that is not the search box. */}
+            <Link to={productPath(line.productId)} className="cart-line__name">
+              {line.productName}
+            </Link>
+            <p className="small text-body-secondary mb-0">
+              {t('line.reference', { sku: line.sku })}
+            </p>
+          </div>
         </Col>
 
         {/* Las cuatro columnas de la derecha van centradas en su ancho: con anchos fijos y
