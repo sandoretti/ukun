@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Col, Container, Row } from 'react-bootstrap';
 
 import { useAuth } from '../../shared/hooks/useAuth';
-import { PROFILE_PATH } from '../../shared/routes';
+import { ORDERS_PATH, PROFILE_PATH } from '../../shared/routes';
 import { Icon } from '../../shared/ui/Icon';
 import { SignOutForm } from './components/SignOutForm';
 
@@ -15,7 +15,7 @@ import { SignOutForm } from './components/SignOutForm';
  * It reads nothing of its own: the session probe is already in the cache, asked for by the shell.
  */
 export default function AccountPage() {
-  const { t } = useTranslation(['common', 'profile']);
+  const { t } = useTranslation(['common', 'profile', 'orders']);
   const { user } = useAuth();
 
   // `RequireAuth` is what guarantees there is a user; this is the type narrowing, not a state.
@@ -41,11 +41,18 @@ export default function AccountPage() {
             </dd>
           </dl>
 
-          {/* Los datos de cliente son otro recurso y otra pantalla; desde aquí solo se va a ella. */}
-          <Link to={PROFILE_PATH} className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2 mb-4">
-            <Icon name="edit" size="sm" />
-            {t('profile:link')}
-          </Link>
+          {/* Los datos de cliente y los pedidos son otros recursos y otras pantallas; desde aquí
+              solo se va a ellas. */}
+          <div className="d-flex flex-wrap gap-2 mb-4">
+            <Link to={PROFILE_PATH} className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2">
+              <Icon name="edit" size="sm" />
+              {t('profile:link')}
+            </Link>
+            <Link to={ORDERS_PATH} className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2">
+              <Icon name="receipt_long" size="sm" />
+              {t('orders:link')}
+            </Link>
+          </div>
 
           <div>
             <SignOutForm variant="primary" />

@@ -1,0 +1,34 @@
+{
+  "title": "Confirmar pedido",
+  "lead": "Repasa lo que vas a comprar. El pedido se cobra y se envía con los datos que tienes ahora en tu perfil.",
+  "lines": {
+    "title": "Lo que vas a comprar",
+    "unitPrice": "{{price}} por unidad",
+    "quantity": "{{count}} unidades",
+    "quantity_one": "{{count}} unidad",
+    "reference": "Ref. {{sku}}",
+    "shortStock": "Solo quedan {{count}} unidades de este producto.",
+    "shortStock_one": "Solo queda {{count}} unidad de este producto."
+  },
+  "summary": {
+    "title": "Total de la compra",
+    "total": "Total",
+    "priceNotice": "Los precios de esta pantalla quedan fijados hasta que confirmes.",
+    "validUntil": "Válido hasta las {{time}}.",
+    "stockNotice": "Alguna línea pide más unidades de las que hay ahora mismo en la tienda online. Si al confirmar siguen faltando, el pedido no se hace."
+  },
+  "shipping": {
+    "title": "Se envía a"
+  },
+  "payment": {
+    "title": "Se paga con",
+    "expires": "Caduca {{expiry}}"
+  },
+  "editProfile": "Cambiar en mi perfil",
+  "confirm": "Confirmar pedido",
+  "confirming": "Confirmando…",
+  "retry": "Volver a intentarlo",
+  "reopen": "Empezar de nuevo",
+  "backToCart": "Volver al carrito",
+  "empty": "No hay nada que comprar."
+}

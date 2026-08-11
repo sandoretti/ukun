@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 import { cartUnitCount, type Cart } from '../../../shared/api/cart';
 import { formatMoney } from '../../../shared/format/money';
 import { useLocale } from '../../../shared/hooks/useLocale';
-import { ComingSoonButton } from '../../../shared/ui/ComingSoon';
+import { CHECKOUT_PATH } from '../../../shared/routes';
 import { StockWarning } from '../../../shared/ui/StockWarning';
 
 type CartSummaryProps = {
@@ -64,8 +65,12 @@ export function CartSummary({ cart }: CartSummaryProps) {
         {short && <StockWarning>{t('summary.stockNotice')}</StockWarning>}
       </div>
 
+      {/* Desde aquí se sale del carrito hacia el checkout, que es quien pide el intento al servidor
+          (ADR-0016): esta pantalla no abre ninguno ni conoce ninguna clave. */}
       <div className="d-grid mt-4">
-        <ComingSoonButton label={t('summary.checkout')} variant="outline-primary" />
+        <Link to={CHECKOUT_PATH} className="btn btn-primary btn-lg">
+          {t('summary.checkout')}
+        </Link>
       </div>
     </aside>
   );

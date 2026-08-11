@@ -1,0 +1,89 @@
+@use "../bootstrap";
+
+// El checkout y los pedidos: dos pantallas que comparten la misma gramática que el carrito, así que
+// repiten su receta en vez de inventar otra. La línea es una fila con divisoria y sin caja; el
+// bloque que cierra —el total del checkout, un pedido del historial— sí es un panel, porque no se
+// edita y tiene que leerse como el final de la lista y no como una fila más.
+//
+// Ningún color se escribe aquí: todos salen de las variables que Bootstrap deriva de `_tokens.scss`.
+
+// --- Líneas del checkout --------------------------------------------------------------------------
+
+// La divisoria va entre líneas y no debajo de cada una: la última cierra ya contra lo que siga.
+.order-lines li + li .order-line {
+  border-top: bootstrap.$border-width solid var(--bs-border-color);
+}
+
+.order-line {
+  padding: 0.875rem 0;
+}
+
+// El nombre ocupa una línea y recorta con puntos suspensivos, igual que en el carrito: es lo que
+// mantiene la altura de la fila constante sin reservar un hueco que se lea como un error.
+.order-line__name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+
+// El aviso solo separa cuando lo hay; en una fila sin aviso, un margen fijo abriría un vacío.
+.order-line__notice:not(:empty) {
+  margin-top: 0.25rem;
+}
+
+// --- El panel que cierra --------------------------------------------------------------------------
+
+.order-panel {
+  border: bootstrap.$border-width solid var(--bs-border-color);
+  border-radius: bootstrap.$border-radius-lg;
+  padding: 1.5rem;
+  background-color: var(--bs-body-bg);
+}
+
+// El importe y el botón no se alejan del ojo en una lista larga. Solo desde `lg`: por debajo el
+// panel va apilado bajo las líneas, donde `sticky` no significa nada. Mismo `top` que el resumen del
+// carrito y que el sidebar del catálogo, por debajo de la barra pegajosa.
+@include bootstrap.media-breakpoint-up(lg) {
+  .order-panel {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+.order-panel__notice:not(:empty) {
+  margin-top: 1rem;
+}
+
+// --- El historial ---------------------------------------------------------------------------------
+
+// Un pedido del historial sí es una tarjeta: la lista es de bloques independientes en los que se
+// entra, no de filas de una misma tabla.
+.order-card {
+  border: bootstrap.$border-width solid var(--bs-border-color);
+  border-radius: bootstrap.$border-radius-lg;
+  padding: 1.25rem 1.5rem;
+}
+
+.order-list li + li {
+  margin-top: 1rem;
+}
+
+// El enlace es el título del pedido —de ahí sale el nombre accesible del destino—, y se comporta
+// como tal: color del texto, subrayado al pasar por encima.
+.order-card__link {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// La leyenda de un `fieldset` es tipografía normal aquí: no es un título de sección, es la etiqueta
+// de un par de campos.
+.order-filters legend {
+  float: none;
+  width: auto;
+  font-size: 1rem;
+}
