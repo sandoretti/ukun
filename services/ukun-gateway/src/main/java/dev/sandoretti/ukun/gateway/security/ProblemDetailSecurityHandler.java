@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.gateway.security;
 
 import dev.sandoretti.ukun.gateway.error.ProblemDetailWriter;
+import dev.sandoretti.ukun.gateway.web.AccessLogAttributes;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
@@ -42,9 +43,21 @@ class ProblemDetailSecurityHandler implements ServerAuthenticationEntryPoint, Se
         return problems.unauthenticated(exchange);
     }
 
-    /** Authenticated, but not {@code ROLE_ADMIN} on {@code /api/admin/**}. */
+    /**
+     * Authenticated, but not {@code ROLE_ADMIN} on {@code /api/admin/**}.
+     *
+     * <p>It names the caller on the exchange before answering, and that is the only place it can be
+     * done: this is a request that <em>had</em> a principal and still stopped inside the security
+     * chain, so {@code AccountIdAttributeWebFilter} below never runs and the access log — which sits
+     * in front of the chain — would otherwise report the one denial that has somebody behind it as
+     * anonymous. A 403 whose {@code accountId} is missing is exactly the line an audit would want.
+     */
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException exception) {
-        return problems.forbidden(exchange);
+        return exchange.getPrincipal()
+                .map(UkunOidcUser::accountIdOf)
+                .doOnNext(accountId -> accountId.ifPresent(
+                        id -> exchange.getAttributes().put(AccessLogAttributes.ACCOUNT_ID, id)))
+                .then(problems.forbidden(exchange));
     }
 }

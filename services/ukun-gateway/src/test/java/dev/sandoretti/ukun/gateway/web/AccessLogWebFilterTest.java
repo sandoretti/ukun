@@ -130,15 +130,19 @@ class AccessLogWebFilterTest {
      * from the access token, never {@code Principal#getName()} — which in this gateway is the email
      * the person typed into the login form, and is PII that would then appear on every line of every
      * request.
+     *
+     * <p>The id arrives as an exchange attribute and not from the principal, because this filter runs
+     * in front of the security chain so that a denied request still gets a line. Who resolves the
+     * principal into that attribute — and who is deliberately not named — is
+     * {@link AccountIdAttributeWebFilterTest}.
      */
     @Test
     @DisplayName("names the person by account id and never by email")
     void namesThePersonByAccountId() {
         MockServerWebExchange exchange = exchangeFor(CATALOGUE);
-        ServerWebExchange loggedIn =
-                exchange.mutate().principal(Mono.just(loggedInUser())).build();
+        exchange.getAttributes().put(AccessLogAttributes.ACCOUNT_ID, ACCOUNT_ID);
 
-        filter.filter(loggedIn, respondingWith(HttpStatus.OK)).block();
+        filter.filter(exchange, respondingWith(HttpStatus.OK)).block();
 
         assertSoftly(softly -> {
             softly.assertThat(lines.list)
@@ -158,12 +162,35 @@ class AccessLogWebFilterTest {
     @DisplayName("leaves no account behind on the event loop thread")
     void leavesNothingBehindOnTheEventLoop() {
         MockServerWebExchange exchange = exchangeFor(CATALOGUE);
-        ServerWebExchange loggedIn =
-                exchange.mutate().principal(Mono.just(loggedInUser())).build();
+        exchange.getAttributes().put(AccessLogAttributes.ACCOUNT_ID, ACCOUNT_ID);
 
-        filter.filter(loggedIn, respondingWith(HttpStatus.OK)).block();
+        filter.filter(exchange, respondingWith(HttpStatus.OK)).block();
 
         assertThat(MDC.get("accountId")).isNull();
+    }
+
+    /**
+     * The regression this filter's move exists for. A request the security chain refuses never reaches
+     * the filters below it, so while this one sat behind the chain every 401 and every 403 of the
+     * coarse route filter went unlogged — a scan of protected routes left no trace in the only service
+     * that sees every request.
+     *
+     * <p>The stand-in for "the chain refused it" is a chain that writes the status and completes
+     * without doing anything else, which is exactly what {@code WebFilterChainProxy} does on a
+     * denial.
+     */
+    @Test
+    @DisplayName("logs a request the security chain refused, with nobody to name")
+    void logsARequestRefusedBeforeAnybodyWasAuthenticated() {
+        MockServerWebExchange exchange = exchangeFor("/api/admin/employees");
+
+        filter.filter(exchange, respondingWith(HttpStatus.UNAUTHORIZED)).block();
+
+        assertThat(lines.list).singleElement().satisfies(event -> assertSoftly(softly -> {
+            softly.assertThat(event.getFormattedMessage()).contains("/api/admin/employees", "401");
+            softly.assertThat(event.getLevel()).isEqualTo(Level.WARN);
+            softly.assertThat(event.getMDCPropertyMap()).doesNotContainKey("accountId");
+        }));
     }
 
     /**
@@ -179,26 +206,6 @@ class AccessLogWebFilterTest {
 
         assertThat(lines.list).singleElement().satisfies(event -> assertThat(event.getMDCPropertyMap())
                 .doesNotContainKey("accountId"));
-    }
-
-    /**
-     * A principal of another shape — nothing in this service produces one today, but a future
-     * authentication mechanism could — is treated as anonymous rather than named by whatever
-     * {@code getName()} happens to return. Guessing is how the email would get in.
-     */
-    @Test
-    @DisplayName("a principal that is not this gateway's user is not named either")
-    void doesNotGuessTheAccountOfAnUnknownPrincipal() {
-        MockServerWebExchange exchange = exchangeFor(CATALOGUE);
-        Authentication other = new TestingAuthenticationToken(EMAIL, "n/a", "ROLE_CUSTOMER");
-        ServerWebExchange loggedIn = exchange.mutate().principal(Mono.just(other)).build();
-
-        filter.filter(loggedIn, respondingWith(HttpStatus.OK)).block();
-
-        assertThat(lines.list).singleElement().satisfies(event -> assertSoftly(softly -> {
-            softly.assertThat(event.getMDCPropertyMap()).doesNotContainKey("accountId");
-            softly.assertThat(event.getFormattedMessage()).doesNotContain(EMAIL);
-        }));
     }
 
     private Level levelFor(HttpStatus status) {
