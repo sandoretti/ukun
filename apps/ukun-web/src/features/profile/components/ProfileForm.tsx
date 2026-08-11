@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Col, Form, Row } from 'react-bootstrap';
 
 import { SUPPORTED_LANGUAGES } from '../../../i18n/languages';
-import { useStores } from '../../../shared/api/stores';
+import { AddressFieldset } from '../../../shared/forms/AddressFieldset';
+import { CardFieldset } from '../../../shared/forms/CardFieldset';
+import { FavoriteStoreField } from '../../../shared/forms/FavoriteStoreField';
 import { applyServerErrors } from '../../../shared/forms/applyServerErrors';
+import { NAME_MAX } from '../../../shared/forms/customerFields';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
 import { Fieldset } from '../../../shared/ui/Fieldset';
 import { ReadOnlyField } from '../../../shared/ui/ReadOnlyField';
@@ -15,15 +18,12 @@ import { TextField } from '../../../shared/ui/TextField';
 import { useUpdateMyProfile } from '../api/queries';
 import type { CustomerProfile } from '../../../shared/api/profile';
 import {
-  ADDRESS_MAX,
   FIELD_MESSAGE_KEYS,
-  NAME_MAX,
   profileSchema,
   toFormValues,
   toRequest,
   type ProfileFormValues,
 } from '../profileSchema';
-import { CardFieldset } from './CardFieldset';
 import { ProfileFormActions, type Outcome } from './ProfileFormActions';
 
 type ProfileFormProps = {
@@ -51,7 +51,6 @@ type ProfileFormProps = {
 export function ProfileForm({ profile }: ProfileFormProps) {
   const { t } = useTranslation('profile');
   const messageOf = useFieldMessages('profile');
-  const stores = useStores();
   const update = useUpdateMyProfile();
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [formError, setFormError] = useState<unknown>(null);
@@ -63,21 +62,12 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     values: toFormValues(profile),
   });
   const {
-    control,
     register,
     handleSubmit,
     setError,
     reset,
     formState: { errors, isDirty },
   } = form;
-
-  /**
-   * The favourite store is the one control that has to be **controlled**: its options arrive from a
-   * second read, and an uncontrolled `<select>` keeps whatever the DOM had when it first rendered —
-   * "None" — even after the store it points at shows up in the list. The form state was right all
-   * along; what was wrong was what the reader saw.
-   */
-  const favoriteStoreId = useWatch({ control, name: 'favoriteStoreId' });
 
   const onSubmit = handleSubmit(async (values) => {
     // Read before the save: the answer is a `200` either way, so whether anything had changed is
@@ -145,55 +135,9 @@ export function ProfileForm({ profile }: ProfileFormProps) {
           </ReadOnlyField>
         </Fieldset>
 
-        <Fieldset
-          legend={t('address.legend')}
-          description={t('address.description')}
-          className="settings-section"
-        >
-          <TextField
-            label={t('address.street')}
-            error={messageOf(errors.address?.street)}
-            type="text"
-            autoComplete="address-line1"
-            maxLength={ADDRESS_MAX}
-            {...register('address.street')}
-          />
-          <Row>
-            <Col md={5}>
-              <TextField
-                label={t('address.city')}
-                error={messageOf(errors.address?.city)}
-                type="text"
-                autoComplete="address-level2"
-                maxLength={ADDRESS_MAX}
-                {...register('address.city')}
-              />
-            </Col>
-            <Col md={4}>
-              <TextField
-                label={t('address.province')}
-                error={messageOf(errors.address?.province)}
-                type="text"
-                autoComplete="address-level1"
-                maxLength={ADDRESS_MAX}
-                {...register('address.province')}
-              />
-            </Col>
-            <Col md={3}>
-              <TextField
-                label={t('address.postalCode')}
-                error={messageOf(errors.address?.postalCode)}
-                type="text"
-                inputMode="numeric"
-                autoComplete="postal-code"
-                maxLength={5}
-                {...register('address.postalCode')}
-              />
-            </Col>
-          </Row>
-        </Fieldset>
+        <AddressFieldset />
 
-        <CardFieldset />
+        <CardFieldset variant="existing" />
 
         <Fieldset
           legend={t('preferences.legend')}
@@ -202,29 +146,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         >
           <Row>
             <Col md={6}>
-              {/* La tienda es un identificador, no un objeto anidado (ADR-0017 §2): el nombre se
-                  resuelve con la lista de tiendas, que ya está en caché para toda la sesión. */}
-              <SelectField
-                label={t('preferences.favoriteStore')}
-                error={messageOf(errors.favoriteStoreId)}
-                hint={
-                  stores.isError
-                    ? t('preferences.favoriteStoreUnavailable')
-                    : t('preferences.favoriteStoreHint')
-                }
-                disabled={stores.isError}
-                {...register('favoriteStoreId', {
-                  setValueAs: (value: string) => (value === '' ? null : Number(value)),
-                })}
-                value={favoriteStoreId ?? ''}
-              >
-                <option value="">{t('preferences.favoriteStoreNone')}</option>
-                {(stores.data ?? []).map((store) => (
-                  <option key={store.id} value={store.id}>
-                    {store.name}
-                  </option>
-                ))}
-              </SelectField>
+              <FavoriteStoreField />
             </Col>
             <Col md={6}>
               <SelectField
