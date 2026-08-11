@@ -110,3 +110,52 @@ tasks.withType<JavaCompile>().configureEach {
         )
     )
 }
+
+// El umbral obligatorio de docs/13-testing.md §3: `orders` e `inventory`, que es donde está el dinero
+// y la concurrencia. El mecanismo lo engancha a `check` el convention plugin; lo que se mide se decide
+// aquí, porque estos dos módulos son de este servicio.
+//
+// POR QUÉ LA REGLA EXCLUYE `..domain..` Y NO ES UN ATAJO.
+//
+// La prohibición de @Data (docs/03 §3) obliga a que cada @Entity escriba a mano equals/hashCode/
+// toString. Ese código existe por una regla dura del repo, no lo ejercita ningún test de negocio, y
+// pesa más que la lógica: `orders` entero da 83,6% de línea y 33,1% de rama, pero descontando esos
+// tres métodos sube a 96,9% y 80,4%. Un umbral sobre el módulo completo mediría entonces cuántas
+// entidades tiene, no cómo de probadas están: añadir una entidad correcta bajaría la cifra y rompería
+// el build, empujando a escribir tests de `equals` — los tests basura que ese mismo documento prohíbe.
+//
+// Jacoco sabe excluir clases, no métodos, así que la exclusión más fina posible es el paquete. Lo que
+// se pierde con ella es poco y está medido: la lógica de agregado de `..domain..` (los invariantes de
+// CustomerOrder, el freeze y el hasExpired de CheckoutAttempt) está hoy al 98,1% de línea, y no lo
+// está por casualidad — se ejercita desde los casos de uso, que sí entran en la barra.
+//
+// Las barras están por debajo de lo medido a propósito: son un suelo contra la regresión, no un
+// objetivo que perseguir. Subirlas hasta rozar la cifra de hoy convierte cualquier refactor honesto en
+// un build rojo.
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = "PACKAGE"
+            includes = listOf(
+                "dev.sandoretti.ukun.api.orders.*",
+                "dev.sandoretti.ukun.api.inventory.*",
+            )
+            excludes = listOf(
+                "dev.sandoretti.ukun.api.orders.domain",
+                "dev.sandoretti.ukun.api.inventory.domain",
+            )
+
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.90".toBigDecimal()
+            }
+
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.75".toBigDecimal()
+            }
+        }
+    }
+}

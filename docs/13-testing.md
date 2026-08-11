@@ -75,9 +75,10 @@ Test de persistencia con contador de sentencias (Hibernate `Statistics.getPrepar
 | `./gradlew integrationTest` | `*IT` backend — Testcontainers, `@SpringBootTest` de los 4 recorridos end-to-end (`03` §3) | CI, antes de merge |
 | Vitest | componentes y hooks del frontend, incluida paridad de traducciones | cada build local y cada push |
 | Playwright | los tres recorridos de `03` §3 (cliente completo, admin crea producto, empleado edita stock) | CI, contra el stack levantado por Tilt |
-| Jacoco (`jacocoTestReport`) | cobertura informativa en todo el backend, sobre las dos tandas; **umbral obligatorio solo en `orders` e `inventory`** (`03` §3 — es donde está el dinero y la concurrencia) | CI |
+| Jacoco (`jacocoTestReport`) | cobertura informativa en todo el backend, sobre las dos tandas | CI |
+| Jacoco (`jacocoTestCoverageVerification`) | **umbral obligatorio solo en `orders` e `inventory`** (`03` §3 — es donde está el dinero y la concurrencia), 90% de línea y 75% de rama por paquete | CI |
 
-`./gradlew check` de un servicio corre las dos tandas y el informe de cobertura; `./gradlew build` añade el empaquetado. Para una sola clase, `--tests`:
+`./gradlew check` de un servicio corre las dos tandas, el informe de cobertura y la verificación del umbral; `./gradlew build` añade el empaquetado. Para una sola clase, `--tests`:
 
 ```bash
 ./gradlew :ukun-api:test                                  # solo unitarios
@@ -88,3 +89,13 @@ Test de persistencia con contador de sentencias (Hibernate `Statistics.getPrepar
 Las dos tandas no se solapan nunca: una clase entra en una o en la otra según su nombre, y ninguna corre dos veces. Es comprobable comparando los informes de `build/test-results/test/` y `build/test-results/integrationTest/`.
 
 Sin umbral global de cobertura — invita a tests basura que solo rellenan líneas sin verificar comportamiento (`03-analisis-y-patrones.md` §3).
+
+### Qué mide exactamente el umbral de `orders` e `inventory`
+
+La barra se aplica **por paquete** y **excluye `..domain..`**, que no es un atajo sino la consecuencia de otra regla dura de este repo. La prohibición de `@Data` (`03` §3) obliga a que cada `@Entity` escriba a mano `equals`/`hashCode`/`toString`; ese código existe por mandato, no lo ejercita ningún test de negocio, y pesa más que la lógica. Medido: `orders` entero da 83,6% de línea y 33,1% de rama, y descontando esos tres métodos, 96,9% y 80,4%.
+
+Un umbral sobre el módulo completo mediría por tanto **cuántas entidades tiene, no cómo de probadas están**: añadir una entidad escrita según las reglas del repo bajaría la cifra y rompería el build, empujando a escribir tests de `equals` — exactamente los tests basura que el párrafo de arriba prohíbe. Jacoco sabe excluir clases, no métodos, así que el paquete es la exclusión más fina disponible.
+
+Lo que se pierde con ella está medido y es poco: la lógica de agregado de `..domain..` (los invariantes de `CustomerOrder`, el `freeze` y el `hasExpired` de `CheckoutAttempt`) está al 98,1% de línea, y no por casualidad — se ejercita desde los casos de uso, que sí entran en la barra.
+
+Las barras están **por debajo** de lo medido a propósito: son un suelo contra la regresión, no un objetivo. Subirlas hasta rozar la cifra de hoy convierte cualquier refactor honesto en un build rojo. El mecanismo se engancha a `check` en el convention plugin, para que ningún servicio pueda olvidarlo; **qué** se mide lo declara cada servicio, porque hoy solo `ukun-api` tiene módulos con dinero dentro.
