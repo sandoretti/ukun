@@ -93,6 +93,28 @@ class CheckoutAttemptIT extends OrdersIntegrationTest {
         });
     }
 
+    /**
+     * The confirmation screen shows the same photos the cart just showed (issue #120), so the line
+     * carries the product's {@code imageUrl} — and {@code null} when the product has none (RF-10),
+     * which the screen paints as an empty frame rather than a broken image.
+     *
+     * <p>Both cases in one test because what a screen needs is to tell them apart. It costs no extra
+     * read: the photo rides on the {@code ProductSummary} already fetched to work out
+     * {@code available}, which is what keeps this off the N+1 the batch-only {@code CatalogApi} exists
+     * to prevent.
+     */
+    @Test
+    @DisplayName("every line carries the product's photo, and null when the product has none")
+    void carriesThePhotoOfEveryProduct() {
+        addToCart(ADA, productIdOf(IN_STOCK), 1);
+        addToCart(ADA, productIdOf(LAST_ONE), 1);
+
+        assertThat(openAttempt(ADA).lines())
+                .extracting(CheckoutAttemptLineResponse::sku, CheckoutAttemptLineResponse::imageUrl)
+                .containsExactlyInAnyOrder(
+                        tuple(IN_STOCK, "/media/products/sofa-cuero.jpg"), tuple(LAST_ONE, null));
+    }
+
     /** RF-04: the shop sells from the online store and nowhere else, whatever Barcelona holds. */
     @Test
     @DisplayName("stock in another store reads as none available")

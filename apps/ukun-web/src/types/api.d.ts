@@ -1127,6 +1127,22 @@ export interface components {
         CheckoutAttemptLine: {
             sku: components["schemas"]["Sku"];
             productName: string;
+            /**
+             * Format: uri-reference
+             * @description The same servable URL `CartLine` carries, composed by the server from the storage key and
+             *     read from the catalogue while the attempt is being opened. Unlike `unitPrice`, it is
+             *     **not stored** in the attempt: what the attempt freezes is the amount the customer is
+             *     agreeing to pay, and a photo is not part of that agreement.
+             *
+             *     `OrderLine` deliberately has no `imageUrl`: an order outlives its product, and the
+             *     snapshot ADR-0011 mandates covers what the order owes — name, price, quantity — not a
+             *     picture that can be replaced under a two-year-old receipt.
+             *
+             *     `null` for a product with no photo (RF-10). The reader is coming from the cart, where the
+             *     same photo is already on screen: dropping it on the confirmation screen would make the
+             *     two lists look like different things.
+             */
+            imageUrl: string | null;
             /** @description Price frozen when the attempt was opened. */
             unitPrice: components["schemas"]["Money"];
             /** Format: int32 */
