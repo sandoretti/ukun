@@ -23,10 +23,7 @@ import org.junit.jupiter.api.Test;
  * product with no row in this store at all. The last two are the ones RF-01 insists must not be
  * distinguishable from outside.
  *
- * <p>The products are inserted with SQL rather than through an object mother of the {@code catalog}
- * module, and that is the point rather than a shortcut: {@code inventory} knows a product as a
- * {@code Long} and nothing else (ADR-0017 §2). The rows exist here only because
- * {@code store_stock.product_id} has a foreign key to satisfy.
+ * <p>The products are inserted with SQL through {@link ProductRows}, which says why.
  */
 class AvailabilityIT extends StoresIntegrationTest {
 
@@ -41,10 +38,10 @@ class AvailabilityIT extends StoresIntegrationTest {
     void seedTheStock() {
         jdbc.update("INSERT INTO product_type (name) VALUES ('Sofás')");
 
-        insertProduct(IN_STOCK, "Sofá de cuero", "399.99", true);
-        insertProduct(OUT_OF_STOCK, "Litera infantil", "399.99", true);
-        insertProduct(NOT_SOLD_HERE, "Mesa de café", "129.75", true);
-        insertProduct(DISCONTINUED, "Silla retirada", "49.90", false);
+        ProductRows.insert(jdbc, IN_STOCK, "Sofá de cuero", "399.99", true);
+        ProductRows.insert(jdbc, OUT_OF_STOCK, "Litera infantil", "399.99", true);
+        ProductRows.insert(jdbc, NOT_SOLD_HERE, "Mesa de café", "129.75", true);
+        ProductRows.insert(jdbc, DISCONTINUED, "Silla retirada", "49.90", false);
 
         long online = storeIdOf("Ukun Online");
 
@@ -313,19 +310,6 @@ class AvailabilityIT extends StoresIntegrationTest {
                         AVAILABILITY,
                         storeId,
                         Arrays.stream(productIds).map(String::valueOf).collect(Collectors.joining(",")));
-    }
-
-    private void insertProduct(String sku, String name, String price, boolean active) {
-        jdbc.update(
-                """
-                INSERT INTO product (sku, name, description, price, product_type_id, is_active)
-                     VALUES (?, ?, ?, CAST(? AS DECIMAL), (SELECT id FROM product_type WHERE name = 'Sofás'), ?)
-                """,
-                sku,
-                name,
-                name + ", for testing purposes.",
-                price,
-                active);
     }
 
 }

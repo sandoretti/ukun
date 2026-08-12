@@ -55,8 +55,8 @@ class SellableStockIT extends StoresIntegrationTest {
     void seedTwoStockedProducts() {
         jdbc.update("INSERT INTO product_type (name) VALUES ('Sofás')");
 
-        insertProduct(ON_SALE, "Sofá de cuero", true);
-        insertProduct(DISCONTINUED, "Silla retirada", false);
+        ProductRows.insert(jdbc, ON_SALE, "Sofá de cuero", "399.99", true);
+        ProductRows.insert(jdbc, DISCONTINUED, "Silla retirada", "399.99", false);
 
         long online = storeIdOf("Ukun Online");
 
@@ -152,17 +152,5 @@ class SellableStockIT extends StoresIntegrationTest {
     private int unitsOf(String sku) {
         return jdbc.queryForObject(
                 "SELECT quantity FROM store_stock WHERE product_id = ?", Integer.class, productIdOf(sku));
-    }
-
-    private void insertProduct(String sku, String name, boolean active) {
-        jdbc.update(
-                """
-                INSERT INTO product (sku, name, description, price, product_type_id, is_active)
-                     VALUES (?, ?, ?, 399.99, (SELECT id FROM product_type WHERE name = 'Sofás'), ?)
-                """,
-                sku,
-                name,
-                name + ", for testing purposes.",
-                active);
     }
 }
