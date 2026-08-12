@@ -30,12 +30,20 @@ export const profileKeys = {
  * the same profile `features/profile` edits — a second consumer in another feature, and features
  * never import each other (`docs/07-frontend-ux-ui.md`). It is the same move `cart.ts` and
  * `session.ts` already made. Saving the profile stays where its only screen is.
+ *
+ * **`enabled` exists for the public screens, and it is a correctness switch rather than a
+ * saved request.** The catalogue reads the favourite store from here to place its availability
+ * (RF-01) and it is reachable with no session at all; this endpoint answers `401` to a visitor, and
+ * a `401` without `allowAnonymous` is a dead session as far as the axios interceptor is concerned —
+ * it would send everyone browsing the catalogue to sign in. Whoever passes `false` is saying "there
+ * is no session to ask about", and the query stays pending for good, which is the honest answer.
  */
-export function useMyProfile() {
+export function useMyProfile({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: profileKeys.me(),
     queryFn: ({ signal }) =>
       http.get<CustomerProfile>('/api/me/profile', { signal }).then((response) => response.data),
+    enabled,
     retry: retryUnlessClientError,
   });
 }

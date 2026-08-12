@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Col, Container, Offcanvas, Row } from 'react-bootstrap';
 
-import { useOnlineAvailability } from '../../shared/api/availability';
+import { useFavoriteStoreAvailability, useOnlineAvailability } from '../../shared/api/availability';
 import { useProductTypes } from '../../shared/api/productTypes';
 import { ErrorState } from '../../shared/ui/ErrorState';
 import { Pagination } from '../../shared/ui/Pagination';
@@ -40,6 +40,10 @@ export default function CatalogPage() {
   // Catalog and availability are two separate reads composed on screen (ADR-0017 §3): the grid is
   // painted as soon as the products arrive, without waiting for the stock answer.
   const availability = useOnlineAvailability(productIds);
+  // The second store of RF-01. `store` being undefined is the whole answer for a visitor with no
+  // session or no favourite, and it is what keeps the cards on their single, unnamed line.
+  const favoriteAvailability = useFavoriteStoreAvailability(productIds);
+  const favoriteStore = favoriteAvailability.store;
 
   const types = typesQuery.data ?? [];
 
@@ -100,7 +104,21 @@ export default function CatalogPage() {
                 <Row xs={2} md={3} xl={4} className="g-4">
                   {items.map((product) => (
                     <Col key={product.id}>
-                      <ProductCard product={product} available={availability.available?.get(product.id)} />
+                      <ProductCard
+                        product={product}
+                        online={{
+                          storeName: availability.store?.name,
+                          available: availability.available?.get(product.id),
+                        }}
+                        favorite={
+                          favoriteStore === undefined
+                            ? undefined
+                            : {
+                                storeName: favoriteStore.name,
+                                available: favoriteAvailability.available?.get(product.id),
+                              }
+                        }
+                      />
                     </Col>
                   ))}
                 </Row>

@@ -4,6 +4,7 @@ import { http as mswHttp, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '../../test/msw/server';
+import { signedIn } from '../../test/msw/sessionHandlers';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import { scrollToSentinel } from '../../test/intersectionObserver';
 import CatalogPage from './CatalogPage';
@@ -273,5 +274,42 @@ describe('CatalogPage', () => {
       await screen.findByText('No hemos podido consultar la disponibilidad. El catálogo se muestra igualmente.'),
     ).toBeDefined();
     expect(screen.queryByText('En stock')).toBeNull();
+  });
+});
+
+/**
+ * The grid's half of RF-01. `customerProfile.favoriteStoreId` is `2` (Ukun Gijón) and `stock[2]`
+ * holds products 1, 3 and 9 only, so the same page shows both a product stocked in the favourite
+ * store and several with no row there at all.
+ */
+describe('CatalogPage · favourite store (RF-01)', () => {
+  it('names both stores on every card once the customer has a favourite', async () => {
+    server.use(signedIn());
+
+    renderWithProviders(<CatalogPage />, { route: '/products?name=sofa' });
+
+    const sofa = await screen.findByRole('article', { name: 'Sofá de cuero' });
+    // Four units online, one in Gijón: stocked in both, and each line says which store it means.
+    // The favourite is awaited and the online one is not, because it is the favourite that lands
+    // last: it takes a session, then a profile, then the store's name before it can be asked about.
+    expect(await within(sofa).findByText('En stock en Ukun Gijón')).toBeDefined();
+    expect(within(sofa).getByText('En stock en Ukun Online')).toBeDefined();
+
+    // Stocked online, no row in Gijón — the two ways of not being available, on one card.
+    const chaise = screen.getByRole('article', { name: 'Sofá chaise longue' });
+    expect(within(chaise).getByText('Sin stock en Ukun Gijón')).toBeDefined();
+    expect(within(chaise).getByText('En stock en Ukun Online')).toBeDefined();
+  });
+
+  it('leaves the anonymous card exactly as it was, on one unnamed line', async () => {
+    renderWithProviders(<CatalogPage />, { route: '/products?name=sofa' });
+
+    const sofa = await screen.findByRole('article', { name: 'Sofá de cuero' });
+
+    // With a single store there is nothing to tell apart, so the card keeps the wording it has
+    // always had — naming the store would be a change to every visitor's screen for no reason.
+    expect(await within(sofa).findByText('En stock')).toBeDefined();
+    expect(within(sofa).queryByText(/Ukun Online/)).toBeNull();
+    expect(within(sofa).queryByText(/Ukun Gijón/)).toBeNull();
   });
 });

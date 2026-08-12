@@ -59,3 +59,13 @@ export function profileValidationFailed(errors: ValidationError[]) {
 export function profileFails(code: ErrorCode, status: number) {
   return http.get(`${base}/api/me/profile`, () => problem(code, status));
 }
+
+/**
+ * The same profile with another favourite store, or with none: `null` is a customer who never chose
+ * one, which the catalogue has to tell apart from having no session at all (RF-01).
+ */
+export function profileWithFavoriteStore(favoriteStoreId: number | null) {
+  return http.get(`${base}/api/me/profile`, () =>
+    HttpResponse.json({ ...customerProfile, favoriteStoreId }),
+  );
+}

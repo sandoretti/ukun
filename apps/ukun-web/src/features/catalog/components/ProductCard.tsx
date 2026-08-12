@@ -8,20 +8,43 @@ import { ProductImage } from '../../../shared/ui/ProductImage';
 import type { ProductSummary } from '../api/productKeys';
 import { productPath } from '../../../shared/routes';
 
-type ProductCardProps = {
-  product: ProductSummary;
+/** One store's answer about this product: its name, and whether there is stock. */
+export type StoreStock = {
+  storeName: string | undefined;
   /** `undefined` while the parallel availability read is still in flight or has failed. */
-  available?: boolean;
+  available: boolean | undefined;
 };
 
-export function ProductCard({ product, available }: ProductCardProps) {
+type ProductCardProps = {
+  product: ProductSummary;
+  online: StoreStock;
+  /**
+   * The customer's favourite store, when there is a session with one (RF-01). Its presence is what
+   * decides whether the stock lines name their store: with a single store there is nothing to tell
+   * apart, with two there is.
+   */
+  favorite?: StoreStock;
+};
+
+export function ProductCard({ product, online, favorite }: ProductCardProps) {
   const { t } = useTranslation('catalog');
   const locale = useLocale();
 
   const titleId = `product-${product.id}-title`;
   // Out of stock steps back visually instead of announcing itself with a banner; what says so is
   // the line under the price, which is also what a screen reader reads.
-  const mediaClass = `product-media${available === false ? ' product-media--dimmed' : ''}`;
+  //
+  // It is the online store that dims the card, never the favourite: an order is only ever placed
+  // against the online one (RF-04), so that is the answer that says whether this product can be
+  // bought at all.
+  const mediaClass = `product-media${online.available === false ? ' product-media--dimmed' : ''}`;
+
+  // Named lines only once there are two stores to tell apart. Without a favourite the card keeps
+  // the line it always had, word for word — most readers are anonymous and nothing changes for them.
+  const named = favorite !== undefined;
+  const stockLines = (named ? [online, favorite] : [online]).filter(
+    (source) => source.available !== undefined && (!named || source.storeName !== undefined),
+  );
 
   return (
     // The whole card is the link to the detail sheet, which is what makes the sheet reachable at
@@ -50,13 +73,20 @@ export function ProductCard({ product, available }: ProductCardProps) {
             {product.name}
           </Card.Title>
           <p className="fs-5 fw-semibold text-tabular-nums mb-1">{formatMoney(product.price, locale)}</p>
-          <div className="mt-auto">
-            {available !== undefined && (
-              <p className="small text-body-secondary d-flex align-items-center gap-2 mb-0">
+          <div className="mt-auto d-grid gap-1">
+            {stockLines.map(({ storeName, available }) => (
+              <p
+                key={storeName ?? 'online'}
+                className="small text-body-secondary d-flex align-items-center gap-2 mb-0"
+              >
                 <span className={`status-dot status-dot--${available ? 'in' : 'out'}`} aria-hidden="true" />
-                {available ? t('availability.available') : t('availability.unavailable')}
+                {named
+                  ? t(available ? 'availability.availableAt' : 'availability.unavailableAt', {
+                      store: storeName,
+                    })
+                  : t(available ? 'availability.available' : 'availability.unavailable')}
               </p>
-            )}
+            ))}
           </div>
         </Card.Body>
       </Card>

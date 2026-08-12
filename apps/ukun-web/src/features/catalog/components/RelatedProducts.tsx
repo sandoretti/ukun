@@ -2,7 +2,10 @@ import { useId, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Col, Row } from 'react-bootstrap';
 
-import { useOnlineAvailability } from '../../../shared/api/availability';
+import {
+  useFavoriteStoreAvailability,
+  useOnlineAvailability,
+} from '../../../shared/api/availability';
 import { useRelatedProducts } from '../api/queries';
 import { ProductCard } from './ProductCard';
 
@@ -31,8 +34,11 @@ export function RelatedProducts({ typeId, excludeId }: RelatedProductsProps) {
     () => (relatedQuery.data ?? []).map((product) => product.id),
     [relatedQuery.data],
   );
-  // Same reading as the listing's, so a card in the strip says the same as that card in the grid.
+  // Same reading as the listing's, so a card in the strip says the same as that card in the grid —
+  // including the customer's favourite store (RF-01), which is also what the sheet above is showing.
   const availability = useOnlineAvailability(productIds);
+  const favoriteAvailability = useFavoriteStoreAvailability(productIds);
+  const favoriteStore = favoriteAvailability.store;
 
   if (products.length === 0) {
     return null;
@@ -46,7 +52,21 @@ export function RelatedProducts({ typeId, excludeId }: RelatedProductsProps) {
       <Row xs={2} md={3} xl={4} className="g-4">
         {products.map((product) => (
           <Col key={product.id}>
-            <ProductCard product={product} available={availability.available?.get(product.id)} />
+            <ProductCard
+              product={product}
+              online={{
+                storeName: availability.store?.name,
+                available: availability.available?.get(product.id),
+              }}
+              favorite={
+                favoriteStore === undefined
+                  ? undefined
+                  : {
+                      storeName: favoriteStore.name,
+                      available: favoriteAvailability.available?.get(product.id),
+                    }
+              }
+            />
           </Col>
         ))}
       </Row>
