@@ -1,18 +1,14 @@
 package dev.sandoretti.ukun.api.identity.internal;
 
-import dev.sandoretti.ukun.api.shared.observability.BusinessEvents;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied;
+import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied.Reason;
 import java.util.stream.Collectors;
-import org.slf4j.event.Level;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Emits {@code auth.authorization.denied} — the role half of it — from the event Spring Security
@@ -38,7 +34,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Component
 class AuthorizationDeniedListener {
 
-    private static final String EVENT = "auth.authorization.denied";
     private static final String ROLE_PREFIX = "ROLE_";
 
     @EventListener
@@ -48,13 +43,7 @@ class AuthorizationDeniedListener {
             return;
         }
 
-        Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("accountId", accountIdOf(authentication));
-        fields.put("role", rolesOf(authentication));
-        fields.putAll(currentRequest());
-        fields.put("reason", "ROLE");
-
-        BusinessEvents.emit(Level.WARN, EVENT, fields);
+        AuthorizationDenied.emit(accountIdOf(authentication), rolesOf(authentication), Reason.ROLE);
     }
 
     private static boolean isIdentified(Authentication authentication) {
@@ -84,20 +73,5 @@ class AuthorizationDeniedListener {
                 .map(authority -> authority.substring(ROLE_PREFIX.length()))
                 .sorted()
                 .collect(Collectors.joining(","));
-    }
-
-    /**
-     * Method and path come from the request rather than from the event's object, which is a
-     * {@code MethodInvocation} for a method rule and a request for a route rule. The audit wants the
-     * same two fields either way.
-     */
-    private static Map<String, Object> currentRequest() {
-        if (!(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes)) {
-            return Map.of();
-        }
-
-        return Map.of(
-                "method", attributes.getRequest().getMethod(),
-                "path", attributes.getRequest().getRequestURI());
     }
 }

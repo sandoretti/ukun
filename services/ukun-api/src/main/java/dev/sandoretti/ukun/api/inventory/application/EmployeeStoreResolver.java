@@ -4,15 +4,11 @@ import dev.sandoretti.ukun.api.identity.CurrentAccount;
 import dev.sandoretti.ukun.api.identity.IdentityApi;
 import dev.sandoretti.ukun.api.identity.Role;
 import dev.sandoretti.ukun.api.inventory.infra.EmployeeStoreRepository;
-import dev.sandoretti.ukun.api.shared.observability.BusinessEvents;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied;
+import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied.Reason;
 import java.util.stream.Collectors;
-import org.slf4j.event.Level;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Turns "the request says store 3" into "this employee works in store 3, so let them" — the rule of
@@ -32,8 +28,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  */
 @Component
 class EmployeeStoreResolver {
-
-    private static final String DENIED_EVENT = "auth.authorization.denied";
 
     private final IdentityApi identity;
     private final EmployeeStoreRepository employees;
@@ -76,33 +70,16 @@ class EmployeeStoreResolver {
      * {@code AccessDeniedException} and cannot tell it apart from a role rule that already reported
      * itself — auditing there would either double the role denials or lose the reason of this one.
      *
-     * <p>The role half stays where it is, in {@code identity}'s listener. Same event name, same fields,
-     * two publishers, exactly as {@code docs/11} §3 describes it.
+     * <p>The role half stays where it is, in {@code identity}'s listener. Two publishers, one shape —
+     * which is what {@link AuthorizationDenied} in {@code shared} is for.
      */
     private AccessDeniedException denied(CurrentAccount account, String detail) {
-        Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("accountId", account.accountId());
-        fields.put("role", rolesOf(account));
-        fields.putAll(currentRequest());
-        fields.put("reason", "FOREIGN_RESOURCE");
-
-        BusinessEvents.emit(Level.WARN, DENIED_EVENT, fields);
+        AuthorizationDenied.emit(account.accountId(), rolesOf(account), Reason.FOREIGN_RESOURCE);
 
         return new AccessDeniedException("Access denied: " + detail);
     }
 
     private static String rolesOf(CurrentAccount account) {
         return account.roles().stream().map(Role::name).sorted().collect(Collectors.joining(","));
-    }
-
-    /** Method and path, read the same way {@code identity}'s listener reads them for the role half. */
-    private static Map<String, Object> currentRequest() {
-        if (!(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes)) {
-            return Map.of();
-        }
-
-        return Map.of(
-                "method", attributes.getRequest().getMethod(),
-                "path", attributes.getRequest().getRequestURI());
     }
 }
