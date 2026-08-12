@@ -5,7 +5,7 @@ description: Convenciones de este repo para el monolito API de dominio (services
 
 # Convenciones de `services/ukun-api`
 
-Este servicio absorbe la lógica que en el legacy está repartida entre `ukun-clientes` y `ukun-empleados` (que no corren y se borran — no hay convivencia). Antes de escribir código aquí, lee `docs/02-requisitos.md` (qué debe hacer) y `docs/03-analisis-y-patrones.md` (por qué se hace así — cada regla de abajo enlaza a un defecto real que corrige).
+Este servicio absorbe la lógica que en el legacy estaba repartida entre `ukun-clientes` (borrado ya en v0.6, en el tag `v0.0-legacy`) y `ukun-empleados` (que no corre y se borra en v0.7 — no hay convivencia). Antes de escribir código aquí, lee `docs/02-requisitos.md` (qué debe hacer) y `docs/03-analisis-y-patrones.md` (por qué se hace así — cada regla de abajo enlaza a un defecto real que corrige).
 
 ## Estructura: módulos de Spring Modulith (ver ADR-0017)
 

@@ -34,7 +34,7 @@ Cerrar issues desde los commits (`closes #42`) mantiene la barra de progreso del
 
 ## Punto de partida: no hay nada corriendo
 
-`ukun-clientes` y `ukun-empleados` **no están en servicio**. Están en el repo como especificación ejecutable de qué hace el negocio y como catálogo de defectos a no repetir — nada más. Esto tiene tres consecuencias que atraviesan todo el plan:
+`ukun-clientes` y `ukun-empleados` **no están en servicio**. Están en el repo como especificación ejecutable de qué hace el negocio y como catálogo de defectos a no repetir — nada más. (`ukun-clientes/` ya se borró, en v0.6; se lee en el tag `v0.0-legacy`.) Esto tiene tres consecuencias que atraviesan todo el plan:
 
 - **No hay estrategia de convivencia.** Ni *strangler fig*, ni enrutado por path entre legacy y nuevo, ni feature flags de infraestructura. Se construye el sistema nuevo y punto.
 - **No hay migración de datos ni de esquema.** El esquema nace completo y en inglés en su baseline de Liquibase (`10-modelo-de-datos.md` §8, ADR-0018); no hay renombrados escalonados ni restricciones que entren en dos pasos por compatibilidad.
@@ -193,7 +193,7 @@ Paralelizable: (a) rutas + filtros del gateway · (b) `oauth2Login` + sesión + 
 Aquí entra también **tracing** (`micrometer-tracing` en los tres servicios, `11-observabilidad-y-logging.md`): antes de este release hay un solo proceso por petición y un `traceId` no aporta nada; a partir de aquí una petición del navegador cruza gateway→auth→api y sin correlación la saga de signup no se puede depurar.
 
 ### v0.6 — Recorrido de cliente completo
-*Salida: paridad funcional con `ukun-clientes` — que se borra del repo.*
+*Salida: paridad funcional con `ukun-clientes` — borrado ya del repo (issue #40); se lee en el tag `v0.0-legacy`.*
 
 Paralelizable en tres slices verticales independientes (backend + frontend cada una): **carrito** · **pedidos/checkout** · **perfil**. Solo checkout depende de carrito.
 

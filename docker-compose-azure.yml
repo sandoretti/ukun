@@ -1,16 +1,4 @@
 services:
-  # configuramos el contenedor del cliente
-  ukun-clientes:
-    image: sandoretti/ukun-clientes
-    ports:
-      - "8081:8081"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://${POSTGRES_DB_URL}:5432/${POSTGRES_DB}
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-      - vol_resources:/opt/resources
-
   # configuramos el contenedor del empleado
   ukun-empleados:
     image: sandoretti/ukun-empleados
@@ -28,5 +16,4 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - ukun-clientes
       - ukun-empleados

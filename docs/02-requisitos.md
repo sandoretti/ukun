@@ -7,7 +7,7 @@
 
 Extraídos leyendo los controllers, servicios y plantillas de `ukun-clientes` y `ukun-empleados` — no son aspiracionales, son lo que la aplicación legacy realmente hace. Sirven de base para el inventario de endpoints y el OpenAPI de v0.1. Donde el comportamiento actual es un bug y no una regla de negocio, se marca explícitamente para que **no** se traslade tal cual.
 
-## 1. Requisitos funcionales — storefront (hoy `ukun-clientes`)
+## 1. Requisitos funcionales — storefront (legacy `ukun-clientes`, borrado en v0.6)
 
 ### RF-01 Catálogo
 - Listar productos con filtro opcional por nombre (`LIKE` case-insensitive), por tipo, y orden por precio (asc/desc).
