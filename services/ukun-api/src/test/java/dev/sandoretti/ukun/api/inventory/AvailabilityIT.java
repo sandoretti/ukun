@@ -35,20 +35,23 @@ class AvailabilityIT extends StoresIntegrationTest {
     private static final String IN_STOCK = "SOFA-CUERO";
     private static final String OUT_OF_STOCK = "LITERA-INFANTIL";
     private static final String NOT_SOLD_HERE = "MESA-CAFE";
+    private static final String DISCONTINUED = "SILLA-RETIRADA";
 
     @BeforeEach
     void seedTheStock() {
         jdbc.update("INSERT INTO product_type (name) VALUES ('Sofás')");
 
-        insertProduct(IN_STOCK, "Sofá de cuero", "399.99");
-        insertProduct(OUT_OF_STOCK, "Litera infantil", "399.99");
-        insertProduct(NOT_SOLD_HERE, "Mesa de café", "129.75");
+        insertProduct(IN_STOCK, "Sofá de cuero", "399.99", true);
+        insertProduct(OUT_OF_STOCK, "Litera infantil", "399.99", true);
+        insertProduct(NOT_SOLD_HERE, "Mesa de café", "129.75", true);
+        insertProduct(DISCONTINUED, "Silla retirada", "49.90", false);
 
         long online = storeIdOf("Ukun Online");
 
         inATransaction(() -> {
             entityManager.persist(StoreStockMother.stock(productIdOf(IN_STOCK), online, 7));
             entityManager.persist(StoreStockMother.outOfStock(productIdOf(OUT_OF_STOCK), online));
+            entityManager.persist(StoreStockMother.stock(productIdOf(DISCONTINUED), online, 4));
         });
     }
 
@@ -151,6 +154,20 @@ class AvailabilityIT extends StoresIntegrationTest {
     }
 
     /**
+     * The fourth case, added by issue #122 and the one the row cannot answer on its own: four units in
+     * the online store, and none of them for sale. Discontinuing takes a product out of the catalogue
+     * without emptying the warehouse (ADR-0013), so this endpoint has to ask the catalogue too — before
+     * it did not, and answered {@code true} for a product the cart and the checkout were both reporting
+     * as zero.
+     */
+    @Test
+    @DisplayName("a discontinued product with units in the store is not available")
+    void doesNotOfferADiscontinuedProduct() {
+        assertThat(availabilityOf(storeIdOf("Ukun Online"), productIdOf(DISCONTINUED)).items())
+                .containsExactly(new AvailabilityItem(productIdOf(DISCONTINUED), false));
+    }
+
+    /**
      * An identifier that is no product at all is unavailable, not an error: from the shop's side it is
      * the same thing.
      */
@@ -212,13 +229,18 @@ class AvailabilityIT extends StoresIntegrationTest {
     }
 
     /**
-     * Two statements for any batch size: the store's existence check and the stock look-up. The count
-     * is what proves the absent rows are reconstructed in memory rather than probed one identifier at
-     * a time — the N+1 that a "one product at a time" implementation would produce without ever
-     * looking wrong.
+     * Three statements for any batch size: the store's existence check, the stock look-up and the
+     * catalogue batch. The count is what proves the absent rows are reconstructed in memory rather than
+     * probed one identifier at a time — the N+1 that a "one product at a time" implementation would
+     * produce without ever looking wrong.
+     *
+     * <p><strong>It was two until issue #122.</strong> The third is {@code CatalogApi.summariesByIds},
+     * and it is the price of this endpoint agreeing with the cart about a discontinued product
+     * (ADR-0013). What matters here is that it is <em>one</em> statement and not one per product: the
+     * cost of the fix does not grow with the batch, which is the property this test defends.
      */
     @Test
-    @DisplayName("a batch of three products costs two statements, whatever the batch size")
+    @DisplayName("a batch of three products costs three statements, whatever the batch size")
     void resolvesTheWholeBatchInOneStatement() {
         long online = storeIdOf("Ukun Online");
         long inStock = productIdOf(IN_STOCK);
@@ -229,7 +251,7 @@ class AvailabilityIT extends StoresIntegrationTest {
 
         assertThat(availabilityOf(online, inStock, outOfStock, notSoldHere).items()).hasSize(3);
 
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(2);
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(3);
     }
 
     /**
@@ -293,16 +315,17 @@ class AvailabilityIT extends StoresIntegrationTest {
                         Arrays.stream(productIds).map(String::valueOf).collect(Collectors.joining(",")));
     }
 
-    private void insertProduct(String sku, String name, String price) {
+    private void insertProduct(String sku, String name, String price, boolean active) {
         jdbc.update(
                 """
                 INSERT INTO product (sku, name, description, price, product_type_id, is_active)
-                     VALUES (?, ?, ?, CAST(? AS DECIMAL), (SELECT id FROM product_type WHERE name = 'Sofás'), true)
+                     VALUES (?, ?, ?, CAST(? AS DECIMAL), (SELECT id FROM product_type WHERE name = 'Sofás'), ?)
                 """,
                 sku,
                 name,
                 name + ", for testing purposes.",
-                price);
+                price,
+                active);
     }
 
 }

@@ -1,10 +1,15 @@
 package dev.sandoretti.ukun.api.inventory.application;
 
+import static dev.sandoretti.ukun.api.inventory.application.Sellability.sellable;
+
+import dev.sandoretti.ukun.api.catalog.CatalogApi;
+import dev.sandoretti.ukun.api.catalog.ProductSummary;
 import dev.sandoretti.ukun.api.inventory.infra.StoreStockRepository;
 import dev.sandoretti.ukun.api.shared.error.ResourceNotFoundException;
 import dev.sandoretti.ukun.api.stores.StoresApi;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +25,15 @@ import org.springframework.transaction.annotation.Transactional;
  * intended side effect is worth stating: the catalog becomes cacheable with a long TTL, and
  * availability — the part that changes every time somebody buys something — does not.
  *
- * <p><strong>It calls no {@code CatalogApi}.</strong> The response carries identifiers and booleans,
- * so there is nothing about a product to resolve. The declared {@code catalog} dependency of this
- * module is for the stock listing of RF-09, which does need product names; inventing a batch look-up
- * here to justify it would add a query to the hottest public read in the shop.
+ * <p><strong>It calls {@code CatalogApi}, and it costs a statement.</strong> An earlier version of this
+ * javadoc argued the opposite — the response carries identifiers and booleans, so there is nothing
+ * about a product to resolve — and it was right about the response and wrong about the question. What
+ * makes a product available is not only its stock row: a discontinued one keeps its units and stops
+ * being sellable (ADR-0013), and answering {@code true} for it would be this endpoint contradicting
+ * the cart and the checkout, which report it as zero. So the batch is read and {@link Sellability}
+ * applied, at the price of one more query on the hottest public read in the shop — the reason issue
+ * #122 weighed it rather than assuming it. Nothing else about a product is resolved here, and the
+ * response is unchanged in shape.
  *
  * <p>{@code @Transactional(readOnly = true)} at class level and no work in the constructor, like every
  * other query service here (rule 6 of the skill {@code spring-api}, defect #6).
@@ -39,10 +49,12 @@ public class AvailabilityQueryService {
 
     private final StoreStockRepository stock;
     private final StoresApi stores;
+    private final CatalogApi catalog;
 
-    public AvailabilityQueryService(StoreStockRepository stock, StoresApi stores) {
+    public AvailabilityQueryService(StoreStockRepository stock, StoresApi stores, CatalogApi catalog) {
         this.stock = stock;
         this.stores = stores;
+        this.catalog = catalog;
     }
 
     /**
@@ -54,7 +66,8 @@ public class AvailabilityQueryService {
      * and no row at all — collapse into the same two-valued answer, so the frontend never has to tell
      * "no data" from "no stock". An identifier that matches no product at all lands in the same place,
      * for the same reason: from the shopper's side, a thing you cannot buy here is a thing you cannot
-     * buy here.
+     * buy here. <strong>A discontinued product with units in the warehouse lands there too</strong>
+     * (ADR-0013), which is the same sentence read once more: you cannot buy it here either.
      *
      * <p>Duplicates are collapsed and the request order preserved ({@link LinkedHashSet}): asking
      * twice about one product is not two answers, and a response reordered by the database would force
@@ -71,10 +84,12 @@ public class AvailabilityQueryService {
         }
 
         Set<Long> requested = new LinkedHashSet<>(productIds);
-        Set<Long> available = stock.availableProductIds(storeId, requested);
+        Set<Long> stocked = stock.availableProductIds(storeId, requested);
+        Map<Long, ProductSummary> products = catalog.summariesByIds(requested);
 
         List<AvailabilityItem> items = requested.stream()
-                .map(productId -> new AvailabilityItem(productId, available.contains(productId)))
+                .map(productId -> new AvailabilityItem(
+                        productId, stocked.contains(productId) && sellable(products.get(productId))))
                 .toList();
 
         return new AvailabilityResponse(storeId, items);
