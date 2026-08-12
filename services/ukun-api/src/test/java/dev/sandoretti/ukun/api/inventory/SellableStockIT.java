@@ -5,13 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sandoretti.ukun.api.catalog.CatalogApi;
 import dev.sandoretti.ukun.api.catalog.ProductSummary;
 import dev.sandoretti.ukun.api.stores.StoresIntegrationTest;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -80,7 +78,10 @@ class SellableStockIT extends StoresIntegrationTest {
     @Test
     @DisplayName("a discontinued product reports no units, and the one still on sale reports its own")
     void reportsNothingSellableForADiscontinuedProduct() {
-        Map<Long, Integer> sellable = inventory.sellableOnlineQuantities(summariesOf(ON_SALE, DISCONTINUED));
+        Map<Long, ProductSummary> products =
+                catalog.summariesByIds(Set.of(productIdOf(ON_SALE), productIdOf(DISCONTINUED)));
+
+        Map<Long, Integer> sellable = inventory.sellableOnlineQuantities(products);
 
         assertThat(sellable).containsOnly(Map.entry(productIdOf(ON_SALE), UNITS));
     }
@@ -96,7 +97,7 @@ class SellableStockIT extends StoresIntegrationTest {
     void refusesToDecrementADiscontinuedProduct() {
         long discontinued = productIdOf(DISCONTINUED);
 
-        StockDecrement decrement = decrement(Map.of(discontinued, 1), DISCONTINUED);
+        StockDecrement decrement = decrement(Map.of(discontinued, 1));
 
         assertThat(decrement).isEqualTo(new StockDecrement.Rejected(null, discontinued, 0, 1));
         assertThat(unitsOf(DISCONTINUED)).isEqualTo(UNITS);
@@ -115,7 +116,7 @@ class SellableStockIT extends StoresIntegrationTest {
         tooMuchOfBoth.put(productIdOf(ON_SALE), UNITS + 1);
         tooMuchOfBoth.put(productIdOf(DISCONTINUED), UNITS + 1);
 
-        StockDecrement decrement = decrement(tooMuchOfBoth, ON_SALE, DISCONTINUED);
+        StockDecrement decrement = decrement(tooMuchOfBoth);
 
         assertThat(decrement)
                 .isEqualTo(new StockDecrement.Rejected(null, productIdOf(DISCONTINUED), 0, UNITS + 1));
@@ -125,7 +126,7 @@ class SellableStockIT extends StoresIntegrationTest {
     @Test
     @DisplayName("a product still on sale is decremented as before")
     void stillDecrementsAProductOnSale() {
-        StockDecrement decrement = decrement(Map.of(productIdOf(ON_SALE), 3), ON_SALE);
+        StockDecrement decrement = decrement(Map.of(productIdOf(ON_SALE), 3));
 
         assertThat(decrement)
                 .isEqualTo(new StockDecrement.Applied(
@@ -133,20 +134,18 @@ class SellableStockIT extends StoresIntegrationTest {
         assertThat(unitsOf(ON_SALE)).isEqualTo(1);
     }
 
-    /** Runs the decrement in a committed transaction of its own, as a confirmation does. */
-    private StockDecrement decrement(Map<Long, Integer> quantities, String... skus) {
+    /**
+     * Runs the decrement in a committed transaction of its own, as a confirmation does, reading the
+     * products off the request exactly as {@code CheckoutService.takeStock} does — the products asked
+     * about are the products being decremented, and a test that let the two drift apart would be
+     * exercising a call no caller can make.
+     */
+    private StockDecrement decrement(Map<Long, Integer> quantities) {
         AtomicReference<StockDecrement> result = new AtomicReference<>();
-        inATransaction(() -> result.set(inventory.decrementOnlineStock(quantities, summariesOf(skus))));
+        inATransaction(() -> result.set(
+                inventory.decrementOnlineStock(quantities, catalog.summariesByIds(quantities.keySet()))));
 
         return result.get();
-    }
-
-    /** What a caller would have read from {@code CatalogApi} before asking. */
-    private Map<Long, ProductSummary> summariesOf(String... skus) {
-        Set<Long> productIds =
-                Arrays.stream(skus).map(this::productIdOf).collect(Collectors.toSet());
-
-        return catalog.summariesByIds(productIds);
     }
 
     private int unitsOf(String sku) {

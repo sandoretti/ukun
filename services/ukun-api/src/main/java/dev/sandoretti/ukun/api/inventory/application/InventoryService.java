@@ -70,7 +70,7 @@ public class InventoryService implements InventoryApi {
     @Transactional(readOnly = true)
     public Map<Long, Integer> sellableOnlineQuantities(Map<Long, ProductSummary> products) {
         Set<Long> sellableIds = products.entrySet().stream()
-                .filter(product -> sellable(product.getValue()))
+                .filter(entry -> sellable(entry.getValue()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
 
