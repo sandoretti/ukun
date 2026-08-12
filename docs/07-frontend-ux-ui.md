@@ -9,6 +9,8 @@ Decisión base (ver `adr/0002-frontend-react-bootstrap.md`): **react-bootstrap**
 
 ## Qué se hereda y qué se corrige del diseño actual
 
+> Las rutas de `ukun-clientes/` de este apartado ya no están en el árbol: el módulo se borró en v0.6 (issue #40) y se lee en el tag `v0.0-legacy`. El tema nuevo ya no hereda nada de él salvo la tipografía, que está en `resources/`.
+
 El CSS actual (`ukun-clientes/static/css/styles.css` y `ukun-empleados/static/css/styles.css`) son dos ficheros distintos con **dos paletas verdes distintas** (`#365a08`/`#e5f6db` en uno, `#5d9d0b`/`#456e0f`/`#E9F5D8` en otro), colores repetidos literalmente en vez de variables, y un color de marca puesto inline (`style="background-color: #5d9d0b"` en el layout de empleados). Se unifica en un único tema.
 
 - Un solo tema (`shared/theme/`, con `sass` como dependencia npm) sobre las variables de Bootstrap 5.3: `--bs-primary`, `--bs-body-font-family`, etc. Es un índice (`index.scss`) y parciales por responsabilidad: `_tokens.scss` es la única fuente de la paleta, `_bootstrap.scss` el **único** `@use ... with` que configura Bootstrap, y luego `_fonts`, `_base`, `_utilities` y `components/*`. Aplicado a toda la app, ya no hay "app de clientes" y "app de empleados" con temas distintos, hay una app con una sección de back-office.

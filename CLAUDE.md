@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-This repo holds **two legacy Spring Boot monoliths** (`ukun-clientes` and `ukun-empleados`), each with its own Thymeleaf server-rendered frontend, both talking directly to the **same** PostgreSQL database, fronted by an nginx reverse proxy.
+This repo holds **one legacy Spring Boot monolith** (`ukun-empleados`), with its own Thymeleaf server-rendered frontend, talking directly to a PostgreSQL database, fronted by an nginx reverse proxy. It used to hold two: `ukun-clientes` was **deleted in v0.6** once the customer journey reached parity (issue #40) and is read from the `v0.0-legacy` tag.
 
-**Neither monolith is in service.** They are kept only as (a) the executable specification of what the business does, and (b) a catalogue of defects not to repeat. Their data is disposable (ADR-0007). This means: **no coexistence strategy, no strangler fig, no data migration, no staged schema renames** — the new system is built from scratch. What carries over is the *requirements* (`docs/02-requisitos.md`) and the *defect list* (`docs/03-analisis-y-patrones.md` §1), not the code.
+**The monolith is not in service.** It is kept only as (a) the executable specification of what the business does, and (b) a catalogue of defects not to repeat. Its data is disposable (ADR-0007). This means: **no coexistence strategy, no strangler fig, no data migration, no staged schema renames** — the new system is built from scratch. What carries over is the *requirements* (`docs/02-requisitos.md`) and the *defect list* (`docs/03-analisis-y-patrones.md` §1), not the code.
 
 The target: a single Spring Boot API monolith (REST, no Thymeleaf) + a React frontend + a dedicated Spring-based auth service (Spring Security's Authorization Server, not Keycloak) + Liquibase per service with its own DB + a Spring Cloud Gateway replacing nginx as a BFF, dropping the current Azure-based deployment. **`docs/` is the source of truth** — start at `docs/README.md`, which has a "dónde se decide qué" table. Every doc opens with a four-line header saying what it owns and what it doesn't. In particular: `docs/01-arquitectura.md` (diagrams), `docs/04-roadmap.md` (releases and what's parallelizable — supersedes the old `REFACTOR-PLAN.md`), `docs/03-analisis-y-patrones.md` (defects and the patterns that fix them), and `docs/adr/` (why each structural decision was made). Tech-specific conventions live as project skills in `.claude/skills/` (`spring-api`, `spring-auth`, `spring-gateway`, `liquibase`, `react-web`, `tilt-dev`, `testing`), plus `slice` (generate a work assignment for another session), `worktree` (isolate two concurrent sessions), and the two closing ones: `refactor` (behaviour-preserving cleanup pass that cross-checks the new code against what already exists) and `pr` (open the pull request from the repo's template, with the issue's labels deciding whether it auto-closes).
 
@@ -28,7 +28,7 @@ The roadmap's **execution state** lives in GitHub issues + milestones, not in a 
 
 ## Commands
 
-**The repo has two build tools on purpose** (ADR-0021). The three new services under `services/` use a single Gradle build from the repo root; the two legacy monoliths keep their own Maven wrapper until they are deleted in v0.6/v0.7. Never run Gradle inside `ukun-clientes`/`ukun-empleados`, and never add them to `settings.gradle.kts`.
+**The repo has two build tools on purpose** (ADR-0021). The three new services under `services/` use a single Gradle build from the repo root; the remaining legacy monolith keeps its own Maven wrapper until it is deleted in v0.7. Never run Gradle inside `ukun-empleados`, and never add it to `settings.gradle.kts`.
 
 ### The new services (Gradle, from the repo root)
 
@@ -43,27 +43,20 @@ The roadmap's **execution state** lives in GitHub issues + milestones, not in a 
 
 Project names are flat (`:ukun-api`, not `:services:ukun-api`) — `settings.gradle.kts` remaps `projectDir`. Versions live only in `gradle/libs.versions.toml`; what is shared between the three services lives in `buildSrc/src/main/kotlin/ukun-java-conventions.gradle.kts`. `tilt up` needs a JDK on the host (see `docs/06-entorno-local-tilt.md`).
 
-### The legacy monoliths (Maven, from their own directory)
+### The legacy monolith (Maven, from its own directory)
 
-Each app is built/run independently with its Maven wrapper from its own directory.
+It is built/run independently with its Maven wrapper from its own directory.
 
 ```bash
-# ukun-clientes (customer-facing app, port 8081, context path "/")
-cd ukun-clientes
+# ukun-empleados (staff/admin app, port 8082, context path "/empleados")
+cd ukun-empleados
 ./mvnw clean install          # build + run tests
 ./mvnw test                   # run tests only
 ./mvnw test -Dtest=ClassName  # run a single test class
 ./mvnw spring-boot:run        # run locally
-
-# ukun-empleados (staff/admin app, port 8082, context path "/empleados")
-cd ukun-empleados
-./mvnw clean install
-./mvnw test
-./mvnw test -Dtest=ClassName
-./mvnw spring-boot:run
 ```
 
-Both apps require the datasource env vars below (see `application.properties`); without them, `spring-boot:run` will fail to connect.
+It requires the datasource env vars below (see `application.properties`); without them, `spring-boot:run` will fail to connect.
 
 ```bash
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/<db>
@@ -73,7 +66,7 @@ SPRING_DATASOURCE_PASSWORD=<password>
 
 ### Legacy compose files (reference only — not the dev environment)
 
-`docker-compose.yml` still brings up `db` + `ukun-clientes` + `ukun-empleados` + `nginx`, but that stack is **not** what you work against: the monoliths are not in service. `docker-compose-sandoretti.yml` and `docker-compose-azure.yml` are old deployment variants; Azure is out of scope (`docs/04-roadmap.md`). All four files get deleted in v0.7.
+`docker-compose.yml` still brings up `db` + `ukun-empleados` + `nginx`, but that stack is **not** what you work against: the monolith is not in service. `docker-compose-sandoretti.yml` and `docker-compose-azure.yml` are old deployment variants; Azure is out of scope (`docs/04-roadmap.md`). All four files get deleted in v0.7, together with `nginx/`, `database/` and `resources/`.
 
 The legacy Postgres container seeds itself from `database/init.sql` on first startup. That file has no migration tool and only affects fresh databases — it is a **reference for what data existed**, not a schema to evolve. The new services use Liquibase from day one, with a complete baseline per database (skill `liquibase`, `docs/10-modelo-de-datos.md` §8).
 
@@ -87,15 +80,16 @@ Orchestrates `compose.yaml` + `compose.dev.yaml` (non-destructive override) with
 
 ## Architecture (legacy, for reference)
 
-**Two independently deployed Spring Boot 3.2 / Java 17 apps**, each following the same layered structure: `controllers` → `services` (interface + `*ServiceImpl`) → `models/dao` (Spring Data JPA repositories) → `models/entity`. Both use Lombok, Thymeleaf, and session-based auth (no Spring Security in either app).
+**One Spring Boot 3.2 / Java 17 app** (there were two until v0.6), following a layered structure: `controllers` → `services` (interface + `*ServiceImpl`) → `models/dao` (Spring Data JPA repositories) → `models/entity`. It uses Lombok, Thymeleaf, and session-based auth (no Spring Security).
 
-- **`ukun-clientes`** (`dev.sandoretti.ukun.clientes.app`): customer storefront — browsing products (`ProductosController`, `TiendaController`), cart (`CarritoController`), orders (`PedidoController`), profile/signup (`PerfilController`, `SignUpController`). Auth is a custom `LoginService` that queries `Cuenta`/`Cliente` by plaintext email+password match and stores the resulting `Cliente` in the HTTP session; `ClienteInterceptor`/`NoClienteInterceptor` gate routes based on session presence (`WebConfig`).
-- **`ukun-empleados`** (`dev.sandoretti.ukun.empleados.app`): staff back-office — managing employees (`EmpleadosController`), products (`ProductosController`), stock (`StockController`). Same session-based pattern via `EmpleadoInterceptor` (applies to all routes except `/login`, static assets) and `AdminInterceptor` (gates `/admin/**` for the `admin` flag on `Empleado`). Runs under context path `/empleados`. Handles file uploads for product images (`UploadFileServiceImpl`, 10MB limit).
-- **Shared database, no shared code.** Both apps map JPA entities onto the same Postgres schema (`database/init.sql`): `cuenta` is the base identity table; `cliente` and `empleado` both FK to `cuenta.id` (table-per-type style). `producto`, `tienda`, `stock_tienda` (composite key `producto_id`+`tienda_id`) are shared catalog/inventory data both apps read/write independently — there is no API boundary between them, only direct DB access, which is the main driver for the planned merge into one API service.
-- **nginx** (`nginx/nginx.conf`) is a plain reverse proxy: `/` → `ukun-clientes:8081`, `/empleados` → `ukun-empleados:8082`. No routing logic beyond path prefix.
-- Uploaded/static resources (`resources/`) are bind-mounted into both containers at `/opt/resources`, served via each app's `WebConfig.addResourceHandlers` at `/resources/**`.
+- **`ukun-empleados`** (`dev.sandoretti.ukun.empleados.app`): staff back-office — managing employees (`EmpleadosController`), products (`ProductosController`), stock (`StockController`). Session-based pattern via `EmpleadoInterceptor` (applies to all routes except `/login`, static assets) and `AdminInterceptor` (gates `/admin/**` for the `admin` flag on `Empleado`). Runs under context path `/empleados`. Handles file uploads for product images (`UploadFileServiceImpl`, 10MB limit).
+- **Shared database, no shared code.** This is what the two apps looked like before `ukun-clientes` was deleted, and it is the main driver for the merge into one API service — read it in the `v0.0-legacy` tag. Both mapped JPA entities onto the same Postgres schema (`database/init.sql`): `cuenta` is the base identity table; `cliente` and `empleado` both FK to `cuenta.id` (table-per-type style). `producto`, `tienda`, `stock_tienda` (composite key `producto_id`+`tienda_id`) were catalog/inventory data both apps read/wrote independently, with no API boundary between them, only direct DB access.
+- **nginx** (`nginx/nginx.conf`) is a plain reverse proxy: `/empleados` → `ukun-empleados:8082`. No routing logic beyond path prefix. Its `/` → `ukun-clientes:8081` rule went with the deleted module.
+- Uploaded/static resources (`resources/`) are bind-mounted into the container at `/opt/resources`, served via `WebConfig.addResourceHandlers` at `/resources/**`.
 
 ## Notable legacy defects (behaviours the new system must NOT reproduce)
+
+Some of these were found in `ukun-clientes`, deleted in v0.6: the classes are read from the `v0.0-legacy` tag, and the defects stand as written.
 
 - Passwords (`cuenta.contrasenna`) are stored and compared in **plaintext**, capped at `VARCHAR(16)`. `ukun-auth` hashes from its first commit; there is nothing to "fix in place".
 - No CSRF/Spring Security — access control is purely session-attribute checks in hand-written `HandlerInterceptor`s.

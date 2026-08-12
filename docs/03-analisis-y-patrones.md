@@ -7,6 +7,8 @@
 
 Cada patrón de esta lista está aquí porque resuelve un defecto **real y localizado** del código legacy, no porque sea buena práctica en abstracto. Las rutas son relativas a la raíz del repo. El legacy no está en marcha: esta lista es la especificación de qué **no** reproducir, no un plan de arreglo in situ.
 
+> **Las rutas de `ukun-clientes/` que se citan abajo ya no están en el árbol.** El módulo se borró en v0.6 al declarar la paridad del recorrido de cliente (issue #40, ADR-0007); se lee en el tag `v0.0-legacy`. Los defectos y sus números siguen valiendo igual: la traza al fichero de origen es lo que hace verificable cada uno.
+
 ## 1. Defectos concretos encontrados (referencia)
 
 | # | Defecto | Dónde |

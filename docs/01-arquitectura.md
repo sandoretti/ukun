@@ -10,6 +10,8 @@ Dos monolitos Spring Boot 3.2 / Java 17 independientes (sin código ni build com
 
 Este apartado está aquí porque `ukun-clientes`/`ukun-empleados` son la **especificación del comportamiento** que hay que conservar (`02-requisitos.md`) y el catálogo de lo que no hay que repetir (`03-analisis-y-patrones.md`), no porque haya que convivir con ellos: no corren, y no hay estrategia de coexistencia (`04-roadmap.md`).
 
+> **`ukun-clientes/` ya no está en el repo:** se borró en v0.6 al declarar la paridad del recorrido de cliente (issue #40), y su código se lee en el tag `v0.0-legacy`. El diagrama se conserva porque sigue siendo el punto de partida que explica los defectos y la fusión en un solo servicio; `ukun-empleados` se va igual en v0.7.
+
 ```mermaid
 flowchart TB
     browser["Navegador"]

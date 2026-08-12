@@ -86,7 +86,7 @@ Aquí la invariante es más estricta que "los tests pasan", porque los tests no 
 - **`docs/api/openapi/` no se toca**: el contrato está congelado desde SINC-1 y moverlo invalida tipos y mocks del frontend (`docs/09` §5).
 - **Ningún defecto adyacente se arregla aquí.** Si te tropiezas con uno, se abre issue y se enlaza; ampliar el alcance en el último commit de la sesión es cómo un PR revisable deja de serlo.
 - **Nada de dependencias nuevas ni de subir versiones.** Eso vive en `gradle/libs.versions.toml` / `package.json` y es una decisión aparte.
-- **El legacy no se refactoriza jamás.** `ukun-clientes` y `ukun-empleados` no están en servicio y se borran en v0.6/v0.7: cada minuto invertido ahí se tira.
+- **El legacy no se refactoriza jamás.** `ukun-empleados` no está en servicio y se borra en v0.7 — como ya se borró `ukun-clientes` en v0.6: cada minuto invertido ahí se tira.
 - **Optimizaciones solo con medición delante.** Las micro-reglas de rendimiento están subordinadas al código limpio; veinte productos por página no justifican ofuscar una función legible.
 
 ## Paso 6 — Qué skill cargar según lo que toca el diff

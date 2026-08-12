@@ -19,7 +19,6 @@
 .env.*
 
 # Everything outside the new services.
-ukun-clientes/
 ukun-empleados/
 nginx/
 database/

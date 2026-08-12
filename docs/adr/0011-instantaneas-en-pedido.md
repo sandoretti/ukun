@@ -4,6 +4,8 @@
 Aceptado
 
 ## Contexto
+> `ukun-clientes/` se borró del repo en v0.6 (issue #40): las clases que se citan aquí se leen en el tag `v0.0-legacy`. La cadena de evidencia no cambia.
+
 RF-04 (`02-requisitos.md`) establece que "el pedido copia la dirección y la tarjeta actuales del cliente en el momento de confirmar". El código actual **no cumple ese requisito**: `Pedido(Cliente)` en `ukun-clientes/.../models/entity/Pedido.java` asigna `this.direccion = cliente.getDireccion()` y `this.tarjeta = cliente.getTarjeta()` — copia la referencia, no el valor. Como `Cliente` declara `@OneToOne(cascade = CascadeType.ALL)` sobre ambas y `PerfilController.editar` opera sobre la instancia de `@SessionAttributes("cliente")`, editar el perfil ejecuta un `UPDATE` sobre la misma fila de `direccion`/`tarjeta` que ya referencian todos los pedidos anteriores del cliente. Un cliente que se muda de casa reescribe silenciosamente la dirección de envío de su historial completo de pedidos; un cambio de tarjeta hace lo mismo con los datos de pago. El mismo problema, sin verificación en código pero por el mismo patrón de referencia compartida, afectaría al nombre del producto si `producto_pedido` solo referenciara `producto.id`: renombrar un producto (que RF-10 permite) cambiaría el nombre mostrado en pedidos ya hechos.
 
 ## Decisión

@@ -7,7 +7,7 @@
 
 Este documento completa `01-arquitectura.md` (que da la forma del ER objetivo) con el detalle que entra en los changelogs de Liquibase. Cada propuesta está aquí porque resuelve una de las siete consultas reales que exigen los requisitos funcionales — no por completitud teórica. La sobreingeniería descartada en `03-analisis-y-patrones.md` §4 (Redis, CQRS, arquitectura hexagonal completa) sigue aplicando aquí igual.
 
-**Nota sobre el legacy:** `ukun-clientes`/`ukun-empleados` no están en marcha y sus datos son desechables (ADR-0007), así que **ninguna restricción de este documento se escalona por compatibilidad**. Las dos bases nuevas nacen completas y en inglés; el esquema legacy (`database/init.sql`) solo se cita como origen de un defecto o como referencia del comportamiento que hay que conservar.
+**Nota sobre el legacy:** `ukun-clientes`/`ukun-empleados` no están en marcha y sus datos son desechables (ADR-0007), así que **ninguna restricción de este documento se escalona por compatibilidad**. Las dos bases nuevas nacen completas y en inglés; el esquema legacy (`database/init.sql`) solo se cita como origen de un defecto o como referencia del comportamiento que hay que conservar. `ukun-clientes/` se borró del repo en v0.6 (issue #40): las rutas suyas que se citan en §5 se leen en el tag `v0.0-legacy`.
 
 ## 0. De dónde salen estas propuestas
 
