@@ -1,8 +1,6 @@
 {
-  "brand": "Ukun",
   "title": "Crea tu cuenta",
   "lead": "Con estos datos podrás comprar sin volver a teclearlos en cada pedido.",
-  "backHome": "Volver a la tienda",
   "account": {
     "legend": "Tu cuenta",
     "description": "Con qué entras a Ukun.",
