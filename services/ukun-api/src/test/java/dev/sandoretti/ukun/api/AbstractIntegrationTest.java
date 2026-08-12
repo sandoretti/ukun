@@ -112,6 +112,13 @@ public abstract class AbstractIntegrationTest {
     protected static final String ORDERS_DATABASE = "ukun_app_orders";
 
     /**
+     * Schema only, for the employee's stock management (RF-09). It seeds {@code employee} rows, which no
+     * other suite does, and it writes {@code store_stock} for stores it owns — so it would fight the
+     * catalogue's fixture for products and the orders' one for quantities if they shared a database.
+     */
+    protected static final String STOCK_DATABASE = "ukun_app_stock";
+
+    /**
      * Connections per application context, against Hikari's default of ten.
      *
      * <p>The contexts of this suite are <strong>cached, not closed</strong>: every one of them keeps its
@@ -238,6 +245,11 @@ public abstract class AbstractIntegrationTest {
 
     protected static String employeeToken(UUID accountId, String email) {
         return AUTH.validToken(accountId, email, List.of("EMPLOYEE"));
+    }
+
+    /** @see #customerToken(UUID) — same reasoning, for the suites that only need the role. */
+    protected static String employeeToken(UUID accountId) {
+        return employeeToken(accountId, accountId + "@ukun.com");
     }
 
     protected static String bearer(String token) {

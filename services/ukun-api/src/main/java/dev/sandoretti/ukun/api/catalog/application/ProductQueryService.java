@@ -11,6 +11,7 @@ import dev.sandoretti.ukun.api.shared.web.PaginationParams;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -146,6 +147,24 @@ public class ProductQueryService implements CatalogApi {
         return products.findAllById(productIds).stream()
                 .map(mapper::toModuleSummary)
                 .collect(Collectors.toMap(ProductSummary::id, Function.identity()));
+    }
+
+    /**
+     * {@link CatalogApi#activeBySku(String)}: the SKU an employee typed, resolved to the product they
+     * may act on — the step {@code inventory} takes before creating a stock line (RF-09, ADR-0015).
+     *
+     * <p>The active filter is applied here and not left to the caller, for the reason the interface
+     * gives. It reads the same way {@link #detail(Long)} does — {@code filter(Product::isActive)} over
+     * the row — because it is the same rule: a discontinued product is invisible outside the back
+     * office, whichever key you look it up by.
+     *
+     * <p>Backed by the {@code UNIQUE} on {@code product.sku} that ADR-0015 puts in the baseline, so it
+     * is one indexed look-up and the return type can be an {@code Optional} rather than a list nobody
+     * would know what to do with a second element of.
+     */
+    @Override
+    public Optional<ProductSummary> activeBySku(String sku) {
+        return products.findBySku(sku).filter(Product::isActive).map(mapper::toModuleSummary);
     }
 
     /**

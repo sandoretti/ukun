@@ -74,6 +74,19 @@ public final class TextSearch {
         return builder.like(normalised(builder, field), normalised(builder, pattern), LIKE_ESCAPE);
     }
 
+    /**
+     * The same term, as the {@code LIKE} pattern a native query binds — for the reads that cannot be
+     * expressed with the Criteria API because they join a table another module owns.
+     *
+     * <p>It exists so that the escaping rule has one definition. The folding itself
+     * ({@code unaccent(lower(…))}) and the {@code ESCAPE} clause are written in the SQL of those
+     * queries; what must not be written twice is {@link #escapeWildcards}, because the day it changes
+     * on one side only, a search for {@code "50%"} starts returning the whole table on the other.
+     */
+    public static String likePattern(String term) {
+        return "%" + escapeWildcards(term) + "%";
+    }
+
     private static Expression<String> normalised(CriteriaBuilder builder, Expression<String> value) {
         return builder.function(UNACCENT, String.class, builder.lower(value));
     }

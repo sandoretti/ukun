@@ -14,7 +14,7 @@ Cada módulo es un paquete de nivel superior bajo el paquete raíz de la aplicac
 ```java
 // dev.sandoretti.ukun.api.inventory.package-info
 @org.springframework.modulith.ApplicationModule(
-    allowedDependencies = { "catalog", "stores", "shared" }
+    allowedDependencies = { "catalog", "stores", "identity", "shared" }
 )
 package dev.sandoretti.ukun.api.inventory;
 ```

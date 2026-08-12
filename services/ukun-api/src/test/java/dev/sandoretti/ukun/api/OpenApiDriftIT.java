@@ -105,10 +105,6 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
     private static final Set<String> NOT_IMPLEMENTED_YET = Set.of(
             // v0.7 — stock, back-office and staff.
             "getProductBySku",
-            "listStoreStock",
-            "createStockLine",
-            "updateStockLine",
-            "deleteStockLine",
             "listProductsForAdmin",
             "createProduct",
             "getProductForAdmin",

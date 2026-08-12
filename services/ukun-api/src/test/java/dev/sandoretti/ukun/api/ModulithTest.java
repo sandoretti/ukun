@@ -39,7 +39,7 @@ class ModulithTest {
             "stores", Set.of(),
             "storage", Set.of(),
             "identity", Set.of(),
-            "inventory", Set.of("catalog", "stores", "shared"),
+            "inventory", Set.of("catalog", "stores", "identity", "shared"),
             "customers", Set.of("stores", "identity", "shared"),
             "staff", Set.of("stores", "identity", "shared"),
             "cart", Set.of("catalog", "inventory", "customers", "shared"),

@@ -22,7 +22,7 @@ Derivada de los 12 controllers y 11 entidades del legacy (`ukun-clientes`/`ukun-
 | `stores` | `store`, `address` de tienda | RF-02, resolución de la tienda online (`is_online`) | — |
 | `storage` | — | `FileStoragePort` + adaptador (filesystem hoy, S3/MinIO en v1.1) | — |
 | `identity` | — | `AccountsPort` + adaptador HTTP a `ukun-auth`; principal del JWT | — |
-| `inventory` | `store_stock` | RF-09 (upsert/borrado por empleado, optimista), descuento en checkout (pesimista) | `catalog`, `stores`, `shared` |
+| `inventory` | `store_stock` | RF-09 (upsert/borrado por empleado, optimista), descuento en checkout (pesimista) | `catalog`, `stores`, `identity`, `shared` |
 | `customers` | `customer`, `address`, `card` de perfil | RF-05, RF-06 (lado datos + saga) | `stores`, `identity`, `shared` |
 | `staff` | `employee` | RF-11 (alta y listado por tienda) | `stores`, `identity`, `shared` |
 | `cart` | `cart_item` | RF-03 | `catalog`, `inventory`, `customers`, `shared` |
