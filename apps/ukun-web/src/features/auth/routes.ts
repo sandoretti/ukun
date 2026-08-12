@@ -10,3 +10,13 @@
  * needs it and `shared/` cannot import from a feature.
  */
 export const ACCOUNT_PATH = '/account';
+
+/**
+ * The signup screen (RF-06), which **is** a route of this router: creating a customer is
+ * `ukun-api`'s job and not the authorization server's (`docs/08-identidad-y-seguridad.md` §3), so
+ * unlike signing in, this one never leaves the SPA.
+ *
+ * It is `/signup` and not `/register` for no deeper reason than matching `/signin`, and it is
+ * neither `/login` nor anything under it: those prefixes belong to the gateway (`ReservedPaths`).
+ */
+export const SIGN_UP_PATH = '/signup';

@@ -20,13 +20,13 @@
     "email": "Email",
     "roles": "Permissions",
     "backoffice": "Back office",
+    "backHome": "Back to the store",
     "signInPage": {
       "title": "Sign in again",
       "lead": "You need an open session to carry on. We will take you to identify yourself and bring you back to where you were.",
       "continue": "Continue with your Ukun account",
       "hint": "We will take you to Ukun's identity server, which is where the password is typed.",
       "noAccount": "Don't have an account yet?",
-      "backHome": "Back to the store",
       "reason": {
         "expired": "Your session has expired. Sign in again to pick up where you left off.",
         "required": "You need a session to see this page."
@@ -86,6 +86,49 @@
       "OTHER": "Other"
     },
     "expires": "Expires {{expiry}}",
-    "summaryLabel": "{{brand}} card ending in {{last4}}, expires {{expiry}}"
+    "summaryLabel": "{{brand}} card ending in {{last4}}, expires {{expiry}}",
+    "legend": "Card",
+    "description": "What your orders are charged to.",
+    "noCvv": "We never ask for the CVV, and of the number we only keep the last four digits and the brand.",
+    "change": "Change card",
+    "done": "Done",
+    "number": {
+      "existing": "New card number",
+      "new": "Card number"
+    },
+    "numberPlaceholder": "0000 0000 0000 0000",
+    "numberHint": "The number does not leave this browser: only its last four digits are kept.",
+    "detected": "{{brand}} · we will only keep the last four digits",
+    "expiry": "Expiry",
+    "expMonth": "Expiry month",
+    "expYear": "Expiry year"
+  },
+  "address": {
+    "legend": "Delivery address",
+    "description": "Where we take your orders.",
+    "street": "Street and number",
+    "city": "City",
+    "province": "Province",
+    "postalCode": "Postcode"
+  },
+  "favoriteStore": {
+    "label": "Favourite store",
+    "none": "None",
+    "hint": "The store we suggest by default when you check availability.",
+    "unavailable": "We could not load the stores. Please try again later."
+  },
+  "validation": {
+    "name": "Enter a first name between 1 and 100 characters",
+    "lastName": "Enter a last name between 1 and 100 characters",
+    "street": "Enter the street, between 1 and 255 characters",
+    "city": "Enter the city, between 1 and 255 characters",
+    "province": "Enter the province, between 1 and 255 characters",
+    "postalCode": "The postcode is exactly five digits",
+    "cardNumber": "That card number is not valid. Please check it",
+    "last4": "We could not read the last four digits. Please type the number again",
+    "brand": "We do not recognise that card brand",
+    "expMonth": "The expiry month goes from 1 to 12",
+    "expYear": "The expiry year goes from 2024 to 2100",
+    "favoriteStore": "That store no longer exists. Please choose another one"
   }
 }

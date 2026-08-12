@@ -1,0 +1,34 @@
+{
+  "title": "Crea tu cuenta",
+  "lead": "Con estos datos podrás comprar sin volver a teclearlos en cada pedido.",
+  "account": {
+    "legend": "Tu cuenta",
+    "description": "Con qué entras a Ukun.",
+    "email": "Correo",
+    "emailHint": "Será tu identificador al entrar. No puede estar ya en uso.",
+    "password": "Contraseña",
+    "passwordHint": "Mínimo {{min}} caracteres. No hay máximo ni reglas raras: una frase larga vale más que un símbolo."
+  },
+  "personal": {
+    "legend": "Datos personales",
+    "description": "Cómo te llamamos.",
+    "name": "Nombre",
+    "lastName": "Apellidos"
+  },
+  "preferences": {
+    "legend": "Preferencias",
+    "description": "Es opcional, y puedes cambiarla más tarde en tu perfil."
+  },
+  "submit": "Crear cuenta",
+  "submitting": "Creando la cuenta...",
+  "afterSubmitHint": "Al terminar te llevamos a identificarte con la contraseña que acabas de elegir.",
+  "pending": {
+    "title": "Tu cuenta está creada",
+    "body": "Nos falta terminar de activarla. Prueba a entrar; si todavía no te deja, vuelve a enviar el alta con los mismos datos y se completará sin duplicar nada.",
+    "continue": "Iniciar sesión"
+  },
+  "validation": {
+    "email": "Escribe un correo válido, de como mucho 255 caracteres",
+    "password": "La contraseña tiene que tener al menos 12 caracteres"
+  }
+}

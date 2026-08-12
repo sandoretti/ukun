@@ -84,14 +84,13 @@ describe('SignInPage', () => {
     await waitFor(() => expect(container.firstChild).toBeNull());
   });
 
-  it('offers the account that cannot be created yet without a dead link', async () => {
+  it('offers the account somebody without one needs, as a route of this router', async () => {
     renderSignIn();
 
-    // Signing up has no screen behind it, so it is a disabled button and never an `<a>` — the same
-    // call the navigation bar makes.
-    expect(screen.queryByRole('link', { name: /Crear cuenta/ })).toBeNull();
-    const signUp = await screen.findByRole('button', { name: 'Crear cuenta (próximamente)' });
-    expect(signUp.hasAttribute('disabled')).toBe(true);
+    // The two ways out of this screen are not the same kind of thing, and the markup says so:
+    // signing in leaves the SPA and is a button, signing up is a screen of ours and is a link.
+    const signUp = await screen.findByRole('link', { name: 'Crear cuenta' });
+    expect(signUp.getAttribute('href')).toBe('/signup');
   });
 
   it('leaves a way back to the store, which this layout has none of', async () => {

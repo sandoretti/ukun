@@ -74,7 +74,7 @@ Test de persistencia con contador de sentencias (Hibernate `Statistics.getPrepar
 | `./gradlew test` | `*Test` backend — sin Testcontainers, sin contexto de Spring salvo `@WebMvcTest`/`@DataJpaTest` puntual | cada build local y cada push |
 | `./gradlew integrationTest` | `*IT` backend — Testcontainers, `@SpringBootTest` de los 4 recorridos end-to-end (`03` §3) | CI, antes de merge |
 | Vitest | componentes y hooks del frontend, incluida paridad de traducciones | cada build local y cada push |
-| Playwright | los tres recorridos de `03` §3 (cliente completo, admin crea producto, empleado edita stock) | CI, contra el stack levantado por Tilt |
+| Playwright | los tres recorridos de `03` §3 (cliente completo, admin crea producto, empleado edita stock) | a mano contra el stack de Tilt, antes de merge — y en CI cuando exista (v1.0) |
 | Jacoco (`jacocoTestReport`) | cobertura informativa en todo el backend, sobre las dos tandas | CI |
 | Jacoco (`jacocoTestCoverageVerification`) | **umbral obligatorio solo en `orders` e `inventory`** (`03` §3 — es donde está el dinero y la concurrencia), 90% de línea y 75% de rama por paquete | CI |
 
@@ -87,6 +87,26 @@ Test de persistencia con contador de sentencias (Hibernate `Statistics.getPrepar
 ```
 
 Las dos tandas no se solapan nunca: una clase entra en una o en la otra según su nombre, y ninguna corre dos veces. Es comprobable comparando los informes de `build/test-results/test/` y `build/test-results/integrationTest/`.
+
+### Cómo se ejecuta el smoke de Playwright
+
+Vive en `apps/ukun-web/e2e/`, dentro del proyecto npm que ya existe — no hay un segundo `package.json` que mantener. Un recorrido por fichero; el de cliente (v0.6) es `customer-journey.spec.ts` y los dos de back-office llegan en v0.7.
+
+```bash
+tilt up                       # en otra pestaña: el smoke NO levanta el stack, solo lo usa
+cd apps/ukun-web
+npx playwright install chromium   # una vez por máquina
+npm run test:e2e              # o test:e2e:ui para verlo paso a paso
+```
+
+Cuatro decisiones que no son de estilo:
+
+- **Contra el gateway** (`http://localhost:8080`), nunca contra el dev server de Vite: el 5173 lleva `/api` por proxy directamente a `ukun-api` y se salta la sesión y el CSRF, que es justo lo que un recorrido completo tiene que ejercitar (ADR-0003). `E2E_BASE_URL` lo reapunta desde un worktree, donde los puertos van desplazados (`06-entorno-local-tilt.md`).
+- **Sin `webServer` y con `globalSetup`**: el stack es de Tilt y el test no lo arranca ni lo para; lo que hace es comprobar que está y fallar diciendo «arranca `tilt up`» en vez de dejar un `ERR_CONNECTION_REFUSED` dentro del primer `goto`.
+- **`workers: 1` y `retries: 0`**: el recorrido escribe en la base y consume stock, así que no hay paralelismo que ganar; y un smoke que pasa a la segunda no dice que el recorrido funcione, dice que a veces funciona.
+- **Ninguna aserción sobre cantidades absolutas de stock ni sobre un SKU concreto**: el propio smoke las cambia en cada ejecución. Elige del catálogo lo que la pantalla pinta como disponible, y da de alta a una persona nueva por ejecución (correo con marca de tiempo). Los datos que deja se limpian con `db-reset`, que es manual a propósito.
+
+Vitest está acotado a `src/` en `vite.config.ts` para que no recoja estos `*.spec.ts`, y `test-results/`, `playwright-report/` y `e2e/` están en el `.dockerignore` del frontend: el contexto de build de su imagen es ese directorio, así que sin esa línea cada ejecución reconstruye —y reinicia— el dev server contra el que está corriendo.
 
 Sin umbral global de cobertura — invita a tests basura que solo rellenan líneas sin verificar comportamiento (`03-analisis-y-patrones.md` §3).
 

@@ -49,6 +49,13 @@
   color: tokens.$primary;
 }
 
+// El alta no cabe en la medida de arriba: son cuatro grupos de campos, con la dirección en tres
+// columnas. Sigue siendo una tarjeta centrada, pero con la medida del formulario largo — la misma
+// que `.settings-form`, porque es el mismo formulario.
+.auth-card--wide {
+  max-width: 44rem;
+}
+
 // Separa la acción principal del alta, que es otra decisión distinta y no una alternativa a ella.
 .auth-card__divider {
   margin-block: 1.5rem;

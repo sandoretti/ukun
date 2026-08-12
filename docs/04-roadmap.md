@@ -199,6 +199,8 @@ Paralelizable en tres slices verticales independientes (backend + frontend cada 
 
 Aquí vive el trabajo de dominio serio: agregado `Order` con sus invariantes, bloqueo pesimista ordenado sobre `store_stock` (`ORDER BY id`, ADR-0015), idempotencia de `POST /api/orders` con el intento emitido por el servidor (`POST /api/checkout/attempts`, ADR-0016), e instantáneas inmutables de envío y pago en `customer_order` (ADR-0011 — corrige el defecto #19, que es el peor bug de comportamiento del legacy). El test de concurrencia de sobreventa es condición de salida, no un extra.
 
+**Una cuarta slice de frontend que este plan no listaba: la pantalla de alta** (RF-06, issue #129). El backend la tenía desde v0.4 —la saga de signup— y el SPA ofrecía «Crear cuenta» como botón apagado, así que el recorrido que declara la paridad no tenía por dónde empezar: `03-analisis-y-patrones.md` §3 dice «cliente completo (signup → compra)», literalmente. Salió al preparar el smoke, que es cuando se nota que falta una puerta.
+
 **SINC-4**: smokes de Playwright del recorrido cliente en verde → paridad declarada.
 
 ### v0.7 — Back-office completo

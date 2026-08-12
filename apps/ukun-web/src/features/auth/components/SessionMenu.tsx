@@ -4,8 +4,7 @@ import { Button, Dropdown } from 'react-bootstrap';
 
 import { useAuth } from '../../../shared/hooks/useAuth';
 import { PROFILE_PATH } from '../../../shared/routes';
-import { ComingSoonButton } from '../../../shared/ui/ComingSoon';
-import { ACCOUNT_PATH } from '../routes';
+import { ACCOUNT_PATH, SIGN_UP_PATH } from '../routes';
 import { SignOutForm } from './SignOutForm';
 
 /**
@@ -35,8 +34,11 @@ export function SessionMenu() {
         <Button type="button" variant="outline-light" size="sm" onClick={signIn}>
           {t('account.signIn')}
         </Button>
-        {/* El alta es otra pantalla que todavía no existe: se sigue ofreciendo, deshabilitada. */}
-        <ComingSoonButton label={t('account.signUp')} variant="light" />
+        {/* El alta sí es una ruta de este router, a diferencia de la entrada: la cuenta la crea
+            `ukun-api` y no el servidor de autorización (docs/08 §3). */}
+        <Link to={SIGN_UP_PATH} className="btn btn-light btn-sm">
+          {t('account.signUp')}
+        </Link>
       </>
     );
   }

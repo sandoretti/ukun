@@ -50,6 +50,7 @@ Fijadas en `apps/ukun-web/package.json` el 2026-08-09, con instalación limpia v
 | material-symbols | **0.45.10** | Iconografía, ver `07-frontend-ux-ui.md`. Fuente variable autohospedada, nunca CDN. |
 | sass | **1.102.0** | Overrides del tema sobre las variables de Bootstrap 5.3 (`07-frontend-ux-ui.md`). `@import` está deprecado y desaparece en sass 3: el tema usa `@use "bootstrap/scss/bootstrap" with (...)`. |
 | Vitest + React Testing Library | **4.1.10** + **16.3.2** (jsdom 30) | Testing de componentes y hooks (`03-analisis-y-patrones.md`, `07-frontend-ux-ui.md`) — capa que Playwright no cubre de forma barata. |
+| Playwright | **1.62.1** (verificada el 2026-08-12) | Los recorridos end-to-end de `03-analisis-y-patrones.md` §3, en `apps/ukun-web/e2e/` contra el stack de Tilt (`13-testing.md` §3). **Solo chromium**: lo que prueban es que el sistema entero responde, no que tres motores pinten igual. El navegador se descarga aparte con `npx playwright install chromium` y vive en `~/.cache/ms-playwright`, no en el repo. |
 | ESLint | **10.8.1** (`typescript-eslint` 8.66, `eslint-plugin-react-hooks` 7.1) | Incluye la regla `i18next/no-literal-string` que rompe el build ante un literal en JSX (ADR-0019). |
 | react-i18next + i18next-browser-languagedetector | **17.0.11** + **8.2.1**, sobre i18next **26.3.6** | i18n del frontend, ver ADR-0019. Namespaces por feature, `errors.json` indexado por el `code` de `docs/12-error-contract.md`. react-i18next 17 exige i18next ≥ 26.2. |
 

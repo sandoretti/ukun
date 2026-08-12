@@ -1,9 +1,13 @@
 @use "../bootstrap";
-@use "../tokens";
 
-// La pantalla de ajustes del perfil. Chrome mínimo: ni tarjetas ni paneles por sección, solo
-// divisorias y aire — lo que separa un bloque de otro es el ritmo, no una caja. Ningún color se
-// escribe aquí: los tokens viven en `_tokens.scss` y las variables de Bootstrap ya llevan el resto.
+// El formulario largo de datos de cliente, que ahora pintan dos pantallas: el perfil (RF-05) y el
+// alta (RF-06). Chrome mínimo: ni tarjetas ni paneles por sección, solo divisorias y aire — lo que
+// separa un bloque de otro es el ritmo, no una caja. Ningún color se escribe aquí: los tokens viven
+// en `_tokens.scss` y las variables de Bootstrap ya llevan el resto.
+//
+// Estaba en `_profile.scss` mientras solo lo usaba el perfil; se muda aquí en cuanto los fieldsets
+// pasaron a `shared/forms/` y los aplican las dos, por la misma razón que `payment-card` no vive en
+// la hoja de ninguna pantalla.
 
 // La medida del formulario, que no es la de la columna. Un campo de texto de mil píxeles obliga a
 // recorrer la línea entera con la vista para leer lo que cabe en un tercio.

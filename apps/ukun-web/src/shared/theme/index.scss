@@ -15,11 +15,12 @@
 @use "components/catalog";
 @use "components/stores";
 @use "components/auth";
-@use "components/profile";
 @use "components/cart";
 @use "components/orders";
-// Los dos componentes de `shared/ui/` con estilo propio: los pintan varias pantallas, así que su
-// receta no vive en la hoja de ninguna de ellas.
+// Lo que pintan varias pantallas, así que su receta no vive en la hoja de ninguna de ellas: los
+// componentes de `shared/ui/` con estilo propio y el formulario largo que comparten el perfil y el
+// alta.
+@use "components/settings-form";
 @use "components/payment-card";
 @use "components/product-thumb";
 @use "components/stock-warning";
