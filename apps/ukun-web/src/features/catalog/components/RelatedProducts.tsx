@@ -8,6 +8,7 @@ import {
 } from '../../../shared/api/availability';
 import { useRelatedProducts } from '../api/queries';
 import { ProductCard } from './ProductCard';
+import { favoriteStockOf, stockOf } from '../storeStock';
 
 type RelatedProductsProps = {
   typeId: number;
@@ -38,7 +39,6 @@ export function RelatedProducts({ typeId, excludeId }: RelatedProductsProps) {
   // including the customer's favourite store (RF-01), which is also what the sheet above is showing.
   const availability = useOnlineAvailability(productIds);
   const favoriteAvailability = useFavoriteStoreAvailability(productIds);
-  const favoriteStore = favoriteAvailability.store;
 
   if (products.length === 0) {
     return null;
@@ -54,18 +54,8 @@ export function RelatedProducts({ typeId, excludeId }: RelatedProductsProps) {
           <Col key={product.id}>
             <ProductCard
               product={product}
-              online={{
-                storeName: availability.store?.name,
-                available: availability.available?.get(product.id),
-              }}
-              favorite={
-                favoriteStore === undefined
-                  ? undefined
-                  : {
-                      storeName: favoriteStore.name,
-                      available: favoriteAvailability.available?.get(product.id),
-                    }
-              }
+              online={stockOf(availability, product.id)}
+              favorite={favoriteStockOf(favoriteAvailability, product.id)}
             />
           </Col>
         ))}

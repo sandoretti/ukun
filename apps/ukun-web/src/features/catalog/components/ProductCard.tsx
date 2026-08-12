@@ -6,14 +6,8 @@ import { formatMoney } from '../../../shared/format/money';
 import { useLocale } from '../../../shared/hooks/useLocale';
 import { ProductImage } from '../../../shared/ui/ProductImage';
 import type { ProductSummary } from '../api/productKeys';
+import type { StoreStock } from '../storeStock';
 import { productPath } from '../../../shared/routes';
-
-/** One store's answer about this product: its name, and whether there is stock. */
-export type StoreStock = {
-  storeName: string | undefined;
-  /** `undefined` while the parallel availability read is still in flight or has failed. */
-  available: boolean | undefined;
-};
 
 type ProductCardProps = {
   product: ProductSummary;

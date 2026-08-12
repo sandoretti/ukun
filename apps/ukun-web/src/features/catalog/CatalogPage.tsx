@@ -12,6 +12,7 @@ import { CatalogFilters } from './components/CatalogFilters';
 import { CatalogLoadMore } from './components/CatalogLoadMore';
 import { CatalogToolbar } from './components/CatalogToolbar';
 import { ProductCard } from './components/ProductCard';
+import { favoriteStockOf, stockOf } from './storeStock';
 import { PAGE_SIZE } from './api/productKeys';
 import { useCatalogProducts, useMaxProductPrice } from './api/queries';
 import { countActiveFilters, useCatalogParams } from './useCatalogParams';
@@ -43,7 +44,6 @@ export default function CatalogPage() {
   // The second store of RF-01. `store` being undefined is the whole answer for a visitor with no
   // session or no favourite, and it is what keeps the cards on their single, unnamed line.
   const favoriteAvailability = useFavoriteStoreAvailability(productIds);
-  const favoriteStore = favoriteAvailability.store;
 
   const types = typesQuery.data ?? [];
 
@@ -106,18 +106,8 @@ export default function CatalogPage() {
                     <Col key={product.id}>
                       <ProductCard
                         product={product}
-                        online={{
-                          storeName: availability.store?.name,
-                          available: availability.available?.get(product.id),
-                        }}
-                        favorite={
-                          favoriteStore === undefined
-                            ? undefined
-                            : {
-                                storeName: favoriteStore.name,
-                                available: favoriteAvailability.available?.get(product.id),
-                              }
-                        }
+                        online={stockOf(availability, product.id)}
+                        favorite={favoriteStockOf(favoriteAvailability, product.id)}
                       />
                     </Col>
                   ))}
