@@ -18,7 +18,7 @@ Por feature, no por capa técnica global — y cada paquete de nivel superior es
 | `stores` | `store`, `address` de tienda | — |
 | `storage` | — (`FileStoragePort` + `/media/products/**`) | — |
 | `identity` | — (`AccountsPort`) | — |
-| `inventory` | `store_stock` | `catalog`, `stores`, `shared` |
+| `inventory` | `store_stock` | `catalog`, `stores`, `identity`, `shared` |
 | `customers` | `customer`, `address`, `card` de perfil | `stores`, `identity`, `shared` |
 | `staff` | `employee` | `stores`, `identity`, `shared` |
 | `cart` | `cart_item` | `catalog`, `inventory`, `customers`, `shared` |

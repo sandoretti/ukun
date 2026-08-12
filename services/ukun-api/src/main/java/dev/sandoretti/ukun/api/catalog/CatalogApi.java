@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.api.catalog;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -33,4 +34,18 @@ public interface CatalogApi {
      * exactly what a caller like {@code cart} needs (ADR-0013).
      */
     Map<Long, ProductSummary> summariesByIds(Set<Long> productIds);
+
+    /**
+     * The product an employee named by typing its SKU, or empty if there is none they may act on.
+     *
+     * <p><strong>Only an active product resolves.</strong> A discontinued one answers empty and the
+     * caller reports it as not found, which is what stops stock being added to something the shop has
+     * taken out of the catalogue (ADR-0013). That decision belongs here rather than in the caller: the
+     * moment a second module writes {@code .filter(ProductSummary::active)} for itself, "can this be
+     * restocked" has two answers, and only one of them gets fixed.
+     *
+     * <p>By SKU and not by identifier because that is what the employee has in front of them, printed
+     * on the label (ADR-0015). It is unique, so the answer is a product or nothing — never a list.
+     */
+    Optional<ProductSummary> activeBySku(String sku);
 }

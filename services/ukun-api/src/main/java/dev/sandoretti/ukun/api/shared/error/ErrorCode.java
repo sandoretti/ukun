@@ -98,6 +98,16 @@ public enum ErrorCode {
      */
     EMPTY_CART(HttpStatus.UNPROCESSABLE_CONTENT),
 
+    /**
+     * Two employees edited the same stock line at once and the second one lost (ADR-0008). Extensions:
+     * {@code resource} and {@code id}, so the frontend can say <em>which</em> line to read again.
+     *
+     * <p>It is the optimistic half of the concurrency split, and the only one that reaches the client
+     * as a conflict: the pessimistic half — the checkout decrement — resolves by waiting for the lock
+     * and answers {@code INSUFFICIENT_STOCK} when there really are not enough units.
+     */
+    VERSION_CONFLICT(HttpStatus.CONFLICT),
+
     REFERENTIAL_INTEGRITY(HttpStatus.CONFLICT),
 
     /** Generic fallback. No detail ever reaches the client. */

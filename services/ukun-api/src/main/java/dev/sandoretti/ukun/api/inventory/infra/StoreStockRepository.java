@@ -4,7 +4,10 @@ import dev.sandoretti.ukun.api.inventory.domain.StoreStock;
 import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -16,6 +19,10 @@ import org.springframework.data.repository.query.Param;
  * <p>Query Q2 of {@code docs/10-modelo-de-datos.md}: the availability of the products on a catalog
  * page, in one store. Served by {@code ux_store_stock (product_id, store_id)}, which the {@code IN}
  * probes as a set of exact look-ups.
+ *
+ * <p>Query Q5 of the same document — the two halves of the employee's stock screen (RF-09) — lives
+ * here too, and is the reason two of these queries are native. See {@link #pageOfStockedLines} for
+ * why they are, and why that is not the same borrowing as {@code EmployeeStoreRepository}.
  */
 public interface StoreStockRepository extends JpaRepository<StoreStock, Long> {
 
@@ -127,11 +134,181 @@ public interface StoreStockRepository extends JpaRepository<StoreStock, Long> {
             """)
     List<StoreStock> lockLinesOf(@Param("storeId") Long storeId, @Param("productIds") Collection<Long> productIds);
 
+    /**
+     * One line of a store, by its own identifier — the read behind {@code PUT} and {@code DELETE} on
+     * {@code /api/stores/{storeId}/stock/{lineId}}.
+     *
+     * <p><strong>The store is part of the look-up, not checked afterwards.</strong> A line that
+     * belongs to another store comes back empty and the caller answers {@code 404}, exactly as it does
+     * for a line that does not exist: the two are the same answer on purpose, because distinguishing
+     * them would let an employee enumerate other stores' lines by watching which identifiers return a
+     * {@code 403}. Authorisation of the store itself already happened — {@code EmployeeStoreResolver} —
+     * and this is the second, narrower question: is this line inside it.
+     */
+    Optional<StoreStock> findByIdAndStoreId(Long id, Long storeId);
+
+    /**
+     * Whether this product already has a line in this store, checked before inserting one.
+     *
+     * <p>{@code ux_store_stock} would catch it anyway, but as a {@code 500}: the advice's integrity net
+     * only recognises a foreign-key violation ({@code SQLState 23503}), and this would arrive as a
+     * unique one. Asking first is also what lets the error name the product instead of the constraint.
+     */
+    boolean existsByProductIdAndStoreId(Long productId, Long storeId);
+
+    /**
+     * The lines this store holds, with the product data the screen shows — the {@code STOCKED} half of
+     * query Q5 (RF-09), served by {@code ix_store_stock_store (store_id, product_id)}.
+     *
+     * <p><strong>Why this one is native.</strong> The screen filters and sorts by columns of
+     * {@code product} — the SKU the employee types, the name they search by — so the join has to be
+     * inside the paginated statement; there is no page to be had otherwise. And {@code inventory}
+     * cannot map {@code Product}: it is an entity of {@code catalog}, and {@code docs/14-modules.md} §2
+     * forbids an entity crossing the boundary in either direction. What crosses here is SQL against a
+     * table this module reads and never writes, projected into a closed interface that leaves nothing
+     * of {@code catalog}'s model visible.
+     *
+     * <p><strong>It is not the borrowing {@code EmployeeStoreRepository} documents.</strong> That one
+     * is a stand-in for a module that does not exist yet and gets deleted when it does; this is the
+     * permanent shape of a cross-module report, and the alternative — reading identifiers here and
+     * asking {@code CatalogApi} for names afterwards — cannot filter or sort by what it has not read
+     * yet, so it would page over the wrong set.
+     *
+     * <p><strong>One statement, no enrichment pass.</strong> The projection already carries {@code sku}
+     * and {@code name}, so there is no second query per page and nothing for
+     * {@code CatalogApi.summariesByIds} to add. The N+1 the module's rules are aimed at cannot form
+     * here because there is no per-row call to make.
+     *
+     * <p><strong>Discontinued products are out of this half too</strong>, not only out of the one
+     * below. RF-10 says a discontinued product leaves the public catalogue <em>and</em> the stock
+     * screens of RF-09, and the units it still holds are exactly why: they stay recorded and stop being
+     * sellable (ADR-0013), so showing the line would invite an employee to top up something the shop
+     * has stopped selling. The row itself is untouched — {@code DELETE} on it still works, which is how
+     * a store empties one out.
+     *
+     * <p>The two optional filters are folded into the {@code WHERE} rather than split into four derived
+     * queries ({@code docs/03-analisis-y-patrones.md} §2). {@code CAST(… AS TEXT)} is what lets a bound
+     * {@code NULL} through: Postgres refuses a parameter whose type it cannot infer, and an untyped
+     * {@code NULL} compared to a column is exactly that case. The name match folds accents through
+     * {@code unaccent(lower(…))} (defect #22) with the pattern escaped by
+     * {@code TextSearch.likePattern}, and {@code ORDER BY} closes on {@code ss.id} so a page boundary
+     * never depends on the order two products with the same name happen to come back in (defect #23).
+     */
+    @Query(
+            value =
+                    """
+                    SELECT ss.id AS "lineId", p.id AS "productId", p.sku AS "sku", p.name AS "productName",
+                           ss.quantity AS "quantity", ss.version AS "version"
+                      FROM store_stock ss
+                      JOIN product p ON p.id = ss.product_id
+                     WHERE ss.store_id = :storeId
+                       AND p.is_active = true
+                       AND (CAST(:sku AS TEXT) IS NULL OR p.sku = CAST(:sku AS TEXT))
+                       AND (CAST(:namePattern AS TEXT) IS NULL
+                            OR unaccent(lower(p.name)) LIKE unaccent(lower(CAST(:namePattern AS TEXT))) ESCAPE '\\')
+                     ORDER BY p.name, ss.id
+                    """,
+            countQuery =
+                    """
+                    SELECT count(*)
+                      FROM store_stock ss
+                      JOIN product p ON p.id = ss.product_id
+                     WHERE ss.store_id = :storeId
+                       AND p.is_active = true
+                       AND (CAST(:sku AS TEXT) IS NULL OR p.sku = CAST(:sku AS TEXT))
+                       AND (CAST(:namePattern AS TEXT) IS NULL
+                            OR unaccent(lower(p.name)) LIKE unaccent(lower(CAST(:namePattern AS TEXT))) ESCAPE '\\')
+                    """,
+            nativeQuery = true)
+    Page<StockLineView> pageOfStockedLines(
+            @Param("storeId") Long storeId,
+            @Param("sku") String sku,
+            @Param("namePattern") String namePattern,
+            Pageable pageable);
+
+    /**
+     * The catalogue products this store has <strong>no</strong> line for — the {@code NOT_STOCKED} half
+     * of query Q5, which is the "add new stock" screen of RF-09.
+     *
+     * <p><strong>{@code NOT EXISTS}, never {@code NOT IN} over a subquery</strong> — defect #21, and
+     * the reason it is written out here rather than derived. The two are not interchangeable: a single
+     * {@code NULL} among the subquery's rows makes {@code NOT IN} return no rows at all, silently, and
+     * the screen would come back empty with nothing to explain it.
+     *
+     * <p><strong>Only active products</strong>, the same filter the {@code STOCKED} half carries and
+     * for the same reason (RF-10, ADR-0013). Here it also happens to be the difference between a list
+     * of things worth adding and a list that includes everything the shop ever sold.
+     *
+     * <p>{@code lineId}, {@code quantity} and {@code version} come back {@code NULL} because the row
+     * does not exist yet, which is what the contract declares for this case. They are cast explicitly:
+     * an untyped {@code NULL} in a select list leaves Postgres without a column type, and the
+     * projection with a type it cannot convert.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT CAST(NULL AS BIGINT) AS "lineId", p.id AS "productId", p.sku AS "sku",
+                           p.name AS "productName", CAST(NULL AS INTEGER) AS "quantity",
+                           CAST(NULL AS BIGINT) AS "version"
+                      FROM product p
+                     WHERE p.is_active = true
+                       AND NOT EXISTS (SELECT 1
+                                         FROM store_stock ss
+                                        WHERE ss.product_id = p.id
+                                          AND ss.store_id = :storeId)
+                       AND (CAST(:sku AS TEXT) IS NULL OR p.sku = CAST(:sku AS TEXT))
+                       AND (CAST(:namePattern AS TEXT) IS NULL
+                            OR unaccent(lower(p.name)) LIKE unaccent(lower(CAST(:namePattern AS TEXT))) ESCAPE '\\')
+                     ORDER BY p.name, p.id
+                    """,
+            countQuery =
+                    """
+                    SELECT count(*)
+                      FROM product p
+                     WHERE p.is_active = true
+                       AND NOT EXISTS (SELECT 1
+                                         FROM store_stock ss
+                                        WHERE ss.product_id = p.id
+                                          AND ss.store_id = :storeId)
+                       AND (CAST(:sku AS TEXT) IS NULL OR p.sku = CAST(:sku AS TEXT))
+                       AND (CAST(:namePattern AS TEXT) IS NULL
+                            OR unaccent(lower(p.name)) LIKE unaccent(lower(CAST(:namePattern AS TEXT))) ESCAPE '\\')
+                    """,
+            nativeQuery = true)
+    Page<StockLineView> pageOfNotStockedProducts(
+            @Param("storeId") Long storeId,
+            @Param("sku") String sku,
+            @Param("namePattern") String namePattern,
+            Pageable pageable);
+
     /** How many units of one product a store holds. See {@link #quantitiesOf}. */
     interface ProductQuantity {
 
         Long getProductId();
 
         int getQuantity();
+    }
+
+    /**
+     * One row of the employee's stock screen, from either half of query Q5.
+     *
+     * <p>The three nullable getters are the {@code NOT_STOCKED} case: a product with no line yet has no
+     * identifier, no quantity and no version to report. Boxed types rather than primitives for exactly
+     * that reason — a primitive would turn "there is no row" into a zero, which is the one distinction
+     * this screen exists to show.
+     */
+    interface StockLineView {
+
+        Long getLineId();
+
+        Long getProductId();
+
+        String getSku();
+
+        String getProductName();
+
+        Integer getQuantity();
+
+        Long getVersion();
     }
 }

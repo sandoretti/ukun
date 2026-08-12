@@ -30,8 +30,10 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * {@code 401} in the access log.
  *
  * <p>The other half of the event, {@code reason=FOREIGN_RESOURCE} ("this store is not yours"), has no
- * {@code AuthorizationDeniedEvent} to hang from — it is a domain decision — and is emitted from the
- * {@code @RestControllerAdvice} when that authorisation arrives. Do not add it here.
+ * {@code AuthorizationDeniedEvent} to hang from — it is a domain decision — and is emitted by the use
+ * case that takes it: {@code inventory}'s {@code EmployeeStoreResolver}, since v0.7. Same event name
+ * and same fields, two publishers. Do not add it here: this class cannot see which store was asked
+ * for, so the reason it wrote would be a guess.
  */
 @Component
 class AuthorizationDeniedListener {

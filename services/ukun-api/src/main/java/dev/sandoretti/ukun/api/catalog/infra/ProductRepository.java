@@ -45,4 +45,13 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Override
     @EntityGraph(attributePaths = "productType")
     Optional<Product> findById(Long id);
+
+    /**
+     * By business identifier, for {@link dev.sandoretti.ukun.api.catalog.CatalogApi#activeBySku(String)}.
+     *
+     * <p>No {@code @EntityGraph}, unlike the two overrides above: what this feeds is a
+     * {@code ProductSummary}, which carries no product type, so fetching the association would be a
+     * join nobody reads. Served by the {@code UNIQUE} on {@code sku} (ADR-0015).
+     */
+    Optional<Product> findBySku(String sku);
 }
