@@ -17,7 +17,7 @@
   },
   "preferences": {
     "legend": "Preferencias",
-    "description": "Opcional: la tienda que te proponemos al mirar disponibilidad."
+    "description": "Es opcional, y puedes cambiarla más tarde en tu perfil."
   },
   "submit": "Crear cuenta",
   "submitting": "Creando la cuenta...",

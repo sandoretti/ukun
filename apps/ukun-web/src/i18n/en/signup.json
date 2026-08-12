@@ -17,7 +17,7 @@
   },
   "preferences": {
     "legend": "Preferences",
-    "description": "Optional: the store we suggest when you check availability."
+    "description": "It is optional, and you can change it later in your profile."
   },
   "submit": "Create account",
   "submitting": "Creating your account...",
