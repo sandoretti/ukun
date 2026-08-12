@@ -162,7 +162,7 @@ public class CartService implements CartApi {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         Map<Long, ProductSummary> products = catalog.summariesByIds(productIds);
-        Map<Long, Integer> available = inventory.onlineQuantitiesByProductIds(productIds);
+        Map<Long, Integer> available = inventory.sellableOnlineQuantities(products);
 
         List<CartLineResponse> cartLines = lines.stream()
                 .filter(line -> products.containsKey(line.getId().getProductId()))
@@ -177,10 +177,10 @@ public class CartService implements CartApi {
     }
 
     /**
-     * <strong>A discontinued product reports zero available, whatever its stock row says.</strong> The
-     * line stays — the contract has no field to flag it and it is frozen since SINC-1 — but nothing that
-     * cannot be bought is going to claim otherwise. Its stock row may well hold units: discontinuing a
-     * product takes it out of the catalogue, it does not empty the warehouse (ADR-0013).
+     * <strong>Nothing here decides what is available.</strong> A discontinued product reports zero
+     * whatever its stock row holds, and that is {@code InventoryApi}'s answer rather than this method's
+     * reading of it (ADR-0013, issue #122): the line asks the map and takes what it says. The line
+     * itself stays either way — the contract has no field to flag it and it is frozen since SINC-1.
      */
     private static CartLineResponse lineOf(
             CartItem line, Map<Long, ProductSummary> products, Map<Long, Integer> available) {
@@ -197,6 +197,6 @@ public class CartService implements CartApi {
                 product.price(),
                 line.getQuantity(),
                 lineTotal,
-                product.active() ? available.getOrDefault(productId, 0) : 0);
+                available.getOrDefault(productId, 0));
     }
 }

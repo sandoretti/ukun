@@ -1,5 +1,8 @@
 package dev.sandoretti.ukun.api.inventory.application;
 
+import static dev.sandoretti.ukun.api.inventory.application.Sellability.sellable;
+
+import dev.sandoretti.ukun.api.catalog.ProductSummary;
 import dev.sandoretti.ukun.api.inventory.InventoryApi;
 import dev.sandoretti.ukun.api.inventory.StockDecrement;
 import dev.sandoretti.ukun.api.inventory.domain.StoreStock;
@@ -17,8 +20,13 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * What {@code inventory} answers to the rest of the application: how many units the online store
- * holds, and the decrement that takes them out when an order is placed.
+ * What {@code inventory} answers to the rest of the application: how many units the online store can
+ * sell, and the decrement that takes them out when an order is placed.
+ *
+ * <p><strong>Can sell, not holds</strong>, and the difference is {@link Sellability}: a discontinued
+ * product keeps its stock row (ADR-0013) and both methods here treat it as having nothing. The rule
+ * used to be applied by the callers instead — issue #122 — which is how a rule of this module came to
+ * live in two that do not own it.
  *
  * <p>Both methods resolve the online store themselves rather than taking it as a parameter, which is
  * the same decision stated twice: RF-04 makes selling from the online store — and from nowhere else —
@@ -46,28 +54,44 @@ public class InventoryService implements InventoryApi {
     }
 
     /**
-     * {@link InventoryApi#onlineQuantitiesByProductIds(Set)}: the batch read of the figure, for the
-     * modules that are allowed to show it.
+     * {@link InventoryApi#sellableOnlineQuantities(Map)}: the batch read of the figure, for the modules
+     * that are allowed to show it.
      *
      * <p>Two statements and never more — one to resolve the online store, one for the whole batch —
-     * whatever the number of products asked about.
+     * whatever the number of products asked about. The products arrive already read, so applying
+     * {@link Sellability} costs nothing: the discontinued ones are dropped from the batch before it is
+     * asked for, which is one fewer identifier in the {@code in} clause rather than one more query.
      *
      * <p>An empty request short-circuits before either statement. The empty cart is the commonest case
-     * this method sees, and it has nothing to look up.
+     * this method sees, and it has nothing to look up. A batch of nothing but discontinued products ends
+     * up in the same place, one filter later.
      */
     @Override
     @Transactional(readOnly = true)
-    public Map<Long, Integer> onlineQuantitiesByProductIds(Set<Long> productIds) {
-        if (productIds.isEmpty()) {
+    public Map<Long, Integer> sellableOnlineQuantities(Map<Long, ProductSummary> products) {
+        Set<Long> sellableIds = products.entrySet().stream()
+                .filter(entry -> sellable(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+
+        if (sellableIds.isEmpty()) {
             return Map.of();
         }
 
-        return stock.quantitiesOf(stores.onlineStoreId(), productIds).stream()
+        return stock.quantitiesOf(stores.onlineStoreId(), sellableIds).stream()
                 .collect(Collectors.toMap(ProductQuantity::getProductId, ProductQuantity::getQuantity));
     }
 
     /**
-     * {@link InventoryApi#decrementOnlineStock(Map)}: the pessimistic, ordered decrement of ADR-0008.
+     * {@link InventoryApi#decrementOnlineStock(Map, Map)}: the pessimistic, ordered decrement of
+     * ADR-0008.
+     *
+     * <p><strong>What cannot be sold is refused before anything is locked.</strong> A discontinued
+     * product keeps its units (ADR-0013) and a deleted one is not in the batch at all; either way there
+     * is nothing to take, and finding that out costs no statement because the products came in with the
+     * request. Doing it first is what keeps the rejection free of locks nobody needs — and it reproduces
+     * the order the caller used to apply by hand: every unsellable line is ruled out before the first
+     * question about quantity, so an order short of both reports the discontinued product.
      *
      * <p><strong>{@code MANDATORY}, not {@code REQUIRED}.</strong> The lock is only worth anything for
      * as long as the transaction that took it is open, so a decrement that started a transaction of
@@ -91,9 +115,17 @@ public class InventoryService implements InventoryApi {
      */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
-    public StockDecrement decrementOnlineStock(Map<Long, Integer> quantitiesByProductId) {
+    public StockDecrement decrementOnlineStock(
+            Map<Long, Integer> quantitiesByProductId, Map<Long, ProductSummary> products) {
+
         if (quantitiesByProductId.isEmpty()) {
             return new StockDecrement.Applied(List.of());
+        }
+
+        for (Map.Entry<Long, Integer> requested : quantitiesByProductId.entrySet()) {
+            if (!sellable(products.get(requested.getKey()))) {
+                return new StockDecrement.Rejected(null, requested.getKey(), 0, requested.getValue());
+            }
         }
 
         Map<Long, StoreStock> locked = stock

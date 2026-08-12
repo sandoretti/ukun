@@ -47,7 +47,11 @@ public interface StoreStockRepository extends JpaRepository<StoreStock, Long> {
 
     /**
      * The same batch, with the number of units instead of the bare identifier — what
-     * {@code InventoryApi.onlineQuantitiesByProductIds} answers.
+     * {@code InventoryApi.sellableOnlineQuantities} answers.
+     *
+     * <p><strong>It is asked about the sellable products only.</strong> Whether a product is still on
+     * sale is not in this table (ADR-0013), so the caller filters the batch before it gets here; this
+     * query answers about rows, which is all it can see.
      *
      * <p><strong>Why the quantity travels here and not above.</strong> The javadoc of
      * {@link #availableProductIds} argues that a method returning rows would put the figure one getter

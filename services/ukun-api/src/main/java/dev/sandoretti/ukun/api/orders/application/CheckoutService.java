@@ -134,7 +134,7 @@ public class CheckoutService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         Map<Long, ProductSummary> products = catalog.summariesByIds(productIds);
-        Map<Long, Integer> available = inventory.onlineQuantitiesByProductIds(productIds);
+        Map<Long, Integer> available = inventory.sellableOnlineQuantities(products);
 
         CheckoutAttempt attempt = new CheckoutAttempt(customerId, clock.instant());
         cartLines.stream()
@@ -319,19 +319,19 @@ public class CheckoutService {
     }
 
     /**
-     * Everything that can stop an order from being served, in the order it is worth asking.
+     * Everything that can stop an order from being served, turned into the error the contract declares.
      *
-     * <p><strong>A discontinued product is rejected as having none available</strong>, whatever its
-     * stock row says. Discontinuing takes a product out of the catalogue without emptying the warehouse
-     * (ADR-0013), so the units are really there — and selling them anyway would make "discontinued"
-     * mean nothing to the one operation that matters. The cart and the attempt already report zero for
-     * it, so the customer sees the same number before and after pressing the button. A product deleted
-     * outright lands here too, and answers identically.
+     * <p><strong>What can stop it is not decided here.</strong> A product that cannot be sold — because
+     * it was discontinued between opening the checkout and confirming it, or deleted outright — is
+     * refused by {@code InventoryApi} along with the one that simply ran out, and for the same reason:
+     * availability is {@code inventory}'s answer to give (ADR-0013, issue #122). This module reads the
+     * catalogue because the decrement needs it, not because it judges it. What is left here is the
+     * translation into {@code 409 INSUFFICIENT_STOCK}, which is the half {@code inventory} cannot do —
+     * it has never heard of a {@code sku} ({@code docs/12-error-contract.md}).
      *
-     * <p>Then the decrement, which is where the lock lives. The {@code sku} the error carries comes
-     * from the attempt rather than from a fresh catalogue read: it was frozen for exactly this, and the
-     * name a customer knows the product by should not change between opening a checkout and being told
-     * it failed.
+     * <p>The {@code sku} the error carries comes from the attempt rather than from a fresh catalogue
+     * read: it was frozen for exactly this, and the name a customer knows the product by should not
+     * change between opening a checkout and being told it failed.
      *
      * @return what moved, for the caller to log once the order has an identifier to log it against.
      */
@@ -340,14 +340,8 @@ public class CheckoutService {
         attempt.getLines().forEach(line -> quantities.put(line.getProductId(), line.getQuantity()));
 
         Map<Long, ProductSummary> products = catalog.summariesByIds(quantities.keySet());
-        for (CheckoutAttemptLine line : attempt.getLines()) {
-            ProductSummary product = products.get(line.getProductId());
-            if (product == null || !product.active()) {
-                throw outOfStock(customerId, null, line.getProductId(), line.getSku(), 0, line.getQuantity());
-            }
-        }
 
-        return switch (inventory.decrementOnlineStock(quantities)) {
+        return switch (inventory.decrementOnlineStock(quantities, products)) {
             case StockDecrement.Rejected rejected -> throw outOfStock(
                     customerId,
                     rejected.stockLineId(),
@@ -365,7 +359,8 @@ public class CheckoutService {
      *
      * <p>{@code available} is read now and reserves nothing; it is there so the customer sees the
      * problem before confirming rather than after (ADR-0016). A discontinued product reports zero
-     * whatever its stock row holds, exactly as the cart reports it.
+     * whatever its stock row holds, exactly as the cart reports it — and, as in the cart, that is the
+     * answer {@code InventoryApi} gave rather than something this method works out (issue #122).
      */
     private static List<CheckoutAttemptLineResponse> linesOf(
             CheckoutAttempt attempt, Map<Long, ProductSummary> products, Map<Long, Integer> available) {
@@ -382,7 +377,7 @@ public class CheckoutService {
                             product.imageUrl(),
                             line.getUnitPrice(),
                             line.getQuantity(),
-                            product.active() ? available.getOrDefault(line.getProductId(), 0) : 0);
+                            available.getOrDefault(line.getProductId(), 0));
                 })
                 .toList();
     }
