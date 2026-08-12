@@ -39,3 +39,21 @@ export function useOnlineStore() {
     select: (stores: Store[]) => stores.find((store) => store.isOnline),
   });
 }
+
+/**
+ * One store by identifier, for the places that hold an id and need the name — the customer's
+ * favourite store is stored as `favoriteStoreId` and nothing else (RF-05, ADR-0017 §2), and a screen
+ * cannot show "in stock at 2".
+ *
+ * It resolves against the listing's cache entry the same way `useOnlineStore` does: same key, a
+ * `select` on top, so asking for the name costs no request. An identifier with no row comes back
+ * `undefined` rather than throwing — a favourite store that no longer exists is a line the screen
+ * leaves out, not an error it reports.
+ */
+export function useStore(storeId: number | undefined) {
+  return useQuery({
+    ...storesQuery,
+    enabled: storeId !== undefined,
+    select: (stores: Store[]) => stores.find((store) => store.id === storeId),
+  });
+}

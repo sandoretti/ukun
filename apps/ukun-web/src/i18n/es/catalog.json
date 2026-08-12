@@ -55,6 +55,8 @@
   "availability": {
     "available": "En stock",
     "unavailable": "Sin stock online",
+    "availableAt": "En stock en {{store}}",
+    "unavailableAt": "Sin stock en {{store}}",
     "unknown": "No hemos podido consultar la disponibilidad. El catálogo se muestra igualmente."
   },
   "loadMore": {

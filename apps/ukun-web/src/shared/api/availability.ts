@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 
 import type { components } from '../../types/api';
+import { useAuth } from '../hooks/useAuth';
 import { http } from './http';
-import { useOnlineStore, type Store } from './stores';
+import { useMyProfile } from './profile';
+import { useOnlineStore, useStore, type Store } from './stores';
 
 type AvailabilityResponse = components['schemas']['AvailabilityResponse'];
 
@@ -20,8 +22,8 @@ export const availabilityKeys = {
  * row comes back as `false`, never as a missing entry (RF-01), so the map below is total over what
  * was asked for.
  *
- * Not exported: which store is being asked about is a decision, not a parameter a screen improvises
- * — today it is always the online one, and v0.5 will add the customer's favourite next to it, here.
+ * Not exported: which store is being asked about is a decision, not a parameter a screen improvises.
+ * The two stores RF-01 names are chosen by the two hooks below.
  */
 function useAvailability(storeId: number | undefined, productIds: readonly number[]) {
   const enabled = storeId !== undefined && productIds.length > 0;
@@ -41,7 +43,7 @@ function useAvailability(storeId: number | undefined, productIds: readonly numbe
 }
 
 /** What a screen needs to paint stock: the store it is talking about, the answer, and whether it came. */
-export type OnlineAvailability = {
+export type StoreAvailability = {
   store: Store | undefined;
   /** `undefined` for a product while the read is in flight or has failed — never "unknown" once it lands. */
   available: ReadonlyMap<number, boolean> | undefined;
@@ -49,15 +51,13 @@ export type OnlineAvailability = {
 };
 
 /**
- * Stock of a set of products in the online store, which in v0.3 is the only one anyone asks about
- * (`isOnline`, a database invariant). It pairs the two reads every screen was pairing by hand —
- * resolve the store, then ask for its stock — and reports a failure of either as one flag, because
- * from the screen's point of view they are the same thing: there is no stock answer to show.
- *
- * Availability of the customer's favourite store depends on there being a session, and that is
- * v0.5/v0.6; this hook is the seam where it will be chosen.
+ * Stock of a set of products in the online store — the one every visitor sees, with or without a
+ * session, and the only one an order is ever placed against (RF-04). It pairs the two reads every
+ * screen was pairing by hand — resolve the store, then ask for its stock — and reports a failure of
+ * either as one flag, because from the screen's point of view they are the same thing: there is no
+ * stock answer to show.
  */
-export function useOnlineAvailability(productIds: readonly number[]): OnlineAvailability {
+export function useOnlineAvailability(productIds: readonly number[]): StoreAvailability {
   const storeQuery = useOnlineStore();
   const availabilityQuery = useAvailability(storeQuery.data?.id, productIds);
 
@@ -65,5 +65,43 @@ export function useOnlineAvailability(productIds: readonly number[]): OnlineAvai
     store: storeQuery.data,
     available: availabilityQuery.data,
     failed: storeQuery.isError || availabilityQuery.isError,
+  };
+}
+
+/**
+ * Stock of the same products in the customer's favourite store — the second half of RF-01, shown
+ * next to the online one and never instead of it.
+ *
+ * **The guard is the interesting part, and it is not an optimisation.** The catalogue and the
+ * product sheet are public, and `GET /api/me/profile` answers `401` to a visitor — which, without
+ * `allowAnonymous`, the axios interceptor reads as a dead session and turns into a trip to the
+ * sign-in screen. Asking for the profile before knowing there is a session would throw every
+ * anonymous reader out of the catalogue. The role is read through `useAuth` because that is where
+ * roles are read (`hasRole`, one place in the whole app), and it also keeps the `403` an employee
+ * would collect here from ever being requested.
+ *
+ * That is why this file reaches into `shared/hooks/`: the store being asked about is decided here,
+ * as the private hook above says, and deciding it needs the session.
+ *
+ * Each step gates the next: no session, no profile; no favourite, no store; no store, no stock
+ * request. A customer whose favourite store is not set never issues the second read at all.
+ */
+export function useFavoriteStoreAvailability(productIds: readonly number[]): StoreAvailability {
+  const { hasRole } = useAuth();
+
+  const profileQuery = useMyProfile({ enabled: hasRole('CUSTOMER') });
+  const favoriteStoreId = profileQuery.data?.favoriteStoreId ?? undefined;
+
+  const storeQuery = useStore(favoriteStoreId);
+  const availabilityQuery = useAvailability(storeQuery.data?.id, productIds);
+
+  return {
+    store: storeQuery.data,
+    available: availabilityQuery.data,
+    // Reported so a screen can tell "not asked" from "asked and lost", even though today every
+    // screen treats both the same way: it leaves the line out. This one degrades in silence — the
+    // store the reader can actually buy from is already answered, and a second error message about
+    // an informative line is noise.
+    failed: profileQuery.isError || storeQuery.isError || availabilityQuery.isError,
   };
 }

@@ -2,11 +2,21 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { http as mswHttp, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { navigateTo } from '../../shared/browser/navigateTo';
 import { server } from '../../test/msw/server';
+import { profileWithFavoriteStore } from '../../test/msw/profileHandlers';
+import { signedIn } from '../../test/msw/sessionHandlers';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import ProductDetailPage from './ProductDetailPage';
+
+// The sheet is public, and what it must never do is leave the site. Mocked so a stray `401` on a
+// public screen fails the test instead of silently reloading jsdom.
+vi.mock('../../shared/browser/navigateTo', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../shared/browser/navigateTo')>()),
+  navigateTo: vi.fn(),
+}));
 
 /**
  * The screen reads its identifier from the path, so it is mounted under its own route instead of
@@ -225,5 +235,113 @@ describe('ProductDetailPage', () => {
       }),
     ).toBeDefined();
     expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+  });
+});
+
+/**
+ * The second half of RF-01: "show availability in the online store and, if the customer is
+ * authenticated and has a favourite store, in that one too".
+ *
+ * The fixtures carry the three shapes without inventing data — `customerProfile.favoriteStoreId` is
+ * `2` (Ukun Gijón), and `stock[2]` holds products 1, 3 and 9 only, so product 2 is the case of a
+ * favourite store with no row at all for the product being looked at.
+ */
+describe('ProductDetailPage · favourite store (RF-01)', () => {
+  beforeEach(() => {
+    vi.mocked(navigateTo).mockClear();
+  });
+
+  /**
+   * The sheet's own stock block, which is the announced one — the cards of the related strip below
+   * report the same two stores and land on the same sentence for a store with no stock, so a bare
+   * `findByText` would match more than one element and say nothing about where.
+   */
+  function sheetStock() {
+    const block = document.querySelector('[aria-live="polite"]');
+
+    if (block === null) {
+      throw new Error('the sheet is not on screen: it has no announced stock block');
+    }
+    return within(block as HTMLElement);
+  }
+
+  it('says nothing about a second store for a visitor, and never asks for a profile', async () => {
+    const asked: string[] = [];
+    server.events.on('request:start', ({ request }) => asked.push(new URL(request.url).pathname));
+
+    renderDetail('/products/1');
+
+    expect(await screen.findByText('Disponible en Ukun Online')).toBeDefined();
+    expect(screen.queryByText(/Ukun Gijón/)).toBeNull();
+
+    // The point of the whole guard. `/api/me/profile` answers 401 to a visitor, and a 401 without
+    // `allowAnonymous` is a dead session to the interceptor: asking for it here would throw every
+    // anonymous reader out of a public sheet. The default handler would answer 200 in this test, so
+    // the assertion is on the request never leaving, not on what came back.
+    expect(asked).not.toContain('/api/me/profile');
+    expect(vi.mocked(navigateTo)).not.toHaveBeenCalled();
+
+    server.events.removeAllListeners();
+  });
+
+  it('says nothing about a second store for a customer who never chose one', async () => {
+    server.use(signedIn(), profileWithFavoriteStore(null));
+
+    renderDetail('/products/1');
+
+    expect(await screen.findByText('Disponible en Ukun Online')).toBeDefined();
+    // Waited out rather than asserted on the spot: the profile lands after the sheet, and a line
+    // that appears late would slip past a synchronous check.
+    await waitFor(() => expect(screen.queryByText(/Ukun Gijón/)).toBeNull());
+  });
+
+  it('shows the favourite store next to the online one, never instead of it', async () => {
+    server.use(signedIn());
+
+    renderDetail('/products/1');
+
+    expect(await screen.findByText('Disponible en Ukun Online')).toBeDefined();
+    // Product 1 has stock in both: one unit in Gijón, four online.
+    expect(await screen.findByText('Disponible en Ukun Gijón')).toBeDefined();
+  });
+
+  it('counts a favourite store with no row for the product as out of stock', async () => {
+    server.use(signedIn());
+
+    // Product 2 is stocked online and has no line at all in Gijón — the absent row, which RF-01
+    // reads as "no", never as "unknown".
+    renderDetail('/products/2');
+    // The block only exists once the product has arrived; scoping to it before that finds nothing.
+    await screen.findByRole('heading', { level: 1 });
+
+    expect(await sheetStock().findByText('Disponible en Ukun Online')).toBeDefined();
+    expect(await sheetStock().findByText('Sin stock en Ukun Gijón')).toBeDefined();
+  });
+
+  it('drops the favourite line in silence when its profile read fails', async () => {
+    server.use(
+      signedIn(),
+      mswHttp.get('/api/me/profile', () =>
+        HttpResponse.json(
+          {
+            type: 'https://ukun.dev/errors/internal-error',
+            title: 'INTERNAL_ERROR',
+            status: 500,
+            code: 'INTERNAL_ERROR',
+            traceId: 'abc',
+          },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    renderDetail('/products/1');
+
+    // The store that can actually be bought from is answered, so there is nothing to apologise for.
+    expect(await screen.findByText('Disponible en Ukun Online')).toBeDefined();
+    await waitFor(() => expect(screen.queryByText(/Ukun Gijón/)).toBeNull());
+    expect(
+      screen.queryByText('No hemos podido consultar la disponibilidad de este producto.'),
+    ).toBeNull();
   });
 });

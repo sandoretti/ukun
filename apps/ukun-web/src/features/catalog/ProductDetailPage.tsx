@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Breadcrumb, Container } from 'react-bootstrap';
 import { Link, useParams } from 'react-router-dom';
 
-import { useOnlineAvailability } from '../../shared/api/availability';
+import { useFavoriteStoreAvailability, useOnlineAvailability } from '../../shared/api/availability';
 import { ProblemDetailError, toProblem } from '../../shared/api/http';
 import { ErrorState } from '../../shared/ui/ErrorState';
 import { LoadingState } from '../../shared/ui/LoadingState';
@@ -42,6 +42,9 @@ export default function ProductDetailPage() {
   // entry for it whether or not there is a stock row (RF-01).
   const productIds = useMemo(() => (productId === undefined ? [] : [productId]), [productId]);
   const availability = useOnlineAvailability(productIds);
+  // The second store of RF-01, and it answers nothing at all for a visitor with no session or no
+  // favourite — which is most of them. It never delays or replaces the online answer.
+  const favoriteAvailability = useFavoriteStoreAvailability(productIds);
 
   /** A failure with no way out is not a comprehensible screen: the catalog is one click away. */
   const deadEndWithExit = (error: unknown) => (
@@ -75,7 +78,11 @@ export default function ProductDetailPage() {
 
     return (
       <>
-        <ProductSheet product={product} availability={availability} />
+        <ProductSheet
+          product={product}
+          availability={availability}
+          favoriteAvailability={favoriteAvailability}
+        />
         <RelatedProducts typeId={product.typeId} excludeId={product.id} />
       </>
     );
