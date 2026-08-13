@@ -8,9 +8,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PreUpdate;
 import java.math.BigDecimal;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 
 /**
  * A catalog product (RF-01, RF-10). Owned by the {@code catalog} module.
@@ -38,8 +42,8 @@ import lombok.Setter;
  * {@code product_type} belongs to this same module; {@code docs/10} §5 reserves the bare identifier
  * for the six associations that cross a module boundary.
  *
- * <p>{@code created_at}/{@code updated_at} exist in the table and are deliberately not mapped yet:
- * only the back-office read exposes them (RF-10, v0.7).
+ * <p>{@code created_at}/{@code updated_at} are mapped since v0.7, when {@code AdminProduct} became the
+ * first response that exposes them (RF-10). The public reads still do not carry them.
  */
 @Entity
 @Getter
@@ -81,6 +85,31 @@ public class Product {
      */
     @Column(nullable = false)
     private boolean isActive = true;
+
+    /**
+     * Written by the database default and read back after the insert, which is what {@code @Generated}
+     * buys: {@code AdminProduct} declares {@code createdAt} required, so a {@code 201} that answered
+     * with {@code null} because the row was never re-read would break the contract on the very
+     * operation that creates it.
+     */
+    @Generated(event = EventType.INSERT)
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /**
+     * Same on insert, stamped here on update: the column has a database default, and a default only
+     * fires once. Postgres would need a trigger to maintain it, and this schema has none by choice
+     * ({@code docs/10-modelo-de-datos.md} §1) — so the entity keeps it, exactly as {@code Customer}
+     * does.
+     */
+    @Generated(event = EventType.INSERT)
+    @Column(name = "updated_at", insertable = false)
+    private Instant updatedAt;
+
+    @PreUpdate
+    void stampUpdatedAt() {
+        this.updatedAt = Instant.now();
+    }
 
     @Override
     public boolean equals(Object other) {

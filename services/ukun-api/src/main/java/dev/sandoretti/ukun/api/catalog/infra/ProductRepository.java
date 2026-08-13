@@ -54,4 +54,25 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
      * join nobody reads. Served by the {@code UNIQUE} on {@code sku} (ADR-0015).
      */
     Optional<Product> findBySku(String sku);
+
+    /**
+     * The uniqueness of {@code ux_product_sku}, asked before inserting so the {@code 409} can name the
+     * field (RF-10, {@code DUPLICATE_VALUE}).
+     *
+     * <p>It does not filter by {@code is_active}, and that is the rule rather than an oversight: a SKU
+     * identifies one product for life (ADR-0015), so reusing the code of a discontinued product is
+     * exactly the case this refuses. The physical label on the shelf does not know the product was
+     * withdrawn.
+     */
+    boolean existsBySku(String sku);
+
+    /**
+     * How many products point at a type, for the {@code 409 PRODUCT_TYPE_IN_USE} of RF-13.
+     *
+     * <p>Served by {@code ix_product_type} ({@code docs/10-modelo-de-datos.md} §4) and deliberately
+     * unfiltered by {@code is_active}: the foreign key that blocks the delete does not care whether the
+     * products are discontinued, so a count that did would promise a deletion the database refuses
+     * (ADR-0013).
+     */
+    long countByProductTypeId(Long productTypeId);
 }

@@ -8,6 +8,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * {@code customer_order} with its lines — query Q3 of {@code docs/10-modelo-de-datos.md}: a customer's
@@ -32,6 +34,20 @@ public interface CustomerOrderRepository extends JpaRepository<CustomerOrder, Lo
     @Override
     @EntityGraph(attributePaths = "lines")
     Page<CustomerOrder> findAll(Specification<CustomerOrder> specification, Pageable pageable);
+
+    /**
+     * Order lines pointing at a product — the {@code inOrders} count of the {@code 409 PRODUCT_IN_USE}
+     * of RF-10, and the one that never goes back to zero: order history is never rewritten (ADR-0012),
+     * so a product that has been sold once can never be deleted and has to be discontinued instead.
+     *
+     * <p>Declared on this repository and not on one of {@code OrderLine}'s own, because there is none:
+     * a line has no life outside its order ({@code docs/10-modelo-de-datos.md} §5) and giving it a
+     * repository would suggest otherwise. What crosses to {@code catalog} through
+     * {@code ProductReferenceCounter} is the number and nothing else — no order of any customer is
+     * exposed by it.
+     */
+    @Query("select count(line) from OrderLine line where line.id.productId = :productId")
+    long countOrderLinesByProductId(@Param("productId") Long productId);
 
     /**
      * One order of one customer, with its lines.

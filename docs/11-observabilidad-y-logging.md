@@ -83,6 +83,8 @@ CREATE INDEX ix_audit_log_actor    ON audit_log (actor_account_id, occurred_at D
 
 `product_type.updated` es el único evento que registra el valor **anterior y el nuevo** de un texto libre: renombrar un tipo cambia lo que ve todo el catálogo público (RF-13) y sin el nombre previo la línea de log no permite reconstruir qué pasó. Frente a `profile.updated`, que registra solo *qué campos* cambiaron y nunca sus valores, la diferencia es que un nombre de tipo no es dato personal.
 
+**`adminId` es el `sub` del token, no el `id` de la fila de `employee`.** Vale para los seis eventos del back-office que lo llevan, y no es un atajo: la tabla `employee` la posee el módulo `staff`, y `catalog` no depende de él (ADR-0017 §1) — resolver el identificador de empleado sería una consulta y una dependencia de módulo para rellenar un campo de log. El UUID de cuenta es además el valor que ya une la línea de log, el MDC (§5) y `audit_log.actor_account_id`, que es exactamente la correlación para la que existe el campo. Quien lo lee es `CurrentActor`, en `shared`: nombra al actor, no autoriza nada — decidir si alguien *puede* sigue pasando por el módulo `identity` (`08-identidad-y-seguridad.md` §4).
+
 Tres niveles que sorprenden y por qué: `stock.deleted`, `product.deleted` y `product_type.deleted` son **WARN**, no INFO. RF-09 distingue explícitamente "eliminar la fila de stock" de "poner el stock a 0" — es una acción destructiva y difícil de deshacer sin conocer el valor previo, y merece destacarse en el log en vez de diluirse entre los INFO.
 
 ### Lo que NO se loguea, por ruido

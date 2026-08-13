@@ -72,6 +72,58 @@ public enum ErrorCode {
     INSUFFICIENT_STOCK(HttpStatus.CONFLICT),
 
     /**
+     * The product is referenced and cannot be deleted (RF-10, ADR-0013). Extensions: {@code inOrders},
+     * {@code inStock} and {@code inCarts} — <em>where</em> the references are, which is what RF-10
+     * means by "a clear message" and what a raw {@code 23503} cannot say.
+     *
+     * <p>Every inbound foreign key of {@code product} is {@code RESTRICT}, so a product that has ever
+     * been sold can never be deleted. The way out is discontinuing it, not retrying this.
+     */
+    PRODUCT_IN_USE(HttpStatus.CONFLICT),
+
+    /**
+     * The product type still has products (RF-13, ADR-0013). Extension: {@code inProducts}, counted
+     * without filtering by {@code is_active}: a type whose products are all discontinued is still a
+     * type in use.
+     *
+     * <p>A code of its own rather than {@link #PRODUCT_IN_USE} with a different {@code resource}: the
+     * way out is different — reassign those products to another type — and the frontend paints a
+     * different sentence for it.
+     */
+    PRODUCT_TYPE_IN_USE(HttpStatus.CONFLICT),
+
+    /**
+     * A business {@code UNIQUE} the use case checked before writing: {@code product.sku} and
+     * {@code product_type.name} (RF-10, RF-13). Extensions: {@code resource} and {@code field}.
+     *
+     * <p>{@code docs/12} §2 keeps three neighbours apart on purpose. {@link #REFERENTIAL_INTEGRITY} is
+     * the safety net for a <em>foreign-key</em> violation ({@code 23503}) that slipped through
+     * unchecked; this is a <em>uniqueness</em> violation ({@code 23505}) the use case looks for first,
+     * precisely so the answer can name the field that clashes. And {@link #EMAIL_ALREADY_EXISTS} keeps
+     * its own code because that uniqueness is imposed by another service and arrives propagated
+     * through the signup saga rather than from a local check.
+     */
+    DUPLICATE_VALUE(HttpStatus.CONFLICT),
+
+    /**
+     * The uploaded file is not a JPEG, a PNG or a WebP — judged by its first bytes and never by its
+     * name or its declared {@code Content-Type} ({@code docs/08-identidad-y-seguridad.md} §9).
+     * Extension: {@code allowed}.
+     */
+    UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+
+    /**
+     * The upload is over the 5 MB limit of {@code docs/08} §9. Extension: {@code maxBytes}.
+     *
+     * <p><strong>The only code of the registry with two possible emitters.</strong> The gateway cuts an
+     * oversized request before it reaches this service, and when it does it answers this same shape;
+     * this one is emitted when the request got through, by {@code MaxUploadSizeExceededException}. That
+     * both layers carry the same limit is what keeps defect #17 — Spring saying 10MB and nginx saying
+     * nothing — from being reproduced.
+     */
+    PAYLOAD_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE),
+
+    /**
      * Another request is already confirming this attempt (ADR-0016). Extension: {@code key}.
      *
      * <p>It is the honest answer to a double submit that arrived twice in the same instant: the first

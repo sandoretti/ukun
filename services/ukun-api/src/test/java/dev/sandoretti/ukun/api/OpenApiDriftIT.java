@@ -103,22 +103,9 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
      * deleting its line here, and the day the list is empty the check is total.
      */
     private static final Set<String> NOT_IMPLEMENTED_YET = Set.of(
-            // v0.7 — stock, back-office and staff.
+            // v0.7 — the SKU look-up of the stock slice, and the staff management of issue #45. The
+            // product and product-type CRUD left this list with issue #43.
             "getProductBySku",
-            "listProductsForAdmin",
-            "createProduct",
-            "getProductForAdmin",
-            "updateProduct",
-            "deleteProduct",
-            "discontinueProduct",
-            "reactivateProduct",
-            "uploadProductImage",
-            "deleteProductImage",
-            "listProductTypesForAdmin",
-            "createProductType",
-            "getProductType",
-            "updateProductType",
-            "deleteProductType",
             "listEmployees",
             "createEmployee");
 

@@ -6,9 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.slf4j.MDC;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -29,9 +26,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * {@code employeeId} belong here too once something has resolved them — nothing has yet, and
  * inventing a lookup to fill the MDC would be a query per request for a log field.
  *
- * <p>{@code sub} is read as text and never parsed. This class logs; it does not authorise. Rejecting
- * a token whose subject is not a UUID is {@code JwtIdentityApi}'s decision, and duplicating it here
- * would mean a malformed token failed in a filter that only exists to name things.
+ * <p>Reading the subject out of the security context is {@link CurrentActor}, which the business
+ * events of the admin CRUD need for the very same value (RF-10). {@code sub} is read as text and never
+ * parsed there: this class logs; it does not authorise. Rejecting a token whose subject is not a UUID
+ * is {@code JwtIdentityApi}'s decision, and duplicating it here would mean a malformed token failed in
+ * a filter that only exists to name things.
  *
  * <h2>The {@code finally} is the whole point</h2>
  *
@@ -50,7 +49,7 @@ public final class AccountIdMdcFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        String accountId = currentAccountId();
+        String accountId = CurrentActor.accountId();
         if (accountId == null) {
             // Anonymous traffic is most of the catalogue, and it is not an error: it simply has no
             // account to name. Nothing is put, so nothing has to be removed.
@@ -64,13 +63,5 @@ public final class AccountIdMdcFilter extends OncePerRequestFilter {
         } finally {
             MDC.remove(ACCOUNT_ID);
         }
-    }
-
-    private static String currentAccountId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        return authentication instanceof JwtAuthenticationToken token
-                ? token.getToken().getSubject()
-                : null;
     }
 }

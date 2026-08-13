@@ -14,6 +14,7 @@ import org.springframework.data.jpa.domain.Specification;
 public final class ProductSpecifications {
 
     private static final String NAME = "name";
+    private static final String SKU = "sku";
     private static final String PRICE = "price";
     private static final String IS_ACTIVE = "isActive";
     private static final String PRODUCT_TYPE = "productType";
@@ -22,12 +23,29 @@ public final class ProductSpecifications {
     private ProductSpecifications() {}
 
     /**
-     * Not an optional filter: the public catalog only ever returns active products. Discontinuation
-     * is logical (ADR-0013), and seeing discontinued ones is {@code GET /api/admin/products}, which
-     * belongs to v0.7.
+     * Not an optional filter of the public catalog: it only ever returns active products, because
+     * discontinuation is logical (ADR-0013). In the back-office listing it <em>is</em> one, and the
+     * default one — {@code status=ACTIVE}.
      */
     public static Specification<Product> isActive() {
         return (root, query, builder) -> builder.isTrue(root.get(IS_ACTIVE));
+    }
+
+    /**
+     * The other half of {@code status}, for the screen that reactivates what was withdrawn (RF-10):
+     * you cannot put back what you cannot find.
+     */
+    public static Specification<Product> isDiscontinued() {
+        return (root, query, builder) -> builder.isFalse(root.get(IS_ACTIVE));
+    }
+
+    /**
+     * Exact SKU, for the back-office filter. Not a {@code LIKE}: the code is unique and whoever types
+     * it has read it off a label, so a prefix match would answer a question nobody asked and stop using
+     * {@code ux_product_sku} as the single look-up it is.
+     */
+    public static Specification<Product> hasSku(String sku) {
+        return (root, query, builder) -> builder.equal(root.get(SKU), sku);
     }
 
     /**
