@@ -115,7 +115,7 @@ class ProductImageIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("an upload answers the servable URL, not the storage key")
     void storesAnImage() {
-        upload(pngOf(64))
+        upload(ImageBytes.png(64))
                 .jsonPath("$.imageUrl")
                 .value(url -> assertThat((String) url).startsWith("/media/products/").endsWith(".png"))
                 .jsonPath("$.imageKey")
@@ -131,7 +131,7 @@ class ProductImageIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("the stored key is named after the real format, not after the uploaded filename")
     void namesTheKeyAfterTheContent() {
-        upload(jpegOf(64), "anything.png");
+        upload(ImageBytes.jpeg(64), "anything.png");
 
         assertThat(imageUrlOf()).endsWith(".jpg");
     }
@@ -144,10 +144,10 @@ class ProductImageIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("replacing leaves exactly one file behind, and it is the new one")
     void replacesTheImage() {
-        upload(pngOf(64));
+        upload(ImageBytes.png(64));
         String first = imageUrlOf();
 
-        upload(jpegOf(64));
+        upload(ImageBytes.jpeg(64));
         String second = imageUrlOf();
 
         assertThat(second).isNotEqualTo(first).endsWith(".jpg");
@@ -193,7 +193,7 @@ class ProductImageIT extends AbstractIntegrationTest {
                 .uri(IMAGE, productIdOf("MESA-CAFE"))
                 .header(HttpHeaders.AUTHORIZATION, bearer(adminToken(ADMIN_ACCOUNT)))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(multipart(pngOf((int) MAX_BYTES * 2), "huge.png"))
+                .body(multipart(ImageBytes.png((int) MAX_BYTES * 2), "huge.png"))
                 .exchange()
                 .expectStatus()
                 .isEqualTo(413)
@@ -210,7 +210,7 @@ class ProductImageIT extends AbstractIntegrationTest {
     @DisplayName("deleting the image removes the file and leaves the product without one")
     void removesTheImage() {
         long id = productIdOf("MESA-CAFE");
-        upload(pngOf(64));
+        upload(ImageBytes.png(64));
 
         restTestClient
                 .delete()
@@ -250,7 +250,7 @@ class ProductImageIT extends AbstractIntegrationTest {
                 .uri(IMAGE, productIdOf("MESA-CAFE"))
                 .header(HttpHeaders.AUTHORIZATION, bearer(employeeToken(UUID.randomUUID())))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(multipart(pngOf(64), "photo.png"))
+                .body(multipart(ImageBytes.png(64), "photo.png"))
                 .exchange()
                 .expectStatus()
                 .isForbidden();
@@ -302,23 +302,6 @@ class ProductImageIT extends AbstractIntegrationTest {
         body.add("file", new HttpEntity<>(part, headers));
 
         return body;
-    }
-
-    /** A valid PNG header followed by filler: what the format check reads is the first eight bytes. */
-    private static byte[] pngOf(int size) {
-        return fileOf(size, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A);
-    }
-
-    private static byte[] jpegOf(int size) {
-        return fileOf(size, 0xFF, 0xD8, 0xFF);
-    }
-
-    private static byte[] fileOf(int size, int... signature) {
-        byte[] content = new byte[size];
-        for (int i = 0; i < signature.length; i++) {
-            content[i] = (byte) signature[i];
-        }
-        return content;
     }
 
     private static Path createTemporaryStorageRoot() {

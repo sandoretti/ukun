@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import dev.sandoretti.ukun.api.catalog.ImageBytes;
 import dev.sandoretti.ukun.api.catalog.domain.Product;
 import dev.sandoretti.ukun.api.catalog.infra.ProductRepository;
 import dev.sandoretti.ukun.api.storage.FileStoragePort;
@@ -35,7 +36,7 @@ class ProductImageServiceTest {
     private static final Long PRODUCT_ID = 7L;
     private static final String PREVIOUS_KEY = "mesa-cafe.jpg";
 
-    private static final byte[] PNG = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+    private static final byte[] PNG = ImageBytes.png(8);
 
     private final ProductRepository products = mock(ProductRepository.class);
     private final FileStoragePort storage = mock(FileStoragePort.class);

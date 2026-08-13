@@ -59,32 +59,10 @@ class LocalFileSystemStorage implements FileStoragePort {
 
     @Override
     public Optional<Resource> load(String key) {
-        if (key == null || !SAFE_KEY.matcher(key).matches()) {
-            // At debug: a rejected key is noise under a scanner, and the key is attacker-controlled
-            // text that has no business at a level anyone watches.
-            log.debug("Rejected a malformed storage key");
-            return Optional.empty();
-        }
-
-        try {
-            Path root = properties.getLocalRoot().toRealPath();
-            Path file = root.resolve(key).normalize();
-
-            if (!file.startsWith(root) || !Files.isRegularFile(file) || !Files.isReadable(file)) {
-                return Optional.empty();
-            }
-
-            // After the existence check, so it cannot throw: resolves any symlink and re-checks, which
-            // is the case `normalize()` alone does not see.
-            return file.toRealPath().startsWith(root) ? Optional.of(new FileSystemResource(file)) : Optional.empty();
-
-        } catch (IOException | InvalidPathException e) {
-            // An unreadable or missing root is a deployment fault (a forgotten bind mount), not a
-            // request fault. It is logged and answered as "no file" rather than as a 500: a broken
-            // <img> is the honest rendering of a missing image, and the mount is what needs fixing.
-            log.warn("Storage root {} is not readable", properties.getLocalRoot(), e);
-            return Optional.empty();
-        }
+        return under(key)
+                .filter(Files::isRegularFile)
+                .filter(Files::isReadable)
+                .flatMap(LocalFileSystemStorage::servable);
     }
 
     /**
@@ -116,28 +94,79 @@ class LocalFileSystemStorage implements FileStoragePort {
     }
 
     /**
-     * Validates the key exactly as {@link #load(String)} does, and for the same reason: the caller is
-     * this service, but the value travelled through the database and a deletion that could name a
-     * parent directory would be a worse version of the same hole.
+     * Validated by the same {@link #under(String)} the read goes through, which is the point of that
+     * method existing: the caller here is this service rather than a browser, but the value travelled
+     * through the database, and a deletion that could name a parent directory would be a worse version
+     * of the same hole. Two barriers written twice would be one barrier and one that drifted.
      */
     @Override
     public boolean delete(String key) {
+        return under(key)
+                .map(file -> {
+                    try {
+                        return Files.deleteIfExists(file);
+                    } catch (IOException e) {
+                        // Never fatal: this is always compensation for a write that already succeeded,
+                        // so the request it belongs to is finished either way. What is left behind is an
+                        // orphaned file.
+                        log.warn("Could not delete the stored file", e);
+                        return false;
+                    }
+                })
+                .orElse(false);
+    }
+
+    /**
+     * The file a key names, or empty when the key is not a plain single segment, when the resolved path
+     * would leave the root, or when the root itself is not there.
+     *
+     * <p>It is the barrier of {@code docs/08-identidad-y-seguridad.md} §9 in one place, called by both
+     * halves of the port. Empty is the same answer for a probe and for a typo, which is deliberate: from
+     * outside, the two must be indistinguishable.
+     */
+    private Optional<Path> under(String key) {
         if (key == null || !SAFE_KEY.matcher(key).matches()) {
+            // At debug: a rejected key is noise under a scanner, and the key is attacker-controlled
+            // text that has no business at a level anyone watches.
             log.debug("Rejected a malformed storage key");
-            return false;
+            return Optional.empty();
         }
 
-        try {
-            Path root = properties.getLocalRoot().toRealPath();
+        return realRoot().flatMap(root -> {
             Path file = root.resolve(key).normalize();
+            return file.startsWith(root) ? Optional.of(file) : Optional.empty();
+        });
+    }
 
-            return file.startsWith(root) && Files.deleteIfExists(file);
-
+    /**
+     * An unreadable or missing root is a deployment fault (a forgotten bind mount), not a request fault.
+     * It is logged and answered as "no file" rather than as a 500: a broken {@code <img>} is the honest
+     * rendering of a missing image, and the mount is what needs fixing.
+     */
+    private Optional<Path> realRoot() {
+        try {
+            return Optional.of(properties.getLocalRoot().toRealPath());
         } catch (IOException | InvalidPathException e) {
-            // Never fatal: this is always compensation for a write that already succeeded, so the
-            // request it belongs to is finished either way. What is left behind is an orphaned file.
-            log.warn("Could not delete the stored file", e);
-            return false;
+            log.warn("Storage root {} is not readable", properties.getLocalRoot(), e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * The last check, and the one {@link #under(String)} cannot make: a symlink whose name is a
+     * well-formed single segment and whose resolved path starts with the root, but whose bytes live
+     * somewhere else. It runs after the existence check, so {@code toRealPath} cannot throw for a file
+     * that is simply absent.
+     */
+    private static Optional<Resource> servable(Path file) {
+        try {
+            return file.toRealPath().startsWith(file.getParent().toRealPath())
+                    ? Optional.of(new FileSystemResource(file))
+                    : Optional.empty();
+
+        } catch (IOException e) {
+            log.warn("Could not resolve a stored file", e);
+            return Optional.empty();
         }
     }
 }

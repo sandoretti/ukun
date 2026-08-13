@@ -2,6 +2,7 @@ package dev.sandoretti.ukun.api.catalog.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import dev.sandoretti.ukun.api.catalog.ImageBytes;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -17,10 +18,9 @@ class ImageFormatTest {
     @Test
     @DisplayName("the three accepted formats are recognised by their first bytes")
     void detectsTheAllowedFormats() {
-        assertThat(ImageFormat.detect(fileOf(0xFF, 0xD8, 0xFF, 0xE0))).contains(ImageFormat.JPEG);
-        assertThat(ImageFormat.detect(fileOf(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)))
-                .contains(ImageFormat.PNG);
-        assertThat(ImageFormat.detect(webp())).contains(ImageFormat.WEBP);
+        assertThat(ImageFormat.detect(ImageBytes.of(0xFF, 0xD8, 0xFF, 0xE0))).contains(ImageFormat.JPEG);
+        assertThat(ImageFormat.detect(ImageBytes.png(8))).contains(ImageFormat.PNG);
+        assertThat(ImageFormat.detect(ImageBytes.webp(12))).contains(ImageFormat.WEBP);
     }
 
     /**
@@ -31,8 +31,7 @@ class ImageFormatTest {
     @Test
     @DisplayName("a signature byte above 0x7F is compared unsigned")
     void comparesBytesUnsigned() {
-        assertThat(ImageFormat.detect(fileOf(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)))
-                .isPresent();
+        assertThat(ImageFormat.detect(ImageBytes.png(8))).isPresent();
     }
 
     /** The whole point: a script named {@code .png} is not a PNG, and only the content says so. */
@@ -51,7 +50,7 @@ class ImageFormatTest {
     @Test
     @DisplayName("a RIFF file that is not a WebP is rejected")
     void rejectsARiffThatIsNotWebp() {
-        byte[] avi = webp();
+        byte[] avi = ImageBytes.webp(12);
         avi[8] = 'A';
         avi[9] = 'V';
         avi[10] = 'I';
@@ -64,7 +63,7 @@ class ImageFormatTest {
     @Test
     @DisplayName("a truncated file is rejected rather than read past its end")
     void rejectsATruncatedFile() {
-        Optional<ImageFormat> detected = ImageFormat.detect(fileOf(0x89, 0x50));
+        Optional<ImageFormat> detected = ImageFormat.detect(ImageBytes.of(0x89, 0x50));
 
         assertThat(detected).isEmpty();
     }
@@ -77,17 +76,5 @@ class ImageFormatTest {
         assertThat(ImageFormat.PNG.extension()).isEqualTo("png");
         assertThat(ImageFormat.WEBP.extension()).isEqualTo("webp");
         assertThat(ImageFormat.ALLOWED_MEDIA_TYPES).containsExactly("image/jpeg", "image/png", "image/webp");
-    }
-
-    private static byte[] webp() {
-        return fileOf(0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50);
-    }
-
-    private static byte[] fileOf(int... bytes) {
-        byte[] content = new byte[bytes.length];
-        for (int i = 0; i < bytes.length; i++) {
-            content[i] = (byte) bytes[i];
-        }
-        return content;
     }
 }

@@ -1,9 +1,7 @@
 package dev.sandoretti.ukun.api.catalog;
 
 import dev.sandoretti.ukun.api.AbstractIntegrationTest;
-import dev.sandoretti.ukun.api.catalog.domain.ProductType;
 import jakarta.persistence.EntityManager;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,23 +53,15 @@ abstract class BackOfficeIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private EntityManager entityManager;
 
-    /** Persisted in a transaction of its own that commits before any request is made. */
+    /**
+     * The same catalogue the public suite reads, persisted in a transaction of its own that commits
+     * before any request is made. It comes from the mother rather than from a copy of that fixture's
+     * seeding, so the cases it encodes — the price tie, the accents, the discontinued product — are the
+     * same rows on both sides.
+     */
     @BeforeEach
     void seedTheCatalogue() {
-        ProductType sofas = ProductMother.type(SOFAS);
-        ProductType beds = ProductMother.type(BEDS);
-        ProductType tables = ProductMother.type(TABLES);
-
-        inATransaction(() -> {
-            List.of(sofas, beds, tables).forEach(entityManager::persist);
-            List.of(
-                            ProductMother.leatherSofa(sofas),
-                            ProductMother.bunkBed(beds),
-                            ProductMother.coffeeTable(tables),
-                            ProductMother.floorLamp(tables),
-                            ProductMother.discontinuedChair(tables))
-                    .forEach(entityManager::persist);
-        });
+        inATransaction(() -> ProductMother.demoCatalogue().forEach(entityManager::persist));
     }
 
     /**

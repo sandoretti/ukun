@@ -3,6 +3,7 @@ package dev.sandoretti.ukun.api.catalog;
 import dev.sandoretti.ukun.api.catalog.domain.Product;
 import dev.sandoretti.ukun.api.catalog.domain.ProductType;
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Object mother for the catalog, per the {@code testing} skill: named cases instead of anonymous
@@ -32,6 +33,36 @@ public final class ProductMother {
         ProductType type = new ProductType();
         type.setName(name);
         return type;
+    }
+
+    /**
+     * The three types and five products the catalogue fixtures seed, in an order that is safe to
+     * persist: every type comes before the products that point at it.
+     *
+     * <p>It lives here because two fixtures need the same catalogue for different reasons —
+     * {@code CatalogIntegrationTest} reads it through the public endpoints, {@code
+     * BackOfficeIntegrationTest} edits and deletes it — and the cases the individual mothers encode
+     * (the price tie of defect #23, the accents of #22, the discontinued product of ADR-0013) are only
+     * worth anything if both suites see the same ones. Two copies of this list would drift the first
+     * time somebody added a sixth product to one of them.
+     *
+     * <p>It builds and does not persist, so the mother stays a pure builder: the caller decides the
+     * transaction, which is what keeps it usable outside a Spring context.
+     */
+    public static List<Object> demoCatalogue() {
+        ProductType sofas = type("Sofás");
+        ProductType beds = type("Camas");
+        ProductType tables = type("Mesas");
+
+        return List.of(
+                sofas,
+                beds,
+                tables,
+                leatherSofa(sofas),
+                bunkBed(beds),
+                coffeeTable(tables),
+                floorLamp(tables),
+                discontinuedChair(tables));
     }
 
     /** {@code 399.99} — one half of the price tie of defect #23. */
