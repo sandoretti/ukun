@@ -5,7 +5,7 @@ import { Table } from 'react-bootstrap';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
 import { useStockedLines } from '../api/queries';
-import { PAGE_SIZE, type StockFilterInput } from '../api/stockKeys';
+import { toApiFilters, type StockFilterInput } from '../api/stockKeys';
 import { countActiveFilters, usePageWithinRange } from '../useStockParams';
 import { DeleteStockLineModal } from './DeleteStockLineModal';
 import { EditQuantityModal } from './EditQuantityModal';
@@ -37,14 +37,7 @@ export function StockedView({ storeId, storeName, filters, page, onPageChange }:
   const [editingLineId, setEditingLineId] = useState<number | null>(null);
   const [deletingLineId, setDeletingLineId] = useState<number | null>(null);
 
-  // The URL counts pages from one and the API from zero; the translation happens here and nowhere
-  // else, which is what keeps `?page=1` from meaning the second page.
-  const query = useStockedLines(storeId, {
-    sku: filters.sku,
-    q: filters.q,
-    page: page - 1,
-    size: PAGE_SIZE,
-  });
+  const query = useStockedLines(storeId, toApiFilters(filters, page));
 
   const lines = query.data?.items;
   const totalPages = query.data?.totalPages;

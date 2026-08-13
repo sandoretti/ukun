@@ -5,7 +5,7 @@ import { Table } from 'react-bootstrap';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
 import { useUnstockedCandidates } from '../api/queries';
-import { PAGE_SIZE, type StockFilterInput } from '../api/stockKeys';
+import { toApiFilters, type StockFilterInput } from '../api/stockKeys';
 import { newStockLinePath } from '../routes';
 import { countActiveFilters, usePageWithinRange } from '../useStockParams';
 
@@ -32,12 +32,7 @@ type UnstockedViewProps = {
 export function UnstockedView({ storeId, storeName, filters, page, onPageChange }: UnstockedViewProps) {
   const { t } = useTranslation('backoffice');
 
-  const query = useUnstockedCandidates(storeId, {
-    sku: filters.sku,
-    q: filters.q,
-    page: page - 1,
-    size: PAGE_SIZE,
-  });
+  const query = useUnstockedCandidates(storeId, toApiFilters(filters, page));
 
   const candidates = query.data?.items;
   const totalPages = query.data?.totalPages;

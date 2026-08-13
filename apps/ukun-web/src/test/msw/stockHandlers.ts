@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
 import type { components } from '../../types/api';
-import { products } from './catalogHandlers';
+import { normalise, products } from './catalogHandlers';
 import { problem } from './problem';
 
 /**
@@ -65,9 +65,6 @@ export type SeedLine = {
   quantity: number;
   version: number;
 };
-
-/** The mock's stand-in for the database's `unaccent(lower(...))`. */
-const normalise = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 const productOf = (productId: number) => products.find((item) => item.id === productId)!;
 

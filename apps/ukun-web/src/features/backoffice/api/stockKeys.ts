@@ -50,6 +50,18 @@ export type StockFilters = StockFilterInput & {
 export const PAGE_SIZE = 20;
 
 /**
+ * The listing's state as the API takes it.
+ *
+ * **This is the one place the page number is translated.** The URL counts from one and the API from
+ * zero (`docs/07-frontend-ux-ui.md`), and doing it once is what keeps the two halves of the screen
+ * from ever disagreeing about which page they are on — a `?page=1` that means the second page in one
+ * tab and the first in the other is exactly the trap the rule exists for.
+ */
+export function toApiFilters(filters: StockFilterInput, page: number): Omit<StockFilters, 'status'> {
+  return { sku: filters.sku, q: filters.q, page: page - 1, size: PAGE_SIZE };
+}
+
+/**
  * The `pattern` the contract puts on `Sku` (`ukun-api.yaml`, schema `Sku`). It lives here so a
  * mistyped SKU is rejected before it becomes a request the server would only answer with a `400`.
  */

@@ -132,8 +132,14 @@ const stock: Record<number, Record<number, number>> = {
   2: { 1: 1, 3: 2, 9: 4 },
 };
 
-/** The mock's stand-in for the database's `unaccent(lower(...))` (defect #22). */
-const normalise = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+/**
+ * The mock's stand-in for the database's `unaccent(lower(...))` (defect #22).
+ *
+ * Exported because the stock double filters by product name the same way, and a second copy of it
+ * would let one of the two answer "sofá" and the other not.
+ */
+export const normalise = (value: string) =>
+  value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 export const catalogHandlers = [
   http.get(`${base}/api/products`, ({ request }) => {
