@@ -1,13 +1,10 @@
 package dev.sandoretti.ukun.api.staff.application;
 
+import dev.sandoretti.ukun.api.identity.AccessDenied;
 import dev.sandoretti.ukun.api.identity.CurrentAccount;
 import dev.sandoretti.ukun.api.identity.IdentityApi;
-import dev.sandoretti.ukun.api.identity.Role;
-import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied;
-import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied.Reason;
 import dev.sandoretti.ukun.api.staff.domain.Employee;
 import dev.sandoretti.ukun.api.staff.infra.EmployeeRepository;
-import java.util.stream.Collectors;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
@@ -50,23 +47,6 @@ class AdminStoreResolver {
         return employees
                 .findByAccountId(account.accountId())
                 .map(Employee::getStoreId)
-                .orElseThrow(() -> denied(account));
-    }
-
-    /**
-     * Emits the {@code FOREIGN_RESOURCE} half of {@code auth.authorization.denied}
-     * ({@code docs/11-observabilidad-y-logging.md} §3) and builds the exception the advice turns into a
-     * {@code 403} — the same division of labour {@code EmployeeStoreResolver} documents at length: the
-     * role half reports itself from Spring Security's own event, and this half can only be reported by
-     * the layer that resolved the resource.
-     */
-    private AccessDeniedException denied(CurrentAccount account) {
-        AuthorizationDenied.emit(account.accountId(), rolesOf(account), Reason.FOREIGN_RESOURCE);
-
-        return new AccessDeniedException("Access denied: no employee profile");
-    }
-
-    private static String rolesOf(CurrentAccount account) {
-        return account.roles().stream().map(Role::name).sorted().collect(Collectors.joining(","));
+                .orElseThrow(() -> AccessDenied.foreignResource(account, "no employee profile"));
     }
 }

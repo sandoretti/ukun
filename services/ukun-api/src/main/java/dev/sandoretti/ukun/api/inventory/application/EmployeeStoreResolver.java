@@ -1,12 +1,9 @@
 package dev.sandoretti.ukun.api.inventory.application;
 
+import dev.sandoretti.ukun.api.identity.AccessDenied;
 import dev.sandoretti.ukun.api.identity.CurrentAccount;
 import dev.sandoretti.ukun.api.identity.IdentityApi;
-import dev.sandoretti.ukun.api.identity.Role;
 import dev.sandoretti.ukun.api.inventory.infra.EmployeeStoreRepository;
-import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied;
-import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied.Reason;
-import java.util.stream.Collectors;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
@@ -50,36 +47,11 @@ class EmployeeStoreResolver {
         CurrentEmployee employee = employees
                 .findByAccountId(account.accountId())
                 .map(row -> new CurrentEmployee(row.getEmployeeId(), row.getStoreId()))
-                .orElseThrow(() -> denied(account, "no employee profile"));
+                .orElseThrow(() -> AccessDenied.foreignResource(account, "no employee profile"));
 
         if (!employee.storeId().equals(storeId)) {
-            throw denied(account, "store " + storeId + " is not theirs");
+            throw AccessDenied.foreignResource(account, "store " + storeId + " is not theirs");
         }
         return employee;
-    }
-
-    /**
-     * Emits the {@code FOREIGN_RESOURCE} half of {@code auth.authorization.denied}
-     * ({@code docs/11-observabilidad-y-logging.md} §3) and builds the exception the advice turns into a
-     * {@code 403}.
-     *
-     * <p><strong>It is emitted here and not in the advice</strong>, unlike what an earlier comment in
-     * {@code GlobalExceptionHandler} anticipated. Spring Security publishes no event for this denial
-     * because it is a domain decision, and the domain is the only layer that holds both halves of it:
-     * which store was asked for and which one the employee actually works in. The advice sees an
-     * {@code AccessDeniedException} and cannot tell it apart from a role rule that already reported
-     * itself — auditing there would either double the role denials or lose the reason of this one.
-     *
-     * <p>The role half stays where it is, in {@code identity}'s listener. Two publishers, one shape —
-     * which is what {@link AuthorizationDenied} in {@code shared} is for.
-     */
-    private AccessDeniedException denied(CurrentAccount account, String detail) {
-        AuthorizationDenied.emit(account.accountId(), rolesOf(account), Reason.FOREIGN_RESOURCE);
-
-        return new AccessDeniedException("Access denied: " + detail);
-    }
-
-    private static String rolesOf(CurrentAccount account) {
-        return account.roles().stream().map(Role::name).sorted().collect(Collectors.joining(","));
     }
 }
