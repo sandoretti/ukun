@@ -5,8 +5,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PreUpdate;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 
 /**
  * A catalog category (RF-01, RF-13). Owned by the {@code catalog} module, like {@code product}.
@@ -19,9 +23,9 @@ import lombok.Setter;
  * and the default naming strategy already maps {@code ProductType} onto {@code product_type}. If you
  * find yourself writing one, you have copied from an outdated source.
  *
- * <p>{@code created_at}/{@code updated_at} exist in the table with a database default and are
- * deliberately not mapped yet: only the back-office read exposes them (RF-13, v0.7), and
- * {@code ddl-auto: validate} checks that the entity's columns exist, not the other way round.
+ * <p>{@code created_at}/{@code updated_at} are mapped since v0.7, when {@code AdminProductType} became
+ * the first response that exposes them (RF-13). The same pair, mapped the same way and for the same
+ * reasons, as {@code Product} — see its javadoc.
  */
 @Entity
 @Getter
@@ -34,6 +38,21 @@ public class ProductType {
 
     @Column(nullable = false, length = 255)
     private String name;
+
+    /** Database default, read back after the insert. See {@code Product#getCreatedAt()}. */
+    @Generated(event = EventType.INSERT)
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private Instant createdAt;
+
+    /** Database default on insert, stamped by {@link #stampUpdatedAt()} on every rename. */
+    @Generated(event = EventType.INSERT)
+    @Column(name = "updated_at", insertable = false)
+    private Instant updatedAt;
+
+    @PreUpdate
+    void stampUpdatedAt() {
+        this.updatedAt = Instant.now();
+    }
 
     /**
      * By id, and only once the row has one: two unsaved instances are never the same type, which is

@@ -1,7 +1,9 @@
 package dev.sandoretti.ukun.api.catalog.application;
 
 import dev.sandoretti.ukun.api.catalog.domain.ProductType;
+import dev.sandoretti.ukun.api.catalog.infra.ProductTypeRepository.AdminProductTypeView;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 /**
  * {@code ProductType} to its DTO, with MapStruct like every other mapping in the service (ADR-0009).
@@ -27,4 +29,25 @@ import org.mapstruct.Mapper;
 public interface ProductTypeMapper {
 
     ProductTypeResponse toResponse(ProductType productType);
+
+    /**
+     * A row of the back-office listing, where the projection's names already match the response's — the
+     * same arrangement {@code StockMapper} has with its own view.
+     */
+    AdminProductTypeResponse toAdminResponse(AdminProductTypeView view);
+
+    /**
+     * A single type, whose count is not on the entity and arrives beside it.
+     *
+     * <p>Two sources rather than one enriched object, for the reason {@code StockMapper} gives: the
+     * listing already carries its count in a projection, and a write has the entity it just saved plus a
+     * number it had to ask for separately. Building a projection by hand after every write, only to have
+     * one shape to map, would be work done to please the mapper.
+     */
+    @Mapping(target = "id", source = "productType.id")
+    @Mapping(target = "name", source = "productType.name")
+    @Mapping(target = "createdAt", source = "productType.createdAt")
+    @Mapping(target = "updatedAt", source = "productType.updatedAt")
+    @Mapping(target = "productCount", source = "productCount")
+    AdminProductTypeResponse toAdminResponse(ProductType productType, long productCount);
 }

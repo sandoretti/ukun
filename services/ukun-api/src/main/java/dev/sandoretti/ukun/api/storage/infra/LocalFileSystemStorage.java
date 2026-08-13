@@ -3,10 +3,13 @@ package dev.sandoretti.ukun.api.storage.infra;
 import dev.sandoretti.ukun.api.storage.FileStoragePort;
 import dev.sandoretti.ukun.api.storage.application.StorageProperties;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +84,60 @@ class LocalFileSystemStorage implements FileStoragePort {
             // <img> is the honest rendering of a missing image, and the mount is what needs fixing.
             log.warn("Storage root {} is not readable", properties.getLocalRoot(), e);
             return Optional.empty();
+        }
+    }
+
+    /**
+     * A UUID plus the extension the caller derived from the file's real content. Nothing of what the
+     * client sent survives into the name, so there is no traversal to sanitise and no collision to
+     * resolve — and {@code CREATE_NEW} turns the impossible one into a failure rather than into a
+     * silent overwrite of somebody else's photo.
+     *
+     * <p>The write is not atomic against a reader mid-read, and does not need to be: the key is new, so
+     * nobody can be reading it yet. That is the property {@link #store} buys by never overwriting, and
+     * it is what makes the temp-file-and-rename dance unnecessary here.
+     */
+    @Override
+    public String store(byte[] content, String extension) {
+        String key = UUID.randomUUID() + "." + extension;
+
+        try {
+            Path root = properties.getLocalRoot();
+            Files.createDirectories(root);
+            Files.write(root.resolve(key), content, StandardOpenOption.CREATE_NEW);
+
+            return key;
+
+        } catch (IOException e) {
+            // Loud, unlike a failed read: the caller is about to point product.image_key at this key,
+            // and a row pointing at bytes that were never written is worse than a failed upload.
+            throw new UncheckedIOException("Could not store the file under " + properties.getLocalRoot(), e);
+        }
+    }
+
+    /**
+     * Validates the key exactly as {@link #load(String)} does, and for the same reason: the caller is
+     * this service, but the value travelled through the database and a deletion that could name a
+     * parent directory would be a worse version of the same hole.
+     */
+    @Override
+    public boolean delete(String key) {
+        if (key == null || !SAFE_KEY.matcher(key).matches()) {
+            log.debug("Rejected a malformed storage key");
+            return false;
+        }
+
+        try {
+            Path root = properties.getLocalRoot().toRealPath();
+            Path file = root.resolve(key).normalize();
+
+            return file.startsWith(root) && Files.deleteIfExists(file);
+
+        } catch (IOException | InvalidPathException e) {
+            // Never fatal: this is always compensation for a write that already succeeded, so the
+            // request it belongs to is finished either way. What is left behind is an orphaned file.
+            log.warn("Could not delete the stored file", e);
+            return false;
         }
     }
 }

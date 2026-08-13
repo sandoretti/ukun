@@ -157,6 +157,18 @@ public interface StoreStockRepository extends JpaRepository<StoreStock, Long> {
     boolean existsByProductIdAndStoreId(Long productId, Long storeId);
 
     /**
+     * Stock lines pointing at a product, across every store — the {@code inStock} count of the
+     * {@code 409 PRODUCT_IN_USE} of RF-10.
+     *
+     * <p>It is the only method here that is not scoped to one store, and deliberately so: the question
+     * it answers belongs to the catalogue ("can this product be deleted at all?"), not to an employee's
+     * screen. It reaches this module through {@code ProductReferenceCounter}, which is what keeps the
+     * dependency pointing at {@code catalog} rather than back from it (ADR-0017 §3), and it returns a
+     * number — no line, and nothing about which store, crosses that boundary.
+     */
+    long countByProductId(Long productId);
+
+    /**
      * The lines this store holds, with the product data the screen shows — the {@code STOCKED} half of
      * query Q5 (RF-09), served by {@code ix_store_stock_store (store_id, product_id)}.
      *

@@ -41,8 +41,9 @@ services:
       # docs/08 §9). Es el bind mount que docs/01-arquitectura.md ya dibuja, y desaparece en v1.1
       # cuando el adaptador pase a almacenamiento de objetos.
       #
-      # `:ro` porque hoy solo se lee: la subida de RF-10 llega en v0.7 y es quien tiene que quitarlo.
-      - ./resources/uploads:/opt/resources/uploads:ro
+      # Sin `:ro` desde v0.7: la subida de RF-10 (`PUT /api/admin/products/{id}/image`) escribe aquí,
+      # y el adaptador de filesystem crea el directorio si no existe.
+      - ./resources/uploads:/opt/resources/uploads
     depends_on:
       - db
 
