@@ -103,11 +103,9 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
      * deleting its line here, and the day the list is empty the check is total.
      */
     private static final Set<String> NOT_IMPLEMENTED_YET = Set.of(
-            // v0.7 — the SKU look-up of the stock slice, and the staff management of issue #45. The
-            // product and product-type CRUD left this list with issue #43.
-            "getProductBySku",
-            "listEmployees",
-            "createEmployee");
+            // v0.7 — the SKU look-up of the stock slice. The product and product-type CRUD left this
+            // list with issue #43, and the two staff operations with issue #45.
+            "getProductBySku");
 
     /** The frozen contract, read and projected once: it is a file, and it does not change mid-run. */
     private static OpenApiShape contract;
