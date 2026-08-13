@@ -42,3 +42,13 @@ export const CHECKOUT_PATH = '/checkout';
 export const ORDERS_PATH = '/orders';
 
 export const orderPath = (id: number) => `${ORDERS_PATH}/${id}`;
+
+/**
+ * The stock back-office (RF-09). It is `features/backoffice`'s screen and it comes up here because
+ * the session menu of `features/auth` is where an employee reaches it from.
+ *
+ * The rest of that feature's paths stay in `features/backoffice/routes.ts`, because nobody else
+ * writes them. And the branch is `/backoffice/*`, never `/admin/*`: that prefix belongs to what talks
+ * to `/api/admin/**` (ADR-0020), and stock is any employee's, not an administrator's.
+ */
+export const BACKOFFICE_STOCK_PATH = '/backoffice/stock';

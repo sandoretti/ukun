@@ -201,6 +201,25 @@ export const catalogHandlers = [
   }),
 
   /**
+   * The same sheet resolved by the business identifier instead of the internal one (ADR-0015) — the
+   * lookup the stock screens do before creating a line.
+   *
+   * Like the rest of the public catalog it only resolves **active** products, so an unknown or
+   * discontinued SKU answers `404`. That is the right answer here and not a failure: it is what stops
+   * an employee from restocking something pulled from the catalog.
+   */
+  http.get(`${base}/api/products/by-sku/:sku`, ({ params }) => {
+    const found = products.find((item) => item.sku === String(params.sku));
+
+    if (!found) {
+      return problem('RESOURCE_NOT_FOUND', 404, { resource: 'product', id: String(params.sku) });
+    }
+
+    const body: ProductDetail = { ...found, description: descriptions[found.id] ?? null };
+    return HttpResponse.json(body);
+  }),
+
+  /**
    * The detail sheet. It goes **after** the typeahead on purpose: MSW resolves in registration
    * order and `:id` also matches `/api/products/suggest`.
    *

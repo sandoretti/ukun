@@ -65,12 +65,14 @@ describe('SessionMenu', () => {
     expect(form?.querySelector('input[name="_csrf"]')?.getAttribute('value')).toBe('a-token');
   });
 
-  it('offers the back office to staff only', async () => {
+  it('offers the back office to staff only, as the way into the stock screens', async () => {
     server.use(signedIn(['EMPLOYEE']));
 
     await openSessionMenu();
 
-    expect(screen.getByRole('button', { name: /Back office/ })).toBeDefined();
+    expect(screen.getByRole('link', { name: /Back office/ }).getAttribute('href')).toBe(
+      '/backoffice/stock',
+    );
   });
 
   it('does not offer the back office to a customer', async () => {
@@ -78,8 +80,8 @@ describe('SessionMenu', () => {
 
     await openSessionMenu();
 
-    // Hiding it is UX, never the barrier: the gateway refuses `/api/admin/**` without the role and
-    // `ukun-api` checks it again.
-    expect(screen.queryByRole('button', { name: /Back office/ })).toBeNull();
+    // Hiding it is UX, never the barrier: the route guard turns a customer away, the gateway refuses
+    // what it protects, and `ukun-api` checks the role again.
+    expect(screen.queryByRole('link', { name: /Back office/ })).toBeNull();
   });
 });

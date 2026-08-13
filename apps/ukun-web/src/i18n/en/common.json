@@ -21,6 +21,10 @@
     "roles": "Permissions",
     "backoffice": "Back office",
     "backHome": "Back to the store",
+    "noAccess": {
+      "title": "This page is not for your account",
+      "lead": "Your account does not have the permissions this screen asks for. Signing in again does not change that."
+    },
     "signInPage": {
       "title": "Sign in again",
       "lead": "You need an open session to carry on. We will take you to identify yourself and bring you back to where you were.",
