@@ -22,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
  * {@code POST /api/signup} (RF-06). Public, and it has to be: signing up cannot require being signed
  * in.
  *
- * <p>The saga itself is {@link SignupService}'s — this class does the one thing a controller should,
- * which is turn its outcome into the status the contract declares. Both outcomes are successes and the
- * difference between them is real: {@code 201} when the account is active and the person can log in,
+ * <p>The saga is orchestrated a layer further in — {@link SignupService} owns the customer's half of
+ * it, {@code AccountRegistrationService} the ordering the employee's alta shares — and this class does
+ * the one thing a controller should, which is turn the outcome into the status the contract declares.
+ * Both outcomes are successes and the difference between them is real: {@code 201} when the account is
+ * active and the person can log in,
  * {@code 202} when the profile is written but the activation has not been confirmed and repeating the
  * signup will finish it.
  *

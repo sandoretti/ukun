@@ -124,7 +124,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * half is published by Spring Security itself and listened to in the {@code identity} module
      * ({@code docs/11-observabilidad-y-logging.md} §3); emitting it here as well would double every
      * denial in the audit. The {@code FOREIGN_RESOURCE} half — "this store is not yours" — is emitted
-     * by the use case that decides it, {@code inventory}'s {@code EmployeeStoreResolver} in v0.7,
+     * by the use case that decides it, through {@code identity}'s {@code AccessDenied},
      * because by the time the exception reaches here the two values that make the event worth having
      * (the store asked for, the store the employee works in) are gone, and an {@code AccessDeniedException}
      * from a role rule is indistinguishable from one raised by a domain check.
