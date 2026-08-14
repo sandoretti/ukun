@@ -91,6 +91,39 @@ public class ProductQueryService implements CatalogApi {
     }
 
     /**
+     * The same detail resolved by the identifier the employee has in front of them, printed on the
+     * label (RF-09, {@code getProductBySku}, ADR-0015). It is the step before creating a stock line:
+     * the SKU is typed, this resolves it, and only then does {@code POST /api/stores/{storeId}/stock}
+     * get called.
+     *
+     * <p>A dedicated read and not a filter over the listing, because the SKU is unique: the answer is a
+     * resource or a {@code 404}, never a page of zero or one elements the caller has to unwrap.
+     *
+     * <p>The active rule is {@link #detail(Long)}'s, applied the same way and for the same reason — a
+     * discontinued product is out of the public catalog (ADR-0013), whichever key you look it up by,
+     * and here that is precisely what stops stock being added to something the shop has withdrawn. The
+     * {@code 404} is also indistinguishable from a SKU that never existed, which is what keeps the
+     * response from telling anyone who asks which codes the shop used to sell.
+     *
+     * <p>Not written on top of {@link #activeBySku(String)}, which answers the neighbouring question
+     * for another module: that one returns a {@link ProductSummary} with no product type, and reusing it
+     * here would mean either fetching the type twice or lending the module read a join it does not want.
+     * The rule they share is spelled the same in both — {@code filter(Product::isActive)} over the row —
+     * and it is one line, which is the honest way for two reads with different fetch plans to agree.
+     *
+     * <p>{@code id} in the {@code ProblemDetail} is the SKU: the registry types that extension as text
+     * so one exception serves numeric identifiers, SKUs and UUIDs alike
+     * ({@code docs/12-error-contract.md}).
+     */
+    public ProductDetailResponse detailBySku(String sku) {
+        return products
+                .findWithProductTypeBySku(sku)
+                .filter(Product::isActive)
+                .map(mapper::toDetail)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", sku));
+    }
+
+    /**
      * The typeahead of the search box (RF-01, {@code suggestProducts}).
      *
      * <p><strong>A list and never a {@code Page}.</strong> The contract declares a flat array with no

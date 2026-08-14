@@ -101,11 +101,14 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
      * <p>It is an explicit list and not "whatever is missing" on purpose: that is what makes an
      * endpoint <em>disappearing</em> a failure rather than a silence. Implementing one of these means
      * deleting its line here, and the day the list is empty the check is total.
+     *
+     * <p><strong>It is empty, and that day is today</strong> (issue #79, the SKU look-up of the stock
+     * slice — the last one left after #43 took the product and product-type CRUD and #45 the two staff
+     * operations). The check now compares the whole contract against the whole implementation, so it
+     * stays: an operation added to the YAML before its code lands has somewhere to wait, and the
+     * {@code isSubsetOf} below keeps that waiting from being silent.
      */
-    private static final Set<String> NOT_IMPLEMENTED_YET = Set.of(
-            // v0.7 — the SKU look-up of the stock slice. The product and product-type CRUD left this
-            // list with issue #43, and the two staff operations with issue #45.
-            "getProductBySku");
+    private static final Set<String> NOT_IMPLEMENTED_YET = Set.of();
 
     /** The frozen contract, read and projected once: it is a file, and it does not change mid-run. */
     private static OpenApiShape contract;
