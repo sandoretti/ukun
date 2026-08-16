@@ -10,6 +10,7 @@ import dev.sandoretti.ukun.api.shared.openapi.InternalErrorResponse;
 import dev.sandoretti.ukun.api.shared.openapi.NotFoundResponse;
 import dev.sandoretti.ukun.api.shared.web.PageResponse;
 import dev.sandoretti.ukun.api.shared.web.PaginationParams;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -121,5 +122,31 @@ class ProductController {
     @InternalErrorResponse
     ProductDetailResponse getProduct(@PathVariable Long id) {
         return products.detail(id);
+    }
+
+    /**
+     * The product detail by SKU (RF-09): what the employee resolves before creating a stock line with
+     * {@code POST /api/stores/{storeId}/stock} (ADR-0015). Same response as {@link #getProduct(Long)},
+     * a different key.
+     *
+     * <p>It does not collide with {@code /{id}}, unlike {@code /suggest}: the path has one segment more,
+     * so no pattern of this controller is a candidate for the other's requests. {@code /api/products/by-sku}
+     * on its own does reach {@code getProduct} with an unparseable id and comes back as the {@code 400}
+     * that a missing path variable deserves, which is the contract's shape for a path that requires one.
+     *
+     * <p><strong>No {@code @Pattern} on the SKU, deliberately.</strong> The contract declares exactly
+     * three responses here — {@code 200}, {@code 404} and {@code 500} — so rejecting a malformed code
+     * with a {@code 400} would be an answer the frozen document does not allow, and the frontend
+     * generated from it would not know what to do with. A string that cannot be a SKU is a string no
+     * product has: it resolves to the same {@code 404 RESOURCE_NOT_FOUND} as one that merely does not
+     * exist, which is both the contract's shape and the answer that leaks least. The {@code @Schema} is
+     * still published so Swagger UI and the frozen {@code Sku} schema say the same thing.
+     */
+    @GetMapping("/by-sku/{sku}")
+    @ApiResponse(responseCode = "200", description = "The product.")
+    @NotFoundResponse
+    @InternalErrorResponse
+    ProductDetailResponse getProductBySku(@PathVariable @Schema(pattern = "^[A-Z0-9-]{3,32}$") String sku) {
+        return products.detailBySku(sku);
     }
 }

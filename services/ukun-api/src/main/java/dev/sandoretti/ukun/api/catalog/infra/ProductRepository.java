@@ -56,6 +56,26 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Optional<Product> findBySku(String sku);
 
     /**
+     * The same row as {@link #findBySku(String)}, with the product type fetched: the detail read of
+     * {@code getProductBySku} (RF-09), which returns the very same {@code ProductDetail} as
+     * {@code getProduct} and therefore carries {@code typeName}.
+     *
+     * <p>Two derived queries over the same unique column rather than one with the graph, because the
+     * two reads want different fetch plans and the difference is not cosmetic. {@link #findBySku(String)}
+     * feeds a {@link dev.sandoretti.ukun.api.catalog.ProductSummary} that has no type, so giving
+     * <em>it</em> the graph would add a join nobody reads to the look-up {@code inventory} performs
+     * before every stock line; leaving <em>this</em> one without it would either fire a second
+     * {@code SELECT} or fail outright under {@code open-in-view: false}. It is the same pair as
+     * {@link #findById(Long)} against {@code findAllById}, one column over.
+     *
+     * <p>Everything between {@code find} and {@code By} is descriptive to Spring Data, so this is the
+     * {@code sku} look-up the name says it is — served by the {@code UNIQUE} on {@code sku} (ADR-0015),
+     * one indexed statement.
+     */
+    @EntityGraph(attributePaths = "productType")
+    Optional<Product> findWithProductTypeBySku(String sku);
+
+    /**
      * The uniqueness of {@code ux_product_sku}, asked before inserting so the {@code 409} can name the
      * field (RF-10, {@code DUPLICATE_VALUE}).
      *
