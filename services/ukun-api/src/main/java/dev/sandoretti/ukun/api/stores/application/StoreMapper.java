@@ -1,5 +1,6 @@
 package dev.sandoretti.ukun.api.stores.application;
 
+import dev.sandoretti.ukun.api.stores.StoreSummary;
 import dev.sandoretti.ukun.api.stores.domain.Store;
 import dev.sandoretti.ukun.api.stores.domain.StoreAddress;
 import org.mapstruct.Mapper;
@@ -32,4 +33,7 @@ public interface StoreMapper {
     StoreResponse toResponse(Store store);
 
     AddressResponse toResponse(StoreAddress address);
+
+    /** {@link StoreSummary}: the two fields another module is allowed to know ({@code docs/14-modules.md} §2). */
+    StoreSummary toSummary(Store store);
 }

@@ -6,6 +6,7 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import java.util.Arrays;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec;
@@ -33,6 +34,10 @@ class SecurityHeadersIT extends GatewayIntegrationTest {
     private static final String STRICT_TRANSPORT_SECURITY = "Strict-Transport-Security";
     private static final String CONTENT_TYPE_OPTIONS = "X-Content-Type-Options";
     private static final String REFERRER_POLICY = "Referrer-Policy";
+
+    /** The browser-facing origin of ukun-auth, read from the same property the policy is built from. */
+    @Value("${ukun.oauth2.issuer}")
+    private String issuer;
 
     @Test
     @DisplayName("adds the four security headers to a proxied response")
@@ -71,6 +76,30 @@ class SecurityHeadersIT extends GatewayIntegrationTest {
         String policy = headersOf(http.get().uri("/api/products").exchange()).getFirst(CONTENT_SECURITY_POLICY);
 
         assertThat(directive(policy, "script-src")).isEqualTo("'self'");
+    }
+
+    /**
+     * {@code form-action} names ukun-auth, and the whole logout depends on it.
+     *
+     * <p>Signing out is a {@code <form>} posting to {@code /logout}, which is {@code 'self'} and
+     * would pass on its own. What needs naming is where that submission <em>ends up</em>: the gateway
+     * answers it with a redirect to the end session endpoint of the authorization server, and Chrome
+     * applies this directive to the redirects a form submission follows, not only to its first hop.
+     *
+     * <p>Restricted to {@code 'self'}, the browser blocks that jump silently — the gateway still logs
+     * its {@code auth.logout} and still answers 302, so every server-side signal says the logout
+     * worked while the session at ukun-auth is never ended and signing in again returns the previous
+     * user without a password. That is why this asserts the whole directive rather than that it
+     * merely contains {@code 'self'}: the failure mode is a value that looks right.
+     */
+    @Test
+    @DisplayName("lets a form submission reach the authorization server, redirects included")
+    void allowsFormSubmissionsToReachTheAuthorizationServer() {
+        String policy = headersOf(http.get().uri("/api/products").exchange()).getFirst(CONTENT_SECURITY_POLICY);
+
+        assertThat(directive(policy, "form-action"))
+                .as("the origins a form of the SPA may submit to")
+                .isEqualTo("'self' " + issuer);
     }
 
     private static void assertHasTheFourHeaders(ResponseSpec response) {

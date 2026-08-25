@@ -1,11 +1,16 @@
 package dev.sandoretti.ukun.api.stores.application;
 
+import dev.sandoretti.ukun.api.stores.StoreSummary;
 import dev.sandoretti.ukun.api.stores.StoresApi;
 import dev.sandoretti.ukun.api.stores.domain.Store;
 import dev.sandoretti.ukun.api.stores.infra.StoreRepository;
 import dev.sandoretti.ukun.api.stores.infra.StoreSpecifications;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -17,8 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Both in one class because they are one query away from each other and the module has exactly one
  * table. The split that matters is not service-per-caller: it is that {@link StoresApi} is the only
- * type outside {@code stores} can name, so {@code inventory} depends on an interface with one method
- * and cannot reach {@link #list} or a {@code Store} through it.
+ * type outside {@code stores} can name, so {@code inventory} depends on three methods that answer
+ * three questions and cannot reach {@link #list} or a {@code Store} through it.
  *
  * <p>{@code @Transactional(readOnly = true)} at class level and nothing in the constructor but
  * assignments, for the same two reasons as every other query service here: {@code open-in-view: false}
@@ -80,5 +85,29 @@ public class StoreQueryService implements StoresApi {
     public Long onlineStoreId() {
         return stores.findOnlineStoreId()
                 .orElseThrow(() -> new IllegalStateException("No store is marked as the online one"));
+    }
+
+    /**
+     * {@link StoresApi#summariesByIds(Set)}: what the modules that hold a {@code store_id} are allowed
+     * to know about it.
+     *
+     * <p>{@code findAllById} rather than a query of this module's own, exactly as
+     * {@code ProductQueryService} does for its own summaries: one statement for the whole batch, served
+     * by the primary key, and without the {@code @EntityGraph} the two overrides in
+     * {@link StoreRepository} carry — which here is the point rather than an omission, since
+     * {@link StoreSummary} has no address and fetching that association would be a join nobody reads.
+     *
+     * <p>An empty request is answered without touching the database. Spring Data would return an empty
+     * list anyway, but a statement issued to learn nothing is still a statement.
+     */
+    @Override
+    public Map<Long, StoreSummary> summariesByIds(Set<Long> storeIds) {
+        if (storeIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return stores.findAllById(storeIds).stream()
+                .map(mapper::toSummary)
+                .collect(Collectors.toMap(StoreSummary::id, Function.identity()));
     }
 }

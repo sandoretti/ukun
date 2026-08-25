@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
  * somebody to it.
  *
  * <p><strong>The store is never a parameter of anything here.</strong> Both operations open by asking
- * {@link AdminStoreResolver} which store the admin administers, and everything downstream uses that
+ * {@link CurrentEmployeeResolver} which store the admin administers, and everything downstream uses that
  * answer — the listing's scope and the new employee's {@code store_id} alike
  * ({@code docs/08-identidad-y-seguridad.md} §3 and §4, RF-11). There is no method that takes a store
  * identifier, which is what makes the legacy's habit of trusting a {@code tiendaId} from the request
@@ -48,14 +48,14 @@ public class AdminEmployeeService {
 
     private static final Set<Role> EMPLOYEE_AND_ADMIN = Set.of(Role.EMPLOYEE, Role.ADMIN);
 
-    private final AdminStoreResolver admins;
+    private final CurrentEmployeeResolver admins;
     private final EmployeeRepository employees;
     private final AccountRegistrationService registrations;
     private final EmployeeRegistrar registrar;
     private final EmployeeMapper mapper;
 
     AdminEmployeeService(
-            AdminStoreResolver admins,
+            CurrentEmployeeResolver admins,
             EmployeeRepository employees,
             AccountRegistrationService registrations,
             EmployeeRegistrar registrar,

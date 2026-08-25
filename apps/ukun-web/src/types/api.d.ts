@@ -389,6 +389,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/employment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The store the current employee works in
+         * @description RF-09. What the stock back-office reads before it can build any of its four routes: they all
+         *     carry `{storeId}` in the path, and the SPA has no other way to learn which store that is.
+         *
+         *     **Any employee, not only an admin.** The permission matrix of `docs/02-requisitos.md` §3
+         *     gives "see and edit the stock of their store" a ✅ for an ordinary employee, which is why
+         *     RF-09 stays outside the `/api/admin/**` prefix (ADR-0020) and why this operation does too.
+         *
+         *     It takes no parameter, and there is nothing to add: the answer depends only on who is
+         *     asking. The store is resolved server-side from `account_id` against `employee`, and it
+         *     deliberately does not travel in the token (`docs/08-identidad-y-seguridad.md` §4) — an
+         *     employee moved to another store is answered with the new one on their very next request.
+         *
+         *     **`storeId` is an answer, never a question.** The screens use it to address stock resources;
+         *     they never send it back as proof of anything, and this service resolves the store again on
+         *     every one of those requests.
+         *
+         *     A `403` means the account has no `employee` row at all — a token can carry `EMPLOYEE` and
+         *     belong to nobody in this database. It is **not** a `404`: the resource being asked for is
+         *     the caller's own employment.
+         */
+        get: operations["getMyEmployment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/profile": {
         parameters: {
             query?: never;
@@ -1298,6 +1336,18 @@ export interface components {
             storeId: number;
         };
         /**
+         * @description Which store the employee behind the token works in. A resource of its own rather than a
+         *     field of `CurrentUser`: that one is served by the `customers` module, and making it read
+         *     employee data would cross a module edge the build verifies (ADR-0017, ADR-0020).
+         */
+        Employment: {
+            /** Format: int64 */
+            employeeId: number;
+            /** Format: int64 */
+            storeId: number;
+            storeName: string;
+        };
+        /**
          * @description **No `storeId`**: a new employee's store is always that of the admin performing the creation
          *     (`docs/08-identidad-y-seguridad.md` §3, RF-11).
          */
@@ -2083,6 +2133,29 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthenticated"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    getMyEmployment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The employee's store. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Employment"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
             500: components["responses"]["InternalError"];
         };
     };
