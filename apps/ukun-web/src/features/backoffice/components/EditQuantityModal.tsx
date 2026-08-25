@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Form, Modal } from 'react-bootstrap';
 
-import { toProblem } from '../../../shared/api/http';
+import { NOT_FOUND, toProblem } from '../../../shared/api/http';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
 import { ErrorState } from '../../../shared/ui/ErrorState';
 import { TextField } from '../../../shared/ui/TextField';
@@ -14,7 +14,6 @@ import { quantityFormSchema, toUpdateRequest, type QuantityFormValues } from '..
 import { VersionConflictPanel } from './VersionConflictPanel';
 
 const TITLE_ID = 'edit-quantity-title';
-const NOT_FOUND = 404;
 
 type EditQuantityModalProps = {
   storeId: number;

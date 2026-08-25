@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Container } from 'react-bootstrap';
 
-import { toProblem } from '../../shared/api/http';
+import { NOT_FOUND, toProblem } from '../../shared/api/http';
 import { BACKOFFICE_STOCK_PATH } from '../../shared/routes';
 import { ErrorState } from '../../shared/ui/ErrorState';
 import { Icon } from '../../shared/ui/Icon';
@@ -12,8 +12,6 @@ import { EmploymentBoundary } from './components/EmploymentBoundary';
 import { NewStockLineForm } from './components/NewStockLineForm';
 import { SkuFinder } from './components/SkuFinder';
 import { readSku } from './stockSchema';
-
-const NOT_FOUND = 404;
 
 /**
  * Adding a line of stock (RF-09) at `/backoffice/stock/new`, in two steps on one screen: resolve the

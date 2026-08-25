@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { hasRole, useCurrentUser, type CurrentUser, type Role } from '../api/session';
+import { useCurrentUser, type CurrentUser, type Role } from '../api/session';
 import { rememberReturnTo, startSignIn } from '../auth/signIn';
 
 type Auth = {
@@ -40,7 +40,7 @@ export function useAuth(): Auth {
     user,
     isAuthenticated: user !== undefined,
     isPending,
-    hasRole: useCallback((role: Role) => hasRole(user, role), [user]),
+    hasRole: useCallback((role: Role) => user?.roles.includes(role) ?? false, [user]),
     // The route comes from the router and not from `window.location`: they agree in the browser and
     // they do not under a `MemoryRouter`, which is where this gets tested. It is also the only
     // place that composes the two halves of a route, so the bar and the guard cannot drift.

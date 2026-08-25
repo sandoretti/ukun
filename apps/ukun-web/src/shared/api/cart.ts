@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { components } from '../../types/api';
 import { http } from './http';
 import { retryUnlessClientError } from './retry';
-import { hasRole, useCurrentUser } from './session';
+import { useAuth } from '../hooks/useAuth';
 
 export type Cart = components['schemas']['Cart'];
 export type CartLine = components['schemas']['CartLine'];
@@ -43,14 +43,18 @@ export const cartKeys = {
  *
  * Gating here and not in each caller is the point: the bar, the sheet's button and the cart screen
  * all read through this hook, and a condition copied into three files drifts in two of them.
+ *
+ * The role is read through `useAuth`, which is the one place in the app that reads roles, and the
+ * reason this file reaches into `shared/hooks/` is the one `availability.ts` already writes down for
+ * the same crossing: what is asked for depends on the session, so deciding it needs the session.
  */
 export function useCart() {
-  const { data: user } = useCurrentUser();
+  const { hasRole } = useAuth();
 
   return useQuery({
     queryKey: cartKeys.mine(),
     queryFn: ({ signal }) => http.get<Cart>('/api/cart', { signal }).then((response) => response.data),
-    enabled: hasRole(user, 'CUSTOMER'),
+    enabled: hasRole('CUSTOMER'),
     retry: retryUnlessClientError,
   });
 }

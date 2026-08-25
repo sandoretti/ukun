@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { toProblem } from '../../../shared/api/http';
+import { FORBIDDEN, toProblem } from '../../../shared/api/http';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { ErrorState } from '../../../shared/ui/ErrorState';
 import { LoadingState } from '../../../shared/ui/LoadingState';
 import { useMyEmployment, type Employment } from '../api/employment';
-
-const FORBIDDEN = 403;
 
 type EmploymentBoundaryProps = {
   children: (employment: Employment) => ReactNode;

@@ -25,6 +25,22 @@ export type ValidationError = components['schemas']['ValidationError'];
 const FIXED_PROBLEM_FIELDS = ['type', 'title', 'status', 'detail', 'instance', 'code', 'traceId', 'errors'];
 
 /**
+ * The statuses a screen branches on, next to the error that carries them.
+ *
+ * They are here and not in each screen because they were written four times across `backoffice/`
+ * alone, and because `.status` belongs to {@link ProblemDetailError}: this is the module that owns
+ * the concept. It is a deliberately short list — a status earns a name the day a screen has to tell
+ * it apart from the others, never as a full table of HTTP copied in.
+ *
+ * **They are not a substitute for `code`.** What a screen says comes from the closed registry of
+ * `docs/12-error-contract.md`; the status is only for deciding *which shape* of answer this is —
+ * a `404` that is a legitimate "no such SKU" against the error state, a `403` that is "this account
+ * never will" against a failure worth retrying.
+ */
+export const FORBIDDEN = 403;
+export const NOT_FOUND = 404;
+
+/**
  * Any 4xx/5xx from the API, normalised to the closed registry of `docs/12-error-contract.md`.
  * Screens translate `code` (ADR-0019); `detail` is fixed English for the operator and is never
  * rendered.

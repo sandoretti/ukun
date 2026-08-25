@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button, Form } from 'react-bootstrap';
 
-import { toProblem } from '../../../shared/api/http';
+import { NOT_FOUND, toProblem } from '../../../shared/api/http';
 import { formatMoney } from '../../../shared/format/money';
 import { applyServerErrors } from '../../../shared/forms/applyServerErrors';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
@@ -23,8 +23,6 @@ import {
   toCreateRequest,
   type QuantityFormValues,
 } from '../stockSchema';
-
-const NOT_FOUND = 404;
 
 type NewStockLineFormProps = {
   employment: Employment;
