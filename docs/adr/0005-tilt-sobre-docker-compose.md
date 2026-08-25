@@ -16,3 +16,6 @@ Se necesitaba un entorno de desarrollo local con recarga rápida de código. Til
 
 ## Alternativas descartadas
 - **kind/k3d**: más fiel a un destino Kubernetes, pero añade piezas (clúster local, manifiestos, ingress, secrets) sin beneficio mientras el destino de despliegue no esté decidido, y pierde `restart_container()`.
+
+## Actualización
+El Contexto de este ADR decía que «el destino de despliegue final tras abandonar Azure aún no está decidido». Lo fija **ADR-0023**: Azure Container Apps. **La decisión de este ADR no cambia** — el destino no es Kubernetes, así que no hay manifiestos a los que acercar el sustrato local, y el `docker_compose()` de Tilt sigue siendo lo que menos traduce.
