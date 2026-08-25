@@ -14,16 +14,20 @@ import { CART_PATH } from '../../../shared/routes';
  * `shared/ui/SiteHeader` cannot import a feature, and the bar knows nothing about who is looking at
  * it.
  *
- * Nothing is rendered without a session, deliberately: the cart requires one (RF-03), and while the
- * session probe is in flight this is the anonymous case, exactly as `SessionMenu` treats it. The
- * count is units and not lines, which is what a reader expects a cart badge to say.
+ * Nothing is rendered for anyone but a **customer**, deliberately. Not having a session is the
+ * obvious half — the cart requires one (RF-03), and while the probe is in flight this is the
+ * anonymous case, exactly as `SessionMenu` treats it. The other half is that an employee *has* a
+ * session and still has no cart (`docs/02-requisitos.md` §3, ADR-0006): a badge painted for them
+ * counts a cart the server will never hand over.
+ *
+ * The count is units and not lines, which is what a reader expects a cart badge to say.
  */
 export function CartIndicator() {
   const { t } = useTranslation('cart');
-  const { isAuthenticated } = useAuth();
+  const { hasRole } = useAuth();
   const { data: cart } = useCart();
 
-  if (!isAuthenticated) {
+  if (!hasRole('CUSTOMER')) {
     return null;
   }
 

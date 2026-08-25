@@ -1,13 +1,13 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http as mswHttp } from 'msw';
+import { http as mswHttp, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { navigateTo } from '../../../shared/browser/navigateTo';
 import { SIGN_IN_URL, takeReturnTo } from '../../../shared/auth/signIn';
 import { cartState, lineOf, sofa } from '../../../test/msw/cartHandlers';
 import { OPERATOR_DETAIL, problem } from '../../../test/msw/problem';
-import { signedIn } from '../../../test/msw/sessionHandlers';
+import { currentUser, signedIn } from '../../../test/msw/sessionHandlers';
 import { server } from '../../../test/msw/server';
 import { renderWithProviders } from '../../../test/renderWithProviders';
 import type { components } from '../../../types/api';
@@ -89,5 +89,35 @@ describe('AddToCartButton', () => {
     expect(await screen.findByText('No encontramos lo que buscas')).toBeDefined();
     expect(screen.queryByText(OPERATOR_DETAIL)).toBeNull();
     expect(addButton()).toBeDefined();
+  });
+
+  /**
+   * The sheet stays public and readable for an employee; this one affordance is not theirs. They are
+   * signed in and have no cart (`docs/02-requisitos.md` §3, ADR-0006), so the button could only
+   * offer a `403` — and sending them to sign in again, which is what the visitor branch does, would
+   * be worse: signing in again does not change anybody's roles.
+   *
+   * The wait is on the session, not on the button. Before the probe answers nobody holds a role, so
+   * asserting straight after `render` would pass even with the condition on `isAuthenticated`.
+   */
+  it('offers nothing to an employee, who is signed in and still has no cart', async () => {
+    const sent: UpdateCartItemRequest[] = [];
+    let sessionReads = 0;
+
+    server.use(
+      capturingPut(sent),
+      mswHttp.get('/api/me', () => {
+        sessionReads += 1;
+
+        return HttpResponse.json({ ...currentUser, roles: ['EMPLOYEE'] });
+      }),
+      ...cartState([lineOf(sofa, 2)]),
+    );
+
+    renderWithProviders(<AddToCartButton productId={sofa.productId} />, { route: '/products/1' });
+    await waitFor(() => expect(sessionReads).toBe(1));
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Añadir al carrito' })).toBeNull());
+    expect(sent).toEqual([]);
   });
 });

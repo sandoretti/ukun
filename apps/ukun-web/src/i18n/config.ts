@@ -23,6 +23,8 @@ import esOrders from './es/orders.json';
 import enOrders from './en/orders.json';
 import esSignup from './es/signup.json';
 import enSignup from './en/signup.json';
+import esBackoffice from './es/backoffice.json';
+import enBackoffice from './en/backoffice.json';
 
 /**
  * The namespaces of `docs/07-frontend-ux-ui.md §i18n`, one JSON per namespace and language. The
@@ -40,7 +42,8 @@ export type Namespace =
   | 'cart'
   | 'checkout'
   | 'orders'
-  | 'signup';
+  | 'signup'
+  | 'backoffice';
 
 /**
  * Every bundle the app ships with. `satisfies` and not a bare object literal: it is what turns
@@ -62,6 +65,7 @@ export const resources = {
     checkout: esCheckout,
     orders: esOrders,
     signup: esSignup,
+    backoffice: esBackoffice,
   },
   en: {
     common: enCommon,
@@ -74,6 +78,7 @@ export const resources = {
     checkout: enCheckout,
     orders: enOrders,
     signup: enSignup,
+    backoffice: enBackoffice,
   },
 } satisfies Record<SupportedLanguage, Record<Namespace, Record<string, unknown>>>;
 

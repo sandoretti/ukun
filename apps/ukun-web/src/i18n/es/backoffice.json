@@ -1,0 +1,104 @@
+{
+  "stock": {
+    "title": "Stock de {{store}}",
+    "lead": "Consulta y ajusta las unidades de cada producto en tu tienda.",
+    "add": "Dar de alta por SKU",
+    "employment": {
+      "denied": "Tu cuenta no gestiona el stock de ninguna tienda."
+    },
+    "tabs": {
+      "label": "Qué se lista",
+      "stocked": "Con stock",
+      "notStocked": "Sin dar de alta"
+    },
+    "filters": {
+      "title": "Filtrar",
+      "sku": "SKU",
+      "skuHint": "Mayúsculas, cifras y guiones. Por ejemplo, ABC-123.",
+      "q": "Nombre del producto",
+      "qHint": "Para cuando no te sepas el SKU de memoria.",
+      "clear": "Quitar filtros"
+    },
+    "results_one": "{{count}} producto",
+    "results_other": "{{count}} productos",
+    "table": {
+      "caption": "Stock de {{store}}",
+      "sku": "SKU",
+      "product": "Producto",
+      "quantity": "Unidades",
+      "actions": "Acciones"
+    },
+    "row": {
+      "edit": "Cambiar las unidades de {{product}}",
+      "delete": "Quitar {{product}} del stock",
+      "add": "Dar de alta {{product}}"
+    },
+    "empty": {
+      "stocked": "Esta tienda todavía no tiene ningún producto en stock.",
+      "stockedFiltered": "Ningún producto en stock coincide con la búsqueda.",
+      "notStocked": "Todos los productos del catálogo están dados de alta en esta tienda.",
+      "notStockedFiltered": "Ningún producto sin dar de alta coincide con la búsqueda."
+    },
+    "pagination": "Paginación del stock"
+  },
+  "edit": {
+    "title": "Cambiar unidades",
+    "product": "{{product}} ({{sku}})",
+    "quantity": "Unidades",
+    "quantityHint": "Cero es un valor válido: el producto sigue gestionado en esta tienda.",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "gone": "Esa línea ya no existe: alguien la ha quitado del stock mientras la editabas.",
+    "conflict": {
+      "title": "Alguien ha cambiado esta línea",
+      "body": "Otro empleado ha guardado un valor distinto mientras editabas. Decide con cuál te quedas.",
+      "server": "En la tienda ahora",
+      "yours": "Lo que escribiste",
+      "reloading": "Volviendo a leer la línea...",
+      "keepServer": "Quedarme con {{quantity}}",
+      "applyMine": "Aplicar mis {{quantity}}"
+    }
+  },
+  "delete": {
+    "title": "Quitar del stock",
+    "body": "Vas a borrar la línea de «{{product}}» en {{store}}. El producto dejará de estar gestionado aquí y volverá a la lista de los que no están dados de alta.",
+    "notZero": "No es lo mismo que poner las unidades a cero: con cero la línea se queda y el producto sigue gestionado en esta tienda.",
+    "confirm": "Quitar del stock",
+    "cancel": "Cancelar",
+    "close": "Cerrar"
+  },
+  "newLine": {
+    "title": "Dar de alta stock",
+    "lead": "Busca el producto por su SKU y di cuántas unidades tiene {{store}}.",
+    "back": "Volver al stock",
+    "sku": {
+      "label": "SKU del producto",
+      "hint": "Mayúsculas, cifras y guiones. Por ejemplo, ABC-123.",
+      "submit": "Buscar"
+    },
+    "product": {
+      "title": "Producto",
+      "sku": "SKU",
+      "name": "Nombre",
+      "type": "Tipo",
+      "price": "Precio",
+      "change": "Buscar otro SKU"
+    },
+    "quantity": {
+      "label": "Unidades en {{store}}",
+      "hint": "Cero es un valor válido: da de alta el producto sin unidades todavía."
+    },
+    "submit": "Dar de alta",
+    "duplicate": {
+      "title": "Ese producto ya tiene línea en esta tienda",
+      "body": "«{{product}}» ya está dado de alta en {{store}}. Lo que buscas es cambiarle las unidades.",
+      "link": "Ir a la línea existente"
+    }
+  },
+  "validation": {
+    "sku": "El SKU son de 3 a 32 caracteres: mayúsculas, cifras y guiones.",
+    "skuNotFound": "No hay ningún producto activo con ese SKU. Puede que no exista o que esté descatalogado.",
+    "quantity": "Las unidades son un número entero de 0 o más."
+  }
+}

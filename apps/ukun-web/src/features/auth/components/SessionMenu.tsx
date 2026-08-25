@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Dropdown } from 'react-bootstrap';
 
 import { useAuth } from '../../../shared/hooks/useAuth';
-import { PROFILE_PATH } from '../../../shared/routes';
+import { BACKOFFICE_STOCK_PATH, PROFILE_PATH } from '../../../shared/routes';
 import { ACCOUNT_PATH, SIGN_UP_PATH } from '../routes';
 import { SignOutForm } from './SignOutForm';
 
@@ -64,13 +64,10 @@ export function SessionMenu() {
           {t('profile:link')}
         </Dropdown.Item>
 
+        {/* La primera pantalla del back-office es el stock de la tienda del empleado (RF-09), y por
+            eso la entrada lleva ahí y no a un índice: es lo único que hay construido. */}
         {isStaff && (
-          <Dropdown.Item
-            as="button"
-            type="button"
-            disabled
-            aria-label={t('nav.comingSoon', { label: t('account.backoffice') })}
-          >
+          <Dropdown.Item as={Link} to={BACKOFFICE_STOCK_PATH}>
             {t('account.backoffice')}
           </Dropdown.Item>
         )}

@@ -132,8 +132,14 @@ const stock: Record<number, Record<number, number>> = {
   2: { 1: 1, 3: 2, 9: 4 },
 };
 
-/** The mock's stand-in for the database's `unaccent(lower(...))` (defect #22). */
-const normalise = (value: string) => value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+/**
+ * The mock's stand-in for the database's `unaccent(lower(...))` (defect #22).
+ *
+ * Exported because the stock double filters by product name the same way, and a second copy of it
+ * would let one of the two answer "sofá" and the other not.
+ */
+export const normalise = (value: string) =>
+  value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 export const catalogHandlers = [
   http.get(`${base}/api/products`, ({ request }) => {
@@ -197,6 +203,25 @@ export const catalogHandlers = [
       .slice(0, limit)
       .map(({ id, sku, name, price, imageUrl }) => ({ id, sku, name, price, imageUrl }));
 
+    return HttpResponse.json(body);
+  }),
+
+  /**
+   * The same sheet resolved by the business identifier instead of the internal one (ADR-0015) — the
+   * lookup the stock screens do before creating a line.
+   *
+   * Like the rest of the public catalog it only resolves **active** products, so an unknown or
+   * discontinued SKU answers `404`. That is the right answer here and not a failure: it is what stops
+   * an employee from restocking something pulled from the catalog.
+   */
+  http.get(`${base}/api/products/by-sku/:sku`, ({ params }) => {
+    const found = products.find((item) => item.sku === String(params.sku));
+
+    if (!found) {
+      return problem('RESOURCE_NOT_FOUND', 404, { resource: 'product', id: String(params.sku) });
+    }
+
+    const body: ProductDetail = { ...found, description: descriptions[found.id] ?? null };
     return HttpResponse.json(body);
   }),
 

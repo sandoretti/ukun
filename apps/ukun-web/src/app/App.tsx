@@ -2,10 +2,19 @@ import { lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
 import { RequireAuth } from '../features/auth/RequireAuth';
+import { RequireRole } from '../features/auth/RequireRole';
 import { ACCOUNT_PATH, SIGN_UP_PATH } from '../features/auth/routes';
+import { NEW_STOCK_LINE_PATH } from '../features/backoffice/routes';
 import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
-import { CART_PATH, CATALOG_PATH, CHECKOUT_PATH, ORDERS_PATH, PROFILE_PATH } from '../shared/routes';
+import {
+  BACKOFFICE_STOCK_PATH,
+  CART_PATH,
+  CATALOG_PATH,
+  CHECKOUT_PATH,
+  ORDERS_PATH,
+  PROFILE_PATH,
+} from '../shared/routes';
 import { AppLayout } from './AppLayout';
 import { AuthLayout } from './AuthLayout';
 
@@ -23,6 +32,8 @@ const OrdersPage = lazy(() => import('../features/orders/OrdersPage'));
 const OrderDetailPage = lazy(() => import('../features/orders/OrderDetailPage'));
 const SignInPage = lazy(() => import('../features/auth/SignInPage'));
 const SignUpPage = lazy(() => import('../features/auth/SignUpPage'));
+const StockPage = lazy(() => import('../features/backoffice/StockPage'));
+const NewStockLinePage = lazy(() => import('../features/backoffice/NewStockLinePage'));
 
 function App() {
   return (
@@ -53,12 +64,17 @@ function App() {
           }
         />
         {/* El carrito exige sesión en las cuatro operaciones de su contrato, y lo resuelve el
-            servidor desde `account_id`: la ruta no lleva ningún identificador de cliente. */}
+            servidor desde `account_id`: la ruta no lleva ningún identificador de cliente. Exige
+            además el rol: tener sesión no es ser cliente, y un empleado no tiene carrito
+            (`docs/02-requisitos.md` §3, ADR-0006). Sin las dos guardas la pantalla se pintaba a
+            medias y se llenaba de 403, que es justo lo que `RequireRole` existe para evitar. */}
         <Route
           path={CART_PATH}
           element={
             <RequireAuth>
-              <CartPage />
+              <RequireRole role="CUSTOMER">
+                <CartPage />
+              </RequireRole>
             </RequireAuth>
           }
         />
@@ -87,6 +103,33 @@ function App() {
           element={
             <RequireAuth>
               <OrderDetailPage />
+            </RequireAuth>
+          }
+        />
+        {/* El back-office del stock (RF-09). Cuelga de `/backoffice/*` y no de `/admin/*`: esa rama
+            es la de lo que habla con `/api/admin/**` (ADR-0020), y el stock es de cualquier empleado.
+            Las dos guardas se componen porque deniegan cosas distintas: sin sesión se va a
+            identificarse, y con sesión sin el rol se explica aquí mismo, porque volver a entrar no
+            cambia los roles. Ninguna de las dos es la barrera: el servidor comprueba el rol otra vez.
+            La ruta tampoco lleva identificador de tienda — la resuelve el servidor desde
+            `account_id`. */}
+        <Route
+          path={BACKOFFICE_STOCK_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="EMPLOYEE">
+                <StockPage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={NEW_STOCK_LINE_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="EMPLOYEE">
+                <NewStockLinePage />
+              </RequireRole>
             </RequireAuth>
           }
         />

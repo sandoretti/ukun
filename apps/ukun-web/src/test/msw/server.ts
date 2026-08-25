@@ -6,6 +6,7 @@ import { orderHandlers } from './orderHandlers';
 import { profileHandlers } from './profileHandlers';
 import { sessionHandlers } from './sessionHandlers';
 import { signupHandlers } from './signupHandlers';
+import { stockHandlers } from './stockHandlers';
 import { storeHandlers } from './storeHandlers';
 
 /**
@@ -24,4 +25,5 @@ export const server = setupServer(
   ...cartHandlers,
   ...orderHandlers,
   ...signupHandlers,
+  ...stockHandlers,
 );

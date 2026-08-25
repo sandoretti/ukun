@@ -1,0 +1,104 @@
+{
+  "stock": {
+    "title": "Stock at {{store}}",
+    "lead": "Check and adjust how many units of each product your store holds.",
+    "add": "Add by SKU",
+    "employment": {
+      "denied": "Your account does not manage the stock of any store."
+    },
+    "tabs": {
+      "label": "What is listed",
+      "stocked": "In stock",
+      "notStocked": "Not added yet"
+    },
+    "filters": {
+      "title": "Filter",
+      "sku": "SKU",
+      "skuHint": "Capitals, digits and hyphens. For example, ABC-123.",
+      "q": "Product name",
+      "qHint": "For when you do not know the SKU by heart.",
+      "clear": "Clear filters"
+    },
+    "results_one": "{{count}} product",
+    "results_other": "{{count}} products",
+    "table": {
+      "caption": "Stock at {{store}}",
+      "sku": "SKU",
+      "product": "Product",
+      "quantity": "Units",
+      "actions": "Actions"
+    },
+    "row": {
+      "edit": "Change the units of {{product}}",
+      "delete": "Remove {{product}} from the stock",
+      "add": "Add {{product}}"
+    },
+    "empty": {
+      "stocked": "This store does not hold any product yet.",
+      "stockedFiltered": "No product in stock matches the search.",
+      "notStocked": "Every catalog product is already added to this store.",
+      "notStockedFiltered": "No product left to add matches the search."
+    },
+    "pagination": "Stock pagination"
+  },
+  "edit": {
+    "title": "Change units",
+    "product": "{{product}} ({{sku}})",
+    "quantity": "Units",
+    "quantityHint": "Zero is a valid value: the product stays managed in this store.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "gone": "That line no longer exists: someone removed it from the stock while you were editing it.",
+    "conflict": {
+      "title": "Someone changed this line",
+      "body": "Another employee saved a different value while you were editing. Decide which one stands.",
+      "server": "In the store now",
+      "yours": "What you typed",
+      "reloading": "Reading the line again...",
+      "keepServer": "Keep {{quantity}}",
+      "applyMine": "Apply my {{quantity}}"
+    }
+  },
+  "delete": {
+    "title": "Remove from stock",
+    "body": "You are about to delete the line for “{{product}}” at {{store}}. The product will stop being managed here and will go back to the list of those not added yet.",
+    "notZero": "This is not the same as setting the units to zero: with zero the line stays and the product is still managed in this store.",
+    "confirm": "Remove from stock",
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "newLine": {
+    "title": "Add stock",
+    "lead": "Find the product by its SKU and say how many units {{store}} holds.",
+    "back": "Back to the stock",
+    "sku": {
+      "label": "Product SKU",
+      "hint": "Capitals, digits and hyphens. For example, ABC-123.",
+      "submit": "Find"
+    },
+    "product": {
+      "title": "Product",
+      "sku": "SKU",
+      "name": "Name",
+      "type": "Type",
+      "price": "Price",
+      "change": "Find another SKU"
+    },
+    "quantity": {
+      "label": "Units at {{store}}",
+      "hint": "Zero is a valid value: it adds the product with no units yet."
+    },
+    "submit": "Add",
+    "duplicate": {
+      "title": "That product already has a line in this store",
+      "body": "“{{product}}” is already added at {{store}}. What you are after is changing its units.",
+      "link": "Go to the existing line"
+    }
+  },
+  "validation": {
+    "sku": "A SKU is 3 to 32 characters: capitals, digits and hyphens.",
+    "skuNotFound": "There is no active product with that SKU. It may not exist, or it may be discontinued.",
+    "quantity": "Units are a whole number of 0 or more."
+  }
+}

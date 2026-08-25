@@ -21,6 +21,10 @@
     "roles": "Permisos",
     "backoffice": "Back office",
     "backHome": "Volver a la tienda",
+    "noAccess": {
+      "title": "Esta página no es para tu cuenta",
+      "lead": "Tu cuenta no tiene los permisos que pide esta pantalla. Volver a entrar no lo cambia."
+    },
     "signInPage": {
       "title": "Vuelve a entrar",
       "lead": "Necesitas una sesión abierta para seguir. Te llevamos a identificarte y te devolvemos donde estabas.",
