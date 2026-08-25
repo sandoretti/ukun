@@ -69,7 +69,8 @@ export function lineOf(product: KnownProduct, quantity: number): CartLine {
   return { ...product, quantity, lineTotal: toMoney(toCents(product.unitPrice) * quantity) };
 }
 
-function cartOf(lines: readonly CartLine[]): Cart {
+/** The cart the server would have computed for these lines — exported for a double of its own. */
+export function cartOf(lines: readonly CartLine[]): Cart {
   return {
     items: [...lines],
     total: toMoney(lines.reduce((cents, line) => cents + toCents(line.lineTotal), 0)),

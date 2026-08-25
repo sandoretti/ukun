@@ -64,12 +64,17 @@ function App() {
           }
         />
         {/* El carrito exige sesión en las cuatro operaciones de su contrato, y lo resuelve el
-            servidor desde `account_id`: la ruta no lleva ningún identificador de cliente. */}
+            servidor desde `account_id`: la ruta no lleva ningún identificador de cliente. Exige
+            además el rol: tener sesión no es ser cliente, y un empleado no tiene carrito
+            (`docs/02-requisitos.md` §3, ADR-0006). Sin las dos guardas la pantalla se pintaba a
+            medias y se llenaba de 403, que es justo lo que `RequireRole` existe para evitar. */}
         <Route
           path={CART_PATH}
           element={
             <RequireAuth>
-              <CartPage />
+              <RequireRole role="CUSTOMER">
+                <CartPage />
+              </RequireRole>
             </RequireAuth>
           }
         />

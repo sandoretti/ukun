@@ -18,6 +18,23 @@ export const sessionKeys = {
 const UNAUTHENTICATED = 401;
 
 /**
+ * Whether the session holds a role, over the probe's own answer — `null` (a visitor) and `undefined`
+ * (the probe still in flight) are both "no", which is what every caller wants while it waits.
+ *
+ * It lives here, next to `Role` and `CurrentUser`, so that reading a role stays a single piece of
+ * code: `useAuth().hasRole` is this function with the session already bound, and `useCart` uses it
+ * directly because an API hook has no business depending on the router that `useAuth` needs.
+ *
+ * **Having a session is not the same as being a customer.** An employee is signed in and still has
+ * no cart, no checkout and no orders — `docs/02-requisitos.md` §3 gives that row a ❌ for `Empleado`,
+ * and ADR-0006 forbids one account being both. Anything gated on `isAuthenticated` that meant
+ * `CUSTOMER` asks the server a question it will answer with a `403`.
+ */
+export function hasRole(user: CurrentUser | null | undefined, role: Role): boolean {
+  return user?.roles.includes(role) ?? false;
+}
+
+/**
  * Who the browser is talking as, or `null` for a visitor with no session.
  *
  * **A 401 here is an answer, not an error.** The catalogue, the product sheet and the stores are

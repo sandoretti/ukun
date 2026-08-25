@@ -26,14 +26,24 @@ type AddToCartButtonProps = {
  *
  * With no session it goes to sign in instead of firing a request that can only answer `401`. What
  * comes back lands on this same sheet: `signIn` already remembers the route.
+ *
+ * **For an employee it renders nothing.** They are signed in and still have no cart
+ * (`docs/02-requisitos.md` §3, ADR-0006), so the button could only offer a `403` — and sending them
+ * to sign in again would be worse, because signing in again does not change anyone's roles. The
+ * sheet itself stays public and readable; what is not theirs is this one affordance.
  */
 export function AddToCartButton({ productId }: AddToCartButtonProps) {
   const { t } = useTranslation('cart');
-  const { isAuthenticated, signIn } = useAuth();
+  const { isAuthenticated, hasRole, signIn } = useAuth();
   const { data: cart } = useCart();
   const putItem = usePutCartItem();
 
   const inCart = cartLineOf(cart, productId)?.quantity ?? 0;
+
+  // A session that is not a customer's: nothing here is for them, and there is nowhere to send them.
+  if (isAuthenticated && !hasRole('CUSTOMER')) {
+    return null;
+  }
 
   const add = () => {
     if (isAuthenticated) {
