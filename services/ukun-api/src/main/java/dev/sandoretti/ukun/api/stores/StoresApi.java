@@ -1,14 +1,18 @@
 package dev.sandoretti.ukun.api.stores;
 
+import java.util.Map;
+import java.util.Set;
+
 /**
  * What the {@code stores} module offers the rest of the application. The only type here that other
  * modules may import — everything else lives in a subpackage and is invisible to them
  * ({@code docs/14-modules.md} §1).
  *
  * <p>It returns no {@code @Entity} and takes none, which is the golden rule of §2 of that document
- * and an ArchUnit rule besides. Today that means a primitive answer to a primitive question; when
- * {@code inventory}, {@code customers} or {@code staff} need the name of a store, this interface
- * grows a batch method returning a {@code record}, never {@code Store}.
+ * and an ArchUnit rule besides. Two of its three methods are a primitive answer to a primitive
+ * question; the third is the batch of {@link StoreSummary} this interface always said it would grow
+ * the day another module needed to name a store to a person — {@code staff} was the first, for the
+ * {@code storeName} of {@code GET /api/me/employment}.
  */
 public interface StoresApi {
 
@@ -45,4 +49,20 @@ public interface StoresApi {
      *     it is a {@code 500} with a stack trace, which is what gets it fixed.
      */
     Long onlineStoreId();
+
+    /**
+     * What the given stores are called, keyed by identifier.
+     *
+     * <p><strong>A batch and not a look-up per store</strong>, for the same reason
+     * {@code CatalogApi.summariesByIds} is one: a caller holding several identifiers — the stores of a
+     * page of employees, say — would otherwise issue a statement per row, which is the N+1 this kind
+     * of interface exists to make impossible. Its only caller today asks about one store, and asking
+     * about one is the degenerate case of asking about several rather than a different method.
+     *
+     * <p>An identifier nobody has is simply absent from the map, not a {@code null} value and not an
+     * exception: this answers what exists, and what a missing entry means is the caller's to decide.
+     * {@link #exists(Long)} is still the method for asking whether a store is there, because a caller
+     * that only wants the answer to that question should not be reading names to find out.
+     */
+    Map<Long, StoreSummary> summariesByIds(Set<Long> storeIds);
 }
