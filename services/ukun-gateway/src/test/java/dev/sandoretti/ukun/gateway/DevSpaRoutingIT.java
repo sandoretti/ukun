@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sandoretti.ukun.gateway.support.UpstreamStub;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -22,6 +23,10 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @ActiveProfiles("dev")
 class DevSpaRoutingIT extends GatewayIntegrationTest {
+
+    /** The browser-facing origin of ukun-auth, read from the same property the policy is built from. */
+    @Value("${ukun.oauth2.issuer}")
+    private String issuer;
 
     @Test
     @DisplayName("proxies a client-side route to the dev server")
@@ -70,6 +75,10 @@ class DevSpaRoutingIT extends GatewayIntegrationTest {
 
         assertThat(policy)
                 .contains("script-src 'self' 'unsafe-inline'")
-                .contains("connect-src 'self' ws:");
+                .contains("connect-src 'self' ws:")
+                // And the one relaxation that is not Vite's: the dev policy is a whole separate
+                // string, so the origin the logout redirect needs has to be named here too or
+                // signing out breaks in exactly the environment everybody develops against.
+                .contains("form-action 'self' " + issuer);
     }
 }
