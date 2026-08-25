@@ -73,6 +73,18 @@ spring:
             # The container name, not the issuer: nobody's browser takes part in this flow.
             token-uri: ${UKUN_AUTH_TOKEN_URI:http://ukun-auth:9000/oauth2/token}
 
+  # The product image of RF-10 is the only multipart operation of this service, and this is one of the
+  # two layers that limit it: the other is `ukun.gateway.max-body-size` in ukun-gateway, which cuts an
+  # oversized request before it ever arrives. **The two values must stay equal** — defect #17 is
+  # exactly that pair disagreeing (Spring said 10MB, nginx said nothing and therefore 1MB).
+  # max-request-size is the same number and not larger: the request carries one part and nothing else,
+  # so the two limits describe the same thing and a gap between them would only decide which of the
+  # two messages the client gets.
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
   jpa:
     hibernate:
       # `validate`, never `create`/`update`: Hibernate checks the schema Liquibase created and

@@ -112,11 +112,29 @@ public abstract class AbstractIntegrationTest {
     protected static final String ORDERS_DATABASE = "ukun_app_orders";
 
     /**
-     * Schema only, for the employee's stock management (RF-09). It seeds {@code employee} rows, which no
-     * other suite does, and it writes {@code store_stock} for stores it owns — so it would fight the
-     * catalogue's fixture for products and the orders' one for quantities if they shared a database.
+     * Schema only, for the employee's stock management (RF-09). It writes {@code store_stock} for stores
+     * it owns — so it would fight the catalogue's fixture for products and the orders' one for
+     * quantities if they shared a database — and it seeds the {@code employee} rows its tokens resolve
+     * against.
      */
     protected static final String STOCK_DATABASE = "ukun_app_stock";
+
+    /**
+     * Schema only, for the management of employees (RF-11). The other suite that writes {@code employee}
+     * is the stock one, and these two are precisely the pair that must not share a database: this one
+     * <em>counts</em> the staff of a store, so a leftover row of the stock fixture would show up inside
+     * an assertion about who works where.
+     */
+    protected static final String STAFF_DATABASE = "ukun_app_staff";
+
+    /**
+     * Schema only, for the back-office of RF-10 and RF-13. It is the widest fixture of the catalogue
+     * side: it edits and deletes {@code product} and {@code product_type} — which the public catalogue
+     * suite reads and counts — and it seeds a stock line, a cart line and an order line to prove that a
+     * referenced product cannot be deleted. Sharing a database with any of those suites would mean each
+     * one truncating rows the other had just built its assertion on.
+     */
+    protected static final String BACKOFFICE_DATABASE = "ukun_app_backoffice";
 
     /**
      * Connections per application context, against Hikari's default of ten.
@@ -250,6 +268,16 @@ public abstract class AbstractIntegrationTest {
     /** @see #customerToken(UUID) — same reasoning, for the suites that only need the role. */
     protected static String employeeToken(UUID accountId) {
         return employeeToken(accountId, accountId + "@ukun.com");
+    }
+
+    /**
+     * An administrator, which is an employee carrying a flag and not a rank above one (RF-12, ADR-0006)
+     * — so the token holds both roles, exactly as ukun-auth mints it. A token with {@code ADMIN} alone
+     * would pass every {@code /api/admin/**} check while failing the stock endpoints, which is not a
+     * state any real account can be in.
+     */
+    protected static String adminToken(UUID accountId) {
+        return AUTH.validToken(accountId, accountId + "@ukun.com", List.of("EMPLOYEE", "ADMIN"));
     }
 
     protected static String bearer(String token) {

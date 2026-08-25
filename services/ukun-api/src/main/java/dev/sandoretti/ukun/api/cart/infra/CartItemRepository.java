@@ -56,4 +56,18 @@ public interface CartItemRepository extends JpaRepository<CartItem, CartItemId> 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from CartItem item where item.id.customerId = :customerId")
     void deleteByCustomerId(@Param("customerId") Long customerId);
+
+    /**
+     * Cart lines pointing at a product, in anybody's cart — the {@code inCarts} count of the {@code 409
+     * PRODUCT_IN_USE} of RF-10.
+     *
+     * <p><strong>The one method here not scoped to a customer, and the exception proves the rule</strong>
+     * stated above: what makes a cart line reachable only through its owner is that no method
+     * <em>returns</em> one without naming the customer. This returns a count. Nothing about whose cart,
+     * or what is in it, leaves this module — it crosses to {@code catalog} through
+     * {@code ProductReferenceCounter} as a number, which is the shape that lets the delete say "in two
+     * carts" without saying whose.
+     */
+    @Query("select count(item) from CartItem item where item.id.productId = :productId")
+    long countByProductId(@Param("productId") Long productId);
 }

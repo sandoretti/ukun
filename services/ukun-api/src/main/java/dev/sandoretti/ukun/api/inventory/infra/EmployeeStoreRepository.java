@@ -14,14 +14,14 @@ import org.springframework.data.repository.query.Param;
  *
  * <p><strong>This reads a table that belongs to another module, and that is a deliberate, temporary
  * exception.</strong> {@code employee} is owned by {@code staff} ({@code docs/14-modules.md} §1),
- * which is an empty package until issue #45 builds it. The alternative was for this slice to create
- * the first half of {@code staff} — the entity, its repository and a {@code StaffApi} — and for #45 to
- * build the rest on top; that was weighed and the call was to keep the two slices from touching the
- * same package.
+ * which was an empty package when this was written. Issue #45 has since filled it, but the swap did
+ * not come with it: reading through a {@code StaffApi} means declaring {@code inventory → staff}, and
+ * that edge is not in the declared graph of ADR-0017 §1 — which {@code ModulithTest} asserts — so it
+ * is an ADR, not a slice's decision.
  *
  * <p>So the whole of the exception is <em>this file</em>: one native read of two columns, no entity
- * mapped, nothing written. When {@code StaffApi.requireCurrentEmployee()} exists, this class is
- * deleted and {@code EmployeeStoreResolver} calls that instead — a one-line change at a single call
+ * mapped, nothing written. The day that edge is declared, this class is deleted and
+ * {@code EmployeeStoreResolver} calls {@code StaffApi} instead — a one-line change at a single call
  * site, which is the reason the borrowing was confined here rather than spread over the use cases.
  *
  * <p>It extends {@code JpaRepository<StoreStock, Long>} only because Spring Data needs a managed

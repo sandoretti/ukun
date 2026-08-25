@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.util.unit.DataSize;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
@@ -56,6 +59,21 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final String FOREIGN_KEY_VIOLATION = "23503";
 
     private static final String ERRORS = "errors";
+
+    /**
+     * The configured upload limit, so the {@code 413} reports the number this service actually
+     * enforces instead of a constant that could drift from {@code application.yaml}.
+     *
+     * <p>Read as a property and not injected as {@code MultipartProperties}: that bean comes from
+     * {@code MultipartAutoConfiguration}, which the {@code @WebMvcTest} slices of this suite do not
+     * include — and this advice is part of every one of them. A missing property fails at startup, which
+     * is the right moment; a missing bean failed six unrelated slice tests, which is how this was found.
+     */
+    private final DataSize maxFileSize;
+
+    GlobalExceptionHandler(@Value("${spring.servlet.multipart.max-file-size}") DataSize maxFileSize) {
+        this.maxFileSize = maxFileSize;
+    }
 
     /**
      * Any business failure. The advice never asks <em>which</em> exception this is: the code, the
@@ -106,7 +124,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * half is published by Spring Security itself and listened to in the {@code identity} module
      * ({@code docs/11-observabilidad-y-logging.md} §3); emitting it here as well would double every
      * denial in the audit. The {@code FOREIGN_RESOURCE} half — "this store is not yours" — is emitted
-     * by the use case that decides it, {@code inventory}'s {@code EmployeeStoreResolver} in v0.7,
+     * by the use case that decides it, through {@code identity}'s {@code AccessDenied},
      * because by the time the exception reaches here the two values that make the event worth having
      * (the store asked for, the store the employee works in) are gone, and an {@code AccessDeniedException}
      * from a role rule is indistinguishable from one raised by a domain check.
@@ -222,6 +240,33 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .toList();
 
         return handleExceptionInternal(exception, validationBody(errors), headers, status, request);
+    }
+
+    /**
+     * An upload over {@code spring.servlet.multipart.max-file-size} — the product image of RF-10, the
+     * only multipart operation of this service.
+     *
+     * <p>The base class already answers {@code 413} for it. What this override adds is the
+     * {@code maxBytes} the registry declares, read from the configured limit rather than from
+     * {@code exception.getMaxUploadSize()}: the container reports the limit it enforced, which is the
+     * request-level one when Tomcat is the layer that cut the request, and answering with a number the
+     * configuration does not contain is how a client ends up retrying at a size that fails again.
+     *
+     * <p>The same body may come from the gateway instead, which cuts oversized requests before they
+     * reach this service ({@code docs/08-identidad-y-seguridad.md} §9). Both carry the same limit and
+     * the same shape on purpose — that agreement is what defect #17 was.
+     */
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+            MaxUploadSizeExceededException exception,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+
+        ProblemDetail body = ProblemDetails.of(ErrorCode.PAYLOAD_TOO_LARGE, "The uploaded file is too large");
+        body.setProperty("maxBytes", maxFileSize.toBytes());
+
+        return handleExceptionInternal(exception, body, headers, ErrorCode.PAYLOAD_TOO_LARGE.status(), request);
     }
 
     /**

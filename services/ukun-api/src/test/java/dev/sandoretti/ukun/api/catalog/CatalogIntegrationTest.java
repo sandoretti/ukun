@@ -1,9 +1,7 @@
 package dev.sandoretti.ukun.api.catalog;
 
 import dev.sandoretti.ukun.api.AbstractIntegrationTest;
-import dev.sandoretti.ukun.api.catalog.domain.ProductType;
 import jakarta.persistence.EntityManager;
-import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,20 +58,7 @@ abstract class CatalogIntegrationTest extends AbstractIntegrationTest {
     /** Persisted in a transaction of its own that commits before any request is made. */
     @BeforeEach
     void seedTheCatalogue() {
-        ProductType sofas = ProductMother.type("Sofás");
-        ProductType beds = ProductMother.type("Camas");
-        ProductType tables = ProductMother.type("Mesas");
-
-        inATransaction(() -> {
-            List.of(sofas, beds, tables).forEach(entityManager::persist);
-            List.of(
-                            ProductMother.leatherSofa(sofas),
-                            ProductMother.bunkBed(beds),
-                            ProductMother.coffeeTable(tables),
-                            ProductMother.floorLamp(tables),
-                            ProductMother.discontinuedChair(tables))
-                    .forEach(entityManager::persist);
-        });
+        inATransaction(() -> ProductMother.demoCatalogue().forEach(entityManager::persist));
     }
 
     /** Ordered truncation rather than {@code @DirtiesContext}, per the `testing` skill. */

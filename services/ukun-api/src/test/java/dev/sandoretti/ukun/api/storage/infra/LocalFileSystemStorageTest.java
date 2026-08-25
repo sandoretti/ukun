@@ -1,9 +1,11 @@
 package dev.sandoretti.ukun.api.storage.infra;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sandoretti.ukun.api.storage.application.StorageProperties;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -128,6 +130,97 @@ class LocalFileSystemStorageTest {
         LocalFileSystemStorage unmounted = new LocalFileSystemStorage(propertiesFor(base.resolve("never-mounted")));
 
         assertThat(unmounted.load("mesa-madera.jpg")).isEmpty();
+    }
+
+    /**
+     * The write half (RF-10). The key is the adapter's to invent — a UUID plus the extension the caller
+     * derived from the file's real content — so nothing the client sent survives into the name and there
+     * is no traversal left to sanitise.
+     */
+    @Test
+    @DisplayName("a stored file gets a generated key, never the caller's name")
+    void shouldStoreUnderAGeneratedKey() throws IOException {
+        String key = storage.store(IMAGE_BYTES, "png");
+
+        assertThat(key)
+                .endsWith(".png")
+                .doesNotContain("/")
+                .hasSize("00000000-0000-0000-0000-000000000000.png".length());
+        assertThat(Files.readAllBytes(root.resolve(key))).isEqualTo(IMAGE_BYTES);
+    }
+
+    /**
+     * Two uploads never collide and never overwrite: the second one is a new object, which is what lets
+     * the use case replace an image by writing first and deleting afterwards.
+     */
+    @Test
+    @DisplayName("storing twice writes two objects")
+    void shouldNeverOverwrite() {
+        String first = storage.store(IMAGE_BYTES, "png");
+        String second = storage.store(IMAGE_BYTES, "png");
+
+        assertThat(first).isNotEqualTo(second);
+        assertThat(root.resolve(first)).exists();
+        assertThat(root.resolve(second)).exists();
+    }
+
+    /** The directory of the bind mount may not be there yet on a fresh checkout. */
+    @Test
+    @DisplayName("storing creates the root if it is missing")
+    void shouldCreateTheRootOnDemand() {
+        Path missing = base.resolve("not-yet");
+        LocalFileSystemStorage fresh = new LocalFileSystemStorage(propertiesFor(missing));
+
+        String key = fresh.store(IMAGE_BYTES, "webp");
+
+        assertThat(missing.resolve(key)).exists();
+    }
+
+    /**
+     * A failed write is loud, unlike a failed read: the caller is about to point {@code product.image_key}
+     * at this key, and a row pointing at bytes that were never written is worse than a failed upload.
+     */
+    @Test
+    @DisplayName("a root that cannot be created fails the call instead of pretending")
+    void shouldFailWhenItCannotWrite() throws IOException {
+        Path file = base.resolve("a-file-not-a-directory");
+        Files.write(file, IMAGE_BYTES);
+        LocalFileSystemStorage broken = new LocalFileSystemStorage(propertiesFor(file));
+
+        assertThatThrownBy(() -> broken.store(IMAGE_BYTES, "png")).isInstanceOf(UncheckedIOException.class);
+    }
+
+    @Test
+    @DisplayName("deleting removes the object and says so")
+    void shouldDeleteAStoredFile() {
+        assertThat(storage.delete("mesa-madera.jpg")).isTrue();
+        assertThat(root.resolve("mesa-madera.jpg")).doesNotExist();
+    }
+
+    /**
+     * Both "there was nothing" and "it could not be removed" answer {@code false}, because the caller
+     * treats them the same: deleting the old object is compensation for a write that already succeeded.
+     */
+    @Test
+    @DisplayName("deleting what is not there is not a failure")
+    void shouldNotFailDeletingAMissingFile() {
+        assertThat(storage.delete("no-existe.jpg")).isFalse();
+    }
+
+    /**
+     * The key travelled through the database, but it is still validated: a deletion that could name a
+     * parent directory would be a worse version of the traversal the read half refuses.
+     */
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"../outside.jpg", "sub/dir.jpg", ".hidden"})
+    @DisplayName("a malformed key deletes nothing")
+    void shouldNotDeleteThroughAMalformedKey(String key) throws IOException {
+        Path outside = base.resolve("outside.jpg");
+        Files.write(outside, IMAGE_BYTES);
+
+        assertThat(storage.delete(key)).isFalse();
+        assertThat(outside).exists();
     }
 
     private static StorageProperties propertiesFor(Path localRoot) {

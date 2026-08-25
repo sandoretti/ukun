@@ -117,6 +117,17 @@ El caso ya resuelto es `catalog` ↔ `inventory` (ADR-0017 §3): se rompe eligie
 2. El módulo consumidor declara la dependencia; el otro se queda limpio.
 3. Si eso obliga a que el frontend haga dos llamadas donde antes hubiera hecho una, se documenta como cambio de contrato **antes** de congelar el OpenAPI si el ciclo se descubre en v0.1-v0.2, o como un ADR si se descubre más tarde y ya hay contrato en producción.
 
+### Cuando el que necesita el dato es el módulo del que ya dependen todos
+
+El caso de v0.7 (RF-10, borrado de producto) no encaja en los tres pasos de arriba, y por eso está escrito aparte. `DeleteProductUseCase` vive en `catalog` y tiene que contar filas de `order_line`, `store_stock` y `cart_item` para responder `409 PRODUCT_IN_USE` diciendo **dónde** están las referencias. Aquí el consumidor natural del caso de uso es `catalog`, pero declarar `catalog → inventory/cart/orders` cerraría exactamente el ciclo que ADR-0017 §3 rompió eligiendo el sentido contrario.
+
+**Se invierte la dependencia en vez de añadirla.** `catalog` publica lo que necesita saber (`ProductReferenceCounter`, `ProductReferenceKind`), cada dueño de tabla lo implementa sobre la suya, y Spring le entrega las implementaciones al caso de uso. Todas las flechas siguen apuntando a `catalog`, el grafo declarado de ADR-0017 §1 no cambia y `verify()` no ve nada nuevo — que es la comprobación de que esto resuelve el problema en vez de reformularlo.
+
+Dos propiedades que hacen que la inversión no se degrade con el tiempo:
+
+- Lo que cruza la frontera es un **número**, nunca una fila: `cart` responde "en dos carritos" sin decir de quién, y su repositorio mantiene la regla de que ninguna línea de carrito es alcanzable sin nombrar a su dueño.
+- El agregador (`ProductReferences`) **falla al arrancar** si algún `ProductReferenceKind` se queda sin implementación. Un módulo que dejara de registrar la suya haría el borrado silenciosamente más permisivo, y la base de datos lo rechazaría después con un `23503` pelado mientras la respuesta afirmaba que no hay referencias.
+
 ## 6. Actuator de módulos
 
 `management.endpoints.web.exposure.include: health,modulith` solo en el perfil `dev` (mismo criterio que springdoc/Swagger UI, `06-entorno-local-tilt.md`) — expone la estructura de módulos y sus dependencias en `/actuator/modulith`, útil para depurar un `verify()` que falla sin tener que leer el mensaje de excepción completo. Requiere la dependencia `spring-modulith-actuator` en alcance `runtime`.

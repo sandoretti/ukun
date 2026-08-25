@@ -214,7 +214,7 @@ Aquí entra también la tabla `audit_log` en uso (`11-observabilidad-y-logging.m
 
 ### v1.0 — Endurecimiento
 
-Sin funcionalidad nueva. CI (build + tests + check de deriva de OpenAPI + escaneo de dependencias), observabilidad (Actuator + Micrometer + OTLP), rate limiting en el gateway, accesibilidad y estados vacío/carga/error en React, despliegue en el destino elegido tras abandonar Azure, `docker-compose-azure.yml` borrado, documentación y ADRs al día.
+Sin funcionalidad nueva. CI (build + tests + check de deriva de OpenAPI + escaneo de dependencias), observabilidad (Actuator + Micrometer + OTLP), rate limiting en el gateway, accesibilidad y estados vacío/carga/error en React, despliegue en **Azure Container Apps** con infraestructura efímera descrita en Bicep (ADR-0023 — sustituye al despliegue Azure del legacy, no lo recupera), `docker-compose-azure.yml` borrado, documentación y ADRs al día.
 
 ### v1.1+ / v2.0 — Post-paridad
 *Ya no es refactor, es evolución de producto.*

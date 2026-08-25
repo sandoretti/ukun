@@ -46,6 +46,28 @@ public interface ProductMapper {
     ProductDetailResponse toDetail(Product product);
 
     /**
+     * The back-office shape (RF-10): the detail plus the management state the public reads hide.
+     *
+     * <p>The three explicit {@code @Mapping}s are the same three as above, repeated for the same reason
+     * — annotations are not inherited between methods of an interface, and {@code unmappedTargetPolicy =
+     * ERROR} makes a forgotten one a compile error instead of a {@code null} in a response.
+     * {@code createdAt} and {@code updatedAt} map by name, which is precisely what that policy is there
+     * to keep honest.
+     *
+     * <p>The fourth is {@code isActive}, and it is the one place where the two sides of the same word
+     * disagree: the entity's field is {@code isActive} but its Lombok accessor is {@code isActive()}, so
+     * the JavaBeans property is {@code active} — while the contract names the JSON field
+     * {@code isActive}, which is what the record component has to be called. Mapping it by hand is what
+     * keeps the response matching the frozen document; without it the build fails, which is the outcome
+     * this policy is for.
+     */
+    @Mapping(target = "typeId", source = "productType.id")
+    @Mapping(target = "typeName", source = "productType.name")
+    @Mapping(target = "imageUrl", source = "imageKey", qualifiedByName = "toImageUrl")
+    @Mapping(target = "isActive", source = "active")
+    AdminProductResponse toAdminResponse(Product product);
+
+    /**
      * The typeahead row. It maps {@code imageUrl} and nothing about the type, which is the whole point:
      * touching {@code productType} here would fetch an association the response does not carry, on the
      * one endpoint that runs on every keystroke.

@@ -16,10 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
  * and a partial profile is never a state the compensation has to reason about. The cascade from
  * {@link Customer} is what expresses it as a single {@code save} instead of three ordered ones.
  *
- * <p>It is a collaborator of {@link SignupService} rather than a method of it for a reason the saga
- * makes concrete: the orchestrator must <em>not</em> run in a transaction, because it makes two HTTP
- * calls to another service, and holding a database connection open across a network round trip is how
- * a pool gets exhausted by one slow dependency. Keeping the transactional part in its own bean is what
+ * <p>It is a bean of its own, handed to the orchestrator as its
+ * {@link dev.sandoretti.ukun.api.identity.LocalProfileWriter}, for a reason the saga makes concrete:
+ * the orchestrator must <em>not</em> run in a transaction, because it makes two HTTP calls to another
+ * service, and holding a database connection open across a network round trip is how a pool gets
+ * exhausted by one slow dependency. Keeping the transactional part in a separate bean is also what
  * makes the proxy apply — a private method calling itself would silently get no transaction at all.
  */
 @Component
