@@ -1,32 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { http } from '../../../shared/api/http';
+import type { components } from '../../../types/api';
 
 /**
  * Which store the employee behind this session works in — the one thing every screen of this feature
  * needs before it can ask anything, because the four stock routes carry `{storeId}` in the path.
  *
- * **This type is written by hand, on purpose, and this is the only file that does it.**
- * `GET /api/me/employment` is agreed but not yet in `docs/api/openapi/ukun-api.yaml`, so
- * `openapi-typescript` does not generate it. The day the contract carries it, this becomes one line:
- *
- * ```ts
- * export type Employment = components['schemas']['Employment'];
- * ```
- *
- * and no other file changes. It is an explicit exception to the rule that types come from the
- * contract (skill `react-web`, rule 7), taken so the screens could be built while the contract
- * change is done elsewhere — not a licence to hand-write the next one.
- *
  * It is a resource of its own rather than a field on `CurrentUser` because `/api/me` is served by the
- * `customers` module and the employee's store lives in `inventory`/`staff`: adding it there would
- * make `customers` depend on employee data, which `ApplicationModules.verify()` checks (ADR-0017).
+ * `customers` module and the employee's store lives in `staff`: adding it there would make
+ * `customers` depend on employee data, which `ApplicationModules.verify()` checks (ADR-0017).
  */
-export type Employment = {
-  employeeId: number;
-  storeId: number;
-  storeName: string;
-};
+export type Employment = components['schemas']['Employment'];
 
 export const employmentKeys = {
   all: ['employment'] as const,
