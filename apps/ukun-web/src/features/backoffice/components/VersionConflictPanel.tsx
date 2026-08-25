@@ -57,11 +57,14 @@ export function VersionConflictPanel({
         <dd className="col-5 text-end text-tabular-nums fw-semibold mb-0">{yourQuantity}</dd>
       </dl>
 
+      {/* Un `div` y no un `p`: el `Spinner` de react-bootstrap renderiza un `div`, y un `div` dentro
+          de un `p` es HTML inválido — el parser del navegador cierra el párrafo antes del spinner y
+          React lo avisa como error de anidamiento. Se vio en el navegador, no en los tests. */}
       {isBusy && (
-        <p className="d-flex align-items-center gap-2 text-body-secondary">
+        <div className="d-flex align-items-center gap-2 text-body-secondary mb-3">
           <Spinner animation="border" size="sm" />
           {t('edit.conflict.reloading')}
-        </p>
+        </div>
       )}
 
       <div className="d-flex flex-wrap gap-2">
