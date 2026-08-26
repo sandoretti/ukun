@@ -100,5 +100,143 @@
     "sku": "A SKU is 3 to 32 characters: capitals, digits and hyphens.",
     "skuNotFound": "There is no active product with that SKU. It may not exist, or it may be discontinued.",
     "quantity": "Units are a whole number of 0 or more."
+  },
+  "admin": {
+    "title": "Administration",
+    "lead": "What only an administrator account can do.",
+    "products": {
+      "title": "Products",
+      "body": "The global catalog: create, edit, photograph, discontinue and delete."
+    }
+  },
+  "products": {
+    "title": "Products",
+    "lead": "The catalog is global and belongs to no store. Discontinued products show up here too.",
+    "add": "New product",
+    "results_one": "{{count}} product",
+    "results_other": "{{count}} products",
+    "pagination": "Catalog pagination",
+    "filters": {
+      "title": "Filter and sort",
+      "q": "Product name",
+      "qHint": "Accents and capitals do not matter.",
+      "sku": "SKU",
+      "skuHint": "Exact match. For example, ABC-123.",
+      "type": "Type",
+      "anyType": "Any type",
+      "status": "Status",
+      "statusHint": "A discontinued product only shows up if you ask for it here.",
+      "sort": "Sort by",
+      "clear": "Clear filters"
+    },
+    "statusFilter": {
+      "ACTIVE": "In the catalog",
+      "DISCONTINUED": "Discontinued",
+      "ALL": "All"
+    },
+    "status": {
+      "ACTIVE": "In the catalog",
+      "DISCONTINUED": "Discontinued"
+    },
+    "sort": {
+      "NAME_ASC": "Name (A-Z)",
+      "NAME_DESC": "Name (Z-A)",
+      "PRICE_ASC": "Price (low to high)",
+      "PRICE_DESC": "Price (high to low)",
+      "UPDATED_DESC": "Recently changed first"
+    },
+    "empty": {
+      "none": "There are no products in the catalog yet.",
+      "filtered": "No product matches the search."
+    },
+    "table": {
+      "caption": "Catalog products",
+      "photo": "Photo",
+      "sku": "SKU",
+      "name": "Product",
+      "type": "Type",
+      "price": "Price",
+      "status": "Status",
+      "actions": "Actions",
+      "manage": "Manage"
+    },
+    "form": {
+      "sku": "SKU",
+      "skuHint": "3 to 32 characters: capitals, digits and hyphens. It is set now and never changed.",
+      "skuFixed": "The SKU cannot be edited: it is the identifier printed on the label. Changing it would mean creating another product.",
+      "name": "Name",
+      "description": "Description",
+      "descriptionHint": "Free text. It is what the customer reads on the product page.",
+      "price": "Price",
+      "priceHint": "In euros, two decimals at most. For example, 399.99.",
+      "type": "Type",
+      "typeHint": "Types are managed separately.",
+      "typePlaceholder": "Pick a type"
+    },
+    "new": {
+      "title": "New product",
+      "lead": "The product is born in the catalog and without a photo. The photo is uploaded afterwards, on its own page.",
+      "back": "Back to the catalog",
+      "submit": "Create product",
+      "duplicate": {
+        "title": "That SKU belongs to another product",
+        "body": "«{{sku}}» is already taken. A SKU belongs to one product for life, even if that product is discontinued.",
+        "link": "See which product has it"
+      }
+    },
+    "sheet": {
+      "back": "Back to the catalog",
+      "gone": "That product no longer exists.",
+      "details": "Product details",
+      "save": "Save changes",
+      "saved": "Changes saved."
+    },
+    "image": {
+      "title": "Photo",
+      "description": "Optional, and apart from the rest of the form: it is uploaded and removed on its own.",
+      "current": "Current photo",
+      "preview": "Preview",
+      "previewAlt": "Preview of the chosen photo",
+      "alt": "Photo of {{product}}",
+      "pick": "Choose a photo",
+      "rules": "JPEG, PNG or WebP, up to 5 MB. The new one replaces the previous one.",
+      "upload": "Upload photo",
+      "remove": "Remove photo",
+      "rejected": {
+        "type": "That file is not a JPEG, a PNG or a WebP.",
+        "size": "That file is over 5 MB."
+      }
+    },
+    "catalog": {
+      "title": "Catalog",
+      "activeBody": "Discontinuing deletes nothing: the product leaves the catalog and the stock screens, its orders stay as they are, and you can put it back whenever you want.",
+      "discontinuedBody": "It is out of the catalog. Reactivating it brings it back to the shop and to the stock screens.",
+      "discontinue": "Discontinue",
+      "reactivate": "Reactivate"
+    },
+    "delete": {
+      "section": "Delete for good",
+      "sectionBody": "Only a product that has never been used can be deleted. If it is already in an order, in a store's stock or in a cart, the answer is to discontinue it.",
+      "open": "Delete product",
+      "title": "Delete product",
+      "body": "You are about to delete «{{product}}» and its photo. This cannot be undone.",
+      "notDiscontinue": "This is not the same as discontinuing: discontinuing keeps the product and its history, and can be reversed.",
+      "confirm": "Delete for good",
+      "cancel": "Cancel",
+      "close": "Close",
+      "inUse": {
+        "title": "This product cannot be deleted",
+        "wayOut": "The way out is to discontinue it: it stops being sold and stops showing up in stock, and everything already pointing at it stays as it is.",
+        "discontinue": "Discontinue instead"
+      }
+    },
+    "validation": {
+      "name": "The name is required and 255 characters at most.",
+      "description": "The description is required.",
+      "price": "The price is an amount in euros with two decimals at most. For example, 399.99.",
+      "typeId": "Pick a product type.",
+      "skuTaken": "That SKU belongs to another product.",
+      "typeGone": "That type no longer exists. Pick another one."
+    }
   }
 }

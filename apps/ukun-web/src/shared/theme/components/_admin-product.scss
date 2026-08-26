@@ -1,0 +1,19 @@
+@use "../bootstrap";
+
+// --- Foto de producto en el back-office -------------------------------------------------------------
+
+// El marco de la foto en la ficha de administración (RF-10): el que enseña la que hay guardada y el
+// que enseña la que se acaba de elegir y todavía no se ha subido. Los dos llevan la misma clase a
+// propósito — comparar dos imágenes de tamaños distintos no es compararlas.
+//
+// Vive en el tema y no dentro de la pantalla por la regla de siempre (ADR-0002): ni un color ni una
+// medida hardcodeados dentro de un componente. Es más grande que `.product-thumb` porque aquí la foto
+// es el objeto de la decisión y no el acompañamiento de un nombre.
+.admin-product-photo {
+  display: block;
+  width: 10rem;
+  height: 10rem;
+  object-fit: cover;
+  border-radius: bootstrap.$border-radius;
+  background-color: var(--bs-tertiary-bg);
+}

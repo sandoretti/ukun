@@ -1,5 +1,6 @@
 import { setupServer } from 'msw/node';
 
+import { adminProductHandlers } from './adminProductHandlers';
 import { cartHandlers } from './cartHandlers';
 import { catalogHandlers } from './catalogHandlers';
 import { orderHandlers } from './orderHandlers';
@@ -26,4 +27,5 @@ export const server = setupServer(
   ...orderHandlers,
   ...signupHandlers,
   ...stockHandlers,
+  ...adminProductHandlers,
 );

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Dropdown } from 'react-bootstrap';
 
 import { useAuth } from '../../../shared/hooks/useAuth';
-import { BACKOFFICE_STOCK_PATH, PROFILE_PATH } from '../../../shared/routes';
+import { ADMIN_PATH, BACKOFFICE_STOCK_PATH, PROFILE_PATH } from '../../../shared/routes';
 import { ACCOUNT_PATH, SIGN_UP_PATH } from '../routes';
 import { SignOutForm } from './SignOutForm';
 
@@ -69,6 +69,16 @@ export function SessionMenu() {
         {isStaff && (
           <Dropdown.Item as={Link} to={BACKOFFICE_STOCK_PATH}>
             {t('account.backoffice')}
+          </Dropdown.Item>
+        )}
+
+        {/* La administración es otra entrada y no un apartado de la anterior: `/backoffice/*` es de
+            cualquier empleado y `/admin/*` es lo que habla con `/api/admin/**` (ADR-0020), así que
+            son dos destinos con dos condiciones distintas. Ocultarla sigue siendo UX — la barrera
+            está en el gateway y otra vez en ukun-api. */}
+        {hasRole('ADMIN') && (
+          <Dropdown.Item as={Link} to={ADMIN_PATH}>
+            {t('account.admin')}
           </Dropdown.Item>
         )}
 
