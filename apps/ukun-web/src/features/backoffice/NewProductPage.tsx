@@ -3,7 +3,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Button, Container, Form } from 'react-bootstrap';
+import { Alert, Button, Container } from 'react-bootstrap';
 
 import { NOT_FOUND, toProblem } from '../../shared/api/http';
 import { applyServerErrors } from '../../shared/forms/applyServerErrors';
@@ -14,15 +14,13 @@ import { TextField } from '../../shared/ui/TextField';
 import {
   createProductFormSchema,
   FIELD_MESSAGE_KEYS,
+  SKU_MAX,
   toCreateRequest,
   type CreateProductFormValues,
 } from './adminProductSchema';
 import { adminProductPath, adminProductsPath, ADMIN_PRODUCTS_PATH } from './adminRoutes';
 import { useCreateProduct } from './api/adminProductQueries';
-import { ProductFields } from './components/ProductFields';
-
-/** The SKU as long as the contract allows it (`Sku`, 3–32), so the browser stops before the server does. */
-const SKU_MAX = 32;
+import { ProductForm } from './components/ProductForm';
 
 /**
  * Creating a product (RF-10) at `/admin/products/new`.
@@ -40,6 +38,10 @@ const SKU_MAX = 32;
  * The SKU already in use is the one failure that gets a way out rather than a sentence: it leads to
  * the listing filtered by that SKU with `status=ALL`, because the product holding it may well be a
  * discontinued one — a SKU belongs to one product for life, reused or not.
+ *
+ * It is the very same `ProductForm` as the sheet it leads to, and the only thing it swaps is the
+ * identity: here the SKU is typed in, there it is shown and refused. Two moments of one job, so
+ * looking alike is not a coincidence to maintain — it is one component.
  */
 export default function NewProductPage() {
   const { t } = useTranslation('backoffice');
@@ -87,51 +89,66 @@ export default function NewProductPage() {
   });
 
   return (
-    <Container className="py-5">
-      <div className="col-lg-8 col-xl-6">
-        <Link to={ADMIN_PRODUCTS_PATH} className="d-inline-flex align-items-center gap-1 mb-3">
-          <Icon name="arrow_back" size="sm" />
-          {t('products.new.back')}
-        </Link>
+    <Container className="admin-form py-5">
+      <div className="admin-form__column">
+        <header className="mb-4">
+          <Link to={ADMIN_PRODUCTS_PATH} className="d-inline-flex align-items-center gap-1 mb-3">
+            <Icon name="arrow_back" size="sm" />
+            {t('products.new.back')}
+          </Link>
 
-        <h1 className="h2 mb-2">{t('products.new.title')}</h1>
-        <p className="text-body-secondary mb-4">{t('products.new.lead')}</p>
+          <p className="overline mb-1">{t('products.sheet.eyebrow')}</p>
+          <h1 className="h2 mb-2">{t('products.new.title')}</h1>
+          <p className="text-body-secondary mb-0">{t('products.new.lead')}</p>
+        </header>
+
+        <hr className="my-0" />
 
         <FormProvider {...form}>
-          <Form noValidate onSubmit={(event) => void onSubmit(event)}>
-            <TextField
-              label={t('products.form.sku')}
-              hint={t('products.form.skuHint')}
-              error={messageOf(errors.sku)}
-              type="text"
-              maxLength={SKU_MAX}
-              autoComplete="off"
-              autoFocus
-              {...register('sku')}
-            />
-
-            <ProductFields />
-
-            <div aria-live="polite">
-              {duplicateSku !== null && (
-                <Alert variant="warning">
-                  <h2 className="h6">{t('products.new.duplicate.title')}</h2>
-                  <p>{t('products.new.duplicate.body', { sku: duplicateSku })}</p>
-                  <Link
-                    to={adminProductsPath({ sku: duplicateSku, status: 'ALL' })}
-                    className="alert-link"
-                  >
-                    {t('products.new.duplicate.link')}
-                  </Link>
-                </Alert>
-              )}
-              {formError !== null && <ErrorState error={formError} />}
-            </div>
-
-            <Button type="submit" variant="primary" disabled={create.isPending}>
-              {t('products.new.submit')}
-            </Button>
-          </Form>
+          <ProductForm
+            description={t('products.new.detailsBody')}
+            onSubmit={() => void onSubmit()}
+            identity={
+              <TextField
+                label={t('products.form.sku')}
+                hint={t('products.form.skuHint')}
+                error={messageOf(errors.sku)}
+                type="text"
+                maxLength={SKU_MAX}
+                autoComplete="off"
+                autoFocus
+                {...register('sku')}
+              />
+            }
+            feedback={
+              <>
+                {duplicateSku !== null && (
+                  <Alert variant="warning">
+                    <h3 className="h6">{t('products.new.duplicate.title')}</h3>
+                    <p>{t('products.new.duplicate.body', { sku: duplicateSku })}</p>
+                    <Link
+                      to={adminProductsPath({ sku: duplicateSku, status: 'ALL' })}
+                      className="alert-link"
+                    >
+                      {t('products.new.duplicate.link')}
+                    </Link>
+                  </Alert>
+                )}
+                {formError !== null && <ErrorState error={formError} />}
+              </>
+            }
+            status={t('products.new.status')}
+            actions={
+              <>
+                <Link to={ADMIN_PRODUCTS_PATH} className="btn btn-light">
+                  {t('products.new.cancel')}
+                </Link>
+                <Button type="submit" variant="primary" disabled={create.isPending}>
+                  {t('products.new.submit')}
+                </Button>
+              </>
+            }
+          />
         </FormProvider>
       </div>
     </Container>

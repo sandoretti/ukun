@@ -69,22 +69,17 @@ export default function AdminProductsPage() {
       >
         {(rows) => (
           <>
-            <Table hover responsive className="align-middle">
+            <Table hover responsive className="admin-table align-middle">
               <caption className="visually-hidden">{t('products.table.caption')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">
-                    <span className="visually-hidden">{t('products.table.photo')}</span>
-                  </th>
-                  <th scope="col">{t('products.table.sku')}</th>
+                  {/* The photo, the name and the SKU are one column: three ways of naming the same
+                      product, read together instead of spread across the table. */}
                   <th scope="col">{t('products.table.name')}</th>
                   <th scope="col">{t('products.table.type')}</th>
-                  <th scope="col" className="text-end">
-                    {t('products.table.price')}
-                  </th>
                   <th scope="col">{t('products.table.status')}</th>
                   <th scope="col" className="text-end">
-                    {t('products.table.actions')}
+                    {t('products.table.price')}
                   </th>
                 </tr>
               </thead>

@@ -106,6 +106,38 @@ describe('AdminProductPage', () => {
     });
   });
 
+  it('shows the type the product already has, and not an empty picker', async () => {
+    server.use(...adminProductState({ products: [sofa] }).handlers);
+
+    renderSheet();
+
+    // The closed list arrives after the product does. A control that ignores that shows «pick a type»
+    // over a product that has one, and the first save would look like a change nobody made.
+    const type = (await screen.findByLabelText('Tipo')) as HTMLSelectElement;
+    await waitFor(() => expect(type.value).toBe(String(sofa.typeId)));
+  });
+
+  it('says whether there is anything to save, and takes it back', async () => {
+    const user = userEvent.setup();
+    const state = adminProductState({ products: [sofa] });
+    server.use(...state.handlers);
+
+    renderSheet();
+
+    const name = await screen.findByLabelText('Nombre');
+    expect(screen.getByText('Sin cambios')).toBeDefined();
+
+    await user.type(name, ' curtido');
+    expect(await screen.findByText('Sin guardar')).toBeDefined();
+
+    await user.click(screen.getByRole('button', { name: 'Descartar' }));
+
+    // Back to the product as the server describes it, and nothing was sent to say so.
+    expect((name as HTMLInputElement).value).toBe('Sofá de cuero');
+    expect(await screen.findByText('Sin cambios')).toBeDefined();
+    expect(state.bodies).toEqual([]);
+  });
+
   it('discontinues without deleting, and offers the way back', async () => {
     const user = userEvent.setup();
     const state = adminProductState({ products: [sofa] });

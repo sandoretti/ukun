@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { MONEY_PATTERN } from '../../shared/format/money';
 import type { FieldMessageKeys } from '../../shared/forms/applyServerErrors';
 import type { CreateProductRequest, UpdateProductRequest } from './api/adminProductKeys';
 import { skuSchema } from './stockSchema';
@@ -26,18 +27,15 @@ export const FIELD_MESSAGE_KEYS = {
   typeId: 'products.validation.typeId',
 } as const satisfies FieldMessageKeys;
 
-/** As long as the column, and as long as the contract says (`CreateProductRequest.name`). */
-const NAME_MAX = 255;
-
 /**
- * The `pattern` the contract puts on `Money` (`ukun-api.yaml`, schema `Money`): up to eight whole
- * digits and at most two decimals, as an **exact decimal string**.
- *
- * It is checked here so a mistyped price is rejected before it becomes a request the server would
- * only answer with a `400`. And it never becomes a `number` on the way: money is a string end to end
- * (defect #5), so what the field holds is what travels.
+ * As long as the contract says (`CreateProductRequest.name`, and `@Size(max = 255)` on the record
+ * behind it). Exported because the field stops the typing at the same number: a rule declared once and
+ * read by both the schema that rejects and the control that prevents.
  */
-const MONEY_PATTERN = /^\d{1,8}(\.\d{1,2})?$/u;
+export const NAME_MAX = 255;
+
+/** The SKU's own ceiling, from the same `^[A-Z0-9-]{3,32}$` the schema below checks against. */
+export const SKU_MAX = 32;
 
 const nameSchema = z.string().trim().min(1, FIELD_MESSAGE_KEYS.name).max(NAME_MAX, FIELD_MESSAGE_KEYS.name);
 
@@ -45,8 +43,11 @@ const nameSchema = z.string().trim().min(1, FIELD_MESSAGE_KEYS.name).max(NAME_MA
 const descriptionSchema = z.string().trim().min(1, FIELD_MESSAGE_KEYS.description);
 
 /**
- * A price as the contract takes it, with the comma a Spanish keyboard produces accepted as the
- * decimal separator it is meant to be. Typing `399,99` is not a mistake to correct with an error
+ * A price as the contract takes it — `MONEY_PATTERN`, the same shape the catalogue's filters check —
+ * with the comma a Spanish keyboard produces accepted as the decimal separator it is meant to be.
+ *
+ * It never becomes a `number` on the way: money is a string end to end (defect #5), so what the field
+ * holds is exactly what travels. Typing `399,99` is not a mistake to correct with an error
  * message; it is the same amount written the way half the readers of this screen write it.
  */
 const priceSchema = z
@@ -55,11 +56,16 @@ const priceSchema = z
   .transform((value) => value.replace(',', '.'))
   .pipe(z.string().regex(MONEY_PATTERN, FIELD_MESSAGE_KEYS.price));
 
-/** An existing type from `GET /api/product-types`. An empty `<select>` arrives as `NaN` and is rejected. */
-const typeIdSchema = z
-  .number({ error: FIELD_MESSAGE_KEYS.typeId })
-  .int(FIELD_MESSAGE_KEYS.typeId)
-  .positive(FIELD_MESSAGE_KEYS.typeId);
+/**
+ * An existing type from `GET /api/product-types`. An empty `<select>` arrives as `NaN` and is
+ * rejected there.
+ *
+ * **It checks that it is a whole number and nothing more**, matching the `@NotNull Long` of the
+ * request behind it. Ruling out zero or negatives would be this screen deciding what identifiers the
+ * database is allowed to hand out; whether a type *exists* is the server's answer — a `404` naming
+ * the field — and not something a form can know.
+ */
+const typeIdSchema = z.number({ error: FIELD_MESSAGE_KEYS.typeId }).int(FIELD_MESSAGE_KEYS.typeId);
 
 /**
  * The four fields both forms share. They are the whole of `UpdateProductRequest`, which is not a

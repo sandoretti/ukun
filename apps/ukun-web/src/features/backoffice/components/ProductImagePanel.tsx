@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Button, Form } from 'react-bootstrap';
 
 import { ErrorState } from '../../../shared/ui/ErrorState';
-import { Fieldset } from '../../../shared/ui/Fieldset';
 import { Icon } from '../../../shared/ui/Icon';
 import { ProductImage } from '../../../shared/ui/ProductImage';
 import type { AdminProduct } from '../api/adminProductKeys';
 import { useDeleteProductImage, useUploadProductImage } from '../api/adminProductQueries';
+import { AdminFormSection } from './AdminFormSection';
 
 /** What the contract accepts (`uploadProductImage`), and what the picker offers by default. */
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -112,7 +112,10 @@ export function ProductImagePanel({ product }: ProductImagePanelProps) {
   const isBusy = upload.isPending || remove.isPending;
 
   return (
-    <Fieldset legend={t('products.image.title')} description={t('products.image.description')}>
+    <AdminFormSection
+      title={t('products.image.title')}
+      description={t('products.image.description')}
+    >
       <div className="d-flex flex-wrap align-items-start gap-4 mb-3">
         <figure className="mb-0">
           <figcaption className="form-label d-block mb-1">{t('products.image.current')}</figcaption>
@@ -167,6 +170,6 @@ export function ProductImagePanel({ product }: ProductImagePanelProps) {
           </Button>
         )}
       </div>
-    </Fieldset>
+    </AdminFormSection>
   );
 }

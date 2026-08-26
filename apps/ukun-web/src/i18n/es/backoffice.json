@@ -151,14 +151,10 @@
     },
     "table": {
       "caption": "Productos del catálogo",
-      "photo": "Foto",
-      "sku": "SKU",
       "name": "Producto",
       "type": "Tipo",
       "price": "Precio",
-      "status": "Estado",
-      "actions": "Acciones",
-      "manage": "Gestionar"
+      "status": "Estado"
     },
     "form": {
       "sku": "SKU",
@@ -182,14 +178,27 @@
         "title": "Ese SKU ya es de otro producto",
         "body": "«{{sku}}» ya está en uso. Un SKU es de un producto para siempre, aunque ese producto esté descatalogado.",
         "link": "Ver qué producto lo tiene"
-      }
+      },
+      "detailsBody": "Todo es obligatorio. La foto no: se sube luego, en la ficha.",
+      "cancel": "Cancelar",
+      "status": "Producto nuevo"
     },
     "sheet": {
       "back": "Volver al catálogo",
       "gone": "Ese producto ya no existe.",
       "details": "Datos del producto",
       "save": "Guardar cambios",
-      "saved": "Cambios guardados."
+      "saved": "Cambios guardados.",
+      "eyebrow": "Catálogo",
+      "lead": "Cambia lo que es, cómo se ve y si sigue a la venta.",
+      "detailsBody": "Lo que el cliente ve en la tienda. El SKU no está aquí: se fijó al darlo de alta.",
+      "discard": "Descartar",
+      "status": {
+        "clean": "Sin cambios",
+        "unsaved": "Sin guardar",
+        "saving": "Guardando...",
+        "saved": "Todo guardado"
+      }
     },
     "image": {
       "title": "Foto",
@@ -215,7 +224,7 @@
       "reactivate": "Reactivar"
     },
     "delete": {
-      "section": "Borrar del todo",
+      "section": "Zona peligrosa",
       "sectionBody": "Solo se puede borrar un producto que no se haya usado nunca. Si ya está en un pedido, en el stock de una tienda o en un carrito, lo que toca es descatalogarlo.",
       "open": "Borrar producto",
       "title": "Borrar producto",

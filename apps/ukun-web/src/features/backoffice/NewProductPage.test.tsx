@@ -145,6 +145,20 @@ describe('NewProductPage', () => {
     expect(state.created).toBe(0);
   });
 
+  it('will not create a product with no type: the field is required, like the request behind it', async () => {
+    const user = userEvent.setup();
+    const state = adminProductState();
+    server.use(...state.handlers);
+
+    renderNew();
+    await fillForm(user);
+    await user.selectOptions(screen.getByLabelText('Tipo'), '');
+    await submit(user);
+
+    expect(await screen.findByText('Elige un tipo de producto.')).toBeDefined();
+    expect(state.created).toBe(0);
+  });
+
   it('lands a field the server rejects on that field', async () => {
     const user = userEvent.setup();
     server.use(

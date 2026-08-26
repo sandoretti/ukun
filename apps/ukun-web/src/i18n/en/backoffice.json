@@ -151,14 +151,10 @@
     },
     "table": {
       "caption": "Catalog products",
-      "photo": "Photo",
-      "sku": "SKU",
       "name": "Product",
       "type": "Type",
       "price": "Price",
-      "status": "Status",
-      "actions": "Actions",
-      "manage": "Manage"
+      "status": "Status"
     },
     "form": {
       "sku": "SKU",
@@ -182,14 +178,27 @@
         "title": "That SKU belongs to another product",
         "body": "«{{sku}}» is already taken. A SKU belongs to one product for life, even if that product is discontinued.",
         "link": "See which product has it"
-      }
+      },
+      "detailsBody": "Everything is required. The photo is not: it is uploaded later, on the product page.",
+      "cancel": "Cancel",
+      "status": "New product"
     },
     "sheet": {
       "back": "Back to the catalog",
       "gone": "That product no longer exists.",
       "details": "Product details",
       "save": "Save changes",
-      "saved": "Changes saved."
+      "saved": "Changes saved.",
+      "eyebrow": "Catalog",
+      "lead": "Change what it is, what it looks like, and whether it is still on sale.",
+      "detailsBody": "What the customer sees in the shop. The SKU is not here: it was set when the product was created.",
+      "discard": "Discard",
+      "status": {
+        "clean": "No changes",
+        "unsaved": "Unsaved",
+        "saving": "Saving...",
+        "saved": "All saved"
+      }
     },
     "image": {
       "title": "Photo",
@@ -215,7 +224,7 @@
       "reactivate": "Reactivate"
     },
     "delete": {
-      "section": "Delete for good",
+      "section": "Danger zone",
       "sectionBody": "Only a product that has never been used can be deleted. If it is already in an order, in a store's stock or in a cart, the answer is to discontinue it.",
       "open": "Delete product",
       "title": "Delete product",

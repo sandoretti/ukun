@@ -1,4 +1,5 @@
-import { useFormContext } from 'react-hook-form';
+import type { ChangeEvent } from 'react';
+import { Controller, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { useProductTypes } from '../../../shared/api/productTypes';
@@ -6,10 +7,7 @@ import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
 import { ErrorState } from '../../../shared/ui/ErrorState';
 import { SelectField } from '../../../shared/ui/SelectField';
 import { TextField } from '../../../shared/ui/TextField';
-import type { UpdateProductFormValues } from '../adminProductSchema';
-
-/** As long as the contract allows, so the browser stops before the server has to (`name`, 255). */
-const NAME_MAX = 255;
+import { NAME_MAX, type UpdateProductFormValues } from '../adminProductSchema';
 
 const DESCRIPTION_ROWS = 5;
 
@@ -31,6 +29,7 @@ export function ProductFields() {
   const messageOf = useFieldMessages('backoffice');
   const types = useProductTypes();
   const {
+    control,
     register,
     formState: { errors },
   } = useFormContext<UpdateProductFormValues>();
@@ -67,20 +66,40 @@ export function ProductFields() {
         {...register('price')}
       />
 
-      <SelectField
-        label={t('products.form.type')}
-        hint={t('products.form.typeHint')}
-        error={messageOf(errors.typeId)}
-        disabled={types.isPending}
-        {...register('typeId', { valueAsNumber: true })}
-      >
-        <option value="">{t('products.form.typePlaceholder')}</option>
-        {(types.data ?? []).map((type) => (
-          <option key={type.id} value={type.id}>
-            {type.name}
-          </option>
-        ))}
-      </SelectField>
+      {/* The one controlled field of the form, and not by taste: its options are a read that lands
+          **after** the product does. An uncontrolled `<select>` handed a value whose `<option>` does
+          not exist yet silently falls back to the empty one and never recovers — the sheet of a
+          product that has a type would show «pick a type», and the next save would look like a change
+          nobody made. Controlled, the value is whatever the form state says on every render, so the
+          list arriving is enough. */}
+      <Controller
+        name="typeId"
+        control={control}
+        render={({ field }) => (
+          <SelectField
+            label={t('products.form.type')}
+            hint={t('products.form.typeHint')}
+            error={messageOf(errors.typeId)}
+            disabled={types.isPending}
+            name={field.name}
+            ref={field.ref}
+            onBlur={field.onBlur}
+            value={Number.isFinite(field.value) ? String(field.value) : ''}
+            // Nothing chosen is `NaN` and not `0` or `''`: zero is a perfectly good identifier, and
+            // the schema rejects `NaN` with the sentence this field carries.
+            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+              field.onChange(event.target.value === '' ? Number.NaN : Number(event.target.value))
+            }
+          >
+            <option value="">{t('products.form.typePlaceholder')}</option>
+            {(types.data ?? []).map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.name}
+              </option>
+            ))}
+          </SelectField>
+        )}
+      />
 
       {/* The closed list failing to load is not a field error: there is nothing to correct, and the
           form cannot be completed until it arrives. It is said where the control is. */}

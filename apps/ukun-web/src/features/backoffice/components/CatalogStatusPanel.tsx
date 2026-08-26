@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { Button } from 'react-bootstrap';
 
 import { ErrorState } from '../../../shared/ui/ErrorState';
-import { Fieldset } from '../../../shared/ui/Fieldset';
 import type { AdminProduct } from '../api/adminProductKeys';
 import { useDiscontinueProduct, useReactivateProduct } from '../api/adminProductQueries';
+import { AdminFormSection } from './AdminFormSection';
 
 type CatalogStatusPanelProps = {
   product: AdminProduct;
@@ -29,8 +29,8 @@ export function CatalogStatusPanel({ product }: CatalogStatusPanelProps) {
   const action = product.isActive ? discontinue : reactivate;
 
   return (
-    <Fieldset
-      legend={t('products.catalog.title')}
+    <AdminFormSection
+      title={t('products.catalog.title')}
       description={
         product.isActive ? t('products.catalog.activeBody') : t('products.catalog.discontinuedBody')
       }
@@ -44,6 +44,6 @@ export function CatalogStatusPanel({ product }: CatalogStatusPanelProps) {
       >
         {product.isActive ? t('products.catalog.discontinue') : t('products.catalog.reactivate')}
       </Button>
-    </Fieldset>
+    </AdminFormSection>
   );
 }

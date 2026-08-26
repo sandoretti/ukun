@@ -1,5 +1,6 @@
+import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from 'react-bootstrap';
 
 import { formatMoney } from '../../../shared/format/money';
@@ -14,56 +15,74 @@ type AdminProductRowProps = {
 };
 
 /**
- * One product of the back-office table.
+ * One product of the back-office table. **The whole row opens it**, which is what a table of things
+ * you go into wants: a row that is one destination should not need a column of buttons repeating it.
  *
- * There is a single action, and it is a link: everything that can be done to a product —edit it,
- * photograph it, pull it from the catalog, delete it— happens on its sheet, where each of those has
- * the room to say what it does. A row of four buttons would be four decisions taken with the product
- * reduced to a line of text.
+ * The photo, the name and the SKU share one cell, in two lines. They are three ways of naming the
+ * same product, and reading them together is how somebody with a label in their hand finds the row —
+ * far better than three columns that push the numbers off to the right and make the eye cross the
+ * whole table to check it is on the line it thinks it is.
  *
- * The badge is not decoration either: this listing is the only screen in the app that shows
- * discontinued products (RF-10), so what tells them apart has to be legible at a glance and not only
- * through the `status` filter that brought them here.
+ * The name is still a real `<Link>`, only dressed as plain text. That is deliberate and it is the
+ * part that is easy to lose: a `<tr onClick>` on its own cannot be reached with the keyboard, has no
+ * address to copy, and does not open in a new tab with ctrl-click. The link is what keeps all three;
+ * the row click is the convenience on top.
  */
 export function AdminProductRow({ product }: AdminProductRowProps) {
   const { t } = useTranslation('backoffice');
   const locale = useLocale();
+  const navigate = useNavigate();
+
+  const path = adminProductPath(product.id);
+
+  const open = (event: MouseEvent<HTMLTableRowElement>) => {
+    // The link inside did it already, and doing it twice would leave two entries in the history.
+    if (event.defaultPrevented || (event.target as HTMLElement).closest('a, button')) {
+      return;
+    }
+    // Selecting a SKU to copy it ends in a click too, and that must not take anybody anywhere.
+    if ((window.getSelection()?.toString() ?? '') !== '') {
+      return;
+    }
+
+    void navigate(path);
+  };
 
   return (
-    <tr>
+    <tr onClick={open} className="admin-product-row">
       <td>
-        {/* Decoration: the link beside it already names the product, and repeating the name would
-            have a screen reader read the row twice. The fallback is an icon because at this size the
-            words do not fit. */}
-        <ProductImage
-          imageUrl={product.imageUrl}
-          alt=""
-          className="product-thumb"
-          fallback={<Icon name="image" size="sm" />}
-        />
+        <div className="d-flex align-items-center gap-3">
+          {/* Decoration: the name beside it already says which product this is, and repeating it
+              would have a screen reader read the row twice. The fallback is an icon because at this
+              size the words do not fit. */}
+          <ProductImage
+            imageUrl={product.imageUrl}
+            alt=""
+            className="admin-product-row__thumb"
+            fallback={<Icon name="image" size="sm" />}
+          />
+
+          <div className="min-w-0">
+            <Link to={path} className="admin-product-row__name">
+              {product.name}
+            </Link>
+            <p className="admin-product-row__sku mb-0">{product.sku}</p>
+          </div>
+        </div>
       </td>
-      <td className="font-monospace">{product.sku}</td>
-      <td>
-        <Link to={adminProductPath(product.id)}>{product.name}</Link>
-      </td>
-      <td>{product.typeName}</td>
-      <td className="text-end">{formatMoney(product.price, locale)}</td>
+      <td className="text-body-secondary">{product.typeName}</td>
       <td>
         {product.isActive ? (
-          <Badge bg="success-subtle" text="success-emphasis">
+          <Badge bg="success-subtle" text="success-emphasis" className="fw-normal">
             {t('products.status.ACTIVE')}
           </Badge>
         ) : (
-          <Badge bg="secondary-subtle" text="secondary-emphasis">
+          <Badge bg="secondary-subtle" text="secondary-emphasis" className="fw-normal">
             {t('products.status.DISCONTINUED')}
           </Badge>
         )}
       </td>
-      <td className="text-end">
-        <Link to={adminProductPath(product.id)} className="btn btn-outline-primary btn-sm">
-          {t('products.table.manage')}
-        </Link>
-      </td>
+      <td className="admin-table__price text-end">{formatMoney(product.price, locale)}</td>
     </tr>
   );
 }

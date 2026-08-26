@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import { adminProduct, adminProductsFail, adminProductState } from '../../test/msw/adminProductHandlers';
@@ -47,6 +48,27 @@ describe('AdminProductsPage', () => {
     expect(within(row).getByText('399,99 €')).toBeDefined();
     // The listing is the way in to everything else: the row links to the product's own sheet.
     expect(within(row).getAllByRole('link')[0].getAttribute('href')).toBe('/admin/products/1');
+    // And there is no second control repeating that: the row itself is the destination.
+    expect(within(row).queryByRole('button')).toBeNull();
+  });
+
+  it('opens the product from anywhere in the row, not only from its name', async () => {
+    const user = userEvent.setup();
+    server.use(...adminProductState({ products: catalog }).handlers);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/admin/products" element={<AdminProductsPage />} />
+        <Route path="/admin/products/:id" element={<p data-testid="product-sheet" />} />
+      </Routes>,
+      { route: '/admin/products' },
+    );
+
+    await screen.findByText('Sofá de cuero');
+    // The type cell: text with no link and no button in it, which is the point.
+    await user.click(within(rowOf('Sofá de cuero')).getByText('Sofás'));
+
+    expect(await screen.findByTestId('product-sheet')).toBeDefined();
   });
 
   it('hides the discontinued ones by default and finds them when asked, which is how one is reactivated', async () => {
