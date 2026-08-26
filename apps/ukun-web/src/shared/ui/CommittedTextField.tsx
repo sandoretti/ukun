@@ -25,9 +25,10 @@ type CommittedTextFieldProps = Omit<
  * "clear filters" empty the box without a second copy of the value to keep in sync.
  *
  * It lives in `shared/ui/` because the stock listing and the staff listing both filter this way, and
- * features never import each other. `type="search"` and `autoComplete="off"` are the defaults every
- * caller wanted and can still be overridden; the two handlers cannot, because they are what this
- * component *is*.
+ * features never import each other. `type="search"`, `autoComplete="off"` and the spellchecker being
+ * off are the defaults every caller wanted and can still be overridden — what is typed into a filter
+ * is a surname, an email or a SKU, never prose, and the red underline under all three is noise. The
+ * two handlers cannot be overridden, because they are what this component *is*.
  */
 export function CommittedTextField({ label, value, onCommit, ...field }: CommittedTextFieldProps) {
   const commit = (next: string) => {
@@ -42,6 +43,7 @@ export function CommittedTextField({ label, value, onCommit, ...field }: Committ
       label={label}
       type="search"
       autoComplete="off"
+      spellCheck={false}
       {...field}
       defaultValue={value}
       onBlur={(event: FocusEvent<HTMLInputElement>) => commit(event.target.value)}

@@ -144,6 +144,18 @@ describe('EmployeesPage', () => {
     expect(screen.queryByText(OPERATOR_DETAIL)).toBeNull();
   });
 
+  it('paints a 403 as the denial it is, and not as a screen that never finished loading', async () => {
+    // The account has the role the route asks for and the server still refuses the read — a token
+    // that lost its claim, an employee moved out of the store. It is an answer, so it is painted as
+    // one: the guard is not the barrier and this is where that shows (docs/08 §4).
+    server.use(signedIn([...ADMIN_ROLES]), employeesFail('FORBIDDEN', 403));
+
+    renderEmployees();
+
+    expect(await screen.findByText('Tu cuenta no tiene acceso a esto')).toBeDefined();
+    expect(screen.queryByText(OPERATOR_DETAIL)).toBeNull();
+  });
+
   it('offers no way to edit or delete an employee, because neither exists (RF-11)', async () => {
     server.use(signedIn([...ADMIN_ROLES]), ...employeeState({ employees: staff }).handlers);
 

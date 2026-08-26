@@ -1,9 +1,9 @@
 @use "../bootstrap";
 
-// El formulario largo de datos de cliente, que ahora pintan dos pantallas: el perfil (RF-05) y el
-// alta (RF-06). Chrome mínimo: ni tarjetas ni paneles por sección, solo divisorias y aire — lo que
-// separa un bloque de otro es el ritmo, no una caja. Ningún color se escribe aquí: los tokens viven
-// en `_tokens.scss` y las variables de Bootstrap ya llevan el resto.
+// El formulario largo de datos, que pintan tres pantallas: el perfil (RF-05), el alta de cliente
+// (RF-06) y el alta de empleado (RF-11). Chrome mínimo: ni tarjetas ni paneles por sección, solo
+// divisorias y aire — lo que separa un bloque de otro es el ritmo, no una caja. Ningún color se
+// escribe aquí: los tokens viven en `_tokens.scss` y las variables de Bootstrap ya llevan el resto.
 //
 // Estaba en `_profile.scss` mientras solo lo usaba el perfil; se muda aquí en cuanto los fieldsets
 // pasaron a `shared/forms/` y los aplican las dos, por la misma razón que `payment-card` no vive en
@@ -27,4 +27,12 @@
 .settings-actions {
   border-top: bootstrap.$border-width solid var(--bs-border-color);
   padding-top: 1.5rem;
+}
+
+// El texto de ayuda de una casilla se alinea con su etiqueta, no con el margen del grupo. `.form-check`
+// desplaza la etiqueta para dejar sitio al control, y una ayuda pegada al margen izquierdo se lee como
+// si perteneciera al campo anterior. El desplazamiento sale de la variable de Bootstrap y no de un
+// número escrito a mano, que es lo que se desalinearía el día que el control cambie de tamaño.
+.form-check-hint {
+  padding-left: bootstrap.$form-check-padding-start;
 }

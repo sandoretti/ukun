@@ -39,8 +39,21 @@ export default function EmployeesPage() {
   const { filters, page, updateFilters, clearFilters, goToPage } = useEmployeeParams();
 
   const query = useEmployees(toApiFilters(filters, page));
+
+  /**
+   * Everything this screen reads off the query, read **here** and not down in the JSX.
+   *
+   * It is not a style choice. TanStack Query watches which fields of the result a render touches and
+   * only re-renders for the ones it saw (tracked properties). The body below is a render prop that
+   * `EmploymentBoundary` does not call while the employment is still loading — so reading the status
+   * only in there means the first render touches `data` and nothing else, and the read **failing** is
+   * a change to fields nobody asked to hear about. The screen then spins forever over a `403` that
+   * already came back. `NewStockLinePage` documents the same trap from the other side.
+   */
   const employees = query.data?.items;
   const totalPages = query.data?.totalPages;
+  const totalElements = query.data?.totalElements;
+  const status = { isPending: query.isPending, isError: query.isError, error: query.error };
 
   usePageWithinRange(page, totalPages, goToPage);
 
@@ -72,13 +85,13 @@ export default function EmployeesPage() {
             <EmployeeFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
 
             <p className="text-body-secondary" aria-live="polite">
-              {query.data === undefined
+              {totalElements === undefined
                 ? null
-                : t('employees.results', { count: query.data.totalElements })}
+                : t('employees.results', { count: totalElements })}
             </p>
 
             <QueryBoundary
-              query={query}
+              query={status}
               data={employees}
               empty={isFiltered ? t('employees.empty.filtered') : t('employees.empty.none')}
             >

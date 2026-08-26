@@ -44,7 +44,7 @@ export function EmployeeFilters({ filters, onChange, onClear }: EmployeeFiltersP
   const { t } = useTranslation('backoffice');
 
   return (
-    <fieldset className="mb-4">
+    <fieldset className="mt-4 mb-4">
       <legend className="h6 text-body-secondary">{t('employees.filters.title')}</legend>
 
       <Row className="g-3 align-items-end">

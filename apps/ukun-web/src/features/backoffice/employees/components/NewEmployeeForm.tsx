@@ -98,15 +98,24 @@ export function NewEmployeeForm({ storeName, onActivationPending }: NewEmployeeF
     }
   });
 
+  // `settings-form` y `settings-section` son el ritmo de los formularios largos de datos, que ya
+  // pintan el perfil (RF-05) y el alta de cliente (RF-06). Este es el tercero y es el mismo tipo de
+  // pantalla, así que se ve igual: la medida del formulario no es la de la columna, y lo que separa
+  // un grupo del siguiente es una divisoria y aire, no una caja.
   return (
-    <Form noValidate onSubmit={(event) => void onSubmit(event)}>
-      <Fieldset legend={t('employees.new.account.legend')} description={t('employees.new.account.description')}>
+    <Form noValidate className="settings-form" onSubmit={(event) => void onSubmit(event)}>
+      <Fieldset
+        legend={t('employees.new.account.legend')}
+        description={t('employees.new.account.description')}
+        className="settings-section"
+      >
         <TextField
           label={t('employees.new.account.email')}
           hint={t('employees.new.account.emailHint')}
           error={messageOf(errors.email)}
           type="email"
           autoComplete="email"
+          spellCheck={false}
           maxLength={EMAIL_MAX}
           {...register('email')}
         />
@@ -118,6 +127,7 @@ export function NewEmployeeForm({ storeName, onActivationPending }: NewEmployeeF
           error={messageOf(errors.password)}
           type="password"
           autoComplete="new-password"
+          spellCheck={false}
           minLength={PASSWORD_MIN}
           {...register('password')}
         />
@@ -126,6 +136,7 @@ export function NewEmployeeForm({ storeName, onActivationPending }: NewEmployeeF
       <Fieldset
         legend={t('employees.new.job.legend')}
         description={t('employees.new.job.description', { store: storeName })}
+        className="settings-section"
       >
         <Row>
           <Col md={6}>
@@ -134,6 +145,7 @@ export function NewEmployeeForm({ storeName, onActivationPending }: NewEmployeeF
               error={messageOf(errors.name)}
               type="text"
               autoComplete="given-name"
+              spellCheck={false}
               maxLength={NAME_MAX}
               {...register('name')}
             />
@@ -144,6 +156,7 @@ export function NewEmployeeForm({ storeName, onActivationPending }: NewEmployeeF
               error={messageOf(errors.lastName)}
               type="text"
               autoComplete="family-name"
+              spellCheck={false}
               maxLength={NAME_MAX}
               {...register('lastName')}
             />
@@ -156,6 +169,7 @@ export function NewEmployeeForm({ storeName, onActivationPending }: NewEmployeeF
           error={messageOf(errors.jobTitle)}
           type="text"
           autoComplete="organization-title"
+          spellCheck={false}
           maxLength={JOB_TITLE_MAX}
           {...register('jobTitle')}
         />
@@ -170,17 +184,19 @@ export function NewEmployeeForm({ storeName, onActivationPending }: NewEmployeeF
             aria-describedby="employee-is-admin-hint"
             {...register('isAdmin')}
           />
-          <Form.Text id="employee-is-admin-hint" className="d-block">
+          <Form.Text id="employee-is-admin-hint" className="d-block form-check-hint">
             {t('employees.new.job.isAdminHint')}
           </Form.Text>
         </Form.Group>
       </Fieldset>
 
-      <div aria-live="polite">{formError !== null && <ErrorState error={formError} />}</div>
+      <div className="settings-actions">
+        <div aria-live="polite">{formError !== null && <ErrorState error={formError} />}</div>
 
-      <Button type="submit" variant="primary" disabled={create.isPending}>
-        {create.isPending ? t('employees.new.submitting') : t('employees.new.submit')}
-      </Button>
+        <Button type="submit" variant="primary" disabled={create.isPending}>
+          {create.isPending ? t('employees.new.submitting') : t('employees.new.submit')}
+        </Button>
+      </div>
     </Form>
   );
 }
