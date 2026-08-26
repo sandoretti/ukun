@@ -26,6 +26,11 @@ type SearchFieldProps = {
  * catalogue's ARIA combobox with a suggestion list, a keyboard contract and a query behind it. This
  * one filters a table that is already on screen and has no list to open, so it stays a plain input —
  * a combobox with nothing to suggest is a promise the control does not keep.
+ *
+ * It is not `FilterTextField` either, and that difference **is** the looks: the two commit the same
+ * way, through `useCommittedInput`, and differ in where they sit. This one hides its label and wears
+ * a magnifier because it lives in the single row of a `FilterToolbar`; that one carries a visible
+ * label and a hint because it lives in a stack of filters.
  */
 export function SearchField({ label, placeholder, value, onCommit }: SearchFieldProps) {
   const { controlId } = useFieldAria({});

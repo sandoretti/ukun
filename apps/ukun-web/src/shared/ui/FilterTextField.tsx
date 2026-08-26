@@ -1,5 +1,4 @@
-import type { FocusEvent, KeyboardEvent } from 'react';
-
+import { useCommittedInput } from '../hooks/useCommittedInput';
 import { TextField } from './TextField';
 
 type FilterTextFieldProps = {
@@ -24,30 +23,15 @@ type FilterTextFieldProps = {
  * The control is uncontrolled and **keyed by the committed value**, which is the part that is easy to
  * get wrong: the input's own draft —what has been typed and not yet committed— is the one piece of
  * state that has no business in the address bar, and keying on the committed value is what makes
- * "clear filters" empty the box without a second copy of the value to keep in sync.
+ * "clear filters" empty the box without a second copy of the value to keep in sync. All of that is
+ * `useCommittedInput`'s, shared with `SearchField`.
+ *
+ * **Which of the two to reach for** is a question of where the control sits, not of what it does:
+ * this one carries a visible label and a hint and belongs in a stack of filters; `SearchField` wears
+ * a magnifier and hides its label, and belongs in the single row of a `FilterToolbar`.
  */
 export function FilterTextField({ label, hint, value, onCommit }: FilterTextFieldProps) {
-  const commit = (typed: string) => {
-    if (typed !== value) {
-      onCommit(typed);
-    }
-  };
+  const committed = useCommittedInput(value, onCommit);
 
-  return (
-    <TextField
-      key={value}
-      label={label}
-      hint={hint}
-      type="search"
-      autoComplete="off"
-      defaultValue={value}
-      onBlur={(event: FocusEvent<HTMLInputElement>) => commit(event.target.value)}
-      onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          commit(event.currentTarget.value);
-        }
-      }}
-    />
-  );
+  return <TextField label={label} hint={hint} type="search" autoComplete="off" {...committed} />;
 }
