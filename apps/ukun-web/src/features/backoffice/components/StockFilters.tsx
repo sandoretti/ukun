@@ -1,11 +1,12 @@
 import type { ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import type { FilterChip } from '../../../shared/ui/ActiveFilterChips';
 import { FilterToolbar } from '../../../shared/ui/FilterToolbar';
 import { SearchField } from '../../../shared/ui/SearchField';
 import { SelectField } from '../../../shared/ui/SelectField';
 import type { StockFilterInput, StockView } from '../api/stockKeys';
-import { countActiveFilters } from '../useStockParams';
+import { NO_FILTERS } from '../useStockParams';
 
 type StockFiltersProps = {
   filters: StockFilterInput;
@@ -41,11 +42,22 @@ const VIEWS = [
 export function StockFilters({ filters, onChange, onClear }: StockFiltersProps) {
   const { t } = useTranslation('backoffice');
 
+  /**
+   * What is filtered right now, in words. **The view is not one of them**: choosing between what the
+   * store has, what it could have and both is deciding what to look at, not narrowing it down — the
+   * same reason it never counted as a filter to clear.
+   */
+  const chips: FilterChip[] = [
+    ...(filters.q ? [{ key: 'q', label: t('stock.chips.q', { value: filters.q }) }] : []),
+    ...(filters.sku ? [{ key: 'sku', label: t('stock.chips.sku', { value: filters.sku }) }] : []),
+  ];
+
   return (
     <FilterToolbar
       label={t('stock.filters.label')}
       hint={t('stock.filters.hint')}
-      activeCount={countActiveFilters(filters)}
+      chips={chips}
+      onRemove={(key) => onChange({ [key]: NO_FILTERS[key as 'q' | 'sku'] })}
       onClear={onClear}
     >
       <div className="filter-toolbar__search">

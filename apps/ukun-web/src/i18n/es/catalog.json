@@ -15,10 +15,7 @@
     "priceFrom": "Desde",
     "priceTo": "Hasta",
     "activeCount_one": "{{count}} filtro activo",
-    "activeCount_other": "{{count}} filtros activos",
-    "active": "Filtros activos",
-    "remove": "Quitar el filtro {{label}}",
-    "clearAll": "Limpiar todo"
+    "activeCount_other": "{{count}} filtros activos"
   },
   "chips": {
     "name": "«{{value}}»",

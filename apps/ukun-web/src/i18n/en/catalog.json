@@ -15,10 +15,7 @@
     "priceFrom": "From",
     "priceTo": "To",
     "activeCount_one": "{{count}} active filter",
-    "activeCount_other": "{{count}} active filters",
-    "active": "Active filters",
-    "remove": "Remove the {{label}} filter",
-    "clearAll": "Clear all"
+    "activeCount_other": "{{count}} active filters"
   },
   "chips": {
     "name": "“{{value}}”",

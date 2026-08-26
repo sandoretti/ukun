@@ -43,6 +43,10 @@
       "stocked": "Con stock",
       "notStocked": "Sin dar de alta",
       "all": "Todo"
+    },
+    "chips": {
+      "q": "Nombre: {{value}}",
+      "sku": "SKU: {{value}}"
     }
   },
   "edit": {
@@ -172,6 +176,11 @@
       "email": "Eso no es una dirección de correo.",
       "password": "La contraseña tiene al menos 12 caracteres.",
       "jobTitle": "El puesto son de 1 a 50 caracteres."
+    },
+    "chips": {
+      "q": "Busca: {{value}}",
+      "admins": "Solo administradores",
+      "staff": "Solo empleados"
     }
   }
 }

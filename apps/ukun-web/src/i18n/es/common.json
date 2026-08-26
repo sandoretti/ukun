@@ -137,7 +137,8 @@
     "favoriteStore": "Esa tienda ya no existe. Elige otra"
   },
   "filters": {
-    "clear_one": "Quitar el filtro",
-    "clear_other": "Quitar los {{count}} filtros"
+    "active": "Filtros activos",
+    "remove": "Quitar el filtro {{label}}",
+    "clearAll": "Limpiar todo"
   }
 }

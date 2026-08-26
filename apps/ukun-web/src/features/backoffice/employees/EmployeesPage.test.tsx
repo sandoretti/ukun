@@ -159,28 +159,39 @@ describe('EmployeesPage', () => {
     ).toBeDefined();
   });
 
-  it('offers to clear only once something is filtered, and counts what it would clear', async () => {
+  it('says what is filtered in removable chips, and drops one without starting over', async () => {
     const user = userEvent.setup();
     server.use(signedIn([...ADMIN_ROLES]), ...employeeState({ employees: staff }).handlers);
 
-    renderEmployees();
-    await screen.findByText('Sandoval');
-    expect(screen.queryByRole('button', { name: /Quitar/ })).toBeNull();
+    renderEmployees('/admin/employees?q=gar&isAdmin=false');
+    await screen.findByText('García');
 
-    await user.type(screen.getByLabelText('Buscar empleados'), 'gar');
-    await user.tab();
+    // Two chips, each saying what it filters — not a bare "clear filters" that says nothing.
+    const active = screen.getByRole('group', { name: 'Filtros activos' });
+    expect(within(active).getByText('Busca: gar')).toBeDefined();
+    expect(within(active).getByText('Solo empleados')).toBeDefined();
 
-    expect(await screen.findByRole('button', { name: 'Quitar el filtro' })).toBeDefined();
+    await user.click(screen.getByRole('button', { name: 'Quitar el filtro Busca: gar' }));
 
-    await user.selectOptions(screen.getByLabelText('Filtrar por administrador'), 'Solo empleados');
-
-    const clear = await screen.findByRole('button', { name: 'Quitar los 2 filtros' });
-    await user.click(clear);
-
-    // Clearing empties the controls and takes the filters out of the URL, both at once.
-    await screen.findByText('Sandoval');
-    expect(screen.queryByRole('button', { name: /Quitar/ })).toBeNull();
+    // The other one survives: dropping one filter is not starting over. Scoped to the chips, since
+    // the select carries the same words in one of its options.
+    await waitFor(() => expect(screen.queryByText('Busca: gar')).toBeNull());
+    const left = screen.getByRole('group', { name: 'Filtros activos' });
+    expect(within(left).getByText('Solo empleados')).toBeDefined();
     expect((screen.getByLabelText('Buscar empleados') as HTMLInputElement).value).toBe('');
+  });
+
+  it('clears every filter at once, and shows nothing to clear when nothing is filtered', async () => {
+    const user = userEvent.setup();
+    server.use(signedIn([...ADMIN_ROLES]), ...employeeState({ employees: staff }).handlers);
+
+    renderEmployees('/admin/employees?q=gar&isAdmin=false');
+    await screen.findByText('García');
+
+    await user.click(screen.getByRole('button', { name: 'Limpiar todo' }));
+
+    await screen.findByText('Sandoval');
+    expect(screen.queryByRole('group', { name: 'Filtros activos' })).toBeNull();
   });
 
   it('paints a 403 as the denial it is, and not as a screen that never finished loading', async () => {

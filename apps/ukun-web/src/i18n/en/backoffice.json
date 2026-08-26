@@ -43,6 +43,10 @@
       "stocked": "In stock",
       "notStocked": "Not added yet",
       "all": "Everything"
+    },
+    "chips": {
+      "q": "Name: {{value}}",
+      "sku": "SKU: {{value}}"
     }
   },
   "edit": {
@@ -172,6 +176,11 @@
       "email": "That is not an email address.",
       "password": "The password is at least 12 characters long.",
       "jobTitle": "A job title is 1 to 50 characters."
+    },
+    "chips": {
+      "q": "Search: {{value}}",
+      "admins": "Administrators only",
+      "staff": "Employees only"
     }
   }
 }

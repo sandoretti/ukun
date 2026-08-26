@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { renderWithProviders } from '../../test/renderWithProviders';
+import type { FilterChip } from './ActiveFilterChips';
 import { FilterToolbar } from './FilterToolbar';
 import { SearchField } from './SearchField';
 
@@ -13,10 +14,12 @@ import { SearchField } from './SearchField';
  */
 const CHILD = 'un filtro';
 
+const NO_CHIPS: FilterChip[] = [];
+
 describe('FilterToolbar', () => {
   it('names the region instead of writing a heading over the controls', () => {
     renderWithProviders(
-      <FilterToolbar label="Filtros del stock" activeCount={0} onClear={() => {}}>
+      <FilterToolbar label="Filtros del stock" chips={NO_CHIPS} onRemove={() => {}} onClear={() => {}}>
         <button type="button">{CHILD}</button>
       </FilterToolbar>,
     );
@@ -30,7 +33,13 @@ describe('FilterToolbar', () => {
 
   it('says what can be searched under the bar, where it misaligns nothing', () => {
     renderWithProviders(
-      <FilterToolbar label="Filtros" hint="Se busca por SKU o por nombre." activeCount={0} onClear={() => {}}>
+      <FilterToolbar
+        label="Filtros"
+        hint="Se busca por SKU o por nombre."
+        chips={NO_CHIPS}
+        onRemove={() => {}}
+        onClear={() => {}}
+      >
         <button type="button">{CHILD}</button>
       </FilterToolbar>,
     );
@@ -38,25 +47,60 @@ describe('FilterToolbar', () => {
     expect(screen.getByText('Se busca por SKU o por nombre.')).toBeDefined();
   });
 
-  it('shows the clear action only when there is something to clear, and counts it', async () => {
+  it('shows nothing at all while nothing is filtered', () => {
+    renderWithProviders(
+      <FilterToolbar label="Filtros" chips={NO_CHIPS} onRemove={() => {}} onClear={() => {}}>
+        <button type="button">{CHILD}</button>
+      </FilterToolbar>,
+    );
+
+    // A row saying "no filters" is a row that only takes up space.
+    expect(screen.queryByRole('group', { name: 'Filtros activos' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Limpiar/ })).toBeNull();
+  });
+
+  it('removes one filter by its own chip, saying which one in the name', async () => {
+    const user = userEvent.setup();
+    const onRemove = vi.fn();
+
+    renderWithProviders(
+      <FilterToolbar
+        label="Filtros"
+        chips={[{ key: 'q', label: 'Nombre: cama' }]}
+        onRemove={onRemove}
+        onClear={() => {}}
+      >
+        <button type="button">{CHILD}</button>
+      </FilterToolbar>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Quitar el filtro Nombre: cama' }));
+
+    expect(onRemove).toHaveBeenCalledExactlyOnceWith('q');
+  });
+
+  it('offers to clear the lot only once there is more than one thing to clear', async () => {
     const user = userEvent.setup();
     const onClear = vi.fn();
+    const one = [{ key: 'q', label: 'Nombre: cama' }];
+    const two = [...one, { key: 'sku', label: 'SKU: ABC-123' }];
 
     const { rerender } = renderWithProviders(
-      <FilterToolbar label="Filtros" activeCount={0} onClear={onClear}>
+      <FilterToolbar label="Filtros" chips={one} onRemove={() => {}} onClear={onClear}>
         <button type="button">{CHILD}</button>
       </FilterToolbar>,
     );
 
-    expect(screen.queryByRole('button', { name: /Quitar/ })).toBeNull();
+    // With a single chip, "clear all" would be a second button doing what the first one does.
+    expect(screen.queryByRole('button', { name: 'Limpiar todo' })).toBeNull();
 
     rerender(
-      <FilterToolbar label="Filtros" activeCount={2} onClear={onClear}>
+      <FilterToolbar label="Filtros" chips={two} onRemove={() => {}} onClear={onClear}>
         <button type="button">{CHILD}</button>
       </FilterToolbar>,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Quitar los 2 filtros' }));
+    await user.click(screen.getByRole('button', { name: 'Limpiar todo' }));
     expect(onClear).toHaveBeenCalledOnce();
   });
 });

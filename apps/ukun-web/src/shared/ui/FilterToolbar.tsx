@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button } from 'react-bootstrap';
+
+import { ActiveFilterChips, type FilterChip } from './ActiveFilterChips';
 
 type FilterToolbarProps = {
   /**
@@ -12,8 +12,9 @@ type FilterToolbarProps = {
   label: string;
   /** What can be searched or filtered, said under the bar — where it does not misalign the row. */
   hint?: string;
-  /** How many filters are set right now. Decides whether the clear action is there at all. */
-  activeCount: number;
+  /** What is filtered right now, already worded. Empty means nothing is. */
+  chips: FilterChip[];
+  onRemove: (key: string) => void;
   onClear: () => void;
   /** The controls, in reading order: the search first, then what narrows it down. */
   children: ReactNode;
@@ -28,36 +29,30 @@ type FilterToolbarProps = {
  * neighbouring select out of line. Here every control sits on the same line, each one names itself
  * for assistive technology, and whatever needs explaining goes under the bar, once.
  *
+ * Under it go the chips of what is filtered right now, which is how a filter is removed: one at a
+ * time by its own ✕, or all at once. A lone "clear filters" link said neither *what* was filtered
+ * nor let anybody drop just one of them.
+ *
  * It lives in `shared/ui/` because both back-office listings filter this way —the stock (RF-09) and
  * the staff (RF-11)— and features never import each other. What it does not do is decide *which*
  * controls there are, or hold any state: the URL holds the answer (`docs/07-frontend-ux-ui.md`), and
  * each screen passes its own children.
  */
-export function FilterToolbar({ label, hint, activeCount, onClear, children }: FilterToolbarProps) {
-  const { t } = useTranslation('common');
-
+export function FilterToolbar({ label, hint, chips, onRemove, onClear, children }: FilterToolbarProps) {
   return (
     // `<search>` is the element for exactly this. The explicit role is not redundancy for its own
     // sake: the element is from 2023 and screen readers —and jsdom, which is where this is tested—
     // do not all map it to the landmark yet, so the role is what makes it announced today.
     <search role="search" aria-label={label} className="mt-3 mb-4">
-      <div className="filter-toolbar">
-        {children}
-
-        {/* Only there when there is something to clear: a permanently disabled control is one more
-            thing to read on a screen that has nothing filtered. */}
-        {activeCount > 0 && (
-          <Button
-            variant="link"
-            className="link-secondary filter-toolbar__clear"
-            onClick={onClear}
-          >
-            {t('filters.clear', { count: activeCount })}
-          </Button>
-        )}
-      </div>
+      <div className="filter-toolbar">{children}</div>
 
       {hint !== undefined && <p className="form-text mt-2 mb-0">{hint}</p>}
+
+      {/* Under the bar and not inside it: the controls are what you filter *with*, and the chips are
+          what is filtered *now* — two different things, and the row stays one row. */}
+      <div className="mt-2">
+        <ActiveFilterChips chips={chips} onRemove={onRemove} onClear={onClear} />
+      </div>
     </search>
   );
 }

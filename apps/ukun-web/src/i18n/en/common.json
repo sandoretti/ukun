@@ -137,7 +137,8 @@
     "favoriteStore": "That store no longer exists. Please choose another one"
   },
   "filters": {
-    "clear_one": "Clear the filter",
-    "clear_other": "Clear the {{count}} filters"
+    "active": "Active filters",
+    "remove": "Remove the filter {{label}}",
+    "clearAll": "Clear all"
   }
 }

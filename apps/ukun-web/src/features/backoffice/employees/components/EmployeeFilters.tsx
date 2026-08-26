@@ -1,11 +1,12 @@
 import type { ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import type { FilterChip } from '../../../../shared/ui/ActiveFilterChips';
 import { FilterToolbar } from '../../../../shared/ui/FilterToolbar';
 import { SearchField } from '../../../../shared/ui/SearchField';
 import { SelectField } from '../../../../shared/ui/SelectField';
 import type { EmployeeFilterInput } from '../api/employeeKeys';
-import { countActiveFilters } from '../useEmployeeParams';
+import { NO_FILTERS } from '../useEmployeeParams';
 
 type EmployeeFiltersProps = {
   filters: EmployeeFilterInput;
@@ -41,11 +42,28 @@ function toIsAdmin(value: string): boolean | null {
 export function EmployeeFilters({ filters, onChange, onClear }: EmployeeFiltersProps) {
   const { t } = useTranslation('backoffice');
 
+  /**
+   * What is filtered right now, in words. The administrator one says which side it asks for rather
+   * than «Administrador: false», which is the filter's shape and not its meaning.
+   */
+  const chips: FilterChip[] = [
+    ...(filters.q ? [{ key: 'q', label: t('employees.chips.q', { value: filters.q }) }] : []),
+    ...(filters.isAdmin === null
+      ? []
+      : [
+          {
+            key: 'isAdmin',
+            label: t(filters.isAdmin ? 'employees.chips.admins' : 'employees.chips.staff'),
+          },
+        ]),
+  ];
+
   return (
     <FilterToolbar
       label={t('employees.filters.label')}
       hint={t('employees.filters.hint')}
-      activeCount={countActiveFilters(filters)}
+      chips={chips}
+      onRemove={(key) => onChange({ [key]: NO_FILTERS[key as 'q' | 'isAdmin'] })}
       onClear={onClear}
     >
       <div className="filter-toolbar__search">
