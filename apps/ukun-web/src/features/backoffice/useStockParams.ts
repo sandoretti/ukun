@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { FIRST_PAGE, readPage } from '../../shared/hooks/usePageParams';
+import { readPositiveInteger } from '../../shared/browser/searchParams';
 import type { StockFilterInput, StockView } from './api/stockKeys';
-import { DEFAULT_STATUS, stockSearch } from './routes';
+import { DEFAULT_STATUS, FIRST_PAGE, stockSearch } from './routes';
 import { readSku } from './stockSchema';
 
 const VIEWS: StockView[] = ['STOCKED', 'NOT_STOCKED', 'ALL'];
@@ -56,7 +56,7 @@ export function useStockParams() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filters = useMemo(() => readFilters(searchParams), [searchParams]);
-  const page = readPage(searchParams);
+  const page = Math.max(FIRST_PAGE, readPositiveInteger(searchParams.get('page')) ?? FIRST_PAGE);
 
   const updateFilters = useCallback(
     (patch: Partial<StockFilterInput>) => setSearchParams(stockSearch({ ...filters, ...patch })),

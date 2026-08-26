@@ -1,14 +1,23 @@
 {
-  "employment": {
-    "denied": "Tu cuenta no está asignada a ninguna tienda."
-  },
   "stock": {
     "title": "Stock de {{store}}",
     "lead": "Consulta y ajusta las unidades de cada producto en tu tienda.",
     "add": "Dar de alta por SKU",
+    "employment": {
+      "denied": "Tu cuenta no gestiona el stock de ninguna tienda."
+    },
+    "tabs": {
+      "label": "Qué se lista",
+      "stocked": "Con stock",
+      "notStocked": "Sin dar de alta"
+    },
     "filters": {
+      "title": "Filtrar",
       "sku": "SKU",
+      "skuHint": "Mayúsculas, cifras y guiones. Por ejemplo, ABC-123.",
       "q": "Nombre del producto",
+      "qHint": "Para cuando no te sepas el SKU de memoria.",
+      "clear": "Quitar filtros",
       "label": "Filtros del stock",
       "hint": "Se busca por SKU exacto —mayúsculas, cifras y guiones— o por una parte del nombre del producto.",
       "skuPlaceholder": "SKU, por ejemplo ABC-123",
@@ -32,6 +41,10 @@
       "addAction": "Dar de alta"
     },
     "empty": {
+      "stocked": "Esta tienda todavía no tiene ningún producto en stock.",
+      "stockedFiltered": "Ningún producto en stock coincide con la búsqueda.",
+      "notStocked": "Todos los productos del catálogo están dados de alta en esta tienda.",
+      "notStockedFiltered": "Ningún producto sin dar de alta coincide con la búsqueda.",
       "STOCKED": "Esta tienda todavía no tiene ningún producto en stock.",
       "NOT_STOCKED": "Todos los productos del catálogo están dados de alta en esta tienda.",
       "ALL": "No hay ningún producto en el catálogo.",
@@ -108,6 +121,160 @@
     "sku": "El SKU son de 3 a 32 caracteres: mayúsculas, cifras y guiones.",
     "skuNotFound": "No hay ningún producto activo con ese SKU. Puede que no exista o que esté descatalogado.",
     "quantity": "Las unidades son un número entero de 0 o más."
+  },
+  "admin": {
+    "title": "Administración",
+    "lead": "Lo que solo puede hacer una cuenta de administrador.",
+    "products": {
+      "title": "Productos",
+      "body": "El catálogo global: alta, edición, foto, descatalogar y borrar."
+    },
+    "employees": {
+      "title": "Empleados",
+      "body": "Consulta quién trabaja en tu tienda y da de alta a quien se incorpore."
+    }
+  },
+  "products": {
+    "title": "Productos",
+    "lead": "El catálogo es global y no depende de ninguna tienda. Aquí ves también los descatalogados.",
+    "add": "Nuevo producto",
+    "results_one": "{{count}} producto",
+    "results_other": "{{count}} productos",
+    "pagination": "Paginación del catálogo",
+    "filters": {
+      "title": "Filtrar y ordenar",
+      "q": "Nombre del producto",
+      "qHint": "Da igual acentos y mayúsculas.",
+      "sku": "SKU",
+      "skuHint": "Exacto. Por ejemplo, ABC-123.",
+      "type": "Tipo",
+      "anyType": "Cualquier tipo",
+      "status": "Estado",
+      "statusHint": "Un producto descatalogado solo aparece si lo pides aquí.",
+      "sort": "Orden",
+      "clear": "Quitar filtros"
+    },
+    "statusFilter": {
+      "ACTIVE": "En el catálogo",
+      "DISCONTINUED": "Descatalogados",
+      "ALL": "Todos"
+    },
+    "status": {
+      "ACTIVE": "En el catálogo",
+      "DISCONTINUED": "Descatalogado"
+    },
+    "sort": {
+      "NAME_ASC": "Nombre (A-Z)",
+      "NAME_DESC": "Nombre (Z-A)",
+      "PRICE_ASC": "Precio (de menor a mayor)",
+      "PRICE_DESC": "Precio (de mayor a menor)",
+      "UPDATED_DESC": "Modificados primero"
+    },
+    "empty": {
+      "none": "Todavía no hay ningún producto en el catálogo.",
+      "filtered": "Ningún producto coincide con la búsqueda."
+    },
+    "table": {
+      "caption": "Productos del catálogo",
+      "name": "Producto",
+      "type": "Tipo",
+      "price": "Precio",
+      "status": "Estado"
+    },
+    "form": {
+      "sku": "SKU",
+      "skuHint": "De 3 a 32 caracteres: mayúsculas, cifras y guiones. Se fija ahora y no se cambia después.",
+      "skuFixed": "El SKU no se edita: es el identificador impreso en la etiqueta. Cambiarlo sería dar de alta otro producto.",
+      "name": "Nombre",
+      "description": "Descripción",
+      "descriptionHint": "Texto libre. Es lo que lee el cliente en la ficha del producto.",
+      "price": "Precio",
+      "priceHint": "En euros, con dos decimales como mucho. Por ejemplo, 399,99.",
+      "type": "Tipo",
+      "typeHint": "Los tipos se gestionan aparte.",
+      "typePlaceholder": "Elige un tipo"
+    },
+    "new": {
+      "title": "Nuevo producto",
+      "lead": "El producto nace en el catálogo y sin foto. La foto se sube después, en su ficha.",
+      "back": "Volver al catálogo",
+      "submit": "Crear producto",
+      "duplicate": {
+        "title": "Ese SKU ya es de otro producto",
+        "body": "«{{sku}}» ya está en uso. Un SKU es de un producto para siempre, aunque ese producto esté descatalogado.",
+        "link": "Ver qué producto lo tiene"
+      },
+      "detailsBody": "Todo es obligatorio. La foto no: se sube luego, en la ficha.",
+      "cancel": "Cancelar",
+      "status": "Producto nuevo"
+    },
+    "sheet": {
+      "back": "Volver al catálogo",
+      "gone": "Ese producto ya no existe.",
+      "details": "Datos del producto",
+      "save": "Guardar cambios",
+      "saved": "Cambios guardados.",
+      "eyebrow": "Catálogo",
+      "lead": "Cambia lo que es, cómo se ve y si sigue a la venta.",
+      "detailsBody": "Lo que el cliente ve en la tienda. El SKU no está aquí: se fijó al darlo de alta.",
+      "discard": "Descartar",
+      "status": {
+        "clean": "Sin cambios",
+        "unsaved": "Sin guardar",
+        "saving": "Guardando...",
+        "saved": "Todo guardado"
+      }
+    },
+    "image": {
+      "title": "Foto",
+      "description": "Opcional, y aparte del resto del formulario: se sube y se quita por su cuenta.",
+      "current": "Foto actual",
+      "preview": "Vista previa",
+      "previewAlt": "Vista previa de la foto elegida",
+      "alt": "Foto de {{product}}",
+      "pick": "Elegir una foto",
+      "rules": "JPEG, PNG o WebP, hasta 5 MB. La nueva sustituye a la anterior.",
+      "upload": "Subir foto",
+      "remove": "Quitar foto",
+      "rejected": {
+        "type": "Ese fichero no es JPEG, PNG ni WebP.",
+        "size": "Ese fichero pasa de 5 MB."
+      }
+    },
+    "catalog": {
+      "title": "Catálogo",
+      "activeBody": "Descatalogar no borra nada: el producto sale del catálogo y de las pantallas de stock, sus pedidos se quedan como están y puedes volver a ponerlo cuando quieras.",
+      "discontinuedBody": "Está fuera del catálogo. Reactivarlo lo devuelve a la tienda y a las pantallas de stock.",
+      "discontinue": "Descatalogar",
+      "reactivate": "Reactivar"
+    },
+    "delete": {
+      "section": "Zona peligrosa",
+      "sectionBody": "Solo se puede borrar un producto que no se haya usado nunca. Si ya está en un pedido, en el stock de una tienda o en un carrito, lo que toca es descatalogarlo.",
+      "open": "Borrar producto",
+      "title": "Borrar producto",
+      "body": "Vas a borrar «{{product}}» y su foto. Esto no se puede deshacer.",
+      "notDiscontinue": "No es lo mismo que descatalogar: descatalogar deja el producto y su historial, y se puede revertir.",
+      "confirm": "Borrar del todo",
+      "cancel": "Cancelar",
+      "close": "Cerrar",
+      "inUse": {
+        "title": "Este producto no se puede borrar",
+        "wayOut": "La salida es descatalogarlo: deja de venderse y de aparecer en el stock, y todo lo que ya lo referencia se queda como está.",
+        "discontinue": "Descatalogar en su lugar"
+      }
+    },
+    "validation": {
+      "name": "El nombre es obligatorio y de 255 caracteres como mucho.",
+      "description": "La descripción es obligatoria.",
+      "price": "El precio es un importe en euros con dos decimales como mucho. Por ejemplo, 399,99.",
+      "typeId": "Elige un tipo de producto.",
+      "skuTaken": "Ese SKU ya es de otro producto.",
+      "typeGone": "Ese tipo ya no existe. Elige otro."
+    }
+  },
+  "employment": {
+    "denied": "Tu cuenta no está asignada a ninguna tienda."
   },
   "employees": {
     "title": "Empleados de {{store}}",

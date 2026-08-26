@@ -75,6 +75,26 @@ describe('SessionMenu', () => {
     );
   });
 
+  it('offers administration to an administrator, and to nobody else', async () => {
+    server.use(signedIn(['ADMIN']));
+
+    await openSessionMenu();
+
+    // Its own entry next to the back office, because they are two different branches: `/backoffice/*`
+    // is any employee's and `/admin/*` is what talks to `/api/admin/**` (ADR-0020).
+    expect(screen.getByRole('link', { name: 'Administración' }).getAttribute('href')).toBe('/admin');
+  });
+
+  it('does not offer administration to an employee who is not one', async () => {
+    server.use(signedIn(['EMPLOYEE']));
+
+    await openSessionMenu();
+
+    expect(screen.queryByRole('link', { name: 'Administración' })).toBeNull();
+    // The stock screens are still theirs: the two entries deny different things.
+    expect(screen.getByRole('link', { name: /Back office/ })).toBeDefined();
+  });
+
   it('does not offer the back office to a customer', async () => {
     server.use(signedIn(['CUSTOMER']));
 

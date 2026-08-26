@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Table } from 'react-bootstrap';
 
-import { usePageWithinRange } from '../../../shared/hooks/usePageParams';
+import { usePageWithinRange } from '../usePageWithinRange';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
 import { useStockView } from '../api/queries';

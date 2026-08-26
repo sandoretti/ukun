@@ -4,12 +4,17 @@ import { Route, Routes } from 'react-router-dom';
 import { RequireAuth } from '../features/auth/RequireAuth';
 import { RequireRole } from '../features/auth/RequireRole';
 import { ACCOUNT_PATH, SIGN_UP_PATH } from '../features/auth/routes';
-import { NEW_EMPLOYEE_PATH } from '../features/backoffice/employees/routes';
+import {
+  ADMIN_PRODUCT_ROUTE,
+  ADMIN_PRODUCTS_PATH,
+  NEW_PRODUCT_PATH,
+} from '../features/backoffice/adminRoutes';
+import { ADMIN_EMPLOYEES_PATH, NEW_EMPLOYEE_PATH } from '../features/backoffice/employees/routes';
 import { NEW_STOCK_LINE_PATH } from '../features/backoffice/routes';
 import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
 import {
-  ADMIN_EMPLOYEES_PATH,
+  ADMIN_PATH,
   BACKOFFICE_STOCK_PATH,
   CART_PATH,
   CATALOG_PATH,
@@ -36,6 +41,10 @@ const SignInPage = lazy(() => import('../features/auth/SignInPage'));
 const SignUpPage = lazy(() => import('../features/auth/SignUpPage'));
 const StockPage = lazy(() => import('../features/backoffice/StockPage'));
 const NewStockLinePage = lazy(() => import('../features/backoffice/NewStockLinePage'));
+const AdminHomePage = lazy(() => import('../features/backoffice/AdminHomePage'));
+const AdminProductsPage = lazy(() => import('../features/backoffice/AdminProductsPage'));
+const NewProductPage = lazy(() => import('../features/backoffice/NewProductPage'));
+const AdminProductPage = lazy(() => import('../features/backoffice/AdminProductPage'));
 const EmployeesPage = lazy(() => import('../features/backoffice/employees/EmployeesPage'));
 const NewEmployeePage = lazy(() => import('../features/backoffice/employees/NewEmployeePage'));
 
@@ -137,14 +146,55 @@ function App() {
             </RequireAuth>
           }
         />
-        {/* La gestión de empleados (RF-11). Cuelga de `/admin/*` y no de `/backoffice/*` porque es
-            lo único de estas dos ramas que habla con `/api/admin/**` (ADR-0020) y porque es de
-            admin, no de cualquier empleado. Las guardas se componen igual que arriba y por lo mismo:
-            sin sesión se va a identificarse, y con sesión sin el rol se explica aquí, porque volver
-            a entrar no cambia los roles. Ninguna de las dos es la barrera — el gateway deniega
-            `/api/admin/**` sin `ROLE_ADMIN` y `ukun-api` lo comprueba otra vez (docs/08 §4). Y
-            ninguna de las dos rutas lleva identificador de tienda: la resuelve el servidor desde
-            `account_id`. */}
+        {/* La rama de administración (RF-10 y RF-11; RF-13 se le añade). Cuelga de `/admin/*`
+            porque es lo que habla con `/api/admin/**` (ADR-0020), y pide `ADMIN` y no `EMPLOYEE`: el
+            catálogo es global y los empleados son de admin, no de cualquier empleado. Las guardas
+            son las mismas dos, compuestas igual, y siguen sin ser la barrera — el servidor vuelve a
+            comprobar el rol en cada petición. El alta va **antes** que `:id`, que también casaría
+            con el literal `new`. Ninguna de estas rutas lleva identificador de tienda: la resuelve
+            el servidor desde `account_id`. */}
+        <Route
+          path={ADMIN_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <AdminHomePage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={ADMIN_PRODUCTS_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <AdminProductsPage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={NEW_PRODUCT_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <NewProductPage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={ADMIN_PRODUCT_ROUTE}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <AdminProductPage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        {/* Los empleados de la tienda del admin (RF-11), en la misma rama y con las mismas guardas
+            por la misma razón: hablan con `/api/admin/**`. */}
         <Route
           path={ADMIN_EMPLOYEES_PATH}
           element={

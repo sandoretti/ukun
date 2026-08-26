@@ -54,11 +54,13 @@ export const orderPath = (id: number) => `${ORDERS_PATH}/${id}`;
 export const BACKOFFICE_STOCK_PATH = '/backoffice/stock';
 
 /**
- * The employee back-office (RF-11). It is `features/backoffice`'s screen and it comes up here
+ * The admin index (RF-10, RF-13, RF-11). It is `features/backoffice`'s screen and it comes up here
  * because the session menu of `features/auth` is where an administrator reaches it from.
  *
- * The branch is `/admin/*` and not `/backoffice/*`: ADR-0020 makes the prefix a biconditional with
- * `/api/admin/**`, which is what this screen talks to. Managing employees is an administrator's job;
- * managing stock is any employee's, which is why the two live on different branches.
+ * The rest of that branch —the catalog listing, the sheet of one product, the staff— stays in
+ * `features/backoffice/`, because nobody outside it writes those: the menu sends an administrator to
+ * the index, and the index is what links to each screen. And the prefix is `/admin/*` and not
+ * `/backoffice/*` on purpose: this is the branch of what talks to `/api/admin/**` (ADR-0020), which
+ * the stock screens deliberately do not.
  */
-export const ADMIN_EMPLOYEES_PATH = '/admin/employees';
+export const ADMIN_PATH = '/admin';

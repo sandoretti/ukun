@@ -1,4 +1,3 @@
-import { FIRST_PAGE } from '../../shared/hooks/usePageParams';
 import { BACKOFFICE_STOCK_PATH } from '../../shared/routes';
 import type { StockFilterInput, StockView } from './api/stockKeys';
 
@@ -12,6 +11,9 @@ import type { StockFilterInput, StockView } from './api/stockKeys';
  * administrator's (RF-09, permission matrix of `docs/02-requisitos.md` §3).
  */
 export const NEW_STOCK_LINE_PATH = '/backoffice/stock/new';
+
+/** Pages count from one in the URL, whatever the API does with them. */
+export const FIRST_PAGE = 1;
 
 /** The view the screen opens on, which is also the contract's own default for `status`. */
 export const DEFAULT_STATUS: StockView = 'STOCKED';

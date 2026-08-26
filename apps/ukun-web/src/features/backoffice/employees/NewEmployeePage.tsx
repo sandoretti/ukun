@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Alert, Col, Container, Row } from 'react-bootstrap';
 
-import { ADMIN_EMPLOYEES_PATH } from '../../../shared/routes';
+import { ADMIN_EMPLOYEES_PATH } from './routes';
 import { Icon } from '../../../shared/ui/Icon';
 import { EmploymentBoundary } from '../components/EmploymentBoundary';
 import { NewEmployeeForm } from './components/NewEmployeeForm';

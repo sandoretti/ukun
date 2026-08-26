@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Container, Table } from 'react-bootstrap';
 
-import { usePageWithinRange } from '../../../shared/hooks/usePageParams';
+import { usePageWithinRange } from '../usePageWithinRange';
 import { Icon } from '../../../shared/ui/Icon';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';

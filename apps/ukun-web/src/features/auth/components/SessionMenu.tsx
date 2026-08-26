@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Dropdown } from 'react-bootstrap';
 
 import { useAuth } from '../../../shared/hooks/useAuth';
-import { ADMIN_EMPLOYEES_PATH, BACKOFFICE_STOCK_PATH, PROFILE_PATH } from '../../../shared/routes';
+import { ADMIN_PATH, BACKOFFICE_STOCK_PATH, PROFILE_PATH } from '../../../shared/routes';
 import { ACCOUNT_PATH, SIGN_UP_PATH } from '../routes';
 import { SignOutForm } from './SignOutForm';
 
@@ -72,11 +72,14 @@ export function SessionMenu() {
           </Dropdown.Item>
         )}
 
-        {/* Los empleados son de admin y solo de admin (RF-11), así que la entrada la decide el mismo
-            sitio y con la misma pregunta: los roles de `GET /api/me`. */}
+        {/* La administración es otra entrada y no un apartado de la anterior: `/backoffice/*` es de
+            cualquier empleado y `/admin/*` es lo que habla con `/api/admin/**` (ADR-0020), así que
+            son dos destinos con dos condiciones distintas. Ocultarla sigue siendo UX — la barrera
+            está en el gateway y otra vez en ukun-api. Y es **una** entrada: los empleados y el
+            catálogo cuelgan del índice de `/admin`, no del menú. */}
         {hasRole('ADMIN') && (
-          <Dropdown.Item as={Link} to={ADMIN_EMPLOYEES_PATH}>
-            {t('account.employees')}
+          <Dropdown.Item as={Link} to={ADMIN_PATH}>
+            {t('account.admin')}
           </Dropdown.Item>
         )}
 

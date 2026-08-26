@@ -1,7 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { FIRST_PAGE, readPage } from '../../../shared/hooks/usePageParams';
+import { readPositiveInteger } from '../../../shared/browser/searchParams';
+import { FIRST_PAGE } from '../routes';
 import type { EmployeeFilterInput } from './api/employeeKeys';
 import { employeesSearch } from './routes';
 
@@ -51,7 +52,7 @@ export function useEmployeeParams() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filters = useMemo(() => readFilters(searchParams), [searchParams]);
-  const page = readPage(searchParams);
+  const page = Math.max(FIRST_PAGE, readPositiveInteger(searchParams.get('page')) ?? FIRST_PAGE);
 
   const updateFilters = useCallback(
     (patch: Partial<EmployeeFilterInput>) =>

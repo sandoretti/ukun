@@ -1,6 +1,13 @@
-import { FIRST_PAGE } from '../../../shared/hooks/usePageParams';
-import { ADMIN_EMPLOYEES_PATH } from '../../../shared/routes';
+import { ADMIN_PATH } from '../../../shared/routes';
+import { FIRST_PAGE } from '../routes';
 import type { EmployeeFilterInput } from './api/employeeKeys';
+
+/**
+ * The staff listing. It hangs off the admin branch and stays in this feature: the session menu sends
+ * an administrator to the index of `/admin`, and the index —which lives here too— is what links to
+ * each screen. A path only `features/backoffice` writes does not belong in `shared/routes.ts`.
+ */
+export const ADMIN_EMPLOYEES_PATH = `${ADMIN_PATH}/employees`;
 
 /**
  * The paths of the employee screens, and the one place that knows what one of their URLs looks like.
@@ -11,7 +18,7 @@ import type { EmployeeFilterInput } from './api/employeeKeys';
  * ADR-0020 makes the prefix a biconditional with `/api/admin/**`, and managing employees is an
  * administrator's job while managing stock is any employee's (RF-11 vs RF-09).
  */
-export const NEW_EMPLOYEE_PATH = '/admin/employees/new';
+export const NEW_EMPLOYEE_PATH = `${ADMIN_EMPLOYEES_PATH}/new`;
 
 /**
  * The listing's query string. Defaults are left out: `/admin/employees` and `?page=1` are the same
