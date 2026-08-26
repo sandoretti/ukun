@@ -71,7 +71,7 @@ describe('StockPage', () => {
     renderStock();
     await screen.findByText(SOFA);
 
-    await user.click(screen.getByRole('link', { name: 'Sin dar de alta' }));
+    await user.selectOptions(screen.getByLabelText('Qué se lista'), 'Sin dar de alta');
 
     // The sofa has a row, so it is not a candidate; the bunk bed has none.
     const candidate = await screen.findByText('Litera infantil');
@@ -151,7 +151,7 @@ describe('StockPage', () => {
     renderStock();
     await screen.findByText(SOFA);
 
-    await user.click(screen.getByRole('link', { name: 'Todo' }));
+    await user.selectOptions(screen.getByLabelText('Qué se lista'), 'Todo');
 
     // The sofa has a line and the bunk bed has none: in this view they are rows of the same table.
     expect(await screen.findByText('Litera infantil')).toBeDefined();
@@ -173,7 +173,7 @@ describe('StockPage', () => {
     renderStock();
     await screen.findByText(SOFA);
 
-    await user.click(screen.getByRole('link', { name: 'Todo' }));
+    await user.selectOptions(screen.getByLabelText('Qué se lista'), 'Todo');
     await screen.findByText('Litera infantil');
 
     // The sofa has a line and no units; the bunk bed has no line at all.
@@ -181,16 +181,28 @@ describe('StockPage', () => {
     expect(within(rowOf('Litera infantil')).getByText('Sin dar de alta')).toBeDefined();
   });
 
-  it('switches view with links, so each one is addressable and the back button walks between them', async () => {
-    server.use(signedIn(['EMPLOYEE']), ...stockState({ lines: twoLines }).handlers);
+  it('keeps the view in the URL, so a screen showing both halves is linkable', async () => {
+    const user = userEvent.setup();
+    const state = stockState({ lines: twoLines });
+    server.use(signedIn(['EMPLOYEE']), ...state.handlers);
 
-    renderStock('/backoffice/stock?status=ALL');
+    // Arriving with the view already chosen: it is read back into the control, not defaulted away.
+    const { unmount } = renderStock('/backoffice/stock?status=ALL');
 
+    await screen.findByText('Litera infantil');
+    // `.value` and not `getAttribute`: a `<select>` has no value attribute, only a property, and
+    // asserting on the attribute would pass against any option at all.
+    expect((await screen.findByLabelText('Qué se lista')).getAttribute('value')).toBeNull();
+    expect((screen.getByLabelText('Qué se lista') as HTMLSelectElement).value).toBe('ALL');
+    unmount();
+
+    // And choosing it writes it: the three views are one control with three values, and the URL is
+    // what holds the answer.
+    renderStock();
     await screen.findByText(SOFA);
-    const views = screen.getByRole('group', { name: 'Qué se lista' });
+    await user.selectOptions(screen.getByLabelText('Qué se lista'), 'Sin dar de alta');
 
-    expect(within(views).getAllByRole('link')).toHaveLength(3);
-    expect(within(views).getByRole('link', { name: 'Todo' }).getAttribute('aria-current')).toBe('page');
+    await waitFor(() => expect(state.searches.at(-1)).toContain('status=NOT_STOCKED'));
   });
 
   it('accepts zero, which is a line that exists with none left', async () => {

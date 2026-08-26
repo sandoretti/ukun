@@ -65,14 +65,14 @@ describe('useStockParams', () => {
     expect(result.current.page).toBe(1);
   });
 
-  it('carries the filters over to the other tab and leaves the page behind', () => {
-    const { result } = renderAt('/backoffice/stock?q=sofá&page=4');
+  it('keeps the filters when the view changes, and goes back to the first page', () => {
+    const { result } = renderAt('/backoffice/stock?q=sof%C3%A1&page=3');
 
-    expect(result.current.hrefForView('NOT_STOCKED')).toBe(
-      '/backoffice/stock?status=NOT_STOCKED&q=sof%C3%A1',
-    );
-    // Page 4 of one half says nothing about the other.
-    expect(result.current.hrefForView('STOCKED')).toBe('/backoffice/stock?q=sof%C3%A1');
+    act(() => result.current.updateFilters({ status: 'NOT_STOCKED' }));
+
+    expect(result.current.filters).toMatchObject({ status: 'NOT_STOCKED', q: 'sofá' });
+    // Page 3 of one view says nothing about another.
+    expect(result.current.page).toBe(1);
   });
 
   it('keeps the filters when the page changes: a page is not a different result', () => {

@@ -1,33 +1,44 @@
+import type { ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FilterToolbar } from '../../../shared/ui/FilterToolbar';
 import { SearchField } from '../../../shared/ui/SearchField';
+import { SelectField } from '../../../shared/ui/SelectField';
 import type { StockFilterInput, StockView } from '../api/stockKeys';
 import { countActiveFilters } from '../useStockParams';
-import { StockViewSwitch } from './StockViewSwitch';
 
 type StockFiltersProps = {
   filters: StockFilterInput;
   onChange: (patch: Partial<StockFilterInput>) => void;
   onClear: () => void;
-  hrefForView: (view: StockView) => string;
 };
 
 /**
- * The two ways an employee looks for a product: the SKU they were given, and the name they remember.
- *
- * Both commit when you leave them or press Enter rather than filtering per keystroke — crossing the
- * field is one request, not forty (`docs/07-frontend-ux-ui.md`). What holds the answer is the URL
- * (`useStockParams`), so a filtered table is linkable and survives a reload.
- *
- * They share the toolbar of the staff listing because they are the same kind of bar over the same
- * kind of table; what changes is which controls it holds.
- *
- * The view switch rides in the same bar rather than floating over it as a strip of tabs: choosing
- * what is listed and narrowing it down are the same gesture from the reader's side, and two rows of
- * controls for one job was the thing that made this screen look assembled rather than designed.
+ * The three views of RF-09, each with the key it is labelled by. Written out rather than composed
+ * into `stock.views.${value}`: a key built at runtime is a key the parity test cannot see, and a
+ * missing translation would only show up on screen.
  */
-export function StockFilters({ filters, onChange, onClear, hrefForView }: StockFiltersProps) {
+const VIEWS = [
+  { value: 'STOCKED', labelKey: 'stock.views.stocked' },
+  { value: 'NOT_STOCKED', labelKey: 'stock.views.notStocked' },
+  { value: 'ALL', labelKey: 'stock.views.all' },
+] as const satisfies readonly { value: StockView; labelKey: string }[];
+
+/**
+ * How an employee narrows down the store: the name they remember, the SKU they were given, and how
+ * much of the store they want to see.
+ *
+ * **The order is the order of use.** The product name is what somebody reaches for first and what
+ * they know without looking anything up, so it leads and takes the width; the SKU is the exact key
+ * for when they have it; and what is listed comes last, because it is the least often changed of
+ * the three.
+ *
+ * The two text fields commit when you leave them or press Enter rather than filtering per keystroke
+ * — crossing a field is one request, not forty (`docs/07-frontend-ux-ui.md`). What holds the answer
+ * is the URL (`useStockParams`), so a filtered table is linkable and survives a reload; that is as
+ * true of the view as of the other two, even though it is a select and not a link.
+ */
+export function StockFilters({ filters, onChange, onClear }: StockFiltersProps) {
   const { t } = useTranslation('backoffice');
 
   return (
@@ -37,15 +48,6 @@ export function StockFilters({ filters, onChange, onClear, hrefForView }: StockF
       activeCount={countActiveFilters(filters)}
       onClear={onClear}
     >
-      <StockViewSwitch current={filters.status} hrefForView={hrefForView} />
-
-      <SearchField
-        label={t('stock.filters.sku')}
-        placeholder={t('stock.filters.skuPlaceholder')}
-        value={filters.sku}
-        onCommit={(sku) => onChange({ sku })}
-      />
-
       <div className="filter-toolbar__search">
         <SearchField
           label={t('stock.filters.q')}
@@ -54,6 +56,28 @@ export function StockFilters({ filters, onChange, onClear, hrefForView }: StockF
           onCommit={(q) => onChange({ q })}
         />
       </div>
+
+      <SearchField
+        label={t('stock.filters.sku')}
+        placeholder={t('stock.filters.skuPlaceholder')}
+        value={filters.sku}
+        onCommit={(sku) => onChange({ sku })}
+      />
+
+      <SelectField
+        label={t('stock.views.label')}
+        labelVisibility="hidden"
+        value={filters.status}
+        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+          onChange({ status: event.target.value as StockView })
+        }
+      >
+        {VIEWS.map((view) => (
+          <option key={view.value} value={view.value}>
+            {t(view.labelKey)}
+          </option>
+        ))}
+      </SelectField>
     </FilterToolbar>
   );
 }

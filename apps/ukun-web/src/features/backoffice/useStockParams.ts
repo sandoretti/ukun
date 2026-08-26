@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { FIRST_PAGE, readPage } from '../../shared/hooks/usePageParams';
 import type { StockFilterInput, StockView } from './api/stockKeys';
-import { DEFAULT_STATUS, stockPath, stockSearch } from './routes';
+import { DEFAULT_STATUS, stockSearch } from './routes';
 import { readSku } from './stockSchema';
 
 const VIEWS: StockView[] = ['STOCKED', 'NOT_STOCKED', 'ALL'];
@@ -83,13 +83,5 @@ export function useStockParams() {
     [filters, setSearchParams],
   );
 
-  /**
-   * Where each view lives, as a link. The switch is navigation and not a button with state: that is
-   * what makes each view addressable, keeps the back button honest, and leaves nothing to keep in
-   * sync. It carries the filters over —the same SKU search makes sense in all three— and drops the
-   * page, because page 3 of one view says nothing about another.
-   */
-  const hrefForView = useCallback((status: StockView) => stockPath({ ...filters, status }), [filters]);
-
-  return { filters, page, updateFilters, clearFilters, goToPage, hrefForView };
+  return { filters, page, updateFilters, clearFilters, goToPage };
 }

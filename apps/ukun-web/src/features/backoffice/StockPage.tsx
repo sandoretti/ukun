@@ -28,7 +28,7 @@ import { useStockParams } from './useStockParams';
  */
 export default function StockPage() {
   const { t } = useTranslation('backoffice');
-  const { filters, page, updateFilters, clearFilters, goToPage, hrefForView } = useStockParams();
+  const { filters, page, updateFilters, clearFilters, goToPage } = useStockParams();
 
   return (
     <Container className="py-5">
@@ -51,12 +51,7 @@ export default function StockPage() {
               </Link>
             </div>
 
-            <StockFilters
-              filters={filters}
-              onChange={updateFilters}
-              onClear={clearFilters}
-              hrefForView={hrefForView}
-            />
+            <StockFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
 
             <StockTable
               storeId={employment.storeId}
