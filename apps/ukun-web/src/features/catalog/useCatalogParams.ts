@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { readPositiveInteger } from '../../shared/browser/searchParams';
 import { MONEY_PATTERN } from '../../shared/format/money';
 import type { CatalogFilterInput, ProductSort } from './api/productKeys';
 
@@ -25,13 +26,6 @@ export function countActiveFilters(criteria: CatalogFilterInput): number {
     Number(criteria.priceMin !== '') +
     Number(criteria.priceMax !== '')
   );
-}
-
-function readPositiveInteger(value: string | null): number | null {
-  if (value === null || !/^\d+$/.test(value)) {
-    return null;
-  }
-  return Number(value);
 }
 
 function readAmount(value: string | null): string {

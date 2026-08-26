@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { readPositiveInteger } from '../../shared/browser/searchParams';
 import type { OrderFilterInput, OrderStatus } from './api/orderKeys';
 
 export const FIRST_PAGE = 1;
@@ -18,13 +19,6 @@ export function countActiveFilters(filters: OrderFilterInput): number {
 function readDate(value: string | null): string {
   // The contract's `format: date`; anything else is dropped rather than sent to the API.
   return value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
-}
-
-function readPositiveInteger(value: string | null): number | null {
-  if (value === null || !/^\d+$/.test(value)) {
-    return null;
-  }
-  return Number(value);
 }
 
 function readFilters(searchParams: URLSearchParams): OrderFilterInput {

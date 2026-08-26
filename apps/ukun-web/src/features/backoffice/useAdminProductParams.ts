@@ -1,14 +1,15 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { readPositiveInteger } from '../../shared/browser/searchParams';
+import { adminProductsSearch, DEFAULT_SORT, DEFAULT_STATUS } from './adminRoutes';
 import {
   type AdminProductFilterInput,
   type AdminProductSort,
   type ProductStatusFilter,
 } from './api/adminProductKeys';
-import { adminProductsSearch, DEFAULT_SORT, DEFAULT_STATUS } from './adminRoutes';
-import { readSku } from './stockSchema';
 import { FIRST_PAGE } from './routes';
+import { readSku } from './stockSchema';
 
 const STATUSES: ProductStatusFilter[] = ['ACTIVE', 'DISCONTINUED', 'ALL'];
 
@@ -50,13 +51,6 @@ function readStatus(value: string | null): ProductStatusFilter {
 
 function readSort(value: string | null): AdminProductSort {
   return SORTS.includes(value as AdminProductSort) ? (value as AdminProductSort) : DEFAULT_SORT;
-}
-
-function readPositiveInteger(value: string | null): number | null {
-  if (value === null || !/^\d+$/.test(value)) {
-    return null;
-  }
-  return Number(value);
 }
 
 /**

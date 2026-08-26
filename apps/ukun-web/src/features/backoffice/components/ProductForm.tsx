@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Form } from 'react-bootstrap';
+import { Container, Form } from 'react-bootstrap';
 
-import { AdminFormBar } from './AdminFormBar';
 import { AdminFormSection } from './AdminFormSection';
 import { ProductFields } from './ProductFields';
 
@@ -58,7 +57,20 @@ export function ProductForm({
         <div aria-live="polite">{feedback}</div>
       </AdminFormSection>
 
-      <AdminFormBar status={status}>{actions}</AdminFormBar>
+      {/* The action bar, anchored to the bottom of the window. A form that does not fit in a
+          viewport cannot keep its save button at the end of the document: the way to it would run
+          past «delete this product», which is the one control nobody should pass through on their way
+          to saving a price. It sits inside the `<form>` even though it is painted down there, which
+          is what lets the button stay a plain `submit` — Enter key included. */}
+      <div className="admin-form__bar">
+        <Container className="d-flex flex-wrap align-items-center justify-content-between gap-3 py-3">
+          {/* Announced and not only coloured: "saved" is something a screen reader hears too. */}
+          <p className="overline mb-0" aria-live="polite">
+            {status}
+          </p>
+          <div className="d-flex flex-wrap gap-2">{actions}</div>
+        </Container>
+      </div>
     </Form>
   );
 }

@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { readPositiveInteger } from '../../shared/browser/searchParams';
 import type { StockFilterInput, StockStatus } from './api/stockKeys';
 import { DEFAULT_STATUS, FIRST_PAGE, stockPath, stockSearch } from './routes';
 import { readSku } from './stockSchema';
@@ -27,13 +28,6 @@ function readTerm(value: string | null): string {
 
 function readStatus(value: string | null): StockStatus {
   return STATUSES.includes(value as StockStatus) ? (value as StockStatus) : DEFAULT_STATUS;
-}
-
-function readPositiveInteger(value: string | null): number | null {
-  if (value === null || !/^\d+$/.test(value)) {
-    return null;
-  }
-  return Number(value);
 }
 
 /**
