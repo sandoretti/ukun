@@ -66,8 +66,8 @@ class ProblemDetailSecurityHandler implements ServerAuthenticationEntryPoint, Se
                 .map(UkunOidcUser::accountIdOf)
                 .doOnNext(accountId -> accountId.ifPresent(
                         id -> exchange.getAttributes().put(AccessLogAttributes.ACCOUNT_ID, id)))
-                .then(Mono.defer(() -> exception instanceof SessionCannotAuthoriseException
+                .then(exception instanceof SessionCannotAuthoriseException
                         ? problems.unauthenticated(exchange)
-                        : problems.forbidden(exchange)));
+                        : problems.forbidden(exchange));
     }
 }

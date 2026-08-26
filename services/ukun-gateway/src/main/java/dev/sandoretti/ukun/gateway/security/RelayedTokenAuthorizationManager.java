@@ -86,7 +86,7 @@ final class RelayedTokenAuthorizationManager implements ReactiveAuthorizationMan
                 .<AuthorizationResult>map(token -> new AuthorizationDecision(rolesOf(token).contains(role)))
                 // Nobody signed in, and a session that cannot produce a token any more, are the same
                 // answer on purpose: neither is a permission problem, and both are fixed by signing in.
-                .switchIfEmpty(Mono.error(RelayedTokenAuthorizationManager::sessionCannotAuthorise));
+                .switchIfEmpty(Mono.error(SessionCannotAuthoriseException::new));
     }
 
     /**
@@ -109,10 +109,12 @@ final class RelayedTokenAuthorizationManager implements ReactiveAuthorizationMan
                 .map(client -> client.getAccessToken().getTokenValue())
                 .flatMap(accessTokens::decode)
                 // A refusal from the authorization server and a token this service cannot validate are
-                // the same situation from here: the session no longer holds a usable credential. Left
-                // as errors they would surface as 500s, which is the one answer that is never true.
-                .onErrorMap(OAuth2AuthorizationException.class, RelayedTokenAuthorizationManager::sessionCannotAuthorise)
-                .onErrorMap(JwtException.class, RelayedTokenAuthorizationManager::sessionCannotAuthorise);
+                // one situation from here, and matched as one for that reason: the session no longer
+                // holds a usable credential. Left as errors they would surface as 500s, which is the
+                // one answer that is never true.
+                .onErrorMap(
+                        error -> error instanceof OAuth2AuthorizationException || error instanceof JwtException,
+                        SessionCannotAuthoriseException::new);
     }
 
     /** No claim means no roles, never an error: the decision above then simply denies. */
@@ -120,13 +122,5 @@ final class RelayedTokenAuthorizationManager implements ReactiveAuthorizationMan
         List<String> roles = accessToken.getClaimAsStringList(ROLES_CLAIM);
 
         return roles == null ? List.of() : roles;
-    }
-
-    private static SessionCannotAuthoriseException sessionCannotAuthorise() {
-        return new SessionCannotAuthoriseException();
-    }
-
-    private static SessionCannotAuthoriseException sessionCannotAuthorise(Throwable cause) {
-        return new SessionCannotAuthoriseException(cause);
     }
 }

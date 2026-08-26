@@ -40,15 +40,10 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * owns the authorized client behind it. Being able to set them apart <em>is</em> the fixture — a
  * single mutator that kept them in step could not express the defect at all.
  *
- * <p>The client mutator has to be applied <strong>first</strong>. {@code mockOAuth2Login} delegates
- * to {@code mockOAuth2Client} internally with an access token of its own, the literal string
- * {@code "access-token"}, and applying it last leaves that one in the session — where it does not
- * even parse as a JWT, so every case would answer 401 and two of these tests would pass for a reason
- * that has nothing to do with roles.
- *
- * <p>The tokens are signed for real ({@code AccessTokens}) rather than fed to a stubbed decoder. A
- * decoder replaced in the test context would be a second reading of the credential, which is the very
- * thing this class exists to rule out.
+ * <p>Why the client mutator goes first is the same trap {@code FilterChainIntegrationTest#signedInWith}
+ * documents, and it is written down there rather than twice. The tokens are signed for real
+ * ({@code AccessTokens}) rather than fed to a stubbed decoder: a decoder replaced in the test context
+ * would be a second reading of the credential, which is the very thing this class exists to rule out.
  */
 class AdminAuthorizationIT extends FilterChainIntegrationTest {
 
@@ -115,7 +110,9 @@ class AdminAuthorizationIT extends FilterChainIntegrationTest {
     /**
      * The registration id is the mutator's own default rather than this service's {@code ukun}: what
      * matters is that the principal and the authorized client agree on one, which is what the
-     * authorized client manager looks the token up by.
+     * authorized client manager looks the token up by. Spelt out here instead of reusing
+     * {@code signedInWith}, which deliberately says nothing about the principal's authorities — this
+     * class is the one that needs to state both halves and set them against each other.
      */
     private WebTestClient session(List<String> granted, OAuth2AccessToken accessToken) {
         return http.mutateWith(mockOAuth2Client("test").accessToken(accessToken))
