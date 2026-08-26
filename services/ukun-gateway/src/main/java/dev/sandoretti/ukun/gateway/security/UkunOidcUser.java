@@ -9,12 +9,15 @@ import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 
 /**
- * The logged-in person, as this gateway needs to see them: the standard OIDC user plus the two things
- * that live in the <em>access</em> token and nowhere else — the roles the coarse filter of ADR-0020
- * decides on, and the account id {@code docs/11-observabilidad-y-logging.md} §3 requires on the
- * {@code auth.logout} event.
+ * The logged-in person, as this gateway needs to see them: the standard OIDC user plus the one thing
+ * that lives in the <em>access</em> token and nowhere else — the account id
+ * {@code docs/11-observabilidad-y-logging.md} §3 requires on the {@code auth.logout} event and on the
+ * access log.
  *
- * <p>Why they are not simply read off the id token is explained in {@link AccessTokenOidcUserService}.
+ * <p>Why it is not simply read off the id token is explained in {@link AccessTokenOidcUserService}.
+ * The roles are <strong>not</strong> here and must not be put here: the coarse filter of ADR-0020
+ * reads them off the token it relays, on the request that relays it, and a second copy in the session
+ * is exactly what drifted in issue #145.
  *
  * <p>{@code getName()} is left alone, so the principal is still named by the id token's {@code sub} —
  * the email the person typed into the login form. That is what keys the stored authorized client, and

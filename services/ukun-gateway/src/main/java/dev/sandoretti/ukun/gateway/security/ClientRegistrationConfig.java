@@ -9,6 +9,9 @@ import org.springframework.security.oauth2.client.registration.ReactiveClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 
 /**
  * The client registration of the BFF, built by hand.
@@ -68,6 +71,33 @@ class ClientRegistrationConfig {
     @Bean
     ReactiveClientRegistrationRepository clientRegistrations(UkunOAuth2Properties properties) {
         return new InMemoryReactiveClientRegistrationRepository(ukun(properties));
+    }
+
+    /**
+     * Reads the <em>access</em> token of the session — the credential this gateway relays, and the
+     * only place the roles and the account id live ({@code TokenClaimsCustomizer} in {@code ukun-auth}
+     * returns early for the id token, which therefore carries neither).
+     *
+     * <p>It is a bean rather than a field of its one-time owner because two collaborators now read
+     * that token and <strong>must</strong> read it the same way: {@link RelayedTokenAuthorizationManager},
+     * which decides {@code /api/admin/**} on every request, and {@link AccessTokenOidcUserService},
+     * which takes the account id off it once at login. Two decoders would be two readings of one
+     * credential, which is the shape of the defect issue #145 records.
+     *
+     * <h2>Signature, expiry and issuer — not the audience</h2>
+     *
+     * The audience names {@code ukun-api}, and skipping it is deliberate: this service is validating
+     * material it holds in its own session, not accepting a bearer credential presented by a caller.
+     * Checking it would reject every token this gateway legitimately relays. That it is a token
+     * addressed to somebody else is precisely why the gateway is not a resource server.
+     */
+    @Bean
+    ReactiveJwtDecoder accessTokenDecoder(UkunOAuth2Properties properties) {
+        NimbusReactiveJwtDecoder decoder =
+                NimbusReactiveJwtDecoder.withJwkSetUri(properties.jwkSetUri()).build();
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.issuer()));
+
+        return decoder;
     }
 
     private static ClientRegistration ukun(UkunOAuth2Properties properties) {

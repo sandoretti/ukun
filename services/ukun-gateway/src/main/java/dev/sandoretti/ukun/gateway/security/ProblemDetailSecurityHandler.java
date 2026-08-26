@@ -44,13 +44,21 @@ class ProblemDetailSecurityHandler implements ServerAuthenticationEntryPoint, Se
     }
 
     /**
-     * Authenticated, but not {@code ROLE_ADMIN} on {@code /api/admin/**}.
+     * A refusal from the authorisation half of the chain, which is two different things wearing one
+     * exception type.
+     *
+     * <p>The usual one is a caller whose relayed token does not carry {@code ADMIN} on
+     * {@code /api/admin/**}, or a mutation without its CSRF token: those are 403, and they mean what
+     * 403 means. {@link SessionCannotAuthoriseException} is the other, and it is a <em>401</em> — a
+     * session that can no longer produce a usable token has not lost a permission, it has stopped
+     * being a session, and telling its owner "your account does not have this" is both false and a
+     * dead end (issue #145).
      *
      * <p>It names the caller on the exchange before answering, and that is the only place it can be
      * done: this is a request that <em>had</em> a principal and still stopped inside the security
      * chain, so {@code AccountIdAttributeWebFilter} below never runs and the access log — which sits
      * in front of the chain — would otherwise report the one denial that has somebody behind it as
-     * anonymous. A 403 whose {@code accountId} is missing is exactly the line an audit would want.
+     * anonymous. A refusal whose {@code accountId} is missing is exactly the line an audit would want.
      */
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException exception) {
@@ -58,6 +66,8 @@ class ProblemDetailSecurityHandler implements ServerAuthenticationEntryPoint, Se
                 .map(UkunOidcUser::accountIdOf)
                 .doOnNext(accountId -> accountId.ifPresent(
                         id -> exchange.getAttributes().put(AccessLogAttributes.ACCOUNT_ID, id)))
-                .then(problems.forbidden(exchange));
+                .then(Mono.defer(() -> exception instanceof SessionCannotAuthoriseException
+                        ? problems.unauthenticated(exchange)
+                        : problems.forbidden(exchange)));
     }
 }

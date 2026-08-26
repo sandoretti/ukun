@@ -1,8 +1,7 @@
 package dev.sandoretti.ukun.gateway;
 
-import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockUser;
-
 import dev.sandoretti.ukun.gateway.support.UpstreamStub;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -15,10 +14,10 @@ import org.junit.jupiter.api.Test;
  * verified here is only that the edge refuses what it can refuse cheaply, and that it refuses it in
  * the shape of the contract.
  *
- * <p>The roles come from the mutator rather than from a real login, and they still should: what this
- * class is about is the rule, not how a principal acquires its authorities. Where those authorities
- * come from in production — the {@code roles} claim of the relayed access token — is
- * {@code AccessTokenOidcUserServiceTest}, and the flow that produces it is {@code OAuth2LoginIT}.
+ * <p>The roles come from a fixture rather than a real login, and they still should: what this class is
+ * about is the rule, not how a session comes to hold the token it holds. That the rule reads the roles
+ * off the token this gateway relays — and cannot fall behind it — is {@code AdminAuthorizationIT}; the
+ * flow that mints the token is {@code OAuth2LoginIT}.
  */
 class RouteAuthorizationIT extends FilterChainIntegrationTest {
 
@@ -42,7 +41,7 @@ class RouteAuthorizationIT extends FilterChainIntegrationTest {
     @Test
     @DisplayName("refuses the admin surface to a customer")
     void refusesTheAdminSurfaceToACustomer() {
-        http.mutateWith(mockUser().roles("CUSTOMER"))
+        signedInWith(List.of("CUSTOMER"))
                 .get().uri("/api/admin/products")
                 .exchange()
                 .expectStatus().isForbidden()
@@ -53,7 +52,7 @@ class RouteAuthorizationIT extends FilterChainIntegrationTest {
     @Test
     @DisplayName("lets an admin through to ukun-api")
     void letsAnAdminThrough() {
-        http.mutateWith(mockUser().roles("ADMIN"))
+        signedInWith(List.of("EMPLOYEE", "ADMIN"))
                 .get().uri("/api/admin/products")
                 .exchange()
                 .expectStatus().isOk()
