@@ -4,10 +4,16 @@ import { Route, Routes } from 'react-router-dom';
 import { RequireAuth } from '../features/auth/RequireAuth';
 import { RequireRole } from '../features/auth/RequireRole';
 import { ACCOUNT_PATH, SIGN_UP_PATH } from '../features/auth/routes';
+import {
+  ADMIN_PRODUCT_ROUTE,
+  ADMIN_PRODUCTS_PATH,
+  NEW_PRODUCT_PATH,
+} from '../features/backoffice/adminRoutes';
 import { NEW_STOCK_LINE_PATH } from '../features/backoffice/routes';
 import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
 import {
+  ADMIN_PATH,
   BACKOFFICE_STOCK_PATH,
   CART_PATH,
   CATALOG_PATH,
@@ -34,6 +40,10 @@ const SignInPage = lazy(() => import('../features/auth/SignInPage'));
 const SignUpPage = lazy(() => import('../features/auth/SignUpPage'));
 const StockPage = lazy(() => import('../features/backoffice/StockPage'));
 const NewStockLinePage = lazy(() => import('../features/backoffice/NewStockLinePage'));
+const AdminHomePage = lazy(() => import('../features/backoffice/AdminHomePage'));
+const AdminProductsPage = lazy(() => import('../features/backoffice/AdminProductsPage'));
+const NewProductPage = lazy(() => import('../features/backoffice/NewProductPage'));
+const AdminProductPage = lazy(() => import('../features/backoffice/AdminProductPage'));
 
 function App() {
   return (
@@ -129,6 +139,51 @@ function App() {
             <RequireAuth>
               <RequireRole role="EMPLOYEE">
                 <NewStockLinePage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        {/* La rama de administración (RF-10 aquí; RF-11 y RF-13 se le añaden). Cuelga de `/admin/*`
+            porque es lo que habla con `/api/admin/**` (ADR-0020), y pide `ADMIN` y no `EMPLOYEE`: el
+            catálogo es global, no de una tienda. Las guardas son las mismas dos, compuestas igual, y
+            siguen sin ser la barrera — el servidor vuelve a comprobar el rol en cada petición. El
+            alta va **antes** que `:id`, que también casaría con el literal `new`. */}
+        <Route
+          path={ADMIN_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <AdminHomePage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={ADMIN_PRODUCTS_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <AdminProductsPage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={NEW_PRODUCT_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <NewProductPage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={ADMIN_PRODUCT_ROUTE}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <AdminProductPage />
               </RequireRole>
             </RequireAuth>
           }

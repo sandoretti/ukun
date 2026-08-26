@@ -1,0 +1,123 @@
+@use "../bootstrap";
+
+// --- Pantallas de administración del catálogo (RF-10) ----------------------------------------------
+//
+// El formulario largo de administración: una columna de navegación a la izquierda, secciones con su
+// encabezado a un lado y sus campos al otro, y una barra de acciones anclada abajo. Es el patrón de
+// una pantalla de ajustes, y está aquí y no dentro de la pantalla por la regla de siempre (ADR-0002):
+// ni una medida ni un color hardcodeados en un componente.
+
+// El aire que la barra fija necesita por debajo del contenido: sin él tapa la última sección, que es
+// justo la de borrar.
+.admin-form {
+  padding-bottom: 7rem;
+}
+
+// La columna del formulario. Un ancho de lectura y no el del contenedor: un campo de texto de mil
+// píxeles de ancho no se lee mejor, se lee peor, y el encabezado de cada bloque arranca exactamente
+// donde arrancan sus etiquetas — una sola columna que recorrer, sin saltos laterales.
+.admin-form__column {
+  max-width: 40rem;
+}
+
+// La barra de acciones, anclada al borde inferior de la ventana. Guardar es la acción de una pantalla
+// que no cabe en un viewport, así que el botón no puede estar solo al final del documento: se llega a
+// él después de pasar por encima de «borrar producto».
+//
+// El fondo es el del cuerpo a media opacidad con desenfoque por detrás: la barra tiene que leerse
+// sobre lo que pase por debajo sin fingir que ahí se acaba la página.
+.admin-form__bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: bootstrap.$zindex-sticky;
+  border-top: 1px solid var(--bs-border-color);
+  background-color: rgba(var(--bs-body-bg-rgb), 0.9);
+  backdrop-filter: blur(8px);
+}
+
+// --- La tabla del catálogo -------------------------------------------------------------------------
+//
+// Una tabla de trabajo, no una de lectura: se recorre de arriba abajo buscando una fila concreta, y
+// lo que ayuda a eso es que las cabeceras no griten, que cada fila tenga aire suficiente para llevar
+// dos líneas, y que los números queden alineados por la derecha para poder compararlos de un vistazo.
+.admin-table {
+  // La cabecera acompaña, no compite: mismo tamaño que el cuerpo, sin negrita y en el gris
+  // secundario. En negrita se lee antes la fila de títulos que los datos, que es justo al revés.
+  thead th {
+    color: var(--bs-secondary-color);
+    font-weight: 500;
+  }
+
+  tbody td {
+    padding-block: 0.75rem;
+  }
+}
+
+// El precio: monoespaciado y con cifras tabulares, para que los céntimos caigan en la misma columna
+// aunque los euros tengan distinto número de dígitos.
+.admin-table__price {
+  font-family: var(--bs-font-monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+// Una fila del listado que es un destino entero: el puntero lo dice antes de pulsar, y el resaltado
+// al pasar por encima ya lo pone `<Table hover>`.
+.admin-product-row {
+  cursor: pointer;
+}
+
+// El nombre sigue siendo un enlace de verdad —teclado, ctrl+clic, dirección que copiar— pero vestido
+// de texto: en una tabla donde toda la fila lleva al mismo sitio, subrayar una celda sugiere que esa
+// es la única que lleva.
+.admin-product-row__name {
+  display: block;
+  color: inherit;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--bs-primary);
+    text-decoration: underline;
+  }
+}
+
+// El SKU, bajo el nombre: el dato con el que se busca una fila cuando se tiene la etiqueta delante,
+// así que va monoespaciado —los caracteres caen alineados entre filas— y en segundo plano.
+.admin-product-row__sku {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
+}
+
+// La miniatura de la primera celda. Más pequeña que `.product-thumb` porque aquí acompaña a dos
+// líneas de texto y no a una tarjeta: lo que fija la altura de la fila es el texto, no la foto.
+.admin-product-row__thumb {
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: bootstrap.$border-radius;
+  background-color: var(--bs-tertiary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// --- Foto de producto en el back-office -------------------------------------------------------------
+//
+// El marco de la foto en la ficha: el que enseña la que hay guardada y el que enseña la que se acaba
+// de elegir y todavía no se ha subido. Los dos llevan la misma clase a propósito — comparar dos
+// imágenes de tamaños distintos no es compararlas.
+//
+// Es más grande que `.product-thumb` porque aquí la foto es el objeto de la decisión y no el
+// acompañamiento de un nombre.
+.admin-product-photo {
+  display: block;
+  width: 10rem;
+  height: 10rem;
+  object-fit: cover;
+  border-radius: bootstrap.$border-radius;
+  background-color: var(--bs-tertiary-bg);
+}

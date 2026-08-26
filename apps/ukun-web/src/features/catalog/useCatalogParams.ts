@@ -1,6 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { readPositiveInteger } from '../../shared/browser/searchParams';
+import { MONEY_PATTERN } from '../../shared/format/money';
 import type { CatalogFilterInput, ProductSort } from './api/productKeys';
 
 export const DEFAULT_SORT: ProductSort = 'PRICE_ASC';
@@ -26,16 +28,9 @@ export function countActiveFilters(criteria: CatalogFilterInput): number {
   );
 }
 
-function readPositiveInteger(value: string | null): number | null {
-  if (value === null || !/^\d+$/.test(value)) {
-    return null;
-  }
-  return Number(value);
-}
-
 function readAmount(value: string | null): string {
-  // Same shape as `Money` in the contract; anything else is dropped rather than sent to the API.
-  return value !== null && /^\d{1,8}(\.\d{1,2})?$/.test(value) ? value : '';
+  // The shape of `Money` in the contract; anything else is dropped rather than sent to the API.
+  return value !== null && MONEY_PATTERN.test(value) ? value : '';
 }
 
 function readCriteria(searchParams: URLSearchParams): CatalogFilterInput {
