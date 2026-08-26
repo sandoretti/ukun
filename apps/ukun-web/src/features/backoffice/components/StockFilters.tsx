@@ -1,8 +1,7 @@
-import type { FocusEvent, KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Col, Row } from 'react-bootstrap';
 
-import { TextField } from '../../../shared/ui/TextField';
+import { CommittedTextField } from '../../../shared/ui/CommittedTextField';
 import type { StockFilterInput } from '../api/stockKeys';
 import { countActiveFilters } from '../useStockParams';
 
@@ -15,33 +14,13 @@ type StockFiltersProps = {
 /**
  * The two ways an employee looks for a product: the SKU they were given, and the name they remember.
  *
- * There is no "apply" button, and there is no filtering per keystroke either — both fields commit
- * when you leave them or press Enter, which is what `docs/07-frontend-ux-ui.md` prescribes for a
- * typed filter: crossing the field is one request, not forty. What holds the answer is the URL
- * (`useStockParams`), so a filtered table is linkable and survives a reload.
- *
- * The controls are uncontrolled, keyed by the value in the URL. That is deliberate: the input's own
- * draft —what has been typed and not yet committed— is the one piece of state that has no business
- * in the address bar, and keying on the committed value is what makes "clear filters" empty the boxes
- * without a second copy of the value to keep in sync.
+ * Both fields commit when you leave them or press Enter rather than filtering per keystroke — that
+ * is `CommittedTextField`'s whole job, and `docs/07-frontend-ux-ui.md` is where the rule comes from.
+ * What holds the answer is the URL (`useStockParams`), so a filtered table is linkable and survives
+ * a reload.
  */
 export function StockFilters({ filters, onChange, onClear }: StockFiltersProps) {
   const { t } = useTranslation('backoffice');
-
-  const commit = (patch: Partial<StockFilterInput>) => {
-    const [[key, value]] = Object.entries(patch) as [[keyof StockFilterInput, string]];
-
-    if (value !== filters[key]) {
-      onChange(patch);
-    }
-  };
-
-  const commitOnEnter = (event: KeyboardEvent<HTMLInputElement>, field: 'sku' | 'q') => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      commit({ [field]: event.currentTarget.value });
-    }
-  };
 
   return (
     <fieldset className="mb-4">
@@ -49,27 +28,19 @@ export function StockFilters({ filters, onChange, onClear }: StockFiltersProps) 
 
       <Row className="g-3 align-items-end">
         <Col xs={12} sm={4}>
-          <TextField
-            key={`sku-${filters.sku}`}
+          <CommittedTextField
             label={t('stock.filters.sku')}
             hint={t('stock.filters.skuHint')}
-            type="search"
-            autoComplete="off"
-            defaultValue={filters.sku}
-            onBlur={(event: FocusEvent<HTMLInputElement>) => commit({ sku: event.target.value })}
-            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => commitOnEnter(event, 'sku')}
+            value={filters.sku}
+            onCommit={(sku) => onChange({ sku })}
           />
         </Col>
         <Col xs={12} sm={5}>
-          <TextField
-            key={`q-${filters.q}`}
+          <CommittedTextField
             label={t('stock.filters.q')}
             hint={t('stock.filters.qHint')}
-            type="search"
-            autoComplete="off"
-            defaultValue={filters.q}
-            onBlur={(event: FocusEvent<HTMLInputElement>) => commit({ q: event.target.value })}
-            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => commitOnEnter(event, 'q')}
+            value={filters.q}
+            onCommit={(q) => onChange({ q })}
           />
         </Col>
         <Col xs={12} sm={3}>

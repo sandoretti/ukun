@@ -1,6 +1,8 @@
 import { http, HttpResponse } from 'msw';
 
 import type { components } from '../../types/api';
+import { normalise } from './catalogHandlers';
+import { paged } from './paged';
 import { problem } from './problem';
 import { employmentAt } from './stockHandlers';
 
@@ -20,7 +22,6 @@ import { employmentAt } from './stockHandlers';
  */
 
 type Employee = components['schemas']['Employee'];
-type EmployeePage = components['schemas']['EmployeePage'];
 type CreateEmployeeRequest = components['schemas']['CreateEmployeeRequest'];
 type ErrorCode = components['schemas']['ErrorCode'];
 type ValidationError = components['schemas']['ValidationError'];
@@ -39,21 +40,6 @@ export const staff: SeedEmployee[] = [
   { id: 2, name: 'Daniel', lastName: 'García', email: 'daniel@ukun.dev', jobTitle: 'Vendedor', isAdmin: false },
   { id: 3, name: 'Lucía', lastName: 'Muñoz', email: 'lucia@ukun.dev', jobTitle: 'Vendedora', isAdmin: false },
 ];
-
-/** Folded the way `TextSearch.containsIgnoringAccents` folds on the server (defect #22). */
-function normalise(value: string): string {
-  return value.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
-}
-
-function paged(items: Employee[], page: number, size: number): EmployeePage {
-  return {
-    page,
-    size,
-    totalElements: items.length,
-    totalPages: Math.max(1, Math.ceil(items.length / size)),
-    items: items.slice(page * size, page * size + size),
-  };
-}
 
 /**
  * The admin's staff with a life of its own for one test:
