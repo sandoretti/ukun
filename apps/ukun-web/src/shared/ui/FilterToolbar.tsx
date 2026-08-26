@@ -40,7 +40,7 @@ export function FilterToolbar({ label, hint, activeCount, onClear, children }: F
     // `<search>` is the element for exactly this. The explicit role is not redundancy for its own
     // sake: the element is from 2023 and screen readers —and jsdom, which is where this is tested—
     // do not all map it to the landmark yet, so the role is what makes it announced today.
-    <search role="search" aria-label={label} className="mb-4">
+    <search role="search" aria-label={label} className="mt-3 mb-4">
       <div className="filter-toolbar">
         {children}
 

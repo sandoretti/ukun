@@ -6,11 +6,6 @@
     "title": "Stock de {{store}}",
     "lead": "Consulta y ajusta las unidades de cada producto en tu tienda.",
     "add": "Dar de alta por SKU",
-    "tabs": {
-      "label": "Qué se lista",
-      "stocked": "Con stock",
-      "notStocked": "Sin dar de alta"
-    },
     "filters": {
       "sku": "SKU",
       "q": "Nombre del producto",
@@ -31,15 +26,24 @@
     "row": {
       "edit": "Cambiar las unidades de {{product}}",
       "delete": "Quitar {{product}} del stock",
-      "add": "Dar de alta {{product}}"
+      "add": "Dar de alta {{product}}",
+      "outOfStock": "Sin unidades",
+      "notStocked": "Sin dar de alta",
+      "addAction": "Dar de alta"
     },
     "empty": {
-      "stocked": "Esta tienda todavía no tiene ningún producto en stock.",
-      "stockedFiltered": "Ningún producto en stock coincide con la búsqueda.",
-      "notStocked": "Todos los productos del catálogo están dados de alta en esta tienda.",
-      "notStockedFiltered": "Ningún producto sin dar de alta coincide con la búsqueda."
+      "STOCKED": "Esta tienda todavía no tiene ningún producto en stock.",
+      "NOT_STOCKED": "Todos los productos del catálogo están dados de alta en esta tienda.",
+      "ALL": "No hay ningún producto en el catálogo.",
+      "filtered": "Ningún producto coincide con la búsqueda."
     },
-    "pagination": "Paginación del stock"
+    "pagination": "Paginación del stock",
+    "views": {
+      "label": "Qué se lista",
+      "stocked": "Con stock",
+      "notStocked": "Sin dar de alta",
+      "all": "Todo"
+    }
   },
   "edit": {
     "title": "Cambiar unidades",

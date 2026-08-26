@@ -1,6 +1,6 @@
 import { FIRST_PAGE } from '../../shared/hooks/usePageParams';
 import { BACKOFFICE_STOCK_PATH } from '../../shared/routes';
-import type { StockFilterInput, StockStatus } from './api/stockKeys';
+import type { StockFilterInput, StockView } from './api/stockKeys';
 
 /**
  * The paths of this feature, and the one place that knows what a stock URL looks like. The listing's
@@ -13,8 +13,8 @@ import type { StockFilterInput, StockStatus } from './api/stockKeys';
  */
 export const NEW_STOCK_LINE_PATH = '/backoffice/stock/new';
 
-/** The half of RF-09 the screen opens on, which is also the contract's own default for `status`. */
-export const DEFAULT_STATUS: StockStatus = 'STOCKED';
+/** The view the screen opens on, which is also the contract's own default for `status`. */
+export const DEFAULT_STATUS: StockView = 'STOCKED';
 
 /**
  * The listing's query string. Defaults are left out: `/backoffice/stock` and

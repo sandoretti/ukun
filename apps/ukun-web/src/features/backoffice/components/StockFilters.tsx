@@ -2,13 +2,15 @@ import { useTranslation } from 'react-i18next';
 
 import { FilterToolbar } from '../../../shared/ui/FilterToolbar';
 import { SearchField } from '../../../shared/ui/SearchField';
-import type { StockFilterInput } from '../api/stockKeys';
+import type { StockFilterInput, StockView } from '../api/stockKeys';
 import { countActiveFilters } from '../useStockParams';
+import { StockViewSwitch } from './StockViewSwitch';
 
 type StockFiltersProps = {
   filters: StockFilterInput;
   onChange: (patch: Partial<StockFilterInput>) => void;
   onClear: () => void;
+  hrefForView: (view: StockView) => string;
 };
 
 /**
@@ -20,8 +22,12 @@ type StockFiltersProps = {
  *
  * They share the toolbar of the staff listing because they are the same kind of bar over the same
  * kind of table; what changes is which controls it holds.
+ *
+ * The view switch rides in the same bar rather than floating over it as a strip of tabs: choosing
+ * what is listed and narrowing it down are the same gesture from the reader's side, and two rows of
+ * controls for one job was the thing that made this screen look assembled rather than designed.
  */
-export function StockFilters({ filters, onChange, onClear }: StockFiltersProps) {
+export function StockFilters({ filters, onChange, onClear, hrefForView }: StockFiltersProps) {
   const { t } = useTranslation('backoffice');
 
   return (
@@ -31,6 +37,8 @@ export function StockFilters({ filters, onChange, onClear }: StockFiltersProps) 
       activeCount={countActiveFilters(filters)}
       onClear={onClear}
     >
+      <StockViewSwitch current={filters.status} hrefForView={hrefForView} />
+
       <SearchField
         label={t('stock.filters.sku')}
         placeholder={t('stock.filters.skuPlaceholder')}

@@ -1,8 +1,9 @@
 @use "../bootstrap";
 
 // La barra de filtros de un listado (`shared/ui/FilterToolbar`), que pintan las dos pantallas del
-// back-office. Un recuadro y una sola fila: lo que separa los filtros del resto de la pantalla es el
-// marco, no una palabra encima diciendo «Filtrar».
+// back-office. Una sola fila y ningún marco: lo que separa los filtros del resto de la pantalla es
+// el aire, no una caja — los controles ya tienen borde propio, y meterlos en un recuadro es dibujar
+// dos veces el mismo límite.
 //
 // Ningún color se escribe aquí: salen de las variables de Bootstrap, que ya llevan la paleta de
 // `_tokens.scss` (ADR-0002).
@@ -11,10 +12,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: bootstrap.$spacer * 0.75;
-  border: bootstrap.$border-width solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius);
-  background-color: var(--bs-tertiary-bg);
-  padding: bootstrap.$spacer * 0.75;
 
   // Los controles vienen envueltos en `Form.Group`, que trae el margen inferior con el que se apilan
   // en un formulario. Dentro de la barra no se apilan: van en línea, así que ese margen sobra. Se

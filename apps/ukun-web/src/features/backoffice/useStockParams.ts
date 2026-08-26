@@ -2,11 +2,11 @@ import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { FIRST_PAGE, readPage } from '../../shared/hooks/usePageParams';
-import type { StockFilterInput, StockStatus } from './api/stockKeys';
+import type { StockFilterInput, StockView } from './api/stockKeys';
 import { DEFAULT_STATUS, stockPath, stockSearch } from './routes';
 import { readSku } from './stockSchema';
 
-const STATUSES: StockStatus[] = ['STOCKED', 'NOT_STOCKED'];
+const VIEWS: StockView[] = ['STOCKED', 'NOT_STOCKED', 'ALL'];
 
 /** The listing with nothing filtered, which is also what clearing goes back to. */
 export const NO_FILTERS: StockFilterInput = { status: DEFAULT_STATUS, sku: '', q: '' };
@@ -26,13 +26,18 @@ function readTerm(value: string | null): string {
   return (value ?? '').trim();
 }
 
-function readStatus(value: string | null): StockStatus {
-  return STATUSES.includes(value as StockStatus) ? (value as StockStatus) : DEFAULT_STATUS;
+/**
+ * Which view the URL asks for. `ALL` is the frontend's own —the contract has no such `status`— and
+ * is read back here like the other two: anything else is the default, so a hand-edited address bar
+ * lands on the stock rather than on an error.
+ */
+function readView(value: string | null): StockView {
+  return VIEWS.includes(value as StockView) ? (value as StockView) : DEFAULT_STATUS;
 }
 
 function readFilters(searchParams: URLSearchParams): StockFilterInput {
   return {
-    status: readStatus(searchParams.get('status')),
+    status: readView(searchParams.get('status')),
     sku: readSku(searchParams.get('sku')),
     q: readTerm(searchParams.get('q')),
   };
@@ -79,15 +84,12 @@ export function useStockParams() {
   );
 
   /**
-   * Where the other tab lives, as a link. The switch is navigation and not a button with state: that
-   * is what makes each half addressable, keeps the back button honest, and leaves nothing to keep in
-   * sync. It carries the filters over —the same SKU search makes sense on both sides— and drops the
-   * page, because page 3 of one half says nothing about the other.
+   * Where each view lives, as a link. The switch is navigation and not a button with state: that is
+   * what makes each view addressable, keeps the back button honest, and leaves nothing to keep in
+   * sync. It carries the filters over —the same SKU search makes sense in all three— and drops the
+   * page, because page 3 of one view says nothing about another.
    */
-  const hrefForStatus = useCallback(
-    (status: StockStatus) => stockPath({ ...filters, status }),
-    [filters],
-  );
+  const hrefForView = useCallback((status: StockView) => stockPath({ ...filters, status }), [filters]);
 
-  return { filters, page, updateFilters, clearFilters, goToPage, hrefForStatus };
+  return { filters, page, updateFilters, clearFilters, goToPage, hrefForView };
 }

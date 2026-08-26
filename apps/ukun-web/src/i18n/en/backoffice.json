@@ -6,11 +6,6 @@
     "title": "Stock at {{store}}",
     "lead": "Check and adjust how many units of each product your store holds.",
     "add": "Add by SKU",
-    "tabs": {
-      "label": "What is listed",
-      "stocked": "In stock",
-      "notStocked": "Not added yet"
-    },
     "filters": {
       "sku": "SKU",
       "q": "Product name",
@@ -31,15 +26,24 @@
     "row": {
       "edit": "Change the units of {{product}}",
       "delete": "Remove {{product}} from the stock",
-      "add": "Add {{product}}"
+      "add": "Add {{product}}",
+      "outOfStock": "No units",
+      "notStocked": "Not added yet",
+      "addAction": "Add"
     },
     "empty": {
-      "stocked": "This store does not hold any product yet.",
-      "stockedFiltered": "No product in stock matches the search.",
-      "notStocked": "Every catalog product is already added to this store.",
-      "notStockedFiltered": "No product left to add matches the search."
+      "STOCKED": "This store does not hold any product yet.",
+      "NOT_STOCKED": "Every catalog product is already added to this store.",
+      "ALL": "There is no product in the catalog.",
+      "filtered": "No product matches the search."
     },
-    "pagination": "Stock pagination"
+    "pagination": "Stock pagination",
+    "views": {
+      "label": "What is listed",
+      "stocked": "In stock",
+      "notStocked": "Not added yet",
+      "all": "Everything"
+    }
   },
   "edit": {
     "title": "Change units",
