@@ -7,7 +7,8 @@ import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
 import { useUnstockedCandidates } from '../api/queries';
 import { toApiFilters, type StockFilterInput } from '../api/stockKeys';
 import { newStockLinePath } from '../routes';
-import { countActiveFilters, usePageWithinRange } from '../useStockParams';
+import { usePageWithinRange } from '../usePageWithinRange';
+import { countActiveFilters } from '../useStockParams';
 
 type UnstockedViewProps = {
   storeId: number;

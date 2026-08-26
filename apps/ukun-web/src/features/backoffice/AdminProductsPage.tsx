@@ -10,8 +10,8 @@ import { toApiFilters } from './api/adminProductKeys';
 import { useAdminProducts } from './api/adminProductQueries';
 import { AdminProductFilters } from './components/AdminProductFilters';
 import { AdminProductRow } from './components/AdminProductRow';
+import { usePageWithinRange } from './usePageWithinRange';
 import { countActiveFilters, useAdminProductParams } from './useAdminProductParams';
-import { usePageWithinRange } from './useStockParams';
 
 /**
  * The catalog as the back-office sees it (RF-10) at `/admin/products`.

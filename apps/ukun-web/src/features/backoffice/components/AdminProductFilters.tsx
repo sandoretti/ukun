@@ -1,10 +1,10 @@
-import type { ChangeEvent, FocusEvent, KeyboardEvent } from 'react';
+import type { ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Col, Row } from 'react-bootstrap';
 
 import { useProductTypes } from '../../../shared/api/productTypes';
+import { FilterTextField } from '../../../shared/ui/FilterTextField';
 import { SelectField } from '../../../shared/ui/SelectField';
-import { TextField } from '../../../shared/ui/TextField';
 import type {
   AdminProductFilterInput,
   AdminProductSort,
@@ -27,31 +27,13 @@ type AdminProductFiltersProps = {
  * —the one this screen exists for— whether they are looking at what is on sale, at what has been
  * pulled, or at both (RF-10).
  *
- * The typed fields commit when you leave them or press Enter, never per keystroke: crossing a field
- * is one request, not forty (`docs/07-frontend-ux-ui.md`). The closed lists commit on change, because
- * choosing from a list *is* the decision. What holds the answer is the URL, so a filtered table is
- * linkable and survives a reload.
- *
- * The typed controls are uncontrolled and keyed by the value in the URL, like the stock filters: the
- * input's own draft is the one piece of state that has no business in the address bar, and keying on
- * the committed value is what makes "clear" empty the boxes with no second copy to keep in sync.
+ * The typed fields are `FilterTextField`, so they commit when you leave them or press Enter and never
+ * per keystroke. The closed lists commit on change, because choosing from a list *is* the decision.
+ * What holds the answer is the URL, so a filtered table is linkable and survives a reload.
  */
 export function AdminProductFilters({ filters, onChange, onClear }: AdminProductFiltersProps) {
   const { t } = useTranslation('backoffice');
   const types = useProductTypes();
-
-  const commitTerm = (field: 'q' | 'sku', value: string) => {
-    if (value !== filters[field]) {
-      onChange({ [field]: value });
-    }
-  };
-
-  const commitOnEnter = (event: KeyboardEvent<HTMLInputElement>, field: 'q' | 'sku') => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      commitTerm(field, event.currentTarget.value);
-    }
-  };
 
   return (
     <fieldset className="mb-4">
@@ -59,27 +41,19 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
 
       <Row className="g-3 align-items-start">
         <Col xs={12} md={4}>
-          <TextField
-            key={`q-${filters.q}`}
+          <FilterTextField
             label={t('products.filters.q')}
             hint={t('products.filters.qHint')}
-            type="search"
-            autoComplete="off"
-            defaultValue={filters.q}
-            onBlur={(event: FocusEvent<HTMLInputElement>) => commitTerm('q', event.target.value)}
-            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => commitOnEnter(event, 'q')}
+            value={filters.q}
+            onCommit={(q) => onChange({ q })}
           />
         </Col>
         <Col xs={12} md={3}>
-          <TextField
-            key={`sku-${filters.sku}`}
+          <FilterTextField
             label={t('products.filters.sku')}
             hint={t('products.filters.skuHint')}
-            type="search"
-            autoComplete="off"
-            defaultValue={filters.sku}
-            onBlur={(event: FocusEvent<HTMLInputElement>) => commitTerm('sku', event.target.value)}
-            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => commitOnEnter(event, 'sku')}
+            value={filters.sku}
+            onCommit={(sku) => onChange({ sku })}
           />
         </Col>
         <Col xs={12} md={5}>
