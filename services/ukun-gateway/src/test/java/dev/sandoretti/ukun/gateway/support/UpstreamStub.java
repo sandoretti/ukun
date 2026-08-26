@@ -94,7 +94,11 @@ public final class UpstreamStub {
 
         // Container-facing: fetched by the gateway itself, so these do point at the stub.
         registry.add("ukun.oauth2.token-uri", () -> AUTH.uri() + "/oauth2/token");
-        registry.add("ukun.oauth2.jwk-set-uri", () -> AUTH.uri() + "/oauth2/jwks");
+        // Not the AUTH stub: the gateway FETCHES this one, and it has to answer a real JWK set rather
+        // than the echo. Publishing it at the stub's own /oauth2/jwks would take that path away from
+        // the tests that assert the browser-facing half — that the same path, asked through the
+        // gateway, is proxied to ukun-auth (TokenRelayIT, TracePropagationIT).
+        registry.add("ukun.oauth2.jwk-set-uri", AccessTokens::jwkSetUri);
     }
 
     public static void forgetRequests() {

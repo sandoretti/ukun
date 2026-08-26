@@ -9,8 +9,10 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.oidc.web.server.logout.OidcClientInitiatedServerLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.logout.ServerLogoutSuccessHandler;
 import org.springframework.security.web.server.authentication.logout.WebSessionServerLogoutHandler;
@@ -45,8 +47,10 @@ import org.springframework.security.web.server.header.StaticServerHttpHeadersWri
  * validates the JWT itself as a resource server and repeats every check with {@code @PreAuthorize},
  * trusting no header this gateway may have injected ({@code docs/08} §4). Resource-level
  * authorisation — "this order is mine", "this store is mine" — cannot be expressed as a path at all
- * and is not attempted here. The roles it matches on come from the very token it relays, so the two
- * layers cannot disagree; see {@link AccessTokenOidcUserService}.
+ * and is not attempted here. The role is read off the very token this gateway is about to relay, on
+ * the request that relays it, which is what keeps the two layers from disagreeing — a property the
+ * session's authorities could not hold, and did not (issue #145). See
+ * {@link RelayedTokenAuthorizationManager}.
  *
  * <h2>Why the local endpoints win over the routes to ukun-auth</h2>
  *
@@ -89,12 +93,19 @@ class GatewaySecurityConfig {
             UkunGatewayProperties properties,
             UkunOAuth2Properties oauth2,
             ReactiveClientRegistrationRepository clients,
+            ReactiveOAuth2AuthorizedClientManager authorizedClients,
+            ReactiveJwtDecoder accessTokenDecoder,
             ProblemDetailSecurityHandler problemHandler) {
 
         ServerCsrfTokenRepository csrfTokens = csrfTokenRepository();
 
         return http.authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Not hasRole(...): that reads the session principal's authorities, which are
+                        // a photograph taken at login, while ukun-api decides the same question from
+                        // the token this gateway relays and refreshes every 15 minutes. Issue #145 is
+                        // what those two lifetimes look like once they diverge.
+                        .pathMatchers("/api/admin/**")
+                        .access(new RelayedTokenAuthorizationManager(authorizedClients, accessTokenDecoder, "ADMIN"))
                         .pathMatchers("/api/me/**").authenticated()
                         // The public catalogue, /media/**, the SPA itself and /actuator/health.
                         // Not an oversight: what the coarse filter cannot decide, the API decides —

@@ -3,7 +3,6 @@ package dev.sandoretti.ukun.gateway;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.awaitility.Awaitility.await;
-import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockUser;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -71,16 +70,16 @@ class DeniedRequestAccessLogIT extends FilterChainIntegrationTest {
     /**
      * The 403 of the coarse role filter, which is a denial with somebody behind it.
      *
-     * <p>The line is asserted, but not its {@code accountId}: {@code mockUser()} injects its principal
-     * through a mutator that rebuilds the client's filter chain, so what reaches the log in this setup
-     * is not what a real session would leave. Where the caller's id is deposited —
+     * <p>The line is asserted, but not its {@code accountId}: the session comes from a mutator, whose
+     * principal is a plain {@code OAuth2User} rather than the {@code UkunOidcUser} a real login builds,
+     * and the account id lives on that type alone. Where the caller's id is deposited —
      * {@code ProblemDetailSecurityHandler}, the only place that still knows it once the chain has
      * decided to stop — is asserted directly in {@code ProblemDetailSecurityHandlerTest}.
      */
     @Test
     @DisplayName("a 403 from the coarse role filter is logged too")
     void logsTheForbiddenDenial() {
-        http.mutateWith(mockUser().roles("CUSTOMER"))
+        signedInWith(List.of("CUSTOMER"))
                 .get()
                 .uri(ADMIN_SURFACE)
                 .exchange()
