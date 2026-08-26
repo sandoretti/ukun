@@ -24,6 +24,10 @@ type EmploymentBoundaryProps = {
  * It is also the only place the store comes from. Nothing here reads a store identifier out of the
  * URL: `{storeId}` identifies a resource, it never authorises access to it, and the server resolves
  * ownership from `account_id` on every request (`docs/08-identidad-y-seguridad.md` §4).
+ *
+ * Its message says "no store", not "no stock": this boundary is the entrance to every screen of the
+ * back-office —the stock of RF-09 and the staff of RF-11— and naming one of them here would be
+ * telling half the readers something false about the other.
  */
 export function EmploymentBoundary({ children }: EmploymentBoundaryProps) {
   const { t } = useTranslation('backoffice');
@@ -40,7 +44,7 @@ export function EmploymentBoundary({ children }: EmploymentBoundaryProps) {
   // already turns away anyone without the role; this covers the account that has the role and no
   // profile behind it.
   if (toProblem(query.error).status === FORBIDDEN) {
-    return <EmptyState icon="badge" message={t('stock.employment.denied')} />;
+    return <EmptyState icon="badge" message={t('employment.denied')} />;
   }
 
   return <ErrorState error={query.error} />;

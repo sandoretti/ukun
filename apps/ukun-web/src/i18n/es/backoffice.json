@@ -1,11 +1,11 @@
 {
+  "employment": {
+    "denied": "Tu cuenta no está asignada a ninguna tienda."
+  },
   "stock": {
     "title": "Stock de {{store}}",
     "lead": "Consulta y ajusta las unidades de cada producto en tu tienda.",
     "add": "Dar de alta por SKU",
-    "employment": {
-      "denied": "Tu cuenta no gestiona el stock de ninguna tienda."
-    },
     "tabs": {
       "label": "Qué se lista",
       "stocked": "Con stock",

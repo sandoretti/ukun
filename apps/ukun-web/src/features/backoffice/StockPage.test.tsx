@@ -366,7 +366,7 @@ describe('StockPage', () => {
     renderStock();
 
     expect(
-      await screen.findByText('Tu cuenta no gestiona el stock de ninguna tienda.'),
+      await screen.findByText('Tu cuenta no está asignada a ninguna tienda.'),
     ).toBeDefined();
   });
 });

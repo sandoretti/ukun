@@ -1,11 +1,11 @@
 {
+  "employment": {
+    "denied": "Your account is not assigned to any store."
+  },
   "stock": {
     "title": "Stock at {{store}}",
     "lead": "Check and adjust how many units of each product your store holds.",
     "add": "Add by SKU",
-    "employment": {
-      "denied": "Your account does not manage the stock of any store."
-    },
     "tabs": {
       "label": "What is listed",
       "stocked": "In stock",
