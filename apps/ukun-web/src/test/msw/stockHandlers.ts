@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 
 import type { components } from '../../types/api';
 import { normalise, products } from './catalogHandlers';
+import { paged } from './paged';
 import { problem } from './problem';
 
 /**
@@ -67,16 +68,6 @@ export type SeedLine = {
 };
 
 const productOf = (productId: number) => products.find((item) => item.id === productId)!;
-
-function paged(items: StockLine[], page: number, size: number): StockLinePage {
-  return {
-    page,
-    size,
-    totalElements: items.length,
-    totalPages: Math.max(1, Math.ceil(items.length / size)),
-    items: items.slice(page * size, page * size + size),
-  };
-}
 
 /**
  * A store's stock with a life of its own for one test:

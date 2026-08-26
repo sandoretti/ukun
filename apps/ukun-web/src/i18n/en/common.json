@@ -135,5 +135,10 @@
     "expMonth": "The expiry month goes from 1 to 12",
     "expYear": "The expiry year goes from 2024 to 2100",
     "favoriteStore": "That store no longer exists. Please choose another one"
+  },
+  "filters": {
+    "active": "Active filters",
+    "remove": "Remove the filter {{label}}",
+    "clearAll": "Clear all"
   }
 }

@@ -21,6 +21,7 @@
 // componentes de `shared/ui/` con estilo propio y el formulario largo que comparten el perfil y el
 // alta.
 @use "components/settings-form";
+@use "components/filter-toolbar";
 @use "components/payment-card";
 @use "components/product-thumb";
 @use "components/admin-product";

@@ -8,6 +8,7 @@ import {
   isStocked,
   isUnstocked,
   SKU_PATTERN,
+  type StockView,
   stockKeys,
   skuLookupKeys,
   type CreateStockLineRequest,
@@ -51,12 +52,17 @@ function fetchStock(storeId: number, filters: StockFilters, signal: AbortSignal)
  * every page change (`docs/07-frontend-ux-ui.md`) — and it is also what lets the edit dialog keep
  * showing a row while the list behind it is being re-read after a version conflict.
  */
-export function useStockedLines(storeId: number, filters: Omit<StockFilters, 'status'>) {
+export function useStockedLines(
+  storeId: number,
+  filters: Omit<StockFilters, 'status'>,
+  enabled = true,
+) {
   const withStatus: StockFilters = { ...filters, status: 'STOCKED' };
 
   return useQuery({
     queryKey: stockKeys.list(storeId, withStatus),
     queryFn: ({ signal }) => fetchStock(storeId, withStatus, signal),
+    enabled,
     placeholderData: keepPreviousData,
     retry: retryUnlessClientError,
     // `STOCKED` promises the three fields, so this filter never drops a row. It is here so the type
@@ -71,12 +77,17 @@ export function useStockedLines(storeId: number, filters: Omit<StockFilters, 'st
  * screen. Same endpoint and same shape, another `status`; a product with no row counts as not
  * managed in this store, which is not the same thing as a quantity of zero.
  */
-export function useUnstockedCandidates(storeId: number, filters: Omit<StockFilters, 'status'>) {
+export function useUnstockedCandidates(
+  storeId: number,
+  filters: Omit<StockFilters, 'status'>,
+  enabled = true,
+) {
   const withStatus: StockFilters = { ...filters, status: 'NOT_STOCKED' };
 
   return useQuery({
     queryKey: stockKeys.list(storeId, withStatus),
     queryFn: ({ signal }) => fetchStock(storeId, withStatus, signal),
+    enabled,
     placeholderData: keepPreviousData,
     retry: retryUnlessClientError,
     select: (page): UnstockedCandidatePage => ({ ...page, items: page.items.filter(isUnstocked) }),
@@ -192,4 +203,62 @@ export function useDeleteStockLine(storeId: number) {
     },
     onSuccess: invalidate,
   });
+}
+
+/**
+ * The whole store in one table: the lines it holds **and** the catalog products with no row here yet.
+ *
+ * **The contract has no such answer, and this is the cost of asking for it anyway.** `status` is
+ * `STOCKED` or `NOT_STOCKED` — two queries over two different shapes — so the crossed view is two
+ * requests joined in the browser, and the join is honest only in what it counts:
+ *
+ * - `totalElements` is the **sum**, which is the real number of things in the store.
+ * - `totalPages` is the **larger of the two**, and that is where the seam shows: page 1 holds up to
+ *   forty rows (twenty of each) and a page past the shorter half shows only the longer one. There is
+ *   no honest way to paginate the union of two independently paginated answers from the client.
+ *
+ * The alternative —a third value of `status` served by one query— is a change to a contract frozen
+ * at SINC-1, and it is written up in its own issue. Until then this is a deliberate compromise, not
+ * an oversight: it was decided with the trade-off on the table.
+ *
+ * A read that fails is reported by the first half that failed; a half that is not asked for
+ * (`enabled: false`) never makes the whole thing pending.
+ */
+export function useStockView(
+  storeId: number,
+  view: StockView,
+  filters: Omit<StockFilters, 'status'>,
+) {
+  const wantsStocked = view !== 'NOT_STOCKED';
+  const wantsUnstocked = view !== 'STOCKED';
+
+  const stocked = useStockedLines(storeId, filters, wantsStocked);
+  const unstocked = useUnstockedCandidates(storeId, filters, wantsUnstocked);
+
+  const halves = [
+    ...(wantsStocked ? [stocked] : []),
+    ...(wantsUnstocked ? [unstocked] : []),
+  ];
+
+  const answered = halves.every((half) => half.data !== undefined);
+
+  return {
+    // Stocked first, always: what the store has comes before what it could have.
+    items: answered
+      ? [
+          ...(wantsStocked ? (stocked.data?.items ?? []) : []),
+          ...(wantsUnstocked ? (unstocked.data?.items ?? []) : []),
+        ]
+      : undefined,
+    totalElements: answered
+      ? halves.reduce((total, half) => total + (half.data?.totalElements ?? 0), 0)
+      : undefined,
+    totalPages: answered
+      ? Math.max(...halves.map((half) => half.data?.totalPages ?? 0))
+      : undefined,
+    isPending: halves.some((half) => half.isPending),
+    isError: halves.some((half) => half.isError),
+    error: halves.find((half) => half.isError)?.error ?? null,
+    isFetching: halves.some((half) => half.isFetching),
+  };
 }

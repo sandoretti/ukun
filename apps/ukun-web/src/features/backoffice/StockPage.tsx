@@ -4,10 +4,8 @@ import { Container } from 'react-bootstrap';
 
 import { Icon } from '../../shared/ui/Icon';
 import { EmploymentBoundary } from './components/EmploymentBoundary';
-import { StockedView } from './components/StockedView';
 import { StockFilters } from './components/StockFilters';
-import { StockStatusTabs } from './components/StockStatusTabs';
-import { UnstockedView } from './components/UnstockedView';
+import { StockTable } from './components/StockTable';
 import { NEW_STOCK_LINE_PATH } from './routes';
 import { useStockParams } from './useStockParams';
 
@@ -30,7 +28,7 @@ import { useStockParams } from './useStockParams';
  */
 export default function StockPage() {
   const { t } = useTranslation('backoffice');
-  const { filters, page, updateFilters, clearFilters, goToPage, hrefForStatus } = useStockParams();
+  const { filters, page, updateFilters, clearFilters, goToPage } = useStockParams();
 
   return (
     <Container className="py-5">
@@ -53,27 +51,15 @@ export default function StockPage() {
               </Link>
             </div>
 
-            <StockStatusTabs current={filters.status} hrefForStatus={hrefForStatus} />
-
             <StockFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
 
-            {filters.status === 'STOCKED' ? (
-              <StockedView
-                storeId={employment.storeId}
-                storeName={employment.storeName}
-                filters={filters}
-                page={page}
-                onPageChange={goToPage}
-              />
-            ) : (
-              <UnstockedView
-                storeId={employment.storeId}
-                storeName={employment.storeName}
-                filters={filters}
-                page={page}
-                onPageChange={goToPage}
-              />
-            )}
+            <StockTable
+              storeId={employment.storeId}
+              storeName={employment.storeName}
+              filters={filters}
+              page={page}
+              onPageChange={goToPage}
+            />
           </>
         )}
       </EmploymentBoundary>

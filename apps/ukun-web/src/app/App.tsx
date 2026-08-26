@@ -9,6 +9,7 @@ import {
   ADMIN_PRODUCTS_PATH,
   NEW_PRODUCT_PATH,
 } from '../features/backoffice/adminRoutes';
+import { ADMIN_EMPLOYEES_PATH, NEW_EMPLOYEE_PATH } from '../features/backoffice/employees/routes';
 import { NEW_STOCK_LINE_PATH } from '../features/backoffice/routes';
 import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
@@ -44,6 +45,8 @@ const AdminHomePage = lazy(() => import('../features/backoffice/AdminHomePage'))
 const AdminProductsPage = lazy(() => import('../features/backoffice/AdminProductsPage'));
 const NewProductPage = lazy(() => import('../features/backoffice/NewProductPage'));
 const AdminProductPage = lazy(() => import('../features/backoffice/AdminProductPage'));
+const EmployeesPage = lazy(() => import('../features/backoffice/employees/EmployeesPage'));
+const NewEmployeePage = lazy(() => import('../features/backoffice/employees/NewEmployeePage'));
 
 function App() {
   return (
@@ -143,11 +146,13 @@ function App() {
             </RequireAuth>
           }
         />
-        {/* La rama de administración (RF-10 aquí; RF-11 y RF-13 se le añaden). Cuelga de `/admin/*`
+        {/* La rama de administración (RF-10 y RF-11; RF-13 se le añade). Cuelga de `/admin/*`
             porque es lo que habla con `/api/admin/**` (ADR-0020), y pide `ADMIN` y no `EMPLOYEE`: el
-            catálogo es global, no de una tienda. Las guardas son las mismas dos, compuestas igual, y
-            siguen sin ser la barrera — el servidor vuelve a comprobar el rol en cada petición. El
-            alta va **antes** que `:id`, que también casaría con el literal `new`. */}
+            catálogo es global y los empleados son de admin, no de cualquier empleado. Las guardas
+            son las mismas dos, compuestas igual, y siguen sin ser la barrera — el servidor vuelve a
+            comprobar el rol en cada petición. El alta va **antes** que `:id`, que también casaría
+            con el literal `new`. Ninguna de estas rutas lleva identificador de tienda: la resuelve
+            el servidor desde `account_id`. */}
         <Route
           path={ADMIN_PATH}
           element={
@@ -184,6 +189,28 @@ function App() {
             <RequireAuth>
               <RequireRole role="ADMIN">
                 <AdminProductPage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        {/* Los empleados de la tienda del admin (RF-11), en la misma rama y con las mismas guardas
+            por la misma razón: hablan con `/api/admin/**`. */}
+        <Route
+          path={ADMIN_EMPLOYEES_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <EmployeesPage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={NEW_EMPLOYEE_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <NewEmployeePage />
               </RequireRole>
             </RequireAuth>
           }

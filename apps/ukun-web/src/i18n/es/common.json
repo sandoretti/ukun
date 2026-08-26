@@ -135,5 +135,10 @@
     "expMonth": "El mes de caducidad va del 1 al 12",
     "expYear": "El año de caducidad va de 2024 a 2100",
     "favoriteStore": "Esa tienda ya no existe. Elige otra"
+  },
+  "filters": {
+    "active": "Filtros activos",
+    "remove": "Quitar el filtro {{label}}",
+    "clearAll": "Limpiar todo"
   }
 }

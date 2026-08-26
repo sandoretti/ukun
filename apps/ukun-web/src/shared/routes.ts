@@ -57,9 +57,10 @@ export const BACKOFFICE_STOCK_PATH = '/backoffice/stock';
  * The admin index (RF-10, RF-13, RF-11). It is `features/backoffice`'s screen and it comes up here
  * because the session menu of `features/auth` is where an administrator reaches it from.
  *
- * The rest of that branch —the catalog listing, the sheet of one product— stays in
- * `features/backoffice/adminRoutes.ts`, because nobody else writes those. And the prefix is
- * `/admin/*` and not `/backoffice/*` on purpose: this is the branch of what talks to `/api/admin/**`
- * (ADR-0020), which the stock screens deliberately do not.
+ * The rest of that branch —the catalog listing, the sheet of one product, the staff— stays in
+ * `features/backoffice/`, because nobody outside it writes those: the menu sends an administrator to
+ * the index, and the index is what links to each screen. And the prefix is `/admin/*` and not
+ * `/backoffice/*` on purpose: this is the branch of what talks to `/api/admin/**` (ADR-0020), which
+ * the stock screens deliberately do not.
  */
 export const ADMIN_PATH = '/admin';

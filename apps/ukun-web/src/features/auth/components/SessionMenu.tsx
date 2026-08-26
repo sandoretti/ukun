@@ -75,7 +75,8 @@ export function SessionMenu() {
         {/* La administración es otra entrada y no un apartado de la anterior: `/backoffice/*` es de
             cualquier empleado y `/admin/*` es lo que habla con `/api/admin/**` (ADR-0020), así que
             son dos destinos con dos condiciones distintas. Ocultarla sigue siendo UX — la barrera
-            está en el gateway y otra vez en ukun-api. */}
+            está en el gateway y otra vez en ukun-api. Y es **una** entrada: los empleados y el
+            catálogo cuelgan del índice de `/admin`, no del menú. */}
         {hasRole('ADMIN') && (
           <Dropdown.Item as={Link} to={ADMIN_PATH}>
             {t('account.admin')}

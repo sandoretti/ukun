@@ -2,11 +2,11 @@ import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { readPositiveInteger } from '../../shared/browser/searchParams';
-import type { StockFilterInput, StockStatus } from './api/stockKeys';
-import { DEFAULT_STATUS, FIRST_PAGE, stockPath, stockSearch } from './routes';
+import type { StockFilterInput, StockView } from './api/stockKeys';
+import { DEFAULT_STATUS, FIRST_PAGE, stockSearch } from './routes';
 import { readSku } from './stockSchema';
 
-const STATUSES: StockStatus[] = ['STOCKED', 'NOT_STOCKED'];
+const VIEWS: StockView[] = ['STOCKED', 'NOT_STOCKED', 'ALL'];
 
 /** The listing with nothing filtered, which is also what clearing goes back to. */
 export const NO_FILTERS: StockFilterInput = { status: DEFAULT_STATUS, sku: '', q: '' };
@@ -26,22 +26,18 @@ function readTerm(value: string | null): string {
   return (value ?? '').trim();
 }
 
-function readStatus(value: string | null): StockStatus {
-  return STATUSES.includes(value as StockStatus) ? (value as StockStatus) : DEFAULT_STATUS;
-}
-
 /**
- * The page the URL is on, counting from one. The API counts from zero and that is where it stays:
- * `?page=1` meaning the second page is a trap for anyone editing the address bar, so the translation
- * happens in the screen, once. Anything that is not a page — `0`, `-3`, `abc` — is the first.
+ * Which view the URL asks for. `ALL` is the frontend's own —the contract has no such `status`— and
+ * is read back here like the other two: anything else is the default, so a hand-edited address bar
+ * lands on the stock rather than on an error.
  */
-function readPage(searchParams: URLSearchParams): number {
-  return Math.max(FIRST_PAGE, readPositiveInteger(searchParams.get('page')) ?? FIRST_PAGE);
+function readView(value: string | null): StockView {
+  return VIEWS.includes(value as StockView) ? (value as StockView) : DEFAULT_STATUS;
 }
 
 function readFilters(searchParams: URLSearchParams): StockFilterInput {
   return {
-    status: readStatus(searchParams.get('status')),
+    status: readView(searchParams.get('status')),
     sku: readSku(searchParams.get('sku')),
     q: readTerm(searchParams.get('q')),
   };
@@ -60,7 +56,7 @@ export function useStockParams() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filters = useMemo(() => readFilters(searchParams), [searchParams]);
-  const page = readPage(searchParams);
+  const page = Math.max(FIRST_PAGE, readPositiveInteger(searchParams.get('page')) ?? FIRST_PAGE);
 
   const updateFilters = useCallback(
     (patch: Partial<StockFilterInput>) => setSearchParams(stockSearch({ ...filters, ...patch })),
@@ -87,16 +83,5 @@ export function useStockParams() {
     [filters, setSearchParams],
   );
 
-  /**
-   * Where the other tab lives, as a link. The switch is navigation and not a button with state: that
-   * is what makes each half addressable, keeps the back button honest, and leaves nothing to keep in
-   * sync. It carries the filters over —the same SKU search makes sense on both sides— and drops the
-   * page, because page 3 of one half says nothing about the other.
-   */
-  const hrefForStatus = useCallback(
-    (status: StockStatus) => stockPath({ ...filters, status }),
-    [filters],
-  );
-
-  return { filters, page, updateFilters, clearFilters, goToPage, hrefForStatus };
+  return { filters, page, updateFilters, clearFilters, goToPage };
 }

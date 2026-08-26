@@ -71,7 +71,7 @@ describe('StockPage', () => {
     renderStock();
     await screen.findByText(SOFA);
 
-    await user.click(screen.getByRole('link', { name: 'Sin dar de alta' }));
+    await user.selectOptions(screen.getByLabelText('Qué se lista'), 'Sin dar de alta');
 
     // The sofa has a row, so it is not a candidate; the bunk bed has none.
     const candidate = await screen.findByText('Litera infantil');
@@ -122,7 +122,7 @@ describe('StockPage', () => {
     renderStock('/backoffice/stock?sku=LAMPARA-PIE-01');
 
     expect(
-      await screen.findByText('Ningún producto en stock coincide con la búsqueda.'),
+      await screen.findByText('Ningún producto coincide con la búsqueda.'),
     ).toBeDefined();
   });
 
@@ -143,6 +143,68 @@ describe('StockPage', () => {
     expect(state.counters.updated).toBe(1);
   });
 
+  it('shows both halves of the store in one table, counting them together', async () => {
+    const user = userEvent.setup();
+    const state = stockState({ lines: twoLines });
+    server.use(signedIn(['EMPLOYEE']), ...state.handlers);
+
+    renderStock();
+    await screen.findByText(SOFA);
+
+    await user.selectOptions(screen.getByLabelText('Qué se lista'), 'Todo');
+
+    // The sofa has a line and the bunk bed has none: in this view they are rows of the same table.
+    expect(await screen.findByText('Litera infantil')).toBeDefined();
+    expect(screen.getByText(SOFA)).toBeDefined();
+
+    // Two requests, one per half, and the count is their sum — which is what the store really holds
+    // plus what it could.
+    expect(state.searches.at(-2)).toContain('status=STOCKED');
+    expect(state.searches.at(-1)).toContain('status=NOT_STOCKED');
+  });
+
+  it('tells "no units left" apart from "not added yet", which are different things (RF-09)', async () => {
+    const user = userEvent.setup();
+    server.use(
+      signedIn(['EMPLOYEE']),
+      ...stockState({ lines: [{ lineId: 10, productId: 1, quantity: 0, version: 0 }] }).handlers,
+    );
+
+    renderStock();
+    await screen.findByText(SOFA);
+
+    await user.selectOptions(screen.getByLabelText('Qué se lista'), 'Todo');
+    await screen.findByText('Litera infantil');
+
+    // The sofa has a line and no units; the bunk bed has no line at all.
+    expect(within(rowOf(SOFA)).getByText('Sin unidades')).toBeDefined();
+    expect(within(rowOf('Litera infantil')).getByText('Sin dar de alta')).toBeDefined();
+  });
+
+  it('keeps the view in the URL, so a screen showing both halves is linkable', async () => {
+    const user = userEvent.setup();
+    const state = stockState({ lines: twoLines });
+    server.use(signedIn(['EMPLOYEE']), ...state.handlers);
+
+    // Arriving with the view already chosen: it is read back into the control, not defaulted away.
+    const { unmount } = renderStock('/backoffice/stock?status=ALL');
+
+    await screen.findByText('Litera infantil');
+    // `.value` and not `getAttribute`: a `<select>` has no value attribute, only a property, and
+    // asserting on the attribute would pass against any option at all.
+    expect((await screen.findByLabelText('Qué se lista')).getAttribute('value')).toBeNull();
+    expect((screen.getByLabelText('Qué se lista') as HTMLSelectElement).value).toBe('ALL');
+    unmount();
+
+    // And choosing it writes it: the three views are one control with three values, and the URL is
+    // what holds the answer.
+    renderStock();
+    await screen.findByText(SOFA);
+    await user.selectOptions(screen.getByLabelText('Qué se lista'), 'Sin dar de alta');
+
+    await waitFor(() => expect(state.searches.at(-1)).toContain('status=NOT_STOCKED'));
+  });
+
   it('accepts zero, which is a line that exists with none left', async () => {
     const user = userEvent.setup();
     const state = stockState({ lines: twoLines });
@@ -156,7 +218,9 @@ describe('StockPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Guardar' }));
 
     await waitFor(() => expect(state.counters.updated).toBe(1));
-    await waitFor(() => expect(within(rowOf(SOFA)).getByText('0')).toBeDefined());
+    // Zero is drawn as a badge and not as a digit: a line that exists with none left is a state, and
+    // the crossed view puts it next to rows that have no line at all.
+    await waitFor(() => expect(within(rowOf(SOFA)).getByText('Sin unidades')).toBeDefined());
   });
 
   it('rejects a negative quantity before asking the server', async () => {
@@ -366,7 +430,7 @@ describe('StockPage', () => {
     renderStock();
 
     expect(
-      await screen.findByText('Tu cuenta no gestiona el stock de ninguna tienda.'),
+      await screen.findByText('Tu cuenta no está asignada a ninguna tienda.'),
     ).toBeDefined();
   });
 });

@@ -1,0 +1,52 @@
+@use "../bootstrap";
+
+// La barra de filtros de un listado (`shared/ui/FilterToolbar`), que pintan las dos pantallas del
+// back-office. Una sola fila y ningún marco: lo que separa los filtros del resto de la pantalla es
+// el aire, no una caja — los controles ya tienen borde propio, y meterlos en un recuadro es dibujar
+// dos veces el mismo límite.
+//
+// Ningún color se escribe aquí: salen de las variables de Bootstrap, que ya llevan la paleta de
+// `_tokens.scss` (ADR-0002).
+.filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: bootstrap.$spacer * 0.75;
+
+  // Los controles vienen envueltos en `Form.Group`, que trae el margen inferior con el que se apilan
+  // en un formulario. Dentro de la barra no se apilan: van en línea, así que ese margen sobra. Se
+  // anula aquí —en el contexto que lo decide— y no quitándoselo a `TextField`, que en un formulario
+  // sí lo necesita.
+  .form-group,
+  .mb-3 {
+    margin-bottom: 0 !important;
+  }
+
+  // El campo de búsqueda manda en la fila y se lleva el espacio que sobra; los demás controles miden
+  // lo suyo. Por debajo de `sm` no hay fila que repartir: cada control ocupa el ancho entero.
+  > * {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  .filter-toolbar__search {
+    flex: 1 1 16rem;
+  }
+
+  // La acción de limpiar no es un control más: se va al final de la barra, separada del último
+  // filtro, para que no se lea como uno de ellos.
+  .filter-toolbar__clear {
+    margin-inline-start: auto;
+    padding-inline: bootstrap.$spacer * 0.5;
+  }
+
+  @media (max-width: map-get(bootstrap.$grid-breakpoints, "sm")) {
+    > * {
+      flex-basis: 100%;
+    }
+
+    .filter-toolbar__clear {
+      margin-inline-start: 0;
+    }
+  }
+}

@@ -17,7 +17,11 @@
       "skuHint": "Capitals, digits and hyphens. For example, ABC-123.",
       "q": "Product name",
       "qHint": "For when you do not know the SKU by heart.",
-      "clear": "Clear filters"
+      "clear": "Clear filters",
+      "label": "Stock filters",
+      "hint": "Searches an exact SKU —capitals, digits and hyphens— or a part of the product name.",
+      "skuPlaceholder": "SKU, for example ABC-123",
+      "qPlaceholder": "Product name"
     },
     "results_one": "{{count}} product",
     "results_other": "{{count}} products",
@@ -31,15 +35,32 @@
     "row": {
       "edit": "Change the units of {{product}}",
       "delete": "Remove {{product}} from the stock",
-      "add": "Add {{product}}"
+      "add": "Add {{product}}",
+      "outOfStock": "No units",
+      "notStocked": "Not added yet",
+      "addAction": "Add"
     },
     "empty": {
       "stocked": "This store does not hold any product yet.",
       "stockedFiltered": "No product in stock matches the search.",
       "notStocked": "Every catalog product is already added to this store.",
-      "notStockedFiltered": "No product left to add matches the search."
+      "notStockedFiltered": "No product left to add matches the search.",
+      "STOCKED": "This store does not hold any product yet.",
+      "NOT_STOCKED": "Every catalog product is already added to this store.",
+      "ALL": "There is no product in the catalog.",
+      "filtered": "No product matches the search."
     },
-    "pagination": "Stock pagination"
+    "pagination": "Stock pagination",
+    "views": {
+      "label": "What is listed",
+      "stocked": "In stock",
+      "notStocked": "Not added yet",
+      "all": "Everything"
+    },
+    "chips": {
+      "q": "Name: {{value}}",
+      "sku": "SKU: {{value}}"
+    }
   },
   "edit": {
     "title": "Change units",
@@ -107,6 +128,10 @@
     "products": {
       "title": "Products",
       "body": "The global catalog: create, edit, photograph, discontinue and delete."
+    },
+    "employees": {
+      "title": "Staff",
+      "body": "See who works in your store, and add whoever joins it."
     }
   },
   "products": {
@@ -246,6 +271,83 @@
       "typeId": "Pick a product type.",
       "skuTaken": "That SKU belongs to another product.",
       "typeGone": "That type no longer exists. Pick another one."
+    }
+  },
+  "employment": {
+    "denied": "Your account is not assigned to any store."
+  },
+  "employees": {
+    "title": "Staff at {{store}}",
+    "lead": "See who works in your store, and add whoever joins it.",
+    "add": "Add employee",
+    "filters": {
+      "q": "Search the staff",
+      "isAdmin": "Filter by administrator",
+      "adminOptions": {
+        "all": "Everyone",
+        "admins": "Administrators only",
+        "staff": "Employees only"
+      },
+      "label": "Staff filters",
+      "hint": "Searches name, last name and email, and a part of any of them is enough.",
+      "qPlaceholder": "Search..."
+    },
+    "results_one": "{{count}} employee",
+    "results_other": "{{count}} employees",
+    "table": {
+      "caption": "Staff at {{store}}",
+      "name": "Name",
+      "lastName": "Last name",
+      "email": "Email",
+      "jobTitle": "Job title",
+      "role": "Administrator",
+      "admin": "Administrator",
+      "notAdmin": "Not an administrator"
+    },
+    "empty": {
+      "none": "This store has no employee other than you.",
+      "filtered": "No employee matches the search."
+    },
+    "pagination": "Staff pagination",
+    "new": {
+      "title": "Add an employee",
+      "lead": "They join {{store}}, which is your store: there is nothing to choose.",
+      "back": "Back to the staff",
+      "account": {
+        "legend": "Account",
+        "description": "This is what they will sign in to Ukun with. They can change the password later.",
+        "email": "Email",
+        "emailHint": "It has to be an email no other account is using.",
+        "password": "Password",
+        "passwordHint": "At least {{min}} characters. No other rules: a long phrase beats a symbol."
+      },
+      "job": {
+        "legend": "Employee details",
+        "description": "How they will appear in the staff list of {{store}}.",
+        "name": "Name",
+        "lastName": "Last name",
+        "jobTitle": "Job title",
+        "jobTitleHint": "For example, Salesperson or Manager.",
+        "isAdmin": "Is an administrator of the store",
+        "isAdminHint": "An administrator can manage the catalogue and add other employees."
+      },
+      "submit": "Add",
+      "submitting": "Adding...",
+      "pending": {
+        "title": "Employee created, activation pending",
+        "body": "The account is written but its activation was not confirmed, so they may not be able to sign in yet. If that happens, add the same email again: that finishes the process and duplicates nothing.",
+        "link": "See the staff"
+      }
+    },
+    "validation": {
+      "email": "That is not an email address.",
+      "password": "The password is at least 12 characters long.",
+      "jobTitle": "A job title is 1 to 50 characters."
+    },
+    "chips": {
+      "q": "Search: {{value}}",
+      "admins": "Administrators only",
+      "staff": "Employees only"
     }
   }
 }

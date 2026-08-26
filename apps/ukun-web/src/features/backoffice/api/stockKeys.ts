@@ -4,6 +4,24 @@ type StockLine = components['schemas']['StockLine'];
 type PageMeta = components['schemas']['PageMeta'];
 
 export type StockStatus = components['schemas']['StockStatus'];
+
+/**
+ * Which of RF-09's halves is on screen — **plus a third the contract does not have**.
+ *
+ * `STOCKED` and `NOT_STOCKED` are the contract's own `status`, and each is a different query
+ * returning a different shape. `ALL` is the frontend's: it asks for both and shows them in one
+ * table, because an employee looking at a store wants to see it whole.
+ *
+ * It is a type of its own and not an extra value of `StockStatus` on purpose: `StockStatus` is
+ * generated from the frozen contract and `ALL` is never sent to the server — it is a decision about
+ * how many requests this screen makes, not a parameter of any of them.
+ */
+export type StockView = StockStatus | 'ALL';
+
+/** The two the API answers, out of a view. `ALL` asks for both, in this order. */
+export function statusesOf(view: StockView): StockStatus[] {
+  return view === 'ALL' ? ['STOCKED', 'NOT_STOCKED'] : [view];
+}
 export type CreateStockLineRequest = components['schemas']['CreateStockLineRequest'];
 export type UpdateStockLineRequest = components['schemas']['UpdateStockLineRequest'];
 
@@ -24,6 +42,12 @@ export type UnstockedCandidate = StockLine & { lineId: null; quantity: null; ver
 export type StockedLinePage = PageMeta & { items: StockedLine[] };
 export type UnstockedCandidatePage = PageMeta & { items: UnstockedCandidate[] };
 
+/**
+ * A row of the crossed view: either half, still told apart by `isStocked`. It is the contract's own
+ * union and the only place a component sees it — the single-half views keep their narrowed types.
+ */
+export type StockLineOrCandidate = StockedLine | UnstockedCandidate;
+
 export function isStocked(line: StockLine): line is StockedLine {
   return line.lineId !== null && line.quantity !== null && line.version !== null;
 }
@@ -34,8 +58,8 @@ export function isUnstocked(line: StockLine): line is UnstockedCandidate {
 
 /** What the listing is filtered by — the part of the URL that is not the page. */
 export type StockFilterInput = {
-  /** Which of the two halves of RF-09 is on screen. It is the view, not a filter. */
-  status: StockStatus;
+  /** Which half of RF-09 is on screen, or both. It is the view, not a filter. */
+  status: StockView;
   sku: string;
   q: string;
 };
