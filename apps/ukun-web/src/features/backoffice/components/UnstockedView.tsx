@@ -2,12 +2,13 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Table } from 'react-bootstrap';
 
+import { usePageWithinRange } from '../../../shared/hooks/usePageParams';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
 import { useUnstockedCandidates } from '../api/queries';
 import { toApiFilters, type StockFilterInput } from '../api/stockKeys';
 import { newStockLinePath } from '../routes';
-import { countActiveFilters, usePageWithinRange } from '../useStockParams';
+import { countActiveFilters } from '../useStockParams';
 
 type UnstockedViewProps = {
   storeId: number;

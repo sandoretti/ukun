@@ -100,5 +100,74 @@
     "sku": "A SKU is 3 to 32 characters: capitals, digits and hyphens.",
     "skuNotFound": "There is no active product with that SKU. It may not exist, or it may be discontinued.",
     "quantity": "Units are a whole number of 0 or more."
+  },
+  "employees": {
+    "title": "Staff at {{store}}",
+    "lead": "See who works in your store, and add whoever joins it.",
+    "add": "Add employee",
+    "filters": {
+      "title": "Filter",
+      "q": "Name, last name or email",
+      "qHint": "A part is enough: “gar” finds García.",
+      "isAdmin": "Administrator",
+      "adminOptions": {
+        "all": "Everyone",
+        "admins": "Administrators only",
+        "staff": "Employees only"
+      },
+      "clear": "Clear filters"
+    },
+    "results_one": "{{count}} employee",
+    "results_other": "{{count}} employees",
+    "table": {
+      "caption": "Staff at {{store}}",
+      "name": "Name",
+      "lastName": "Last name",
+      "email": "Email",
+      "jobTitle": "Job title",
+      "role": "Administrator",
+      "admin": "Administrator",
+      "notAdmin": "Not an administrator"
+    },
+    "empty": {
+      "none": "This store has no employee other than you.",
+      "filtered": "No employee matches the search."
+    },
+    "pagination": "Staff pagination",
+    "new": {
+      "title": "Add an employee",
+      "lead": "They join {{store}}, which is your store: there is nothing to choose.",
+      "back": "Back to the staff",
+      "account": {
+        "legend": "Account",
+        "description": "This is what they will sign in to Ukun with. They can change the password later.",
+        "email": "Email",
+        "emailHint": "It has to be an email no other account is using.",
+        "password": "Password",
+        "passwordHint": "At least {{min}} characters. No other rules: a long phrase beats a symbol."
+      },
+      "job": {
+        "legend": "Employee details",
+        "description": "How they will appear in the staff list of {{store}}.",
+        "name": "Name",
+        "lastName": "Last name",
+        "jobTitle": "Job title",
+        "jobTitleHint": "For example, Salesperson or Manager.",
+        "isAdmin": "Is an administrator of the store",
+        "isAdminHint": "An administrator can manage the catalogue and add other employees."
+      },
+      "submit": "Add",
+      "submitting": "Adding...",
+      "pending": {
+        "title": "Employee created, activation pending",
+        "body": "The account is written but its activation was not confirmed, so they may not be able to sign in yet. If that happens, add the same email again: that finishes the process and duplicates nothing.",
+        "link": "See the staff"
+      }
+    },
+    "validation": {
+      "email": "That is not an email address.",
+      "password": "The password is at least 12 characters long.",
+      "jobTitle": "A job title is 1 to 50 characters."
+    }
   }
 }

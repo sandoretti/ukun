@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { FieldMessageKeys } from '../../shared/forms/applyServerErrors';
+import { emailSchema, passwordSchema } from '../../shared/forms/credentialFields';
 import {
   SHARED_FIELD_MESSAGE_KEYS,
   addressSchema,
@@ -13,9 +14,12 @@ import {
 } from '../../shared/forms/customerFields';
 import type { SignupRequest } from './api/queries';
 
-/** The bounds of `SignupRequest`, used by the schema and by the controls' `maxLength`/`minLength`. */
-export const EMAIL_MAX = 255;
-export const PASSWORD_MIN = 12;
+/**
+ * The bounds of the credentials, re-exported so this screen's form keeps reading them from the
+ * schema it already imports. They live in `shared/forms/credentialFields.ts` because the employee
+ * alta (RF-11) creates an account with the very same rules.
+ */
+export { EMAIL_MAX, PASSWORD_MIN } from '../../shared/forms/credentialFields';
 
 /**
  * What the API can reject, mapped to the sentence each field is painted with.
@@ -47,18 +51,8 @@ export const FIELD_MESSAGE_KEYS = {
  *   language the interface is already speaking, and changes it in the profile if it is wrong.
  */
 export const signupSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .max(EMAIL_MAX, FIELD_MESSAGE_KEYS.email)
-    // A single rule and a single sentence: "that is not an email address". Splitting it into
-    // "missing" and "malformed" would be a taxonomy of ways to be wrong, not help.
-    .pipe(z.email(FIELD_MESSAGE_KEYS.email)),
-  /**
-   * A real minimum and **no artificial maximum**, aligned with NIST SP 800-63B (`docs/08` §8). No
-   * composition rules either: they push people towards `Password1!` and buy nothing.
-   */
-  password: z.string().min(PASSWORD_MIN, FIELD_MESSAGE_KEYS.password),
+  email: emailSchema(FIELD_MESSAGE_KEYS.email),
+  password: passwordSchema(FIELD_MESSAGE_KEYS.password),
   name: nameSchema,
   lastName: lastNameSchema,
   address: addressSchema,

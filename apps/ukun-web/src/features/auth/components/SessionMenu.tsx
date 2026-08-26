@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Dropdown } from 'react-bootstrap';
 
 import { useAuth } from '../../../shared/hooks/useAuth';
-import { BACKOFFICE_STOCK_PATH, PROFILE_PATH } from '../../../shared/routes';
+import { ADMIN_EMPLOYEES_PATH, BACKOFFICE_STOCK_PATH, PROFILE_PATH } from '../../../shared/routes';
 import { ACCOUNT_PATH, SIGN_UP_PATH } from '../routes';
 import { SignOutForm } from './SignOutForm';
 
@@ -69,6 +69,14 @@ export function SessionMenu() {
         {isStaff && (
           <Dropdown.Item as={Link} to={BACKOFFICE_STOCK_PATH}>
             {t('account.backoffice')}
+          </Dropdown.Item>
+        )}
+
+        {/* Los empleados son de admin y solo de admin (RF-11), así que la entrada la decide el mismo
+            sitio y con la misma pregunta: los roles de `GET /api/me`. */}
+        {hasRole('ADMIN') && (
+          <Dropdown.Item as={Link} to={ADMIN_EMPLOYEES_PATH}>
+            {t('account.employees')}
           </Dropdown.Item>
         )}
 

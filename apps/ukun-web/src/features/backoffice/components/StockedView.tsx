@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Table } from 'react-bootstrap';
 
+import { usePageWithinRange } from '../../../shared/hooks/usePageParams';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
 import { useStockedLines } from '../api/queries';
 import { toApiFilters, type StockFilterInput } from '../api/stockKeys';
-import { countActiveFilters, usePageWithinRange } from '../useStockParams';
+import { countActiveFilters } from '../useStockParams';
 import { DeleteStockLineModal } from './DeleteStockLineModal';
 import { EditQuantityModal } from './EditQuantityModal';
 import { StockedRow } from './StockedRow';

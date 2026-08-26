@@ -4,10 +4,12 @@ import { Route, Routes } from 'react-router-dom';
 import { RequireAuth } from '../features/auth/RequireAuth';
 import { RequireRole } from '../features/auth/RequireRole';
 import { ACCOUNT_PATH, SIGN_UP_PATH } from '../features/auth/routes';
+import { NEW_EMPLOYEE_PATH } from '../features/backoffice/employees/routes';
 import { NEW_STOCK_LINE_PATH } from '../features/backoffice/routes';
 import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
 import {
+  ADMIN_EMPLOYEES_PATH,
   BACKOFFICE_STOCK_PATH,
   CART_PATH,
   CATALOG_PATH,
@@ -34,6 +36,8 @@ const SignInPage = lazy(() => import('../features/auth/SignInPage'));
 const SignUpPage = lazy(() => import('../features/auth/SignUpPage'));
 const StockPage = lazy(() => import('../features/backoffice/StockPage'));
 const NewStockLinePage = lazy(() => import('../features/backoffice/NewStockLinePage'));
+const EmployeesPage = lazy(() => import('../features/backoffice/employees/EmployeesPage'));
+const NewEmployeePage = lazy(() => import('../features/backoffice/employees/NewEmployeePage'));
 
 function App() {
   return (
@@ -129,6 +133,34 @@ function App() {
             <RequireAuth>
               <RequireRole role="EMPLOYEE">
                 <NewStockLinePage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        {/* La gestión de empleados (RF-11). Cuelga de `/admin/*` y no de `/backoffice/*` porque es
+            lo único de estas dos ramas que habla con `/api/admin/**` (ADR-0020) y porque es de
+            admin, no de cualquier empleado. Las guardas se componen igual que arriba y por lo mismo:
+            sin sesión se va a identificarse, y con sesión sin el rol se explica aquí, porque volver
+            a entrar no cambia los roles. Ninguna de las dos es la barrera — el gateway deniega
+            `/api/admin/**` sin `ROLE_ADMIN` y `ukun-api` lo comprueba otra vez (docs/08 §4). Y
+            ninguna de las dos rutas lleva identificador de tienda: la resuelve el servidor desde
+            `account_id`. */}
+        <Route
+          path={ADMIN_EMPLOYEES_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <EmployeesPage />
+              </RequireRole>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path={NEW_EMPLOYEE_PATH}
+          element={
+            <RequireAuth>
+              <RequireRole role="ADMIN">
+                <NewEmployeePage />
               </RequireRole>
             </RequireAuth>
           }

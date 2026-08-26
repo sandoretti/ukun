@@ -100,5 +100,74 @@
     "sku": "El SKU son de 3 a 32 caracteres: mayúsculas, cifras y guiones.",
     "skuNotFound": "No hay ningún producto activo con ese SKU. Puede que no exista o que esté descatalogado.",
     "quantity": "Las unidades son un número entero de 0 o más."
+  },
+  "employees": {
+    "title": "Empleados de {{store}}",
+    "lead": "Consulta quién trabaja en tu tienda y da de alta a quien se incorpore.",
+    "add": "Dar de alta empleado",
+    "filters": {
+      "title": "Filtrar",
+      "q": "Nombre, apellido o correo",
+      "qHint": "Basta con una parte: «gar» encuentra a García.",
+      "isAdmin": "Administrador",
+      "adminOptions": {
+        "all": "Todos",
+        "admins": "Solo administradores",
+        "staff": "Solo empleados"
+      },
+      "clear": "Quitar filtros"
+    },
+    "results_one": "{{count}} empleado",
+    "results_other": "{{count}} empleados",
+    "table": {
+      "caption": "Empleados de {{store}}",
+      "name": "Nombre",
+      "lastName": "Apellido",
+      "email": "Correo",
+      "jobTitle": "Puesto",
+      "role": "Administrador",
+      "admin": "Administrador",
+      "notAdmin": "No es administrador"
+    },
+    "empty": {
+      "none": "En esta tienda no hay más empleados que tú.",
+      "filtered": "Ningún empleado coincide con la búsqueda."
+    },
+    "pagination": "Paginación de empleados",
+    "new": {
+      "title": "Dar de alta un empleado",
+      "lead": "Se incorpora a {{store}}, que es tu tienda: no hay que elegirla.",
+      "back": "Volver a los empleados",
+      "account": {
+        "legend": "Cuenta",
+        "description": "Con estos datos entrará en Ukun. La contraseña la puede cambiar después.",
+        "email": "Correo",
+        "emailHint": "Tiene que ser un correo que no use ninguna otra cuenta.",
+        "password": "Contraseña",
+        "passwordHint": "Al menos {{min}} caracteres. No hay más reglas: una frase larga vale más que un símbolo."
+      },
+      "job": {
+        "legend": "Datos del empleado",
+        "description": "Cómo aparecerá en el listado de {{store}}.",
+        "name": "Nombre",
+        "lastName": "Apellido",
+        "jobTitle": "Puesto",
+        "jobTitleHint": "Por ejemplo, Vendedor o Gerente.",
+        "isAdmin": "Es administrador de la tienda",
+        "isAdminHint": "Un administrador puede gestionar el catálogo y dar de alta a otros empleados."
+      },
+      "submit": "Dar de alta",
+      "submitting": "Dando de alta...",
+      "pending": {
+        "title": "Empleado creado, activación pendiente",
+        "body": "La cuenta está escrita pero su activación no se ha confirmado, así que puede que todavía no pueda entrar. Si le pasa, vuelve a dar de alta el mismo correo: eso termina el proceso y no duplica nada.",
+        "link": "Ver los empleados"
+      }
+    },
+    "validation": {
+      "email": "Eso no es una dirección de correo.",
+      "password": "La contraseña tiene al menos 12 caracteres.",
+      "jobTitle": "El puesto son de 1 a 50 caracteres."
+    }
   }
 }
