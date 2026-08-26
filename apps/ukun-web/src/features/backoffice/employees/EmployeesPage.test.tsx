@@ -57,7 +57,7 @@ describe('EmployeesPage', () => {
     renderEmployees();
     await screen.findByText('Sandoval');
 
-    await user.type(screen.getByLabelText('Nombre, apellido o correo'), 'garcia');
+    await user.type(screen.getByLabelText('Buscar empleados'), 'garcia');
     await user.tab();
 
     await waitFor(() => expect(screen.queryByText('Sandoval')).toBeNull());
@@ -74,7 +74,7 @@ describe('EmployeesPage', () => {
     renderEmployees();
     await screen.findByText('Sandoval');
 
-    const filter = screen.getByLabelText('Administrador');
+    const filter = screen.getByLabelText('Filtrar por administrador');
 
     await user.selectOptions(filter, 'Solo administradores');
     await waitFor(() => expect(screen.queryByText('García')).toBeNull());
@@ -142,6 +142,45 @@ describe('EmployeesPage', () => {
 
     expect(await screen.findByText('Algo ha fallado por nuestra parte. Inténtalo de nuevo')).toBeDefined();
     expect(screen.queryByText(OPERATOR_DETAIL)).toBeNull();
+  });
+
+  it('puts the filters in one named search region, with what is searched said under it', async () => {
+    server.use(signedIn([...ADMIN_ROLES]), ...employeeState({ employees: staff }).handlers);
+
+    renderEmployees();
+    await screen.findByText('Sandoval');
+
+    // The bar names itself for assistive technology instead of carrying a visible "Filter" heading.
+    const filters = screen.getByRole('search', { name: 'Filtros de empleados' });
+    expect(within(filters).getByLabelText('Buscar empleados')).toBeDefined();
+    expect(within(filters).getByLabelText('Filtrar por administrador')).toBeDefined();
+    expect(
+      screen.getByText('Se busca por nombre, apellido o correo, y basta con una parte.'),
+    ).toBeDefined();
+  });
+
+  it('offers to clear only once something is filtered, and counts what it would clear', async () => {
+    const user = userEvent.setup();
+    server.use(signedIn([...ADMIN_ROLES]), ...employeeState({ employees: staff }).handlers);
+
+    renderEmployees();
+    await screen.findByText('Sandoval');
+    expect(screen.queryByRole('button', { name: /Quitar/ })).toBeNull();
+
+    await user.type(screen.getByLabelText('Buscar empleados'), 'gar');
+    await user.tab();
+
+    expect(await screen.findByRole('button', { name: 'Quitar el filtro' })).toBeDefined();
+
+    await user.selectOptions(screen.getByLabelText('Filtrar por administrador'), 'Solo empleados');
+
+    const clear = await screen.findByRole('button', { name: 'Quitar los 2 filtros' });
+    await user.click(clear);
+
+    // Clearing empties the controls and takes the filters out of the URL, both at once.
+    await screen.findByText('Sandoval');
+    expect(screen.queryByRole('button', { name: /Quitar/ })).toBeNull();
+    expect((screen.getByLabelText('Buscar empleados') as HTMLInputElement).value).toBe('');
   });
 
   it('paints a 403 as the denial it is, and not as a screen that never finished loading', async () => {

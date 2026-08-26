@@ -12,12 +12,12 @@
       "notStocked": "Sin dar de alta"
     },
     "filters": {
-      "title": "Filtrar",
       "sku": "SKU",
-      "skuHint": "Mayúsculas, cifras y guiones. Por ejemplo, ABC-123.",
       "q": "Nombre del producto",
-      "qHint": "Para cuando no te sepas el SKU de memoria.",
-      "clear": "Quitar filtros"
+      "label": "Filtros del stock",
+      "hint": "Se busca por SKU exacto —mayúsculas, cifras y guiones— o por una parte del nombre del producto.",
+      "skuPlaceholder": "SKU, por ejemplo ABC-123",
+      "qPlaceholder": "Nombre del producto"
     },
     "results_one": "{{count}} producto",
     "results_other": "{{count}} productos",
@@ -106,16 +106,16 @@
     "lead": "Consulta quién trabaja en tu tienda y da de alta a quien se incorpore.",
     "add": "Dar de alta empleado",
     "filters": {
-      "title": "Filtrar",
-      "q": "Nombre, apellido o correo",
-      "qHint": "Basta con una parte: «gar» encuentra a García.",
-      "isAdmin": "Administrador",
+      "q": "Buscar empleados",
+      "isAdmin": "Filtrar por administrador",
       "adminOptions": {
         "all": "Todos",
         "admins": "Solo administradores",
         "staff": "Solo empleados"
       },
-      "clear": "Quitar filtros"
+      "label": "Filtros de empleados",
+      "hint": "Se busca por nombre, apellido o correo, y basta con una parte.",
+      "qPlaceholder": "Buscar..."
     },
     "results_one": "{{count}} empleado",
     "results_other": "{{count}} empleados",

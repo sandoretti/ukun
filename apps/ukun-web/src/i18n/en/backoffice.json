@@ -12,12 +12,12 @@
       "notStocked": "Not added yet"
     },
     "filters": {
-      "title": "Filter",
       "sku": "SKU",
-      "skuHint": "Capitals, digits and hyphens. For example, ABC-123.",
       "q": "Product name",
-      "qHint": "For when you do not know the SKU by heart.",
-      "clear": "Clear filters"
+      "label": "Stock filters",
+      "hint": "Searches an exact SKU —capitals, digits and hyphens— or a part of the product name.",
+      "skuPlaceholder": "SKU, for example ABC-123",
+      "qPlaceholder": "Product name"
     },
     "results_one": "{{count}} product",
     "results_other": "{{count}} products",
@@ -106,16 +106,16 @@
     "lead": "See who works in your store, and add whoever joins it.",
     "add": "Add employee",
     "filters": {
-      "title": "Filter",
-      "q": "Name, last name or email",
-      "qHint": "A part is enough: “gar” finds García.",
-      "isAdmin": "Administrator",
+      "q": "Search the staff",
+      "isAdmin": "Filter by administrator",
       "adminOptions": {
         "all": "Everyone",
         "admins": "Administrators only",
         "staff": "Employees only"
       },
-      "clear": "Clear filters"
+      "label": "Staff filters",
+      "hint": "Searches name, last name and email, and a part of any of them is enough.",
+      "qPlaceholder": "Search..."
     },
     "results_one": "{{count}} employee",
     "results_other": "{{count}} employees",
