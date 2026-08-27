@@ -58,3 +58,44 @@ export function applyServerErrors<T extends FieldValues>(
 
   return placed === problem.errors.length;
 }
+
+/**
+ * Paints a `409 DUPLICATE_VALUE` on the field that actually clashed, and says whether it found one.
+ *
+ * It is separate from {@link applyServerErrors} because it is a different answer: that one spreads a
+ * `400 VALIDATION_FAILED` over its `errors[]`, while this is a single unique constraint the use case
+ * checked *before* writing so it could name the column — the distinction `docs/12-error-contract.md`
+ * draws between `DUPLICATE_VALUE` and `REFERENTIAL_INTEGRITY`. What they share, and the reason both
+ * live here, is the invariant: **whatever reaches the form state is a translation key**, so
+ * `useFieldMessages` resolves a server rejection and a zod one with the same line.
+ *
+ * The sentence comes from `messageKeys` and not from `errors:DUPLICATE_VALUE`: the registry's phrase
+ * is written for any unique field of any resource and cannot say which one clashed, while the screen
+ * knows that a taken `sku` belongs to another product and a taken `name` to another type.
+ *
+ * **The `field` extension is read, never assumed.** A `field` nobody claims returns `false` rather
+ * than being placed on some other control: an error invented on a field the reader is not editing
+ * sits in the form state invisible and blocks every later submit.
+ */
+export function applyDuplicateValue<T extends FieldValues>(
+  error: unknown,
+  setError: UseFormSetError<T>,
+  messageKeys: FieldMessageKeys,
+): boolean {
+  const problem = toProblem(error);
+
+  if (problem.code !== 'DUPLICATE_VALUE') {
+    return false;
+  }
+
+  const field = problem.extensions.field;
+  const messageKey = typeof field === 'string' ? messageKeys[field] : undefined;
+
+  if (messageKey === undefined) {
+    return false;
+  }
+
+  setError(field as FieldPath<T>, { type: 'server', message: messageKey }, { shouldFocus: true });
+
+  return true;
+}

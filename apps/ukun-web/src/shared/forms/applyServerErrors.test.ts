@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { ProblemDetailError } from '../api/http';
-import { applyServerErrors } from './applyServerErrors';
+import { applyDuplicateValue, applyServerErrors } from './applyServerErrors';
 
 type Form = { name: string; address: { postalCode: string } };
 
@@ -92,6 +92,50 @@ describe('applyServerErrors', () => {
     );
 
     expect(allPlaced).toBe(false);
+    expect(setError).not.toHaveBeenCalled();
+  });
+});
+
+function duplicateValue(field: string) {
+  return new ProblemDetailError(
+    { code: 'DUPLICATE_VALUE', status: 409, resource: 'productType', field },
+    409,
+  );
+}
+
+describe('applyDuplicateValue', () => {
+  it('places the clash on the field the extension names, not on the one the screen expected', () => {
+    const setError = vi.fn();
+
+    const placed = applyDuplicateValue<Form>(duplicateValue('name'), setError, messageKeys);
+
+    expect(placed).toBe(true);
+    expect(setError).toHaveBeenCalledWith(
+      'name',
+      { type: 'server', message: 'validation.name' },
+      { shouldFocus: true },
+    );
+  });
+
+  it('refuses a field this form does not render, so the caller can fall back', () => {
+    const setError = vi.fn();
+
+    const placed = applyDuplicateValue<Form>(duplicateValue('email'), setError, messageKeys);
+
+    expect(placed).toBe(false);
+    expect(setError).not.toHaveBeenCalled();
+  });
+
+  it('leaves any other code alone, `VALIDATION_FAILED` included: that one is the other function', () => {
+    const setError = vi.fn();
+
+    const placed = applyDuplicateValue<Form>(
+      validationFailed([{ field: 'name', message: 'must not be blank' }]),
+      setError,
+      messageKeys,
+    );
+
+    expect(placed).toBe(false);
     expect(setError).not.toHaveBeenCalled();
   });
 });

@@ -15,6 +15,16 @@ export const FIELD_MESSAGE_KEYS = {
 } as const satisfies FieldMessageKeys;
 
 /**
+ * The sentence each unique field of a type is rejected with, keyed by the `field` extension of a
+ * `409 DUPLICATE_VALUE`. It is a map of one because a type has one field, and it is still a map
+ * because that is what `applyDuplicateValue` reads: what the screen must not do is assume which
+ * column clashed (`docs/12-error-contract.md`).
+ */
+export const DUPLICATE_MESSAGE_KEYS = {
+  name: 'productTypes.validation.nameTaken',
+} as const satisfies FieldMessageKeys;
+
+/**
  * As long as the contract says (`ProductTypeRequest.name`, `@Size(max = 255)` on the record behind
  * it). Exported because the control stops the typing at the same number: one rule, read by the schema
  * that rejects and by the field that prevents.

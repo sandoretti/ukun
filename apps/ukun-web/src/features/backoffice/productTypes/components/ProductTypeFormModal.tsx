@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Form, Modal } from 'react-bootstrap';
 
-import { toProblem } from '../../../../shared/api/http';
-import { applyServerErrors } from '../../../../shared/forms/applyServerErrors';
+import { applyDuplicateValue, applyServerErrors } from '../../../../shared/forms/applyServerErrors';
 import { useFieldMessages } from '../../../../shared/hooks/useFieldMessages';
 import { ErrorState } from '../../../../shared/ui/ErrorState';
 import { TextField } from '../../../../shared/ui/TextField';
 import type { AdminProductType } from '../api/productTypeKeys';
 import { useCreateProductType, useRenameProductType } from '../api/queries';
 import {
+  DUPLICATE_MESSAGE_KEYS,
   FIELD_MESSAGE_KEYS,
   NAME_MAX,
   productTypeFormSchema,
@@ -36,12 +36,9 @@ type ProductTypeFormModalProps = {
  * groups of fields (the product, the employee) and dialogs for a single one, like `EditQuantityModal`.
  *
  * **A name already taken is painted under the field**, which is where the reader can act on it
- * (RF-13: «se rechaza indicando el campo, no con un error genérico»). The sentence is this
- * namespace's own and not `errors:DUPLICATE_VALUE`: the registry's phrase is written for any unique
- * field of any resource and cannot say which one clashed, while the problem's `field` extension can —
- * so that extension is *read* rather than assumed. Anything other than `name` falls back to the
- * form-level error instead of inventing a field, which would sit in the form state invisible and
- * block every later submit (the reason `applyServerErrors` reports its misses instead of placing them).
+ * (RF-13: «se rechaza indicando el campo, no con un error genérico»). Which field that is comes from
+ * the problem's own `field` extension and the map in `productTypeSchema`; `applyDuplicateValue` owns
+ * the reading, so this screen and the product alta answer the same rejection the same way.
  */
 export function ProductTypeFormModal({ productType, onClose }: ProductTypeFormModalProps) {
   const { t } = useTranslation('backoffice');
@@ -77,10 +74,7 @@ export function ProductTypeFormModal({ productType, onClose }: ProductTypeFormMo
 
       onClose();
     } catch (error) {
-      const problem = toProblem(error);
-
-      if (problem.code === 'DUPLICATE_VALUE' && problem.extensions.field === 'name') {
-        setError('name', { type: 'server', message: 'productTypes.validation.nameTaken' }, { shouldFocus: true });
+      if (applyDuplicateValue(error, setError, DUPLICATE_MESSAGE_KEYS)) {
         return;
       }
 
