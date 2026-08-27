@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Container } from 'react-bootstrap';
 
 import { Icon } from '../../shared/ui/Icon';
+import { PageHeader } from '../../shared/ui/PageHeader';
 import { EmploymentBoundary } from './components/EmploymentBoundary';
 import { StockFilters } from './components/StockFilters';
 import { StockTable } from './components/StockTable';
@@ -25,44 +25,41 @@ import { useStockParams } from './useStockParams';
  *
  * The route is under `/backoffice/*` and not `/admin/*`: managing stock belongs to any employee, not
  * to an administrator, and it talks to `/api/stores/**`, not to `/api/admin/**` (ADR-0020).
+ *
+ * There is no `<Container>` here and there is none in any other back-office screen: the width and the
+ * padding are the shell's, decided once in `BackofficeLayout`.
  */
 export default function StockPage() {
   const { t } = useTranslation('backoffice');
   const { filters, page, updateFilters, clearFilters, goToPage } = useStockParams();
 
   return (
-    <Container className="py-5">
-      <EmploymentBoundary>
-        {(employment) => (
-          <>
-            <div className="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-2">
-              <div>
-                <h1 className="h2 mb-2">{t('stock.title', { store: employment.storeName })}</h1>
-                <p className="text-body-secondary mb-0">{t('stock.lead')}</p>
-              </div>
-              {/* Un enlace con aspecto de botón, como el alta de la barra: el destino es una ruta,
-                  así que es un `<Link>` y no un `<button>` que navega. */}
-              <Link
-                to={NEW_STOCK_LINE_PATH}
-                className="btn btn-primary d-inline-flex align-items-center gap-1"
-              >
-                <Icon name="add" size="sm" />
-                {t('stock.add')}
-              </Link>
-            </div>
+    <EmploymentBoundary>
+      {(employment) => (
+        <>
+          <PageHeader title={t('stock.title', { store: employment.storeName })} lead={t('stock.lead')}>
+            {/* Un enlace con aspecto de botón: el destino es una ruta, así que es un `<Link>` y no un
+                `<button>` que navega. */}
+            <Link
+              to={NEW_STOCK_LINE_PATH}
+              className="btn btn-primary d-inline-flex align-items-center gap-1"
+            >
+              <Icon name="add" size="sm" />
+              {t('stock.add')}
+            </Link>
+          </PageHeader>
 
-            <StockFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
+          <StockFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
 
-            <StockTable
-              storeId={employment.storeId}
-              storeName={employment.storeName}
-              filters={filters}
-              page={page}
-              onPageChange={goToPage}
-            />
-          </>
-        )}
-      </EmploymentBoundary>
-    </Container>
+          <StockTable
+            storeId={employment.storeId}
+            storeName={employment.storeName}
+            filters={filters}
+            page={page}
+            onPageChange={goToPage}
+          />
+        </>
+      )}
+    </EmploymentBoundary>
   );
 }

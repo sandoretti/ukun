@@ -20,7 +20,6 @@
     "email": "Correo",
     "roles": "Permisos",
     "backoffice": "Back office",
-    "admin": "Administración",
     "backHome": "Volver a la tienda",
     "noAccess": {
       "title": "Esta página no es para tu cuenta",

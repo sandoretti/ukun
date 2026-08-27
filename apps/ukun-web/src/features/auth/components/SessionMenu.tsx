@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Dropdown } from 'react-bootstrap';
 
 import { useAuth } from '../../../shared/hooks/useAuth';
-import { ADMIN_PATH, BACKOFFICE_STOCK_PATH, PROFILE_PATH } from '../../../shared/routes';
+import { BACKOFFICE_PATH, PROFILE_PATH } from '../../../shared/routes';
 import { ACCOUNT_PATH, SIGN_UP_PATH } from '../routes';
 import { SignOutForm } from './SignOutForm';
 
@@ -64,22 +64,16 @@ export function SessionMenu() {
           {t('profile:link')}
         </Dropdown.Item>
 
-        {/* La primera pantalla del back-office es el stock de la tienda del empleado (RF-09), y por
-            eso la entrada lleva ahí y no a un índice: es lo único que hay construido. */}
+        {/* **Una** entrada, y lleva al back-office entero. Fueron dos —el stock por un lado y la
+            administración por otro— porque no había ningún sitio donde las dos ramas se encontraran:
+            `/backoffice/*` es de cualquier empleado y `/admin/*` es lo que habla con `/api/admin/**`
+            (ADR-0020), y cada una tenía su propia condición aquí mismo. Ahora se encuentran en su
+            cascarón, y qué puede abrir esta cuenta lo decide el rail desde `BACKOFFICE_SECTIONS`, en
+            un sitio. La barra de la tienda vuelve a no saber nada de rutas privilegiadas más allá de
+            si esto es una cuenta de trabajo. */}
         {isStaff && (
-          <Dropdown.Item as={Link} to={BACKOFFICE_STOCK_PATH}>
+          <Dropdown.Item as={Link} to={BACKOFFICE_PATH}>
             {t('account.backoffice')}
-          </Dropdown.Item>
-        )}
-
-        {/* La administración es otra entrada y no un apartado de la anterior: `/backoffice/*` es de
-            cualquier empleado y `/admin/*` es lo que habla con `/api/admin/**` (ADR-0020), así que
-            son dos destinos con dos condiciones distintas. Ocultarla sigue siendo UX — la barrera
-            está en el gateway y otra vez en ukun-api. Y es **una** entrada: los empleados y el
-            catálogo cuelgan del índice de `/admin`, no del menú. */}
-        {hasRole('ADMIN') && (
-          <Dropdown.Item as={Link} to={ADMIN_PATH}>
-            {t('account.admin')}
           </Dropdown.Item>
         )}
 

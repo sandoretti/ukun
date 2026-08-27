@@ -27,10 +27,11 @@ type SearchFieldProps = {
  * one filters a table that is already on screen and has no list to open, so it stays a plain input —
  * a combobox with nothing to suggest is a promise the control does not keep.
  *
- * It is not `FilterTextField` either, and that difference **is** the looks: the two commit the same
- * way, through `useCommittedInput`, and differ in where they sit. This one hides its label and wears
- * a magnifier because it lives in the single row of a `FilterToolbar`; that one carries a visible
- * label and a hint because it lives in a stack of filters.
+ * It used to have a sibling, `FilterTextField`, that committed the same way and carried a visible
+ * label because it lived in a stack of filters rather than in a row. That stack was the back-office
+ * catalogue's, the last screen filtering differently from the other two (issue #148); once it moved
+ * to a `FilterToolbar` the sibling had no users left and was deleted. There is one typed filter
+ * control now, and it is this one.
  */
 export function SearchField({ label, placeholder, value, onCommit }: SearchFieldProps) {
   const { controlId } = useFieldAria({});

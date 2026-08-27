@@ -13,8 +13,11 @@ import type { FocusEvent, KeyboardEvent } from 'react';
  * committed value is what makes "clear filters" empty the box without a second copy of the value to
  * keep in sync.
  *
- * A hook and not a component because two controls need it and they do not look alike: a plain field
- * and a search box with its magnifier.
+ * A hook and not a component. It had two consumers that did not look alike —a plain labelled field
+ * and a search box with its magnifier— and today it has one, `SearchField`, since the back-office
+ * catalogue stopped stacking its filters (issue #148) and `FilterTextField` went with the stack. It
+ * stays a hook because what it holds is the *contract* of a typed filter, which is what the next
+ * listing has to find rather than reinvent — the looks of the control are the part that varies.
  */
 export function useCommittedInput(value: string, onCommit: (value: string) => void) {
   const commit = (next: string) => {

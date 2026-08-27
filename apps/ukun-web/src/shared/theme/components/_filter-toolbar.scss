@@ -33,20 +33,9 @@
     flex: 1 1 16rem;
   }
 
-  // La acción de limpiar no es un control más: se va al final de la barra, separada del último
-  // filtro, para que no se lea como uno de ellos.
-  .filter-toolbar__clear {
-    margin-inline-start: auto;
-    padding-inline: bootstrap.$spacer * 0.5;
-  }
-
   @media (max-width: map-get(bootstrap.$grid-breakpoints, "sm")) {
     > * {
       flex-basis: 100%;
-    }
-
-    .filter-toolbar__clear {
-      margin-inline-start: 0;
     }
   }
 }

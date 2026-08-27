@@ -8,8 +8,8 @@ import { FIRST_PAGE } from './routes';
  *
  * The whole branch hangs off `/admin/*` and not `/backoffice/*`: that prefix is what talks to
  * `/api/admin/**` and is an administrator's alone (ADR-0020, `docs/07-frontend-ux-ui.md`), while
- * managing stock is any employee's job. `ADMIN_PATH` itself is not declared here — the session menu
- * of `features/auth` links to it, and a path a second feature needs goes up to `shared/routes.ts`.
+ * managing stock is any employee's job. `ADMIN_PATH` itself is not declared here — it is a prefix
+ * shared with the staff screens, and a path a second module needs goes up to `shared/routes.ts`.
  *
  * It is a file of its own rather than more lines in `routes.ts` so that the two halves of the
  * back-office —stock (RF-09) and catalog (RF-10)— can be worked on without touching each other.

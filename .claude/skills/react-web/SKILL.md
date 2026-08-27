@@ -11,7 +11,7 @@ Lee `docs/07-frontend-ux-ui.md` antes de construir una pantalla nueva — este s
 
 ```
 src/
-├── app/            router, providers (QueryClient, tema, i18n), layout raíz
+├── app/            router, providers (QueryClient, tema, i18n), los tres layouts
 ├── features/       una carpeta por dominio: catalog, cart, orders, profile, auth, backoffice, inventory
 ├── shared/ui/       componentes base envueltos sobre react-bootstrap
 ├── shared/api/       cliente HTTP + hooks de TanStack Query
@@ -20,7 +20,9 @@ src/
 └── types/api.d.ts   generado — NUNCA editar a mano
 ```
 
-Nombres de carpeta en inglés (ADR-0018), alineados con los módulos de Spring Modulith del backend donde aplica (`catalog`, `cart`, `orders`, `inventory` — ADR-0017). Las carpetas de `features/` no se importan entre sí — si dos features necesitan lo mismo, sube a `shared/`.
+Nombres de carpeta en inglés (ADR-0018), alineados con los módulos de Spring Modulith del backend donde aplica (`catalog`, `cart`, `orders`, `inventory` — ADR-0017). Las carpetas de `features/` no se importan entre sí — si dos features necesitan lo mismo, sube a `shared/`. `app/` sí puede bajar a una feature: es la capa que las compone.
+
+**Tres layouts, y una pantalla nueva elige uno**: `AppLayout` (la tienda), `AuthLayout` (entrar y darse de alta) y `BackofficeLayout` (rail lateral por rol, sin barra ni pie de tienda). Ninguna pantalla del back-office trae su propio `<Container>` ni sus propias guardas: el ancho y el rol los pone el cascarón, y lo que el rail ofrece sale de la lista única `features/backoffice/sections.ts`. Detalle y porqué en `docs/07-frontend-ux-ui.md` §«El back-office tiene cascarón propio».
 
 ## Reglas duras
 

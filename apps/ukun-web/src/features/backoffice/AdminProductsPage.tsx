@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Container, Table } from 'react-bootstrap';
+import { Table } from 'react-bootstrap';
 
 import { Icon } from '../../shared/ui/Icon';
+import { PageHeader } from '../../shared/ui/PageHeader';
 import { Pagination } from '../../shared/ui/Pagination';
 import { QueryBoundary } from '../../shared/ui/QueryBoundary';
 import { NEW_PRODUCT_PATH } from './adminRoutes';
@@ -42,19 +43,15 @@ export default function AdminProductsPage() {
   const isFiltered = countActiveFilters(filters) > 0;
 
   return (
-    <Container className="py-5">
-      <div className="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-2">
-        <div>
-          <h1 className="h2 mb-2">{t('products.title')}</h1>
-          <p className="text-body-secondary mb-0">{t('products.lead')}</p>
-        </div>
+    <>
+      <PageHeader title={t('products.title')} lead={t('products.lead')}>
         {/* A link that looks like a button: the destination is a route, so it is a `<Link>` and not a
             `<button>` that navigates. */}
         <Link to={NEW_PRODUCT_PATH} className="btn btn-primary d-inline-flex align-items-center gap-1">
           <Icon name="add" size="sm" />
           {t('products.add')}
         </Link>
-      </div>
+      </PageHeader>
 
       <AdminProductFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
 
@@ -99,6 +96,6 @@ export default function AdminProductsPage() {
           </>
         )}
       </QueryBoundary>
-    </Container>
+    </>
   );
 }

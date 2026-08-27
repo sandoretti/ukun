@@ -7,7 +7,13 @@ import { Icon } from '../../../shared/ui/Icon';
 
 type SignOutFormProps = {
   /** Named variant, as everywhere else in the app — never a pile of booleans. */
-  variant: 'primary' | 'outline-primary';
+  variant: 'primary' | 'outline-primary' | 'outline-light';
+  /**
+   * Whether the caption is drawn. `hidden` still renders it —it is never dropped, only taken off
+   * screen— which is what keeps the button named for a screen reader inside the narrow back-office
+   * rail. Same word, same prop name and same two values as `SelectField` and `TextField`.
+   */
+  labelVisibility?: 'visible' | 'hidden';
 };
 
 /**
@@ -25,7 +31,7 @@ type SignOutFormProps = {
  * second reader that decoded it differently would answer 403 on the one action that has no screen
  * to show it on.
  */
-export function SignOutForm({ variant }: SignOutFormProps) {
+export function SignOutForm({ variant, labelVisibility = 'visible' }: SignOutFormProps) {
   const { t } = useTranslation('common');
 
   return (
@@ -35,7 +41,9 @@ export function SignOutForm({ variant }: SignOutFormProps) {
       <input type="hidden" name="_csrf" value={csrfToken() ?? ''} />
       <Button type="submit" variant={variant} size="sm" className="d-inline-flex align-items-center gap-2">
         <Icon name="logout" size="sm" />
-        {t('account.signOut')}
+        <span className={labelVisibility === 'hidden' ? 'visually-hidden' : undefined}>
+          {t('account.signOut')}
+        </span>
       </Button>
     </form>
   );

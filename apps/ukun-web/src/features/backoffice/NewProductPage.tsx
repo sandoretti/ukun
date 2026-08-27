@@ -3,13 +3,12 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Button, Container } from 'react-bootstrap';
+import { Alert, Button } from 'react-bootstrap';
 
 import { NOT_FOUND, toProblem } from '../../shared/api/http';
 import { applyServerErrors } from '../../shared/forms/applyServerErrors';
 import { useFieldMessages } from '../../shared/hooks/useFieldMessages';
 import { ErrorState } from '../../shared/ui/ErrorState';
-import { Icon } from '../../shared/ui/Icon';
 import { TextField } from '../../shared/ui/TextField';
 import {
   createProductFormSchema,
@@ -20,6 +19,7 @@ import {
 } from './adminProductSchema';
 import { adminProductPath, adminProductsPath, ADMIN_PRODUCTS_PATH } from './adminRoutes';
 import { useCreateProduct } from './api/adminProductQueries';
+import { BackLink } from './components/BackLink';
 import { ProductForm } from './components/ProductForm';
 
 /**
@@ -89,13 +89,10 @@ export default function NewProductPage() {
   });
 
   return (
-    <Container className="admin-form py-5">
+    <div className="admin-form">
       <div className="admin-form__column">
         <header className="mb-4">
-          <Link to={ADMIN_PRODUCTS_PATH} className="d-inline-flex align-items-center gap-1 mb-3">
-            <Icon name="arrow_back" size="sm" />
-            {t('products.new.back')}
-          </Link>
+          <BackLink to={ADMIN_PRODUCTS_PATH} label={t('products.new.back')} />
 
           <p className="overline mb-1">{t('products.sheet.eyebrow')}</p>
           <h1 className="h2 mb-2">{t('products.new.title')}</h1>
@@ -151,6 +148,6 @@ export default function NewProductPage() {
           />
         </FormProvider>
       </div>
-    </Container>
+    </div>
   );
 }

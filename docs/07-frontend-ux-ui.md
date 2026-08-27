@@ -87,6 +87,16 @@ apps/ukun-web/src/
 
 `features/backoffice` cubre las pantallas de empleado y de admin: stock (RF-09), CRUD de productos con su imagen (RF-10), CRUD de tipos de producto (RF-13) y empleados (RF-11). Todo lo que sea solo de admin habla contra `/api/admin/**` (ADR-0020) y cuelga de la rama `/admin/*` del router, así que la decisión de pintar o no la entrada al back-office se toma en un sitio, con los roles que devuelve `GET /api/me` — no hay una lista de rutas privilegiadas repartida por los componentes.
 
+### El back-office tiene cascarón propio
+
+Hay **tres** layouts en `app/`, no dos: `AppLayout` (la tienda), `AuthLayout` (entrar y darse de alta) y `BackofficeLayout`. El tercero existe por lo mismo que el segundo — lo que necesita es **resta**: un empleado ajustando stock no usa el menú del catálogo, ni el buscador de productos, ni el carrito, ni el pie de la tienda. En su lugar lleva un **rail** vertical a la izquierda, de solo iconos con tooltip, que se puede ampliar a etiquetas visibles; la preferencia se recuerda en `localStorage`, que es donde va el estado de UI que es de quien mira y no de lo que está en pantalla (a diferencia de filtros, orden y página, que van en la URL). Por debajo de `md` el rail ampliado flota sobre el contenido en vez de quitarle ancho.
+
+Tres reglas que se derivan de eso y que no se negocian pantalla a pantalla:
+
+- **Una sola lista de lo que el back-office contiene**, `features/backoffice/sections.ts`: ruta, icono, rol y claves de traducción por sección. La leen el rail y el índice de `/backoffice`, que son dos vistas de la misma pregunta. Antes eran dos listas y ya habían divergido: el índice de `/admin` conocía el catálogo y los empleados pero no el stock, que se alcanzaba solo desde la barra de la tienda.
+- **Una sola entrada** en el menú de sesión, `/backoffice`, igual para empleado y para administrador. Qué puede abrir la cuenta lo decide el rail con `useAuth().hasRole`; `/admin` a secas redirige al índice y deja de ser pantalla. Ocultar una entrada sigue siendo UX y nunca la barrera (`08-identidad-y-seguridad.md` §4).
+- **Las guardas se componen una vez**, no ruta por ruta: `RequireAuth` en la ruta del layout y `RequireRole role="EMPLOYEE"` alrededor de su `Outlet` —dentro del marco, para que a quien se le niegue le quede el rail y con él la salida a la tienda—, más un `RequireRole role="ADMIN"` para el grupo de `/admin/*`. Y ninguna pantalla del back-office trae su propio `<Container>`: el ancho y el aire los decide el cascarón.
+
 Nombres de carpeta y de módulo en inglés (ADR-0018), alineados con los módulos de Spring Modulith del backend (ADR-0017) donde aplica — `catalog`, `cart`, `orders`, `inventory` son el mismo concepto a ambos lados de la API. Las carpetas de `features/` no se importan entre sí directamente — si `orders` necesita algo de `cart`, ese algo sube a `shared/`. Es la misma regla que ArchUnit/Spring Modulith hace cumplir en el backend (`03-analisis-y-patrones.md`, ADR-0017), aplicada al frontend.
 
 ## Cómo se diseña un componente base de `shared/ui/`

@@ -1,0 +1,253 @@
+@use "sass:map";
+@use "../bootstrap";
+@use "../tokens";
+
+// El cascarón del back-office: rail a la izquierda, barra fina arriba, pantalla debajo. Es el marco
+// de las ocho rutas de trabajo y no se parece al de la tienda a propósito — lo que necesita es resta.
+//
+// Ningún color se escribe dos veces: salen de `_tokens.scss` y de las variables de Bootstrap.
+
+// El ancho del rail vive en una custom property y no en cada regla porque hay una tercera cosa que
+// depende de él: la barra de acciones de la ficha de producto, que está `position: fixed` y se
+// metería por debajo del rail si arrancara en el borde de la ventana.
+.bo-shell {
+  --bo-rail-width: 4rem;
+
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+// Tope en `50vw` para el móvil: catorce rem sobre una pantalla de 390 px se comen más de un tercio
+// del contenido, y el rail es la navegación, no la pantalla.
+.bo-shell--wide-rail {
+  --bo-rail-width: min(14rem, 50vw);
+}
+
+.bo-shell__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  // Sin esto una tabla ancha estira el flex item y empuja el rail fuera de la ventana.
+  min-width: 0;
+}
+
+// --- El rail --------------------------------------------------------------------------------------
+
+// $primary-hover y no $primary, por lo mismo que el pie de la tienda (`_shell.scss`): con la barra
+// superior del mismo verde, los dos bloques se leen como una sola masa sin borde entre ellos.
+// Blanco sobre $primary-hover es 8.01:1 (AAA).
+.bo-rail {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex: 0 0 var(--bo-rail-width);
+  flex-direction: column;
+  align-self: flex-start;
+  width: var(--bo-rail-width);
+  height: 100vh;
+  height: 100dvh;
+  padding: bootstrap.$spacer * 0.5;
+  background-color: tokens.$primary-hover;
+  color: tokens.$on-dark;
+}
+
+.bo-rail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: bootstrap.$spacer * 0.5;
+  min-height: 3rem;
+  padding-inline: bootstrap.$spacer * 0.25;
+}
+
+// La marca en tipografía y no el logotipo: el wordmark es un bitmap ancho que no cabe en cuatro rem.
+// Es el mismo recurso que usa el pie (`.site-footer__brand`).
+.bo-rail__brand {
+  overflow: hidden;
+  font-family: tokens.$display-font;
+  font-size: 1.25rem;
+  white-space: nowrap;
+}
+
+.bo-rail__toggle {
+  display: inline-flex;
+  padding: bootstrap.$spacer * 0.25;
+  border: 0;
+  border-radius: bootstrap.$border-radius;
+  background-color: transparent;
+  color: inherit;
+}
+
+.bo-rail__nav {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  // Para que el grupo de arriba pueda desbordar en vez de empujar al pie fuera de la ventana.
+  min-height: 0;
+  margin-top: bootstrap.$spacer * 0.5;
+}
+
+.bo-rail__group {
+  display: flex;
+  flex-direction: column;
+  gap: bootstrap.$spacer * 0.25;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// El pie del rail se pega abajo y se separa con una línea: volver a la tienda y salir no son dos
+// pantallas más del back-office, son las dos formas de dejarlo.
+.bo-rail__group--foot {
+  margin-top: auto;
+  padding-top: bootstrap.$spacer * 0.5;
+  border-top: bootstrap.$border-width solid rgba(255, 255, 255, 0.25);
+}
+
+.bo-rail__item {
+  display: flex;
+  align-items: center;
+  gap: bootstrap.$spacer * 0.75;
+  overflow: hidden;
+  padding: bootstrap.$spacer * 0.5;
+  border-radius: bootstrap.$border-radius;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.bo-rail__item:hover,
+.bo-rail__item:focus-visible {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: tokens.$on-dark;
+}
+
+// La pantalla en la que estás. No es solo el color: `NavLink` pone `aria-current="page"`, así que
+// esta regla y el lector de pantalla dicen lo mismo, y quien no distinga el fondo tiene la negrita.
+.bo-rail__item[aria-current="page"] {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: tokens.$on-dark;
+  font-weight: 600;
+}
+
+// Un puesto largo no ensancha el rail ni parte en dos líneas: se corta con puntos suspensivos.
+.bo-rail__caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bo-rail__signout .btn {
+  justify-content: center;
+  width: 100%;
+}
+
+// Plegado: los iconos se centran y no queda un hueco a la izquierda donde estaba el texto.
+.bo-rail:not(.bo-rail--expanded) {
+  .bo-rail__head,
+  .bo-rail__item {
+    justify-content: center;
+  }
+}
+
+// El anillo de foco por defecto es del color de marca y aquí caería sobre el propio verde.
+.bo-rail :focus-visible {
+  outline-color: tokens.$on-dark;
+}
+
+// --- La barra superior ----------------------------------------------------------------------------
+
+// Lo que queda de un bloque de cuenta cuando el rail ya lleva salir y volver a la tienda: quién eres
+// y en qué idioma. `LanguageSwitcher` está dibujado para fondo oscuro (`_shell.scss`), así que la
+// barra es verde y no blanca — pintarla clara obligaría a inventarle una segunda piel a ese control.
+.bo-topbar {
+  position: sticky;
+  top: 0;
+  z-index: bootstrap.$zindex-sticky;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: bootstrap.$spacer * 0.5;
+  padding: bootstrap.$spacer * 0.5 bootstrap.$spacer;
+  background-color: tokens.$primary;
+  color: tokens.$on-dark;
+}
+
+// Quién cede sitio primero cuando la barra no cabe, que en un móvil es siempre. El orden es el de lo
+// que cuesta más perder: el conmutador de idioma es un control y no se recorta nunca; la tienda cabe
+// entera porque es corta y es el dato que esta barra existe para dar; y el correo, que es el más
+// largo y está entero a un toque en `/account`, es el que se corta.
+.bo-topbar .lang-switch {
+  flex: 0 0 auto;
+}
+
+// La tienda y el correo son una pareja —dónde trabajas y quién eres— y se separan con un punto
+// medio dibujado desde aquí: es puntuación decorativa, no un texto que nadie tenga que traducir.
+.bo-topbar__store {
+  flex: 0 0 auto;
+  overflow: hidden;
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-topbar__store + .bo-topbar__account::before {
+  content: "\00b7";
+  margin-inline-end: 0.5rem;
+  opacity: 0.7;
+}
+
+.bo-topbar__account {
+  flex: 0 1 auto;
+  overflow: hidden;
+  color: tokens.$on-dark;
+  font-size: 0.875rem;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-topbar__account:hover,
+.bo-topbar__account:focus-visible {
+  color: tokens.$on-dark;
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.bo-topbar :focus-visible {
+  outline-color: tokens.$on-dark;
+}
+
+.bo-main {
+  flex: 1 1 auto;
+}
+
+// --- Lo que el rail desplaza ----------------------------------------------------------------------
+
+// La barra de acciones de la ficha de producto está `position: fixed` con `inset-inline: 0`, que
+// antes era el borde de la ventana y ahora es el borde de debajo del rail. Se corrige aquí —en el
+// cascarón, que es quien sabe cuánto ocupa— y no en `_admin-product.scss`, que no sabe nada de esto.
+// Dos clases contra una: gana sin depender del orden de los `@use`.
+.bo-shell .admin-form__bar {
+  inset-inline-start: var(--bo-rail-width);
+}
+
+// --- El rail ancho en una pantalla estrecha -------------------------------------------------------
+
+// Catorce rem sobre 390 px dejaban al contenido la mitad de la pantalla: la tabla de stock se leía en
+// una columna de dos centímetros. Por debajo de `md` el rail ancho **flota sobre** el contenido en
+// vez de quitarle sitio — el cuerpo conserva el hueco del rail mínimo, y el mismo botón que lo abrió
+// lo cierra, que es por qué no hace falta ni velo ni cerrar al tocar fuera.
+@media (max-width: map.get(bootstrap.$grid-breakpoints, "md")) {
+  .bo-shell--wide-rail {
+    --bo-rail-width: 4rem;
+  }
+
+  .bo-shell--wide-rail .bo-rail {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: bootstrap.$zindex-fixed;
+    width: min(14rem, 70vw);
+  }
+}
