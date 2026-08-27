@@ -6,6 +6,9 @@
     "home": "Inicio",
     "shop": "Ir a la tienda"
   },
+  "topbar": {
+    "store": "Tu tienda:"
+  },
   "home": {
     "title": "Back office",
     "lead": "Lo que tu cuenta puede hacer aquí. El menú de la izquierda te lleva a lo mismo desde cualquier pantalla."

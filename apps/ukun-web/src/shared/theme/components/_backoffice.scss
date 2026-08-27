@@ -167,13 +167,38 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: bootstrap.$spacer * 0.75;
+  gap: bootstrap.$spacer * 0.5;
   padding: bootstrap.$spacer * 0.5 bootstrap.$spacer;
   background-color: tokens.$primary;
   color: tokens.$on-dark;
 }
 
+// Quién cede sitio primero cuando la barra no cabe, que en un móvil es siempre. El orden es el de lo
+// que cuesta más perder: el conmutador de idioma es un control y no se recorta nunca; la tienda cabe
+// entera porque es corta y es el dato que esta barra existe para dar; y el correo, que es el más
+// largo y está entero a un toque en `/account`, es el que se corta.
+.bo-topbar .lang-switch {
+  flex: 0 0 auto;
+}
+
+// La tienda y el correo son una pareja —dónde trabajas y quién eres— y se separan con un punto
+// medio dibujado desde aquí: es puntuación decorativa, no un texto que nadie tenga que traducir.
+.bo-topbar__store {
+  flex: 0 0 auto;
+  overflow: hidden;
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-topbar__store + .bo-topbar__account::before {
+  content: "\00b7";
+  margin-inline-end: 0.5rem;
+  opacity: 0.7;
+}
+
 .bo-topbar__account {
+  flex: 0 1 auto;
   overflow: hidden;
   color: tokens.$on-dark;
   font-size: 0.875rem;

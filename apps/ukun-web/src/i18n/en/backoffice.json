@@ -6,6 +6,9 @@
     "home": "Overview",
     "shop": "Go to the shop"
   },
+  "topbar": {
+    "store": "Your store:"
+  },
   "home": {
     "title": "Back office",
     "lead": "What your account can do here. The menu on the left takes you to the same places from any screen."

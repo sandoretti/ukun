@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { server } from '../test/msw/server';
 import { signedIn } from '../test/msw/sessionHandlers';
+import { employmentFails } from '../test/msw/stockHandlers';
 import { renderWithProviders } from '../test/renderWithProviders';
 import { BackofficeLayout } from './BackofficeLayout';
 
@@ -92,6 +93,31 @@ describe('BackofficeLayout', () => {
     expect(rail.getByRole('button', { name: 'Cerrar sesión' }).closest('form')?.getAttribute('action')).toBe(
       '/logout',
     );
+  });
+
+  it('says which store this account works in, next to who it belongs to', async () => {
+    server.use(signedIn(['EMPLOYEE', 'ADMIN']));
+
+    await renderShell();
+
+    // Next to the email and not over the screen: it is a fact about the session, not the subject of
+    // what is being looked at — the catalogue of `/admin/products` is global and belongs to no store
+    // (ADR-0020). And it is named for a screen reader, which would otherwise hear a store and an
+    // email side by side with nothing saying which is which.
+    expect(await screen.findByText('Tu tienda:')).toBeDefined();
+    expect(screen.getByText('Ukun Gran Vía')).toBeDefined();
+  });
+
+  it('says one thing less rather than breaking when the store cannot be resolved', async () => {
+    server.use(signedIn(['EMPLOYEE', 'ADMIN']), employmentFails('FORBIDDEN', 403));
+
+    await renderShell();
+
+    // The shell reads the query and never `EmploymentBoundary`: the boundary refuses to draw its
+    // screen until the store is known, and a bar that did that would hold the whole back-office
+    // hostage to one request that the screens already handle for themselves.
+    expect(await screen.findByRole('link', { name: 'Stock' })).toBeDefined();
+    expect(screen.queryByText('Tu tienda:')).toBeNull();
   });
 
   it('is not the shop: no catalogue menu, no product search, no cart', async () => {

@@ -5,6 +5,7 @@ import { Container } from 'react-bootstrap';
 
 import { RequireRole } from '../features/auth/RequireRole';
 import { ACCOUNT_PATH } from '../features/auth/routes';
+import { useMyEmployment } from '../features/backoffice/api/employment';
 import { useAuth } from '../shared/hooks/useAuth';
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
 import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher';
@@ -40,6 +41,17 @@ import { useRailExpanded } from './useRailExpanded';
 export function BackofficeLayout() {
   const { t } = useTranslation(['backoffice', 'common']);
   const { user } = useAuth();
+  /**
+   * Where this account works, for the bar. It is the **query** and never `EmploymentBoundary`: the
+   * boundary refuses to draw its screen until the store is known, and a shell that did that would
+   * hold the whole back-office hostage to one request. Here the store is a nice-to-know — if it has
+   * not arrived, or the account has no employee row behind it, the bar simply says one thing less.
+   *
+   * It costs no extra request on the four screens that already resolve it, because TanStack Query
+   * dedupes them onto one key with `staleTime: Infinity`; on the three that did not —the index, the
+   * catalogue and the product sheet— it is one request, answered once per session.
+   */
+  const employment = useMyEmployment();
   const { expanded, toggle } = useRailExpanded();
   useLocaleSync();
 
@@ -59,9 +71,23 @@ export function BackofficeLayout() {
       <div className="bo-shell__body">
         {/* What is left of an account block once the rail carries both of its destinations: signing
             out is down there, and the shop is down there too. What is not in the rail is who you are
-            and the language, so that is what the bar holds. */}
+            and the language, so that is what the bar holds.
+
+            The store goes **next to the email and in the same weight**, not on the far left where a
+            title would sit. It is a fact about the session —where you work— and not the subject of
+            the screen: the catalogue of `/admin/products` is global and belongs to no store
+            (ADR-0020), so a store name with the presence of a heading over it would be claiming
+            something false. Grouped with the email, it reads as the pair it is. */}
         <div className="bo-topbar">
           <LanguageSwitcher />
+          {employment.data !== undefined && (
+            <p className="bo-topbar__store mb-0">
+              {/* Named for a screen reader, which otherwise hears a store and an email side by side
+                  with nothing saying which is which. On screen the pairing says it already. */}
+              <span className="visually-hidden">{t('topbar.store')} </span>
+              {employment.data.storeName}
+            </p>
+          )}
           {user !== undefined && (
             <Link to={ACCOUNT_PATH} className="bo-topbar__account">
               {user.email}
