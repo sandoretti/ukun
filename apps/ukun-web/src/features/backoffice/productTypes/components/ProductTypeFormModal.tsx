@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Form, Modal } from 'react-bootstrap';
+import { Button, Modal } from 'react-bootstrap';
 
 import { applyDuplicateValue, applyServerErrors } from '../../../../shared/forms/applyServerErrors';
+import { HookForm } from '../../../../shared/forms/HookForm';
 import { useFieldMessages } from '../../../../shared/hooks/useFieldMessages';
 import { ErrorState } from '../../../../shared/ui/ErrorState';
 import { TextField } from '../../../../shared/ui/TextField';
@@ -94,7 +95,7 @@ export function ProductTypeFormModal({ productType, onClose }: ProductTypeFormMo
         </Modal.Title>
       </Modal.Header>
 
-      <Form noValidate onSubmit={(event) => void onSubmit(event)}>
+      <HookForm onSubmit={onSubmit}>
         <Modal.Body>
           <TextField
             label={t('productTypes.form.name')}
@@ -122,7 +123,7 @@ export function ProductTypeFormModal({ productType, onClose }: ProductTypeFormMo
             {isRename ? t('productTypes.form.save') : t('productTypes.form.create')}
           </Button>
         </Modal.Footer>
-      </Form>
+      </HookForm>
     </Modal>
   );
 }

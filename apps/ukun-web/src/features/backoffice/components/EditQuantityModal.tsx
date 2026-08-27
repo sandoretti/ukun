@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Form, Modal } from 'react-bootstrap';
+import { Button, Modal } from 'react-bootstrap';
 
 import { NOT_FOUND, toProblem } from '../../../shared/api/http';
+import { HookForm } from '../../../shared/forms/HookForm';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
 import { ErrorState } from '../../../shared/ui/ErrorState';
 import { TextField } from '../../../shared/ui/TextField';
@@ -136,7 +137,7 @@ function EditQuantityForm({ storeId, line, isRefreshing, onClose }: EditQuantity
   }
 
   return (
-    <Form noValidate onSubmit={(event) => void onSubmit(event)}>
+    <HookForm onSubmit={onSubmit}>
       <Modal.Body>
         <p className="text-body-secondary">
           {t('edit.product', { product: line.productName, sku: line.sku })}
@@ -167,6 +168,6 @@ function EditQuantityForm({ storeId, line, isRefreshing, onClose }: EditQuantity
           {t('edit.save')}
         </Button>
       </Modal.Footer>
-    </Form>
+    </HookForm>
   );
 }

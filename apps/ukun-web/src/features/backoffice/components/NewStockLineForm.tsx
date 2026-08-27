@@ -3,11 +3,12 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Button, Form } from 'react-bootstrap';
+import { Alert, Button } from 'react-bootstrap';
 
 import { NOT_FOUND, toProblem } from '../../../shared/api/http';
 import { formatMoney } from '../../../shared/format/money';
 import { applyServerErrors } from '../../../shared/forms/applyServerErrors';
+import { HookForm } from '../../../shared/forms/HookForm';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
 import { useLocale } from '../../../shared/hooks/useLocale';
 import { ErrorState } from '../../../shared/ui/ErrorState';
@@ -91,7 +92,7 @@ export function NewStockLineForm({ employment, product, onChangeSku }: NewStockL
   });
 
   return (
-    <Form noValidate onSubmit={(event) => void onSubmit(event)}>
+    <HookForm onSubmit={onSubmit}>
       <Fieldset legend={t('newLine.product.title')}>
         <ReadOnlyField label={t('newLine.product.sku')}>{product.sku}</ReadOnlyField>
         <ReadOnlyField label={t('newLine.product.name')}>{product.name}</ReadOnlyField>
@@ -133,6 +134,6 @@ export function NewStockLineForm({ employment, product, onChangeSku }: NewStockL
       <Button type="submit" variant="primary" disabled={create.isPending}>
         {t('newLine.submit')}
       </Button>
-    </Form>
+    </HookForm>
   );
 }

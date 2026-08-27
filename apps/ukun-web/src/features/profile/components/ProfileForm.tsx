@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Col, Form, Row } from 'react-bootstrap';
+import { Col, Row } from 'react-bootstrap';
 
 import { SUPPORTED_LANGUAGES } from '../../../i18n/languages';
 import { AddressFieldset } from '../../../shared/forms/AddressFieldset';
@@ -10,6 +10,7 @@ import { CardFieldset } from '../../../shared/forms/CardFieldset';
 import { FavoriteStoreField } from '../../../shared/forms/FavoriteStoreField';
 import { applyServerErrors } from '../../../shared/forms/applyServerErrors';
 import { NAME_MAX } from '../../../shared/forms/customerFields';
+import { HookForm } from '../../../shared/forms/HookForm';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
 import { Fieldset } from '../../../shared/ui/Fieldset';
 import { ReadOnlyField } from '../../../shared/ui/ReadOnlyField';
@@ -99,7 +100,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
 
   return (
     <FormProvider {...form}>
-      <Form noValidate className="settings-form" onSubmit={(event) => void onSubmit(event)}>
+      <HookForm className="settings-form" onSubmit={onSubmit}>
         <Fieldset
           legend={t('personal.legend')}
           description={t('personal.description')}
@@ -172,7 +173,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
           isSaving={update.isPending}
           onDiscard={discard}
         />
-      </Form>
+      </HookForm>
     </FormProvider>
   );
 }

@@ -104,7 +104,7 @@ export default function NewProductPage() {
         <FormProvider {...form}>
           <ProductForm
             description={t('products.new.detailsBody')}
-            onSubmit={() => void onSubmit()}
+            onSubmit={onSubmit}
             identity={
               <TextField
                 label={t('products.form.sku')}

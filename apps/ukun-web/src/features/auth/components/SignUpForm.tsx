@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Col, Form, Row } from 'react-bootstrap';
+import { Button, Col, Row } from 'react-bootstrap';
 
 import { AddressFieldset } from '../../../shared/forms/AddressFieldset';
 import { CardFieldset } from '../../../shared/forms/CardFieldset';
@@ -10,6 +10,7 @@ import { FavoriteStoreField } from '../../../shared/forms/FavoriteStoreField';
 import { applyServerErrors } from '../../../shared/forms/applyServerErrors';
 import { NAME_MAX } from '../../../shared/forms/customerFields';
 import { toProblem } from '../../../shared/api/http';
+import { HookForm } from '../../../shared/forms/HookForm';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
 import { ErrorState } from '../../../shared/ui/ErrorState';
 import { Fieldset } from '../../../shared/ui/Fieldset';
@@ -88,7 +89,7 @@ export function SignUpForm({ onSignedUp }: SignUpFormProps) {
 
   return (
     <FormProvider {...form}>
-      <Form noValidate className="settings-form" onSubmit={(event) => void onSubmit(event)}>
+      <HookForm className="settings-form" onSubmit={onSubmit}>
         <Fieldset legend={t('account.legend')} description={t('account.description')} className="settings-section">
           <TextField
             label={t('account.email')}
@@ -164,7 +165,7 @@ export function SignUpForm({ onSignedUp }: SignUpFormProps) {
               después: la entrada no es una pantalla de este sitio (ADR-0003). */}
           <p className="form-text mt-3 mb-0">{t('afterSubmitHint')}</p>
         </div>
-      </Form>
+      </HookForm>
     </FormProvider>
   );
 }

@@ -1,8 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, Form } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 
+import { HookForm } from '../../../shared/forms/HookForm';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
 import { TextField } from '../../../shared/ui/TextField';
 import { skuFormSchema, type SkuFormValues } from '../stockSchema';
@@ -41,7 +42,7 @@ export function SkuFinder({ defaultSku, isSearching, notFound, onSearch }: SkuFi
   const onSubmit = handleSubmit((values) => onSearch(values.sku));
 
   return (
-    <Form noValidate onSubmit={(event) => void onSubmit(event)}>
+    <HookForm onSubmit={onSubmit}>
       <TextField
         label={t('newLine.sku.label')}
         hint={t('newLine.sku.hint')}
@@ -57,6 +58,6 @@ export function SkuFinder({ defaultSku, isSearching, notFound, onSearch }: SkuFi
       <Button type="submit" variant="primary" disabled={isSearching}>
         {t('newLine.sku.submit')}
       </Button>
-    </Form>
+    </HookForm>
   );
 }

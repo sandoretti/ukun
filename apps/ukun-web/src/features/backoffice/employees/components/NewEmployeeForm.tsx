@@ -9,6 +9,7 @@ import { toProblem } from '../../../../shared/api/http';
 import { applyServerErrors } from '../../../../shared/forms/applyServerErrors';
 import { EMAIL_MAX, PASSWORD_MIN } from '../../../../shared/forms/credentialFields';
 import { NAME_MAX } from '../../../../shared/forms/customerFields';
+import { HookForm } from '../../../../shared/forms/HookForm';
 import { useFieldMessages } from '../../../../shared/hooks/useFieldMessages';
 import { ErrorState } from '../../../../shared/ui/ErrorState';
 import { Fieldset } from '../../../../shared/ui/Fieldset';
@@ -103,7 +104,7 @@ export function NewEmployeeForm({ storeName, onActivationPending }: NewEmployeeF
   // pantalla, así que se ve igual: la medida del formulario no es la de la columna, y lo que separa
   // un grupo del siguiente es una divisoria y aire, no una caja.
   return (
-    <Form noValidate className="settings-form" onSubmit={(event) => void onSubmit(event)}>
+    <HookForm className="settings-form" onSubmit={onSubmit}>
       <Fieldset
         legend={t('employees.new.account.legend')}
         description={t('employees.new.account.description')}
@@ -197,6 +198,6 @@ export function NewEmployeeForm({ storeName, onActivationPending }: NewEmployeeF
           {create.isPending ? t('employees.new.submitting') : t('employees.new.submit')}
         </Button>
       </div>
-    </Form>
+    </HookForm>
   );
 }
