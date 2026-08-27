@@ -6,6 +6,7 @@ import { Icon } from '../../shared/ui/Icon';
 import { PageHeader } from '../../shared/ui/PageHeader';
 import { Pagination } from '../../shared/ui/Pagination';
 import { QueryBoundary } from '../../shared/ui/QueryBoundary';
+import { ResultCount } from '../../shared/ui/ResultCount';
 import { NEW_PRODUCT_PATH } from './adminRoutes';
 import { toApiFilters } from './api/adminProductKeys';
 import { useAdminProducts } from './api/adminProductQueries';
@@ -55,9 +56,9 @@ export default function AdminProductsPage() {
 
       <AdminProductFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
 
-      <p className="text-body-secondary" aria-live="polite">
-        {query.data === undefined ? null : t('products.results', { count: query.data.totalElements })}
-      </p>
+      <ResultCount
+        label={query.data === undefined ? undefined : t('products.results', { count: query.data.totalElements })}
+      />
 
       <QueryBoundary
         query={query}

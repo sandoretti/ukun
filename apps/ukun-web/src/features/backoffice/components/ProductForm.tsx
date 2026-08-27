@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Container, Form } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 
+import { HookForm, type FormSubmitHandler } from '../../../shared/forms/HookForm';
 import { AdminFormSection } from './AdminFormSection';
 import { ProductFields } from './ProductFields';
 
@@ -20,7 +21,12 @@ type ProductFormProps = {
   status: string;
   /** The actions of that bar. The one that commits goes last, which is where the eye ends up. */
   actions: ReactNode;
-  onSubmit: () => void;
+  /**
+   * The screen's `handleSubmit(...)`, passed through rather than wrapped. It was typed `() => void`
+   * and both screens then handed it a listener that dropped the submit event, so react-hook-form
+   * never cancelled the browser's own submit and saving reloaded the SPA (issue #151).
+   */
+  onSubmit: FormSubmitHandler;
 };
 
 /**
@@ -48,7 +54,7 @@ export function ProductForm({
   const { t } = useTranslation('backoffice');
 
   return (
-    <Form noValidate onSubmit={onSubmit}>
+    <HookForm onSubmit={onSubmit}>
       <AdminFormSection title={t('products.sheet.details')} description={description}>
         {identity}
 
@@ -71,6 +77,6 @@ export function ProductForm({
           <div className="d-flex flex-wrap gap-2">{actions}</div>
         </Container>
       </div>
-    </Form>
+    </HookForm>
   );
 }

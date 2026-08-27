@@ -10,6 +10,7 @@ import {
   NEW_PRODUCT_PATH,
 } from '../features/backoffice/adminRoutes';
 import { ADMIN_EMPLOYEES_PATH, NEW_EMPLOYEE_PATH } from '../features/backoffice/employees/routes';
+import { ADMIN_PRODUCT_TYPES_PATH } from '../features/backoffice/productTypes/routes';
 import { NEW_STOCK_LINE_PATH } from '../features/backoffice/routes';
 import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
@@ -47,6 +48,7 @@ const BackofficeHomePage = lazy(() => import('../features/backoffice/BackofficeH
 const AdminProductsPage = lazy(() => import('../features/backoffice/AdminProductsPage'));
 const NewProductPage = lazy(() => import('../features/backoffice/NewProductPage'));
 const AdminProductPage = lazy(() => import('../features/backoffice/AdminProductPage'));
+const ProductTypesPage = lazy(() => import('../features/backoffice/productTypes/ProductTypesPage'));
 const EmployeesPage = lazy(() => import('../features/backoffice/employees/EmployeesPage'));
 const NewEmployeePage = lazy(() => import('../features/backoffice/employees/NewEmployeePage'));
 
@@ -150,11 +152,11 @@ function App() {
         <Route path={BACKOFFICE_STOCK_PATH} element={<StockPage />} />
         <Route path={NEW_STOCK_LINE_PATH} element={<NewStockLinePage />} />
 
-        {/* La rama de administración (RF-10 y RF-11; RF-13 se le añade). Pide `ADMIN` y no
-            `EMPLOYEE`: el catálogo es global y los empleados son de admin, no de cualquier empleado.
-            La guarda se compone **una vez** para las cuatro rutas, en una ruta sin path que solo
-            existe para agruparlas. El alta va **antes** que `:id`, que también casaría con el literal
-            `new`. Ninguna lleva identificador de tienda: la resuelve el servidor. */}
+        {/* La rama de administración (RF-10, RF-11 y RF-13). Pide `ADMIN` y no `EMPLOYEE`: el
+            catálogo es global y los empleados son de admin, no de cualquier empleado. La guarda se
+            compone **una vez** para las seis rutas, en una ruta sin path que solo existe para
+            agruparlas. El alta va **antes** que `:id`, que también casaría con el literal `new`.
+            Ninguna lleva identificador de tienda: la resuelve el servidor. */}
         <Route
           element={
             <RequireRole role="ADMIN">
@@ -165,6 +167,7 @@ function App() {
           <Route path={ADMIN_PRODUCTS_PATH} element={<AdminProductsPage />} />
           <Route path={NEW_PRODUCT_PATH} element={<NewProductPage />} />
           <Route path={ADMIN_PRODUCT_ROUTE} element={<AdminProductPage />} />
+          <Route path={ADMIN_PRODUCT_TYPES_PATH} element={<ProductTypesPage />} />
           <Route path={ADMIN_EMPLOYEES_PATH} element={<EmployeesPage />} />
           <Route path={NEW_EMPLOYEE_PATH} element={<NewEmployeePage />} />
         </Route>

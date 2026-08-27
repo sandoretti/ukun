@@ -28,6 +28,16 @@ export const FIELD_MESSAGE_KEYS = {
 } as const satisfies FieldMessageKeys;
 
 /**
+ * The sentence each unique field of a product is rejected with, keyed by the `field` extension of a
+ * `409 DUPLICATE_VALUE`. Only the SKU is unique here (`docs/12-error-contract.md`), and it is a map
+ * rather than a check against `'sku'` so that the screen reads which column clashed instead of
+ * assuming it — the same map `productTypes` keeps for its own name.
+ */
+export const DUPLICATE_MESSAGE_KEYS = {
+  sku: 'products.validation.skuTaken',
+} as const satisfies FieldMessageKeys;
+
+/**
  * As long as the contract says (`CreateProductRequest.name`, and `@Size(max = 255)` on the record
  * behind it). Exported because the field stops the typing at the same number: a rule declared once and
  * read by both the schema that rejects and the control that prevents.

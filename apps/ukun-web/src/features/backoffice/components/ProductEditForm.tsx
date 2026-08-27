@@ -109,7 +109,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
     <FormProvider {...form}>
       <ProductForm
         description={t('products.sheet.detailsBody')}
-        onSubmit={() => void onSubmit()}
+        onSubmit={onSubmit}
         identity={
           <ReadOnlyField label={t('products.form.sku')} hint={t('products.form.skuFixed')}>
             <span className="font-monospace">{product.sku}</span>

@@ -18,6 +18,10 @@
       "title": "Stock",
       "body": "Check and adjust how many units of each product your store holds."
     },
+    "productTypes": {
+      "title": "Product types",
+      "body": "The catalog's categories: create them, rename them, and delete the ones you do not use."
+    },
     "products": {
       "title": "Products",
       "body": "The global catalog: create, edit, photograph, discontinue and delete."
@@ -137,6 +141,51 @@
     "sku": "A SKU is 3 to 32 characters: capitals, digits and hyphens.",
     "skuNotFound": "There is no active product with that SKU. It may not exist, or it may be discontinued.",
     "quantity": "Units are a whole number of 0 or more."
+  },
+  "productTypes": {
+    "title": "Product types",
+    "lead": "Every product belongs to a type, so this is the first screen a freshly created catalog needs.",
+    "add": "New type",
+    "results_one": "{{count}} type",
+    "results_other": "{{count}} types",
+    "empty": "There are no product types yet. Create the first one so products can be added.",
+    "table": {
+      "caption": "Product types of the catalog, with how many products each one has",
+      "name": "Name",
+      "productCount": "Products",
+      "actions": "Actions",
+      "noProducts": "No products",
+      "rename": "Rename {{productType}}",
+      "delete": "Delete {{productType}}"
+    },
+    "form": {
+      "createTitle": "New product type",
+      "renameTitle": "Rename product type",
+      "name": "Name",
+      "nameHint": "This is the name shoppers see in the catalog filter.",
+      "renameNote": "Renaming a type changes no past order. It does change the catalog filter right away, for every product of that type.",
+      "cancel": "Cancel",
+      "create": "Create type",
+      "save": "Save",
+      "close": "Close"
+    },
+    "delete": {
+      "title": "Delete product type",
+      "body": "You are about to delete «{{productType}}». This cannot be undone.",
+      "noProducts": "No product has this type, so deleting it drags nothing else along.",
+      "confirm": "Delete type",
+      "cancel": "Cancel",
+      "understood": "Got it",
+      "close": "Close",
+      "inUse": {
+        "title": "This type cannot be deleted",
+        "wayOut": "Move those products to another type from the products screen, then try again."
+      }
+    },
+    "validation": {
+      "name": "The name is required and at most 255 characters long.",
+      "nameTaken": "Another type already has that name."
+    }
   },
   "products": {
     "title": "Products",

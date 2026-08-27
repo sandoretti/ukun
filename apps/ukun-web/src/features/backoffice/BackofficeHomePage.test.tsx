@@ -19,7 +19,10 @@ describe('BackofficeHomePage', () => {
     expect((await screen.findByRole('link', { name: /Stock/ })).getAttribute('href')).toBe(
       '/backoffice/stock',
     );
-    expect(screen.getByRole('link', { name: /Productos/ }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: /Tipos de producto/ }).getAttribute('href')).toBe(
+      '/admin/product-types',
+    );
+    expect(screen.getByRole('link', { name: /^Productos/ }).getAttribute('href')).toBe(
       '/admin/products',
     );
     expect(screen.getByRole('link', { name: /Empleados/ }).getAttribute('href')).toBe(
@@ -44,8 +47,9 @@ describe('BackofficeHomePage', () => {
 
     renderHome();
 
-    // Product types (RF-13) are still being built: a landing that lists screens which do not exist is
-    // a landing that lies about the back-office.
-    expect(await screen.findAllByRole('link')).toHaveLength(3);
+    // The four sections `sections.ts` holds, and not one card more: a landing that lists a screen
+    // which does not exist is a landing that lies about the back-office. The number is asserted, and
+    // not only the four names, because that is the half a new entry with no route would break.
+    expect(await screen.findAllByRole('link')).toHaveLength(4);
   });
 });

@@ -6,12 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button } from 'react-bootstrap';
 
 import { NOT_FOUND, toProblem } from '../../shared/api/http';
-import { applyServerErrors } from '../../shared/forms/applyServerErrors';
+import { applyDuplicateValue, applyServerErrors } from '../../shared/forms/applyServerErrors';
 import { useFieldMessages } from '../../shared/hooks/useFieldMessages';
 import { ErrorState } from '../../shared/ui/ErrorState';
 import { TextField } from '../../shared/ui/TextField';
 import {
   createProductFormSchema,
+  DUPLICATE_MESSAGE_KEYS,
   FIELD_MESSAGE_KEYS,
   SKU_MAX,
   toCreateRequest,
@@ -74,9 +75,8 @@ export default function NewProductPage() {
     } catch (error) {
       const problem = toProblem(error);
 
-      if (problem.code === 'DUPLICATE_VALUE') {
+      if (applyDuplicateValue(error, setError, DUPLICATE_MESSAGE_KEYS)) {
         setDuplicateSku(values.sku);
-        setError('sku', { type: 'server', message: 'products.validation.skuTaken' }, { shouldFocus: true });
       } else if (problem.status === NOT_FOUND) {
         // The only identifier this request carries besides the SKU is the type, and the SKU cannot be
         // missing — it is being created. So a `404` here is a type that stopped existing while the
@@ -104,7 +104,7 @@ export default function NewProductPage() {
         <FormProvider {...form}>
           <ProductForm
             description={t('products.new.detailsBody')}
-            onSubmit={() => void onSubmit()}
+            onSubmit={onSubmit}
             identity={
               <TextField
                 label={t('products.form.sku')}

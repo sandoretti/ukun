@@ -3,11 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Button, Modal } from 'react-bootstrap';
 
 import { toProblem, type ProblemDetailError } from '../../../shared/api/http';
+import { Dialog } from '../../../shared/ui/Dialog';
 import { ErrorState } from '../../../shared/ui/ErrorState';
 import type { AdminProduct } from '../api/adminProductKeys';
 import { useDeleteProduct, useDiscontinueProduct } from '../api/adminProductQueries';
-
-const TITLE_ID = 'delete-product-title';
 
 type DeleteProductModalProps = {
   product: AdminProduct;
@@ -58,13 +57,7 @@ export function DeleteProductModal({ product, onClose, onDeleted }: DeleteProduc
   const isBusy = remove.isPending || discontinue.isPending;
 
   return (
-    <Modal show onHide={onClose} centered aria-labelledby={TITLE_ID}>
-      <Modal.Header closeButton closeLabel={t('products.delete.close')}>
-        <Modal.Title id={TITLE_ID} className="h5">
-          {t('products.delete.title')}
-        </Modal.Title>
-      </Modal.Header>
-
+    <Dialog title={t('products.delete.title')} closeLabel={t('products.delete.close')} onClose={onClose}>
       <Modal.Body>
         {inUse === null ? (
           <>
@@ -110,6 +103,6 @@ export function DeleteProductModal({ product, onClose, onDeleted }: DeleteProduc
           </Button>
         )}
       </Modal.Footer>
-    </Modal>
+    </Dialog>
   );
 }
