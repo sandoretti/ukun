@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { NOT_FOUND, toProblem } from '../../shared/api/http';
 import { BACKOFFICE_STOCK_PATH } from '../../shared/routes';
 import { ErrorState } from '../../shared/ui/ErrorState';
-import { Icon } from '../../shared/ui/Icon';
 import { useProductBySku } from './api/queries';
+import { BackLink } from './components/BackLink';
 import { EmploymentBoundary } from './components/EmploymentBoundary';
 import { NewStockLineForm } from './components/NewStockLineForm';
 import { SkuFinder } from './components/SkuFinder';
@@ -51,10 +51,7 @@ export default function NewStockLinePage() {
     <EmploymentBoundary>
       {(employment) => (
         <div className="col-lg-8 col-xl-6">
-          <Link to={BACKOFFICE_STOCK_PATH} className="d-inline-flex align-items-center gap-1 mb-3">
-            <Icon name="arrow_back" size="sm" />
-            {t('newLine.back')}
-          </Link>
+          <BackLink to={BACKOFFICE_STOCK_PATH} label={t('newLine.back')} />
 
           <h1 className="h2 mb-2">{t('newLine.title')}</h1>
           <p className="text-body-secondary mb-4">

@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Alert, Col, Row } from 'react-bootstrap';
 
+import { BackLink } from '../components/BackLink';
 import { ADMIN_EMPLOYEES_PATH } from './routes';
-import { Icon } from '../../../shared/ui/Icon';
 import { EmploymentBoundary } from '../components/EmploymentBoundary';
 import { NewEmployeeForm } from './components/NewEmployeeForm';
 
@@ -31,13 +31,7 @@ export default function NewEmployeePage() {
       {(employment) => (
         <Row>
           <Col lg={9} xl={7}>
-            <Link
-              to={ADMIN_EMPLOYEES_PATH}
-              className="d-inline-flex align-items-center gap-1 mb-3"
-            >
-              <Icon name="arrow_back" size="sm" />
-              {t('employees.new.back')}
-            </Link>
+            <BackLink to={ADMIN_EMPLOYEES_PATH} label={t('employees.new.back')} />
 
             <h1 className="h2 mb-2">{t('employees.new.title')}</h1>
             <p className="text-body-secondary mb-4">

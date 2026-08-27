@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button } from 'react-bootstrap';
 
-import { Icon } from '../../shared/ui/Icon';
 import { ResourceBoundary } from '../../shared/ui/ResourceBoundary';
 import { ADMIN_PRODUCTS_PATH } from './adminRoutes';
 import { useAdminProduct } from './api/adminProductQueries';
 import { AdminFormSection } from './components/AdminFormSection';
+import { BackLink } from './components/BackLink';
 import { CatalogStatusPanel } from './components/CatalogStatusPanel';
 import { DeleteProductModal } from './components/DeleteProductModal';
 import { ProductEditForm } from './components/ProductEditForm';
@@ -45,10 +45,7 @@ export default function AdminProductPage() {
           {(product) => (
             <>
               <header className="mb-4">
-                <Link to={ADMIN_PRODUCTS_PATH} className="d-inline-flex align-items-center gap-1 mb-3">
-                  <Icon name="arrow_back" size="sm" />
-                  {t('products.sheet.back')}
-                </Link>
+                <BackLink to={ADMIN_PRODUCTS_PATH} label={t('products.sheet.back')} />
 
                 <p className="overline mb-1">
                   {t('products.sheet.eyebrow')} · {product.sku}

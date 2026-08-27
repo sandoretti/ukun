@@ -31,9 +31,6 @@
     "title": "Stock de {{store}}",
     "lead": "Consulta y ajusta las unidades de cada producto en tu tienda.",
     "add": "Dar de alta por SKU",
-    "employment": {
-      "denied": "Tu cuenta no gestiona el stock de ninguna tienda."
-    },
     "filters": {
       "sku": "SKU",
       "q": "Nombre del producto",
