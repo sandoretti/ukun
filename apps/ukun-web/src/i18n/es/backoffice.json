@@ -18,6 +18,10 @@
       "title": "Stock",
       "body": "Consulta y ajusta las unidades de cada producto en tu tienda."
     },
+    "productTypes": {
+      "title": "Tipos de producto",
+      "body": "Las categorías del catálogo: créalas, renómbralas y borra las que no uses."
+    },
     "products": {
       "title": "Productos",
       "body": "El catálogo global: alta, edición, foto, descatalogar y borrar."
@@ -137,6 +141,51 @@
     "sku": "El SKU son de 3 a 32 caracteres: mayúsculas, cifras y guiones.",
     "skuNotFound": "No hay ningún producto activo con ese SKU. Puede que no exista o que esté descatalogado.",
     "quantity": "Las unidades son un número entero de 0 o más."
+  },
+  "productTypes": {
+    "title": "Tipos de producto",
+    "lead": "Cada producto pertenece a un tipo, así que esta es la primera pantalla que hace falta en un catálogo recién creado.",
+    "add": "Nuevo tipo",
+    "results_one": "{{count}} tipo",
+    "results_other": "{{count}} tipos",
+    "empty": "Todavía no hay ningún tipo de producto. Crea el primero para poder dar de alta productos.",
+    "table": {
+      "caption": "Tipos de producto del catálogo, con cuántos productos tiene cada uno",
+      "name": "Nombre",
+      "productCount": "Productos",
+      "actions": "Acciones",
+      "noProducts": "Sin productos",
+      "rename": "Renombrar {{productType}}",
+      "delete": "Borrar {{productType}}"
+    },
+    "form": {
+      "createTitle": "Nuevo tipo de producto",
+      "renameTitle": "Renombrar tipo de producto",
+      "name": "Nombre",
+      "nameHint": "Es el nombre que ve quien compra, en el filtro del catálogo.",
+      "renameNote": "Renombrar un tipo no cambia ningún pedido ya hecho. Sí cambia el filtro del catálogo al instante, para todos sus productos.",
+      "cancel": "Cancelar",
+      "create": "Crear tipo",
+      "save": "Guardar",
+      "close": "Cerrar"
+    },
+    "delete": {
+      "title": "Borrar tipo de producto",
+      "body": "Vas a borrar «{{productType}}». Esto no se puede deshacer.",
+      "noProducts": "No hay ningún producto de este tipo, así que borrarlo no arrastra nada más.",
+      "confirm": "Borrar tipo",
+      "cancel": "Cancelar",
+      "understood": "Entendido",
+      "close": "Cerrar",
+      "inUse": {
+        "title": "Este tipo no se puede borrar",
+        "wayOut": "Cambia esos productos a otro tipo desde la pantalla de productos y vuelve a intentarlo."
+      }
+    },
+    "validation": {
+      "name": "El nombre es obligatorio y de 255 caracteres como mucho.",
+      "nameTaken": "Ya hay otro tipo con ese nombre."
+    }
   },
   "products": {
     "title": "Productos",

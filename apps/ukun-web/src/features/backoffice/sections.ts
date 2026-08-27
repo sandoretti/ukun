@@ -2,6 +2,7 @@ import type { Role } from '../../shared/api/session';
 import { BACKOFFICE_STOCK_PATH } from '../../shared/routes';
 import { ADMIN_PRODUCTS_PATH } from './adminRoutes';
 import { ADMIN_EMPLOYEES_PATH } from './employees/routes';
+import { ADMIN_PRODUCT_TYPES_PATH } from './productTypes/routes';
 
 export type BackofficeSection = {
   /** Identifies the entry — in a `key` prop, and in a test. */
@@ -35,8 +36,12 @@ export type BackofficeSection = {
  * barrier: the gateway refuses `/api/admin/**` without `ADMIN`, `ukun-api` checks it again, and
  * `RequireRole` turns the route away (`docs/08-identidad-y-seguridad.md` §4).
  *
- * **It lists only what exists.** Product types (RF-13) will add their entry when they have a screen
- * to point at; announcing them first would be a menu that lies about what the back-office can do.
+ * **The order is the order of use, not of importance.** Product types come before the products
+ * because a product cannot be created without one: on a freshly installed database that is the first
+ * screen an administrator opens (`docs/04-roadmap.md`, v0.7).
+ *
+ * **It lists only what exists**: announcing a screen before it is there would be a menu that lies
+ * about what the back-office can do.
  */
 export const BACKOFFICE_SECTIONS = [
   {
@@ -46,6 +51,14 @@ export const BACKOFFICE_SECTIONS = [
     role: 'EMPLOYEE',
     titleKey: 'sections.stock.title',
     bodyKey: 'sections.stock.body',
+  },
+  {
+    key: 'productTypes',
+    to: ADMIN_PRODUCT_TYPES_PATH,
+    icon: 'category',
+    role: 'ADMIN',
+    titleKey: 'sections.productTypes.title',
+    bodyKey: 'sections.productTypes.body',
   },
   {
     key: 'products',
