@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Container, Table } from 'react-bootstrap';
+import { Table } from 'react-bootstrap';
 
 import { usePageWithinRange } from '../usePageWithinRange';
 import { Icon } from '../../../shared/ui/Icon';
+import { PageHeader } from '../../../shared/ui/PageHeader';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
 import { EmploymentBoundary } from '../components/EmploymentBoundary';
@@ -60,75 +61,70 @@ export default function EmployeesPage() {
   const isFiltered = countActiveFilters(filters) > 0;
 
   return (
-    <Container className="py-5">
-      <EmploymentBoundary>
-        {(employment) => (
-          <>
-            <div className="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-2">
-              <div>
-                <h1 className="h2 mb-2">
-                  {t('employees.title', { store: employment.storeName })}
-                </h1>
-                <p className="text-body-secondary mb-0">{t('employees.lead')}</p>
-              </div>
-              {/* Un enlace con aspecto de botón: el destino es una ruta, así que es un `<Link>` y no
-                  un `<button>` que navega. */}
-              <Link
-                to={NEW_EMPLOYEE_PATH}
-                className="btn btn-primary d-inline-flex align-items-center gap-1"
-              >
-                <Icon name="add" size="sm" />
-                {t('employees.add')}
-              </Link>
-            </div>
-
-            <EmployeeFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
-
-            <p className="text-body-secondary" aria-live="polite">
-              {totalElements === undefined
-                ? null
-                : t('employees.results', { count: totalElements })}
-            </p>
-
-            <QueryBoundary
-              query={status}
-              data={employees}
-              empty={isFiltered ? t('employees.empty.filtered') : t('employees.empty.none')}
+    <EmploymentBoundary>
+      {(employment) => (
+        <>
+          <PageHeader
+            title={t('employees.title', { store: employment.storeName })}
+            lead={t('employees.lead')}
+          >
+            {/* Un enlace con aspecto de botón: el destino es una ruta, así que es un `<Link>` y no
+                un `<button>` que navega. */}
+            <Link
+              to={NEW_EMPLOYEE_PATH}
+              className="btn btn-primary d-inline-flex align-items-center gap-1"
             >
-              {(rows) => (
-                <>
-                  <Table hover responsive className="align-middle">
-                    <caption className="visually-hidden">
-                      {t('employees.table.caption', { store: employment.storeName })}
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">{t('employees.table.name')}</th>
-                        <th scope="col">{t('employees.table.lastName')}</th>
-                        <th scope="col">{t('employees.table.email')}</th>
-                        <th scope="col">{t('employees.table.jobTitle')}</th>
-                        <th scope="col">{t('employees.table.role')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((employee) => (
-                        <EmployeeRow key={employee.id} employee={employee} />
-                      ))}
-                    </tbody>
-                  </Table>
+              <Icon name="add" size="sm" />
+              {t('employees.add')}
+            </Link>
+          </PageHeader>
 
-                  <Pagination
-                    page={page}
-                    totalPages={totalPages ?? 0}
-                    label={t('employees.pagination')}
-                    onPageChange={goToPage}
-                  />
-                </>
-              )}
-            </QueryBoundary>
-          </>
-        )}
-      </EmploymentBoundary>
-    </Container>
+          <EmployeeFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
+
+          <p className="text-body-secondary" aria-live="polite">
+            {totalElements === undefined
+              ? null
+              : t('employees.results', { count: totalElements })}
+          </p>
+
+          <QueryBoundary
+            query={status}
+            data={employees}
+            empty={isFiltered ? t('employees.empty.filtered') : t('employees.empty.none')}
+          >
+            {(rows) => (
+              <>
+                <Table hover responsive className="align-middle">
+                  <caption className="visually-hidden">
+                    {t('employees.table.caption', { store: employment.storeName })}
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">{t('employees.table.name')}</th>
+                      <th scope="col">{t('employees.table.lastName')}</th>
+                      <th scope="col">{t('employees.table.email')}</th>
+                      <th scope="col">{t('employees.table.jobTitle')}</th>
+                      <th scope="col">{t('employees.table.role')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((employee) => (
+                      <EmployeeRow key={employee.id} employee={employee} />
+                    ))}
+                  </tbody>
+                </Table>
+
+                <Pagination
+                  page={page}
+                  totalPages={totalPages ?? 0}
+                  label={t('employees.pagination')}
+                  onPageChange={goToPage}
+                />
+              </>
+            )}
+          </QueryBoundary>
+        </>
+      )}
+    </EmploymentBoundary>
   );
 }

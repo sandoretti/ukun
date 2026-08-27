@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Badge, Button, Container } from 'react-bootstrap';
+import { Badge, Button } from 'react-bootstrap';
 
 import { Icon } from '../../shared/ui/Icon';
 import { ResourceBoundary } from '../../shared/ui/ResourceBoundary';
@@ -39,7 +39,7 @@ export default function AdminProductPage() {
   const query = useAdminProduct(Number.isSafeInteger(id) ? id : -1);
 
   return (
-    <Container className="admin-form py-5">
+    <div className="admin-form">
       <div className="admin-form__column">
         <ResourceBoundary query={query} data={query.data} empty={t('products.sheet.gone')}>
           {(product) => (
@@ -103,6 +103,6 @@ export default function AdminProductPage() {
           )}
         </ResourceBoundary>
       </div>
-    </Container>
+    </div>
   );
 }

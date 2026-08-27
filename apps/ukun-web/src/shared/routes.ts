@@ -44,23 +44,32 @@ export const ORDERS_PATH = '/orders';
 export const orderPath = (id: number) => `${ORDERS_PATH}/${id}`;
 
 /**
- * The stock back-office (RF-09). It is `features/backoffice`'s screen and it comes up here because
- * the session menu of `features/auth` is where an employee reaches it from.
+ * The back-office, which is a **place** and not one screen: everything an employee does at work is
+ * painted inside its own shell (`app/BackofficeLayout`), and this is the door to it. The session menu
+ * of `features/auth` carries exactly one entry, and it points here whatever the roles are — what the
+ * account may open is decided once, by the rail, from `GET /api/me`.
  *
- * The rest of that feature's paths stay in `features/backoffice/routes.ts`, because nobody else
- * writes them. And the branch is `/backoffice/*`, never `/admin/*`: that prefix belongs to what talks
- * to `/api/admin/**` (ADR-0020), and stock is any employee's, not an administrator's.
+ * The prefix is `/backoffice/*` and stays deliberately apart from `/admin/*`: ADR-0020 makes that
+ * second one a biconditional with `/api/admin/**`, and both branches are painted inside this shell.
  */
-export const BACKOFFICE_STOCK_PATH = '/backoffice/stock';
+export const BACKOFFICE_PATH = '/backoffice';
 
 /**
- * The admin index (RF-10, RF-13, RF-11). It is `features/backoffice`'s screen and it comes up here
- * because the session menu of `features/auth` is where an administrator reaches it from.
+ * The stock back-office (RF-09). It hangs off `/backoffice/*` and not `/admin/*` because managing
+ * stock is any employee's job and talks to `/api/stores/**`.
  *
- * The rest of that branch —the catalog listing, the sheet of one product, the staff— stays in
- * `features/backoffice/`, because nobody outside it writes those: the menu sends an administrator to
- * the index, and the index is what links to each screen. And the prefix is `/admin/*` and not
- * `/backoffice/*` on purpose: this is the branch of what talks to `/api/admin/**` (ADR-0020), which
- * the stock screens deliberately do not.
+ * It comes up here because it is the first entry of the rail, which lives in `app/`. The rest of that
+ * feature's paths stay in `features/backoffice/routes.ts`, because nobody else writes them.
+ */
+export const BACKOFFICE_STOCK_PATH = `${BACKOFFICE_PATH}/stock`;
+
+/**
+ * The branch of what talks to `/api/admin/**` (ADR-0020), which the stock screens deliberately do
+ * not: the catalog (RF-10), the product types (RF-13) and the staff (RF-11) hang off it.
+ *
+ * **It is a prefix and no longer a screen.** It used to serve an index of cards that was the only way
+ * to reach those screens; the rail of `BackofficeLayout` is that navigation now, so `/admin` on its
+ * own redirects to `BACKOFFICE_PATH` and the two ways of saying the same thing became one. The paths
+ * built on top of it stay in `features/backoffice/`, because nobody outside writes them.
  */
 export const ADMIN_PATH = '/admin';

@@ -3,8 +3,9 @@ import type { StockFilterInput, StockView } from './api/stockKeys';
 
 /**
  * The paths of this feature, and the one place that knows what a stock URL looks like. The listing's
- * own path is **not** declared here: the session menu of `features/auth` links to it, and a path a
- * second feature needs goes up to `shared/routes.ts` — features never import each other.
+ * own path is **not** declared here: the rail of the back-office shell links to it, and a path
+ * something outside this feature needs goes up to `shared/routes.ts` — features never import each
+ * other.
  *
  * The whole branch is `/backoffice/*` and deliberately not `/admin/*`: that one is reserved for what
  * talks to `/api/admin/**` (ADR-0020), and managing stock is any employee's job, not an

@@ -1,4 +1,29 @@
 {
+  "rail": {
+    "label": "Back-office navigation",
+    "expand": "Widen the menu",
+    "collapse": "Narrow the menu",
+    "home": "Overview",
+    "shop": "Go to the shop"
+  },
+  "home": {
+    "title": "Back office",
+    "lead": "What your account can do here. The menu on the left takes you to the same places from any screen."
+  },
+  "sections": {
+    "stock": {
+      "title": "Stock",
+      "body": "Check and adjust how many units of each product your store holds."
+    },
+    "products": {
+      "title": "Products",
+      "body": "The global catalog: create, edit, photograph, discontinue and delete."
+    },
+    "employees": {
+      "title": "Staff",
+      "body": "See who works in your store, and add whoever joins it."
+    }
+  },
   "stock": {
     "title": "Stock at {{store}}",
     "lead": "Check and adjust how many units of each product your store holds.",
@@ -6,18 +31,9 @@
     "employment": {
       "denied": "Your account does not manage the stock of any store."
     },
-    "tabs": {
-      "label": "What is listed",
-      "stocked": "In stock",
-      "notStocked": "Not added yet"
-    },
     "filters": {
-      "title": "Filter",
       "sku": "SKU",
-      "skuHint": "Capitals, digits and hyphens. For example, ABC-123.",
       "q": "Product name",
-      "qHint": "For when you do not know the SKU by heart.",
-      "clear": "Clear filters",
       "label": "Stock filters",
       "hint": "Searches an exact SKU —capitals, digits and hyphens— or a part of the product name.",
       "skuPlaceholder": "SKU, for example ABC-123",
@@ -122,18 +138,6 @@
     "skuNotFound": "There is no active product with that SKU. It may not exist, or it may be discontinued.",
     "quantity": "Units are a whole number of 0 or more."
   },
-  "admin": {
-    "title": "Administration",
-    "lead": "What only an administrator account can do.",
-    "products": {
-      "title": "Products",
-      "body": "The global catalog: create, edit, photograph, discontinue and delete."
-    },
-    "employees": {
-      "title": "Staff",
-      "body": "See who works in your store, and add whoever joins it."
-    }
-  },
   "products": {
     "title": "Products",
     "lead": "The catalog is global and belongs to no store. Discontinued products show up here too.",
@@ -142,17 +146,16 @@
     "results_other": "{{count}} products",
     "pagination": "Catalog pagination",
     "filters": {
-      "title": "Filter and sort",
       "q": "Product name",
-      "qHint": "Accents and capitals do not matter.",
       "sku": "SKU",
-      "skuHint": "Exact match. For example, ABC-123.",
       "type": "Type",
       "anyType": "Any type",
       "status": "Status",
-      "statusHint": "A discontinued product only shows up if you ask for it here.",
       "sort": "Sort by",
-      "clear": "Clear filters"
+      "label": "Catalog filters",
+      "hint": "Searches an exact SKU —capitals, digits and hyphens— or a part of the name. A discontinued product only shows up if the status asks for it.",
+      "qPlaceholder": "Product name",
+      "skuPlaceholder": "SKU, for example ABC-123"
     },
     "statusFilter": {
       "ACTIVE": "In the catalog",
@@ -271,6 +274,12 @@
       "typeId": "Pick a product type.",
       "skuTaken": "That SKU belongs to another product.",
       "typeGone": "That type no longer exists. Pick another one."
+    },
+    "chips": {
+      "q": "Name: {{value}}",
+      "sku": "SKU: {{value}}",
+      "type": "Type: {{value}}",
+      "status": "Status: {{value}}"
     }
   },
   "employment": {

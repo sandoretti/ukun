@@ -3,16 +3,14 @@ import { FIRST_PAGE } from '../routes';
 import type { EmployeeFilterInput } from './api/employeeKeys';
 
 /**
- * The staff listing. It hangs off the admin branch and stays in this feature: the session menu sends
- * an administrator to the index of `/admin`, and the index —which lives here too— is what links to
- * each screen. A path only `features/backoffice` writes does not belong in `shared/routes.ts`.
+ * The staff listing. It hangs off the admin branch and stays in this feature, where `sections.ts`
+ * picks it up: that list is what both the back-office rail and its index draw, so this path travels
+ * without `shared/routes.ts` having to know it exists.
  */
 export const ADMIN_EMPLOYEES_PATH = `${ADMIN_PATH}/employees`;
 
 /**
  * The paths of the employee screens, and the one place that knows what one of their URLs looks like.
- * The listing's own path is **not** declared here: the session menu of `features/auth` links to it,
- * and a path a second feature needs goes up to `shared/routes.ts` — features never import each other.
  *
  * The branch is `/admin/*` and deliberately not `/backoffice/*`, which is where the stock lives:
  * ADR-0020 makes the prefix a biconditional with `/api/admin/**`, and managing employees is an

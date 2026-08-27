@@ -106,6 +106,59 @@ describe('AdminProductsPage', () => {
     expect(screen.getByText('1 producto')).toBeDefined();
   });
 
+  it('presents its filters the way the other two back-office listings do', async () => {
+    server.use(...adminProductState({ products: catalog }).handlers);
+
+    renderCatalog();
+    await screen.findByText('Sofá de cuero');
+
+    // One `<search>` region with the controls in a row, the explanation under it, and no visible
+    // «Filtrar» heading over a stack — the same shape as the stock and the staff (issue #148).
+    const filters = within(screen.getByRole('search', { name: 'Filtros del catálogo' }));
+    expect(filters.getByLabelText('Nombre del producto')).toBeDefined();
+    expect(filters.getByLabelText('SKU')).toBeDefined();
+    expect(filters.getByLabelText('Estado')).toBeDefined();
+    expect(screen.queryByText('Filtrar y ordenar')).toBeNull();
+    // And the link it used to clear them with is gone: chips do that now, one at a time.
+    expect(screen.queryByRole('button', { name: 'Quitar filtros' })).toBeNull();
+  });
+
+  it('says what is filtered, and drops one filter without dropping the rest', async () => {
+    const user = userEvent.setup();
+    server.use(...adminProductState({ products: catalog }).handlers);
+
+    renderCatalog('/admin/products?q=mesa&status=ALL');
+    await screen.findByText('Mesa de comedor');
+
+    const active = within(screen.getByRole('group', { name: 'Filtros activos' }));
+    expect(active.getByText('Nombre: mesa')).toBeDefined();
+    // The status is a chip too, unlike the stock's view: looking at what has been pulled from the
+    // catalogue *is* narrowing it down, and it is the filter somebody most easily forgets is on.
+    expect(active.getByText('Estado: Todos')).toBeDefined();
+
+    await user.click(screen.getByRole('button', { name: 'Quitar el filtro Nombre: mesa' }));
+
+    await waitFor(() => expect(screen.getByText('Sofá de cuero')).toBeDefined());
+    // The other one survives, which is exactly what a lone «clear filters» link could not do.
+    expect(screen.getByText('Estado: Todos')).toBeDefined();
+  });
+
+  it('clears every filter at once without rearranging the table', async () => {
+    const user = userEvent.setup();
+    const state = adminProductState({ products: catalog });
+    server.use(...state.handlers);
+
+    renderCatalog('/admin/products?q=mesa&sku=MESA-COMEDOR-01&sort=PRICE_ASC');
+    await screen.findByText('Mesa de comedor');
+
+    await user.click(screen.getByRole('button', { name: 'Limpiar todo' }));
+
+    await waitFor(() => expect(screen.queryByRole('group', { name: 'Filtros activos' })).toBeNull());
+    // The sort order is not a filter and is not cleared with them: «Limpiar todo» must not reorder a
+    // table nobody asked to reorder.
+    expect(state.searches.at(-1)).toContain('sort=PRICE_ASC');
+  });
+
   it('reads the filters from the URL: a filtered table is linkable', async () => {
     const state = adminProductState({ products: catalog });
     server.use(...state.handlers);

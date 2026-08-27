@@ -3,7 +3,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Button, Container } from 'react-bootstrap';
+import { Alert, Button } from 'react-bootstrap';
 
 import { NOT_FOUND, toProblem } from '../../shared/api/http';
 import { applyServerErrors } from '../../shared/forms/applyServerErrors';
@@ -89,7 +89,7 @@ export default function NewProductPage() {
   });
 
   return (
-    <Container className="admin-form py-5">
+    <div className="admin-form">
       <div className="admin-form__column">
         <header className="mb-4">
           <Link to={ADMIN_PRODUCTS_PATH} className="d-inline-flex align-items-center gap-1 mb-3">
@@ -151,6 +151,6 @@ export default function NewProductPage() {
           />
         </FormProvider>
       </div>
-    </Container>
+    </div>
   );
 }

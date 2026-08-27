@@ -65,34 +65,29 @@ describe('SessionMenu', () => {
     expect(form?.querySelector('input[name="_csrf"]')?.getAttribute('value')).toBe('a-token');
   });
 
-  it('offers the back office to staff only, as the way into the stock screens', async () => {
+  it('offers the back office to staff, as one entry into the whole of it', async () => {
     server.use(signedIn(['EMPLOYEE']));
 
     await openSessionMenu();
 
     expect(screen.getByRole('link', { name: /Back office/ }).getAttribute('href')).toBe(
-      '/backoffice/stock',
+      '/backoffice',
     );
   });
 
-  it('offers administration to an administrator, and to nobody else', async () => {
-    server.use(signedIn(['ADMIN']));
+  it('sends an administrator to the same place as any other employee', async () => {
+    server.use(signedIn(['EMPLOYEE', 'ADMIN']));
 
     await openSessionMenu();
 
-    // Its own entry next to the back office, because they are two different branches: `/backoffice/*`
-    // is any employee's and `/admin/*` is what talks to `/api/admin/**` (ADR-0020).
-    expect(screen.getByRole('link', { name: 'Administración' }).getAttribute('href')).toBe('/admin');
-  });
-
-  it('does not offer administration to an employee who is not one', async () => {
-    server.use(signedIn(['EMPLOYEE']));
-
-    await openSessionMenu();
-
+    // There is no second «Administración» entry any more. The two branches —`/backoffice/*` for any
+    // employee and `/admin/*` for what talks to `/api/admin/**`, ADR-0020— now meet inside the
+    // back-office shell, and which of them this account may open is the rail's decision, taken once
+    // from `BACKOFFICE_SECTIONS`. The bar knows only whether this is a work account.
+    expect(screen.getByRole('link', { name: /Back office/ }).getAttribute('href')).toBe(
+      '/backoffice',
+    );
     expect(screen.queryByRole('link', { name: 'Administración' })).toBeNull();
-    // The stock screens are still theirs: the two entries deny different things.
-    expect(screen.getByRole('link', { name: /Back office/ })).toBeDefined();
   });
 
   it('does not offer the back office to a customer', async () => {
