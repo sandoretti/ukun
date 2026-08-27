@@ -7,14 +7,13 @@ import { Button, Modal } from 'react-bootstrap';
 import { NOT_FOUND, toProblem } from '../../../shared/api/http';
 import { HookForm } from '../../../shared/forms/HookForm';
 import { useFieldMessages } from '../../../shared/hooks/useFieldMessages';
+import { Dialog } from '../../../shared/ui/Dialog';
 import { ErrorState } from '../../../shared/ui/ErrorState';
 import { TextField } from '../../../shared/ui/TextField';
 import { useUpdateStockLine } from '../api/queries';
 import type { StockedLine } from '../api/stockKeys';
 import { quantityFormSchema, toUpdateRequest, type QuantityFormValues } from '../stockSchema';
 import { VersionConflictPanel } from './VersionConflictPanel';
-
-const TITLE_ID = 'edit-quantity-title';
 
 type EditQuantityModalProps = {
   storeId: number;
@@ -57,21 +56,13 @@ export function EditQuantityModal({ storeId, line, isRefreshing, onClose }: Edit
   const { t } = useTranslation('backoffice');
 
   return (
-    <Modal show onHide={onClose} centered aria-labelledby={TITLE_ID}>
-      {/* The cross closes, it does not cancel: two controls with the same accessible name in one
-          dialog are two things a screen reader cannot tell apart. */}
-      <Modal.Header closeButton closeLabel={t('edit.close')}>
-        <Modal.Title id={TITLE_ID} className="h5">
-          {t('edit.title')}
-        </Modal.Title>
-      </Modal.Header>
-
+    <Dialog title={t('edit.title')} closeLabel={t('edit.close')} onClose={onClose}>
       {line === undefined ? (
         <GoneBody onClose={onClose} />
       ) : (
         <EditQuantityForm storeId={storeId} line={line} isRefreshing={isRefreshing} onClose={onClose} />
       )}
-    </Modal>
+    </Dialog>
   );
 }
 

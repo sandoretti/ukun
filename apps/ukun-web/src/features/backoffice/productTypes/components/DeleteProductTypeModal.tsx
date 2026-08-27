@@ -3,11 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Button, Modal } from 'react-bootstrap';
 
 import { toProblem, type ProblemDetailError } from '../../../../shared/api/http';
+import { Dialog } from '../../../../shared/ui/Dialog';
 import { ErrorState } from '../../../../shared/ui/ErrorState';
 import type { AdminProductType } from '../api/productTypeKeys';
 import { useDeleteProductType } from '../api/queries';
-
-const TITLE_ID = 'delete-product-type-title';
 
 type DeleteProductTypeModalProps = {
   productType: AdminProductType;
@@ -62,15 +61,11 @@ export function DeleteProductTypeModal({ productType, onClose }: DeleteProductTy
   };
 
   return (
-    <Modal show onHide={onClose} centered aria-labelledby={TITLE_ID}>
-      {/* The cross closes, and the footer button says what pressing it means here: two controls with
-          the same accessible name in one dialog are two things a screen reader cannot tell apart. */}
-      <Modal.Header closeButton closeLabel={t('productTypes.delete.close')}>
-        <Modal.Title id={TITLE_ID} className="h5">
-          {t('productTypes.delete.title')}
-        </Modal.Title>
-      </Modal.Header>
-
+    <Dialog
+      title={t('productTypes.delete.title')}
+      closeLabel={t('productTypes.delete.close')}
+      onClose={onClose}
+    >
       <Modal.Body>
         {blocked ? (
           <Alert variant="warning" className="mb-0">
@@ -103,6 +98,6 @@ export function DeleteProductTypeModal({ productType, onClose }: DeleteProductTy
           </Button>
         )}
       </Modal.Footer>
-    </Modal>
+    </Dialog>
   );
 }

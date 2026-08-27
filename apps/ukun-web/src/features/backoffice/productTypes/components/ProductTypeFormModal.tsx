@@ -7,6 +7,7 @@ import { Button, Modal } from 'react-bootstrap';
 import { applyDuplicateValue, applyServerErrors } from '../../../../shared/forms/applyServerErrors';
 import { HookForm } from '../../../../shared/forms/HookForm';
 import { useFieldMessages } from '../../../../shared/hooks/useFieldMessages';
+import { Dialog } from '../../../../shared/ui/Dialog';
 import { ErrorState } from '../../../../shared/ui/ErrorState';
 import { TextField } from '../../../../shared/ui/TextField';
 import type { AdminProductType } from '../api/productTypeKeys';
@@ -19,8 +20,6 @@ import {
   toRequest,
   type ProductTypeFormValues,
 } from '../productTypeSchema';
-
-const TITLE_ID = 'product-type-form-title';
 
 type ProductTypeFormModalProps = {
   /** The type being renamed, or `undefined` when this is the alta. It is the only difference. */
@@ -86,15 +85,11 @@ export function ProductTypeFormModal({ productType, onClose }: ProductTypeFormMo
   });
 
   return (
-    <Modal show onHide={onClose} centered aria-labelledby={TITLE_ID}>
-      {/* The cross closes, it does not cancel: two controls with the same accessible name in one
-          dialog are two things a screen reader cannot tell apart. */}
-      <Modal.Header closeButton closeLabel={t('productTypes.form.close')}>
-        <Modal.Title id={TITLE_ID} className="h5">
-          {isRename ? t('productTypes.form.renameTitle') : t('productTypes.form.createTitle')}
-        </Modal.Title>
-      </Modal.Header>
-
+    <Dialog
+      title={isRename ? t('productTypes.form.renameTitle') : t('productTypes.form.createTitle')}
+      closeLabel={t('productTypes.form.close')}
+      onClose={onClose}
+    >
       <HookForm onSubmit={onSubmit}>
         <Modal.Body>
           <TextField
@@ -124,6 +119,6 @@ export function ProductTypeFormModal({ productType, onClose }: ProductTypeFormMo
           </Button>
         </Modal.Footer>
       </HookForm>
-    </Modal>
+    </Dialog>
   );
 }

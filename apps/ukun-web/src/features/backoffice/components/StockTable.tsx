@@ -5,6 +5,7 @@ import { Table } from 'react-bootstrap';
 import { usePageWithinRange } from '../usePageWithinRange';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
+import { ResultCount } from '../../../shared/ui/ResultCount';
 import { useStockView } from '../api/queries';
 import { isStocked, toApiFilters, type StockFilterInput, type StockView } from '../api/stockKeys';
 import { countActiveFilters } from '../useStockParams';
@@ -72,9 +73,9 @@ export function StockTable({ storeId, storeName, filters, page, onPageChange }: 
 
   return (
     <>
-      <p className="text-body-secondary" aria-live="polite">
-        {totalElements === undefined ? null : t('stock.results', { count: totalElements })}
-      </p>
+      <ResultCount
+        label={totalElements === undefined ? undefined : t('stock.results', { count: totalElements })}
+      />
 
       <QueryBoundary
         query={query}

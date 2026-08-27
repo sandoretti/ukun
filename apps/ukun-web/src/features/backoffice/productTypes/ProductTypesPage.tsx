@@ -5,6 +5,7 @@ import { Button, Table } from 'react-bootstrap';
 import { Icon } from '../../../shared/ui/Icon';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
+import { ResultCount } from '../../../shared/ui/ResultCount';
 import { useAdminProductTypes } from './api/queries';
 import { DeleteProductTypeModal } from './components/DeleteProductTypeModal';
 import { ProductTypeFormModal } from './components/ProductTypeFormModal';
@@ -70,9 +71,9 @@ export default function ProductTypesPage() {
         </Button>
       </PageHeader>
 
-      <p className="text-body-secondary" aria-live="polite">
-        {productTypes === undefined ? null : t('productTypes.results', { count: productTypes.length })}
-      </p>
+      <ResultCount
+        label={productTypes === undefined ? undefined : t('productTypes.results', { count: productTypes.length })}
+      />
 
       <QueryBoundary query={status} data={productTypes} empty={t('productTypes.empty')}>
         {(rows) => (

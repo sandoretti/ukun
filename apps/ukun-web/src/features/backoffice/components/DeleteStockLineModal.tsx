@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, Modal } from 'react-bootstrap';
 
+import { Dialog } from '../../../shared/ui/Dialog';
 import { ErrorState } from '../../../shared/ui/ErrorState';
 import { useDeleteStockLine } from '../api/queries';
 import type { StockedLine } from '../api/stockKeys';
-
-const TITLE_ID = 'delete-stock-line-title';
 
 type DeleteStockLineModalProps = {
   storeId: number;
@@ -34,13 +33,7 @@ export function DeleteStockLineModal({ storeId, storeName, line, onClose }: Dele
   };
 
   return (
-    <Modal show onHide={onClose} centered aria-labelledby={TITLE_ID}>
-      <Modal.Header closeButton closeLabel={t('delete.close')}>
-        <Modal.Title id={TITLE_ID} className="h5">
-          {t('delete.title')}
-        </Modal.Title>
-      </Modal.Header>
-
+    <Dialog title={t('delete.title')} closeLabel={t('delete.close')} onClose={onClose}>
       <Modal.Body>
         {line === undefined ? (
           t('edit.gone')
@@ -66,6 +59,6 @@ export function DeleteStockLineModal({ storeId, storeName, line, onClose }: Dele
           </Button>
         )}
       </Modal.Footer>
-    </Modal>
+    </Dialog>
   );
 }

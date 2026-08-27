@@ -7,6 +7,7 @@ import { Icon } from '../../../shared/ui/Icon';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { Pagination } from '../../../shared/ui/Pagination';
 import { QueryBoundary } from '../../../shared/ui/QueryBoundary';
+import { ResultCount } from '../../../shared/ui/ResultCount';
 import { EmploymentBoundary } from '../components/EmploymentBoundary';
 import { useEmployees } from './api/queries';
 import { toApiFilters } from './api/employeeKeys';
@@ -81,11 +82,9 @@ export default function EmployeesPage() {
 
           <EmployeeFilters filters={filters} onChange={updateFilters} onClear={clearFilters} />
 
-          <p className="text-body-secondary" aria-live="polite">
-            {totalElements === undefined
-              ? null
-              : t('employees.results', { count: totalElements })}
-          </p>
+          <ResultCount
+            label={totalElements === undefined ? undefined : t('employees.results', { count: totalElements })}
+          />
 
           <QueryBoundary
             query={status}
