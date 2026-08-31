@@ -50,7 +50,14 @@ export function CartSummary({ cart }: CartSummaryProps) {
           <dd className="mb-0 text-tabular-nums">{total}</dd>
         </div>
 
-        <hr className="my-3" />
+        {/* El separador va envuelto: `<hr>` no es hijo válido de `<dl>` —solo lo son `<dt>`, `<dd>`,
+            `<script>`, `<template>` y `<div>`— y un lector de pantalla se encuentra la lista rota por
+            la mitad. Lo encontró axe en el navegador; en jsdom la regla no llega a evaluarse porque
+            solo mira contenido visible, y allí nada tiene tamaño. `.cart-summary__lines` no tiene
+            estilos propios, así que el `<div>` no cambia nada de lo que se ve. */}
+        <div>
+          <hr className="my-3" />
+        </div>
 
         <div className="d-flex justify-content-between align-items-baseline gap-3">
           <dt className="fw-semibold">{t('summary.total')}</dt>

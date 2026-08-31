@@ -31,6 +31,13 @@ const NEEDS_A_REAL_BROWSER = [
  * Nota sobre `incomplete`: no se afirma nada sobre ello. Son los casos en los que axe necesita ojos
  * o un navegador para decidir, y convertirlos en fallo llenaría la suite de ruido que nadie puede
  * resolver desde jsdom.
+ *
+ * **Y una limitación que no se arregla apagando reglas: en verde aquí no quiere decir en verde.**
+ * Varias reglas de axe solo evalúan contenido *visible*, y en jsdom nada tiene tamaño, así que no
+ * fallan — pasan sin haber mirado. Le pasó a `region`, que se apaga arriba por eso, y le pasó a
+ * `definition-list`: el `<hr>` que partía en dos la lista del resumen del carrito pasó por aquí y lo
+ * cazó el navegador. Esta pasada es la red rápida y de cada día; **la que decide es la de
+ * `@axe-core/playwright` en los tres recorridos**, y por eso ninguna de las dos sobra.
  */
 export async function expectNoA11yViolations(container: HTMLElement): Promise<void> {
   const results: AxeResults = await axe.run(container, {

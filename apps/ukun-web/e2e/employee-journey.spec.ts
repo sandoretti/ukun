@@ -88,11 +88,15 @@ test('una empleada gestiona el stock de su tienda y no puede entrar en la admini
     // tienda: no comparten ni landmarks ni tema.
     await expectNoA11yViolations(page, 'stock de la tienda');
 
-    // El rail son cuatro a seis paradas antes del contenido en **todas** las pantallas del
-    // back-office; su salto al contenido es el que más ahorra de los tres cascarones.
-    await expectSkipLinkWorks(page, 'el back-office');
     await expect(page).toHaveURL(/\/backoffice\/stock$/u);
     await expect(page.getByRole('navigation', { name: 'Paginación del stock' })).toBeVisible();
+
+    // El rail son cuatro a seis paradas antes del contenido en **todas** las pantallas del
+    // back-office; su salto al contenido es el que más ahorra de los tres cascarones.
+    //
+    // Al final del paso y no antes: activar el enlace deja `#main-content` en la URL, que es lo que
+    // hace un ancla, y la comprobación de ruta de arriba mira que la ruta acabe en `/stock`.
+    await expectSkipLinkWorks(page, 'el back-office');
 
     return firstRow(page);
   });
