@@ -81,4 +81,4 @@ Antes de esta tabla, la versión de cada plugin del build vivía solo en el `pom
 
 - Las versiones de este documento se revisan **al empezar cada release** de `04-roadmap.md`, no continuamente — evita que "actualizar dependencias" se convierta en una tarea infinita paralela al refactor.
 - Un salto de versión mayor (p. ej. React 19→20, Spring Boot 4.1→5) durante el refactor se trata como una decisión de producto, con su propio ADR — no se cuela dentro de un release que ya tiene su propio objetivo.
-- Dependabot/Renovate se activa en v1.0 junto con el resto de CI (ver `04-roadmap.md`), no antes — antes de tener CI, un PR automático de actualización no se puede verificar y es ruido.
+- Dependabot se activó en v1.0 junto con el resto de CI (issue #51, `.github/dependabot.yml`), no antes — antes de tener CI, un PR automático de actualización no se puede verificar y es ruido. Cubre las tres superficies: `gradle/libs.versions.toml`, el `package.json` del frontend y las propias `actions/*` del pipeline. **Solo son actualizaciones de versión:** las alertas de seguridad son un ajuste del repositorio, aparte del fichero.

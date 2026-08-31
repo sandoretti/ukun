@@ -74,7 +74,7 @@ Test de persistencia con contador de sentencias (Hibernate `Statistics.getPrepar
 | `./gradlew test` | `*Test` backend — sin Testcontainers, sin contexto de Spring salvo `@WebMvcTest`/`@DataJpaTest` puntual | cada build local y cada push |
 | `./gradlew integrationTest` | `*IT` backend — Testcontainers, `@SpringBootTest` de los 4 recorridos end-to-end (`03` §3) | CI, antes de merge |
 | Vitest | componentes y hooks del frontend, incluida paridad de traducciones | cada build local y cada push |
-| Playwright | los tres recorridos de `03` §3 (cliente completo, admin crea producto, empleado edita stock) | a mano contra el stack de Tilt, antes de merge — y en CI cuando exista (v1.0) |
+| Playwright | los tres recorridos de `03` §3 (cliente completo, admin crea producto, empleado edita stock) | a mano contra el stack de Tilt, y en CI en cada PR desde v1.0 (issue #51) |
 | Jacoco (`jacocoTestReport`) | cobertura informativa en todo el backend, sobre las dos tandas | CI |
 | Jacoco (`jacocoTestCoverageVerification`) | **umbral obligatorio solo en `orders` e `inventory`** (`03` §3 — es donde está el dinero y la concurrencia), 90% de línea y 75% de rama por paquete | CI |
 
