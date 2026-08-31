@@ -34,7 +34,7 @@ jobs:
       run:
         working-directory: apps/ukun-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
@@ -76,7 +76,7 @@ jobs:
     name: backend
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Temurin 25 explícito y no negociable: `settings.gradle.kts` no aplica el plugin
       # `foojay-resolver`, así que Gradle no sabe auto-descargarse el toolchain que pide
@@ -112,7 +112,7 @@ jobs:
     name: e2e
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-java@v4
         with:
