@@ -124,6 +124,43 @@ management:
       # Produced *and* consumed as W3C only; Boot would otherwise also accept B3 and B3_MULTI.
       type: w3c
 
+  # Y la exportación en sí, que es lo que v1.0 añade sobre lo anterior (docs/11 §5, fila de v1.0).
+  #
+  # Las dos propiedades que la encienden NO se declaran aquí, y la omisión es la configuración:
+  #   management.opentelemetry.tracing.export.otlp.endpoint  -> MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT
+  #   management.otlp.metrics.export.url                     -> MANAGEMENT_OTLP_METRICS_EXPORT_URL
+  # Sin la variable la propiedad no existe, no se instala exportador y el servicio arranca igual, que
+  # es lo que tiene que pasar donde no hay colector. compose.dev.yaml las pone apuntando al de Tilt;
+  # en producción salen del despliegue (ADR-0023, issue #55). Declararlas aquí con un default vacío
+  # sería peor: la propiedad presente y sin URL es un exportador configurado contra ninguna parte.
+  #
+  # Los dos nombres se leen dos veces antes de escribirlos. Boot 4 movió el de trazas a
+  # `management.opentelemetry.*` y dejó el de métricas en `management.otlp.*`, y escribir el nombre de
+  # Boot 3.x no da error: la propiedad desconocida se ignora y no se exporta nada.
+  #
+  # Y dos interruptores que NO son afinado: son los dos defaults de Boot que exportarían solos.
+  #
+  # `management.otlp.metrics.export.enabled` viene a `true`, y cuando no hay URL Micrometer cae a la
+  # suya, `http://localhost:4318/v1/metrics`. O sea: en cuanto micrometer-registry-otlp entró en el
+  # classpath con el starter, este servicio empezaría a hacer POST a un puerto cerrado cada minuto —
+  # en cada test, en cada `java -jar` y en cada PR de CI—, avisando de una conexión rechazada que
+  # nadie relacionaría con este cambio. Se enciende donde hay colector (compose.dev.yaml) y en ningún
+  # otro sitio. Las trazas no necesitan gemelo de esta línea: su exportador lleva
+  # @ConditionalOnProperty sobre el endpoint, así que sin endpoint no se instala.
+  #
+  # Y los logs no salen por OTLP, que es una decisión y no un olvido: docs/11 §7 los deja en stdout y
+  # el agregador es de ADR-0023. Boot los exportaría en cuanto alguien pusiera un endpoint —incluida
+  # una variable OTEL_* del entorno, que gana a este fichero—, así que la decisión se escribe aquí en
+  # vez de quedarse en el documento.
+  otlp:
+    metrics:
+      export:
+        enabled: false
+  logging:
+    export:
+      otlp:
+        enabled: false
+
 ---
 spring:
   config:
@@ -138,3 +175,60 @@ spring:
 # No /actuator/modulith here, unlike ukun-api: this service has no application modules to print
 # (ADR-0022). Nothing else is dev-only in it yet — springdoc is not wired because the only contract
 # it exposes, /internal/accounts, is service-to-service and lives in docs/api/openapi/ukun-auth.yaml.
+
+# El otro lado de la tabla de docs/11 §7. En desarrollo interesa lo contrario que en producción: el
+# arranque se lee, y el código propio habla más que nadie.
+#
+# `dev.sandoretti.ukun` es el paquete —las clases—, distinto de los loggers `ukun.business` y
+# `ukun.access`, que llevan nombre propio y no cuelgan de él. Y nada de SQL: docs/11 §7 lo deja
+# apagado siempre, y para depurar una consulta se sube `org.hibernate.SQL` a mano y a ratos.
+logging:
+  level:
+    root: INFO
+    dev.sandoretti.ukun: DEBUG
+
+---
+# El formato de producción, en un documento `!dev` y no en un perfil `prod`.
+#
+# Lo de `!dev` en vez de `prod` es lo que ya hace el resto del fichero: el documento por defecto ES el
+# de producción y `dev` releva lo que en desarrollo se quiere distinto (springdoc, los contexts de
+# Liquibase). Un perfil `prod` obligaría además a activarlo en el despliegue, y hoy nadie lo activa.
+#
+# Lo que sí es una elección es tenerlo en documento aparte en vez de arriba con un `console: ""` en el
+# documento `dev` —que funcionaría: DefaultLogbackConfiguration elige entre PatternLayoutEncoder y
+# StructuredLogEncoder con StringUtils.hasLength(formato), así que la cadena vacía es exactamente «no
+# estructurado», y es el mecanismo que usa la tanda de tests en ukun-java-conventions.gradle.kts—. Se
+# prefiere el documento porque las dos propiedades de abajo tienen que ir juntas: la máscara de
+# secretos solo actúa sobre el JSON, así que un formato activo sin su customizer es logging de
+# producción sin la capa 3 de docs/11 §4, y ese es el fallo que nadie nota. Aquí no se pueden
+# desalinear.
+spring:
+  config:
+    activate:
+      on-profile: "!dev"
+
+logging:
+  structured:
+    format:
+      # ECS y no `logstash`: nombra los campos igual que cualquier stack Elastic/OpenSearch al que se
+      # envíen algún día e incluye el MDC en el JSON sin configuración adicional (docs/11 §5). Eso
+      # último es la mitad del valor del diseño: los campos que BusinessEvents estampa en el MDC pasan
+      # a ser campos JSON indexables sin tocar una línea de BusinessEvents.
+      console: ecs
+    json:
+      # La cuarta capa de docs/11 §4. Solo aquí: en local un secreto mal logueado tiene que verse para
+      # que se corrija, y este documento no se activa bajo `dev`.
+      customizer: dev.sandoretti.ukun.auth.security.SecretMaskingJsonCustomizer
+
+  # Los niveles que docs/11 §7 promete para producción, que hasta ahora el documento afirmaba y el
+  # código no cumplía. Lo que hacen juntos: apagar el ruido y dejar encendido exactamente lo que la
+  # tabla de eventos de §3 emite, para que «solo lo que afecta al usuario» sea una configuración y no
+  # una promesa. Por eso BusinessEvents tiene logger propio.
+  #
+  # `root: WARN` tiene una consecuencia que conviene saber antes de verla en un despliegue: **apaga
+  # también los INFO de arranque de Spring**, incluido el «Started UkunApiApplication in N seconds».
+  # Un servicio recién desplegado dejará de anunciarse, y eso parece un arranque fallido cuando no lo
+  # es — quien responde por él es /actuator/health, que es lo que sondea el contenedor.
+  level:
+    root: WARN
+    ukun.business: INFO

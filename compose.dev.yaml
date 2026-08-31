@@ -9,6 +9,27 @@ services:
     volumes:
       - ./scripts/postgres-init-databases.sh:/docker-entrypoint-initdb.d/00-databases.sh:ro
 
+  # El destino OTLP del entorno local (issue #52, docs/11-observabilidad-y-logging.md §5). Va en el
+  # override y no en compose.yaml porque es tooling de desarrollo, como los puertos JDWP: en
+  # producción el destino lo pone el despliegue (ADR-0023, issue #55).
+  #
+  # Sin prefijo `ukun-`, siguiendo a `db`: ese prefijo lo llevan los servicios que son este sistema, no
+  # la infraestructura de terceros que lo sostiene.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.159.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./config/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "${OTLP_PORT:-4318}:4318"
+    # Literal y no el ancla de compose.yaml: las anclas YAML no cruzan de un fichero al otro. Mismos
+    # límites, y aquí importan igual — el exportador `debug` imprime cada lote que recibe.
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
   ukun-api:
     build:
       # La raíz del repo, igual que en compose.yaml: el Dockerfile.dev copia de services/<x>/build/,
@@ -19,6 +40,19 @@ services:
     # /actuator/modulith) stays off under `tilt up`, which is the one environment it exists for.
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+      # Aquí es donde la exportación se enciende: application.yaml deja los dos destinos sin declarar y
+      # las métricas apagadas, a propósito (el porqué está allí). Las URL apuntan al nombre del
+      # contenedor porque las resuelve el servicio desde dentro de la red de Docker, no el navegador.
+      # Si el colector está parado, el exportador reintenta y el servicio sigue atendiendo peticiones:
+      # un destino de telemetría caído no puede tumbar el sistema que observa.
+      - MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT=http://otel-collector:4318/v1/traces
+      - MANAGEMENT_OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
+      # application.yaml apaga las métricas por defecto para no publicar contra un puerto
+      # cerrado en cada test y en cada PR; aquí sí hay a dónde, así que se encienden.
+      - MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED=true
+      # Un minuto es el paso por defecto y el correcto en producción; bajo `tilt up` es un
+      # minuto mirando un colector vacío antes de saber si esto funciona.
+      - MANAGEMENT_OTLP_METRICS_EXPORT_STEP=10s
     ports:
       - "${JDWP_API_PORT:-5005}:5005"
     depends_on:
@@ -38,6 +72,19 @@ services:
     # (Aquí no hay /actuator/modulith que activar, a diferencia de ukun-api: ADR-0022.)
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+      # Aquí es donde la exportación se enciende: application.yaml deja los dos destinos sin declarar y
+      # las métricas apagadas, a propósito (el porqué está allí). Las URL apuntan al nombre del
+      # contenedor porque las resuelve el servicio desde dentro de la red de Docker, no el navegador.
+      # Si el colector está parado, el exportador reintenta y el servicio sigue atendiendo peticiones:
+      # un destino de telemetría caído no puede tumbar el sistema que observa.
+      - MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT=http://otel-collector:4318/v1/traces
+      - MANAGEMENT_OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
+      # application.yaml apaga las métricas por defecto para no publicar contra un puerto
+      # cerrado en cada test y en cada PR; aquí sí hay a dónde, así que se encienden.
+      - MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED=true
+      # Un minuto es el paso por defecto y el correcto en producción; bajo `tilt up` es un
+      # minuto mirando un colector vacío antes de saber si esto funciona.
+      - MANAGEMENT_OTLP_METRICS_EXPORT_STEP=10s
     ports:
       - "${JDWP_AUTH_PORT:-5006}:5005"
     depends_on:
@@ -55,6 +102,19 @@ services:
     # que arranque (docs/06-entorno-local-tilt.md, DevSpaRouteConfig).
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+      # Aquí es donde la exportación se enciende: application.yaml deja los dos destinos sin declarar y
+      # las métricas apagadas, a propósito (el porqué está allí). Las URL apuntan al nombre del
+      # contenedor porque las resuelve el servicio desde dentro de la red de Docker, no el navegador.
+      # Si el colector está parado, el exportador reintenta y el servicio sigue atendiendo peticiones:
+      # un destino de telemetría caído no puede tumbar el sistema que observa.
+      - MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT=http://otel-collector:4318/v1/traces
+      - MANAGEMENT_OTLP_METRICS_EXPORT_URL=http://otel-collector:4318/v1/metrics
+      # application.yaml apaga las métricas por defecto para no publicar contra un puerto
+      # cerrado en cada test y en cada PR; aquí sí hay a dónde, así que se encienden.
+      - MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED=true
+      # Un minuto es el paso por defecto y el correcto en producción; bajo `tilt up` es un
+      # minuto mirando un colector vacío antes de saber si esto funciona.
+      - MANAGEMENT_OTLP_METRICS_EXPORT_STEP=10s
     ports:
       - "${JDWP_GATEWAY_PORT:-5007}:5005"
     depends_on:

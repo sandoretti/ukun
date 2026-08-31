@@ -1,7 +1,18 @@
+# La rotación de logs que pide docs/11-observabilidad-y-logging.md §7: la aplicación escribe a stdout
+# y nunca a fichero (`logging.file.name` sin usar), así que rotar es responsabilidad del runtime. Con
+# el formato ECS de v1.0 cada línea es un JSON bastante más largo que el patrón legible, y sin esto el
+# único riesgo real —que un log llene el disco de la máquina de desarrollo— crece en vez de bajar.
+x-log-rotation: &log-rotation
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   db:
     image: postgres:17
     restart: always
+    logging: *log-rotation
     shm_size: 128mb
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -14,6 +25,7 @@ services:
 
   ukun-api:
     image: ukun/api:dev
+    logging: *log-rotation
     build:
       # El contexto es la raíz del repo, no el directorio del servicio: el Dockerfile de producción
       # copia gradlew, settings.gradle.kts y buildSrc/, que viven ahí.
@@ -49,6 +61,7 @@ services:
 
   ukun-auth:
     image: ukun/auth:dev
+    logging: *log-rotation
     build:
       # El contexto es la raíz del repo, no el directorio del servicio: el Dockerfile de producción
       # copia gradlew, settings.gradle.kts y buildSrc/, que viven ahí.
@@ -75,6 +88,7 @@ services:
 
   ukun-gateway:
     image: ukun/gateway:dev
+    logging: *log-rotation
     build:
       # El contexto es la raíz del repo, no el directorio del servicio: el Dockerfile de producción
       # copia gradlew, settings.gradle.kts y buildSrc/, que viven ahí.
@@ -110,6 +124,7 @@ services:
 
   ukun-web:
     image: ukun/web:dev
+    logging: *log-rotation
     build:
       context: ./apps/ukun-web
       dockerfile: Dockerfile

@@ -47,6 +47,21 @@ La compilación (`./gradlew :<servicio>:classes :<servicio>:copyDeps`) ocurre en
 
 Esto es un cambio respecto a cómo estaba montado con Maven, y hace desaparecer tres cosas que ya no vas a encontrar en el `Tiltfile`: el `--user "$(id -u):$(id -g)"` (que existía para que los directorios de salida no quedaran de root contra un daemon rootful), el bind mount de la caché, y el `HOME` postizo. Si alguna vez vuelves a compilar en contenedor, vuelven las tres — y con el daemon de Gradle además tendrías que decidir qué hacer con `~/.gradle`, que guarda locks y el registro del daemon, no solo dependencias descargadas.
 
+## Infraestructura de terceros (`db`, `otel-collector`)
+
+Un contenedor que no se compila aquí no lleva `docker_build` ni live update: basta con declararlo en
+`compose.yaml` (o en `compose.dev.yaml`, si es solo de desarrollo) y enseñárselo a Tilt con una línea.
+
+```python
+dc_resource('otel-collector', labels=['observability'])
+```
+
+Dos detalles que sí importan: el nombre **no lleva el prefijo `ukun-`** —ese prefijo es de los
+servicios que son este sistema, no de lo que lo sostiene, y `db` es el precedente—, y el recurso va
+**sin `resource_deps` y sin que nadie dependa de él**. El colector es el caso claro: si no arranca,
+los tres backends tienen que levantarse igual. Encadenar el arranque de la aplicación a su telemetría
+es exactamente al revés.
+
 ## Al añadir un servicio Java nuevo (`ukun-api`, `ukun-auth`, `ukun-gateway`)
 
 1. Añade su bloque `docker_build` siguiendo el patrón de arriba — el `Tiltfile` actual ya deja un comentario marcando dónde.

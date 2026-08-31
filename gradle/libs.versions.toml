@@ -95,25 +95,31 @@ spring-boot-webmvc-test = { module = "org.springframework.boot:spring-boot-webmv
 # Genera spring-configuration-metadata.json para las @ConfigurationProperties del servicio: sin él
 # el IDE marca `ukun.catalog.media-base-path` como propiedad no resuelta y no la autocompleta.
 spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
-# Correlación entre los tres procesos (docs/11-observabilidad-y-logging.md §5). Con esto en el
-# classpath Boot rellena traceId/spanId en el MDC y propaga `traceparent` en cada salto: es
-# instrumentación, no código nuestro.
+# Correlación entre los tres procesos y exportación de lo que se correlaciona
+# (docs/11-observabilidad-y-logging.md §5). Con esto en el classpath Boot rellena traceId/spanId en el
+# MDC y propaga `traceparent` en cada salto: es instrumentación, no código nuestro.
 #
-# Boot 4 volvió a partir por tecnología y aquí la elección importa. `spring-boot-starter-opentelemetry`
-# es el AGREGADOR: resuelto su POM, añade a lo de abajo `opentelemetry-exporter-otlp` y
-# `micrometer-registry-otlp`, que son justo lo que docs/11 §5 sitúa en v1.0 —cuando haya a dónde
-# exportar—. Lo que hace falta en v0.5 es correlacionar logs, no exportar traces.
+# Este es el AGREGADOR, y sustituye desde v1.0 a `spring-boot-micrometer-tracing-opentelemetry`, que
+# es lo que estuvo declarado aquí entre v0.5 y v0.7. Sobre aquel módulo añade `opentelemetry-exporter-otlp`
+# y `micrometer-registry-otlp`: trazas Y métricas por OTLP, que es justo lo que docs/11 §5 situaba en
+# v1.0 «cuando haya a dónde exportar». Ya lo hay — el colector de compose.dev.yaml en local, y el
+# entorno de Azure Container Apps de ADR-0023 en producción (issue #55).
 #
-# El bridge es el de OpenTelemetry y no el de Brave por la misma sección: OTLP es el protocolo hacia el
-# que va el ecosistema. Existe `spring-boot-micrometer-tracing-brave` y no se usa.
-spring-boot-micrometer-tracing-opentelemetry = { module = "org.springframework.boot:spring-boot-micrometer-tracing-opentelemetry" }
-# Y esta segunda coordenada NO sobra, aunque el nombre de la de arriba sugiera que sí. El módulo de
-# Boot trae la autoconfiguración y nada más: su POM declara cinco dependencias y el bridge no es
-# ninguna. Sin él no existen OtelTracer ni OtelPropagator, OpenTelemetryTracingAutoConfiguration no
-# carga, y el resultado no es un fallo de arranque sino algo peor — el gateway sigue funcionando y se
-# limita a copiar la cabecera `traceparent` que le llegue, así que parece que hay propagación mientras
-# una petición de navegador (que no trae ninguna) viaja sin traza. Diagnosticado así, con
-# TracePropagationIT: 1 Tracer, 0 Propagator y 0 GatewayPropagatingSenderTracingObservationHandler.
+# Cambiar de módulo a starter NO basta para exportar: los nombres de propiedad se movieron en Boot 4 y
+# no de forma uniforme —las trazas a `management.opentelemetry.tracing.export.otlp.endpoint`, las
+# métricas se quedaron en `management.otlp.metrics.export.url`—. Escribir el nombre de Boot 3.x no da
+# error: Boot ignora la propiedad desconocida y no se exporta nada.
+#
+# El exportador es el de OpenTelemetry y no el de Brave por la misma sección: OTLP es el protocolo hacia
+# el que va el ecosistema. Existe `spring-boot-micrometer-tracing-brave` y no se usa.
+spring-boot-starter-opentelemetry = { module = "org.springframework.boot:spring-boot-starter-opentelemetry" }
+# Y esta segunda coordenada se queda declarada aunque el starter de arriba ya la arrastre. No es
+# redundancia por descuido: es la única pieza cuya ausencia no rompe el arranque. Sin ella no existen
+# OtelTracer ni OtelPropagator, OpenTelemetryTracingAutoConfiguration no carga, y el gateway sigue
+# funcionando limitándose a copiar la cabecera `traceparent` que le llegue —así que parece que hay
+# propagación mientras una petición de navegador (que no trae ninguna) viaja sin traza. Diagnosticado
+# así, con TracePropagationIT: 1 Tracer, 0 Propagator y 0 GatewayPropagatingSenderTracingObservationHandler.
+# Declararla explícitamente deja el árbol de dependencias inmune a que el POM del starter cambie.
 micrometer-tracing-bridge-otel = { module = "io.micrometer:micrometer-tracing-bridge-otel" }
 
 # --- Spring Cloud (versión gestionada por spring-cloud-bom) -----------------------------------

@@ -1,0 +1,32 @@
+# Colector OTLP del entorno local (docs/06-entorno-local-tilt.md). Es el "a dónde exportar" que
+# docs/11-observabilidad-y-logging.md §5 daba por pendiente hasta v1.0: sin un destino, las trazas y
+# las métricas que los tres servicios producen desde v0.5 no salían del stdout de su contenedor.
+#
+# No pretende parecerse al destino de producción, que es el entorno de Azure Container Apps de
+# ADR-0023 (issue #55). Lo único que tiene que hacer es demostrar que la exportación funciona, y por
+# eso el único exportador es `debug`: lo que llega se ve en los logs del propio colector, agrupado por
+# recurso en la UI de Tilt, sin añadir al stack ni un Jaeger ni un Prometheus que nadie ha pedido.
+receivers:
+  otlp:
+    protocols:
+      # Solo HTTP. Es el protocolo que habla el exportador de Boot por defecto, y abrir además gRPC
+      # sería un puerto más que reservar en la tabla de docs/06 para nada.
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  debug:
+    # `detailed` y no `normal`, aunque sea más ruidoso: con `normal` el colector solo dice cuántos
+    # spans ha recibido, y lo que hay que poder comprobar aquí no es que lleguen — es que los de
+    # ukun-gateway, ukun-api y ukun-auth comparten el mismo trace ID. Sin los identificadores impresos,
+    # este contenedor no sirve para lo único que justifica tenerlo.
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      exporters: [debug]

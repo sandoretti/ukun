@@ -29,6 +29,14 @@ docker_compose(['compose.yaml', 'compose.dev.yaml'], project_name=project_name)
 
 dc_resource('db', labels=['data'])
 
+# El colector OTLP al que exportan los tres servicios Java (issue #52). Imagen de terceros: no lleva
+# docker_build ni live update, solo hay que enseñárselo a Tilt para que su panel muestre lo que llega.
+#
+# A propósito SIN resource_deps y sin que nadie dependa de él: si el colector no arranca, los tres
+# backends tienen que seguir levantándose igual. Un destino de telemetría es lo último que puede ser
+# capaz de impedir que el sistema arranque.
+dc_resource('otel-collector', labels=['observability'])
+
 # ---------------------------------------------------------------------------
 # Compilación de los servicios Java.
 #

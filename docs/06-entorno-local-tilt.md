@@ -15,6 +15,7 @@ Tilt orquesta el stack de desarrollo vía `docker_compose()` (ADR-0005), con rei
 | `ukun-auth` | Authorization Server | 9000 · JDWP 5006 | `AUTH_PORT` · `JDWP_AUTH_PORT` | v0.4 |
 | `ukun-gateway` | BFF + único punto de entrada | 8080 · JDWP 5007 | `GATEWAY_PORT` · `JDWP_GATEWAY_PORT` | v0.5 |
 | `ukun-web` | SPA con Vite en modo dev (HMR) | 5173 | `WEB_PORT` | v0.1 |
+| `otel-collector` | destino OTLP de trazas y métricas de los tres servicios Java | 4318 | `OTLP_PORT` | v1.0 |
 
 La columna **Puerto** es el valor por defecto: son los que se usan si no defines nada, que es el
 caso normal de un checkout único. Solo se tocan al levantar dos stacks a la vez (ver más abajo).
@@ -77,6 +78,28 @@ Para `ukun-web` el `live_update` es solo `sync` **sin** `restart_container()`: V
 ## Depuración remota
 
 Cada servicio Java expone su puerto JDWP (ver tabla de arriba) — conéctate desde tu IDE como *Remote JVM Debug*. Sobrevive a `restart_container()`: el IDE reconecta solo.
+
+## Ver trazas y métricas en local
+
+Los tres servicios Java exportan por OTLP al recurso `otel-collector` desde v1.0 (issue #52). No hay
+nada que arrancar aparte: `tilt up` lo levanta con los demás.
+
+1. Abre el recurso **`otel-collector`** en la UI de Tilt. Vacío al principio: nadie ha pedido nada.
+2. Navega el SPA por el 8080 — un login y el catálogo bastan.
+3. En el panel del colector aparecen los spans. Lo que hay que mirar no es que lleguen, sino que los
+   de `ukun-gateway`, `ukun-api` y `ukun-auth` compartan **el mismo `trace_id`**: eso es lo que
+   distingue tener tracing de tener tres servicios que escriben cada uno lo suyo.
+4. Las métricas llegan cada 10 segundos (`MANAGEMENT_OTLP_METRICS_EXPORT_STEP` en `compose.dev.yaml`;
+   en producción el paso es de un minuto). `http.server.requests` es la que responde «¿cuántas
+   peticiones y a qué latencia?» sin una línea de log por cada `GET` de catálogo.
+
+**Si paras el colector, no pasa nada.** El exportador reintenta y los servicios siguen atendiendo:
+un destino de telemetría caído no puede tumbar el sistema que observa. Es una propiedad del diseño,
+no una casualidad — pruébala con `docker compose stop otel-collector` si tienes la duda.
+
+El exportador es `debug`, que vuelca a stdout, y no hay Jaeger ni Prometheus en el stack. Cuando haga
+falta un waterfall de verdad, la imagen a la que cambiar es `grafana/otel-lgtm` — está descartada hoy
+por tamaño (~1,2 GB, y `compose.dev.yaml` lo levanta también el job `e2e` de CI), no por capacidad.
 
 ## Resetear la base de datos
 

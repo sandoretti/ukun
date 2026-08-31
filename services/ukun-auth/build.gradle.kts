@@ -23,10 +23,10 @@ dependencies {
     // en vez de la que genera Spring Security para que se parezca a la tienda a la que pertenece.
     implementation(libs.spring.boot.starter.thymeleaf)
 
-    // Correlación con los otros dos procesos (docs/11 §5). Este servicio es el extremo de la saga de
-    // signup: sin un traceId común, un `signup.compensation` aquí y el `signup.started` de ukun-api
-    // son dos líneas de log que nadie puede juntar.
-    implementation(libs.spring.boot.micrometer.tracing.opentelemetry)
+    // Correlación con los otros dos procesos y exportación por OTLP (docs/11 §5). Este servicio es el
+    // extremo de la saga de signup: sin un traceId común, un `signup.compensation` aquí y el
+    // `signup.started` de ukun-api son dos líneas de log que nadie puede juntar.
+    implementation(libs.spring.boot.starter.opentelemetry)
     runtimeOnly(libs.micrometer.tracing.bridge.otel)
 
     // El Authorization Server dejó de ser un proyecto aparte y vive dentro de Spring Security 7

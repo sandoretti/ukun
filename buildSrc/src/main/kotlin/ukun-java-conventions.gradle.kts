@@ -44,6 +44,18 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.withType<Test>().configureEach {
     // Sin esto Gradle no ejecutaría ni un test: no autodetecta el motor como hacía surefire.
     useJUnitPlatform()
+
+    // La tanda de tests corre SIN el perfil `dev` —el documento por defecto de application.yaml es el
+    // de producción—, así que sin esta línea la salida de cada test saldría en JSON ECS y depurar un
+    // fallo pasaría por leer un objeto JSON por línea.
+    //
+    // La cadena vacía no es un truco: DefaultLogbackConfiguration elige entre PatternLayoutEncoder y
+    // StructuredLogEncoder con StringUtils.hasLength(formato), así que "" es exactamente "no
+    // estructurado". Es el mismo mecanismo con el que el documento `dev` recupera el patrón legible.
+    //
+    // Lo que se pierde con ello es la comprobación de que la capa 3 de docs/11 §4 está bien cableada,
+    // y por eso existe EcsMaskedLoggingIT: se enciende el formato a sí mismo.
+    systemProperty("logging.structured.format.console", "")
 }
 
 tasks.test {
