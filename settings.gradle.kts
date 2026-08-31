@@ -5,9 +5,10 @@
 // que invocan el Tiltfile y los Dockerfile de producción; el nombre del proyecto es también el del
 // directorio, así que renombrarlo sin más rompería ambos.
 //
-// El monolito legacy que queda (ukun-empleados) queda FUERA a propósito: va en Boot 3.2.3 sobre
-// Java 17, sigue construyéndose con su propio Maven y se borra en v0.7 (docs/04-roadmap.md).
-// Homologarlo sería trabajo de tirar. ukun-clientes ya se borró en v0.6, tras declarar la paridad.
+// Los dos monolitos legacy quedaron siempre FUERA de este build, y nunca se homologaron: iban en
+// Boot 3.2.3 sobre Java 17 con su propio Maven, y homologarlos habría sido trabajo de tirar. Se
+// borraron al declarar la paridad de su recorrido —ukun-clientes en v0.6, ukun-empleados en v0.7—,
+// así que ya no hay un segundo build del que hablar (ADR-0021 conserva el porqué).
 
 rootProject.name = "ukun"
 

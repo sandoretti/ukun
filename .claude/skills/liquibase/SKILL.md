@@ -48,7 +48,7 @@ Y **prueba que los `CHECK` existen de verdad** (`SELECT … FROM information_sch
 
 ## Cómo se escribe el baseline
 
-**`docs/10-modelo-de-datos.md` es el origen de cada changeset**, no `database/init.sql`. Ese documento ya hizo el trabajo: tipos y `CHECK` columna a columna (§2), índices justificados uno a uno por la consulta real que los motiva (§4), política `ON DELETE` explícita por FK (§6), y las instantáneas embebidas de `customer_order` (§5). El `init.sql` legacy solo sirve como referencia de qué datos existían, y sus decisiones están *corregidas* en ese documento, no copiadas — p. ej. dos de los índices de FK citados en `docs/03-analisis-y-patrones.md` (`cart_item.customer_id`, `order_line.order_id`) son redundantes por ser ya columna líder de su PK compuesta.
+**`docs/10-modelo-de-datos.md` es el origen de cada changeset**, no `database/init.sql`. Ese documento ya hizo el trabajo: tipos y `CHECK` columna a columna (§2), índices justificados uno a uno por la consulta real que los motiva (§4), política `ON DELETE` explícita por FK (§6), y las instantáneas embebidas de `customer_order` (§5). El `init.sql` legacy —que se borró del repo en v0.7 con el resto del legacy y se lee en el tag `v0.0-legacy`— solo sirve como referencia de qué datos existían, y sus decisiones están *corregidas* en ese documento, no copiadas — p. ej. dos de los índices de FK citados en `docs/03-analisis-y-patrones.md` (`cart_item.customer_id`, `order_line.order_id`) son redundantes por ser ya columna líder de su PK compuesta.
 
 Trampas concretas que el baseline debe recoger, todas justificadas en `10` §2:
 - `store_stock`: `id BIGSERIAL PK` + `UNIQUE (product_id, store_id)` + `version BIGINT` + `CHECK (quantity >= 0)` (ADR-0008, ADR-0015).

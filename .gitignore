@@ -7,10 +7,6 @@
 build/
 .gradle/
 
-# Maven: solo lo usa ya ukun-empleados, que lo lista también en su propio .gitignore. Esta línea se
-# va con él en v0.7.
-target/
-
 # Node / frontend
 node_modules/
 dist/

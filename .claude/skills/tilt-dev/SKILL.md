@@ -83,7 +83,7 @@ Mismo patrón que `db-reset`: un `local_resource` (o un `link` de recurso, si Ti
 
 ## Nada de legacy en el `Tiltfile`
 
-`ukun-empleados` y `nginx` **no se levantan**: no están en servicio y no hay convivencia (`docs/04-roadmap.md`). No añadas sus recursos al `Tiltfile` ni "por si acaso" — el stack de desarrollo es solo el sistema nuevo. (`ukun-clientes` ya se borró en v0.6, así que ni existe.)
+No hay nada legacy que levantar: `ukun-empleados`, `nginx/` y los `docker-compose*.yml` se borraron en v0.7 (issue #50), como `ukun-clientes` en v0.6. El stack de desarrollo es el sistema nuevo y nada más — si te encuentras añadiendo al `Tiltfile` un recurso que no está en `services/` o en `apps/`, comprueba de dónde lo has copiado.
 
 ## Dos stacks a la vez (worktrees en paralelo)
 
