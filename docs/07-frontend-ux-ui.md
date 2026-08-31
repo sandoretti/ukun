@@ -179,7 +179,7 @@ Los **únicos** mocks del frontend son dobles HTTP de MSW en `src/test/msw/`, ca
 
 ## Accesibilidad
 
-No es una pasada final: react-bootstrap ya resuelve buena parte (roles ARIA en modales, dropdowns, tabs), pero cada componente base de `shared/ui/` se revisa explícitamente por: foco visible, orden de tabulación, labels asociados a inputs (el signup actual tiene un formulario largo sin agrupar campos relacionados — se corrige agrupando con `fieldset`/`legend`), y contraste de color suficiente en la paleta elegida. La pasada de a11y de v1.0 (`04-roadmap.md`) es una auditoría con axe/Lighthouse sobre lo ya construido, no el único punto donde se piensa en esto.
+No es una pasada final: react-bootstrap ya resuelve buena parte (roles ARIA en modales, dropdowns, tabs), pero cada componente base de `shared/ui/` se revisa explícitamente por: foco visible, orden de tabulación, labels asociados a inputs (el signup actual tiene un formulario largo sin agrupar campos relacionados — se corrige agrupando con `fieldset`/`legend`), y contraste de color suficiente en la paleta elegida. La pasada de a11y de v1.0 (`04-roadmap.md`) es una auditoría con axe/Lighthouse sobre lo ya construido, no el único punto donde se piensa en esto. Ya está hecha, y lo que dejó es ejecutable: `eslint-plugin-jsx-a11y` en `npm run lint`, `npm run test:a11y` con axe sobre las pantallas de los tres recorridos, y `@axe-core/playwright` dentro de esos mismos recorridos para lo que hace falta un navegador — el reparto y su porqué, en `13-testing.md` §3.
 
 La lista concreta que se comprueba en cada componente, para que "revisar accesibilidad" tenga un contenido verificable y no sea una intención:
 
