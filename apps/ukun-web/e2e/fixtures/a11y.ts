@@ -63,23 +63,20 @@ export async function expectVisibleFocusRing(page: Page, what: string): Promise<
 }
 
 /**
- * Deja el foco al principio del documento y da el primer tabulador.
+ * **Por qué el primer tabulador solo se puede pedir sobre un documento recién cargado.**
  *
- * Hace falta porque un recorrido llega a este punto con el foco en mitad de la pantalla —acaba de
- * pulsar algo— y desde ahí el tabulador no vuelve al principio. Y hace falta que sea `blur` y no un
- * clic en el fondo: un clic pone al navegador en modalidad ratón, y entonces `:focus-visible` deja de
- * activarse, que es justo lo que se quiere comprobar.
+ * Chromium no tabula «desde el principio»: tabula desde su *sequential focus navigation starting
+ * point*, que es donde estuvo el último foco. Un `blur()` no lo reinicia — lo deja donde estaba—, así
+ * que pedir el primer tabulador a mitad de recorrido devuelve la parada siguiente a lo último que se
+ * pulsó, no la primera de la página. Esto costó un CI en rojo, y con una ironía: lo que lo destapa es
+ * `useRouteFocus`, que al navegar deja el foco en el `<main>`, o sea **pasado** el salto al contenido.
+ *
+ * Y está bien que sea así: quien acaba de aterrizar en el contenido no necesita un enlace para
+ * saltárselo. Lo que el salto al contenido promete es otra cosa —que al **cargar** una ruta sea la
+ * primera parada—, y es exactamente lo que `useRouteFocus` respeta al no robar el foco en el primer
+ * render. Por eso estas comprobaciones van detrás de un `goto` o un `reload` y no de un helper: la
+ * carga limpia no es un detalle de montaje, es la condición que se está afirmando.
  */
-export async function tabFromStart(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const active = document.activeElement;
-    if (active instanceof HTMLElement) {
-      active.blur();
-    }
-  });
-
-  await page.keyboard.press('Tab');
-}
 
 /**
  * Lleva el foco a un control **como lo haría el teclado**, y no con `focus()` a secas.
@@ -99,27 +96,25 @@ export async function focusByKeyboard(page: Page, locator: Locator): Promise<voi
 }
 
 /**
- * Recorre la pantalla con el tabulador y devuelve el nombre accesible de cada parada.
+ * Tabula `limit` veces y exige que **cada parada tenga nombre accesible**.
  *
- * Sirve para afirmar dos cosas que solo existen en un navegador: que **se llega** a un control sin
- * ratón, y en qué orden. Se para en `limit` porque lo que se comprueba es la cabeza del recorrido
- * —el salto al contenido y lo que viene tras él—, no el inventario entero de la página.
+ * Una parada anónima es un control al que se llega y del que no se sabe qué hace: para quien navega
+ * con teclado y lector, un «enlace» a secas en mitad de la cabecera.
+ *
+ * El nombre lo calcula Playwright y no este fichero, y esa es la parte que importa. La primera
+ * versión lo aproximaba con `aria-label ?? textContent` y daba por anónimo el enlace de la marca,
+ * que se llama por el `alt` de su imagen — una aproximación que no falla del lado seguro: además de
+ * inventarse fallos, habría aprobado un `aria-labelledby` roto. `toHaveAccessibleName` aplica el
+ * algoritmo de verdad, con sus `alt`, sus `aria-labelledby` y su texto visually-hidden.
+ *
+ * Cuenta desde el principio de la página, así que quien lo llame tiene que venir de una carga limpia
+ * — la razón está arriba, en el bloque sobre el punto de partida de la navegación secuencial.
  */
-export async function tabThrough(page: Page, limit: number): Promise<string[]> {
-  const stops: string[] = [];
-
-  for (let step = 0; step < limit; step += 1) {
+export async function expectNamedTabStops(page: Page, limit: number): Promise<void> {
+  for (let stop = 1; stop <= limit; stop += 1) {
     await page.keyboard.press('Tab');
-    stops.push(
-      await page.evaluate(() => {
-        const element = document.activeElement;
-        if (element === null || element === document.body) {
-          return '';
-        }
-        return (element.getAttribute('aria-label') ?? element.textContent ?? '').trim();
-      }),
-    );
-  }
 
-  return stops;
+    await expect(page.locator(':focus'), `la parada ${stop} del tabulador no tiene nombre`)
+      .not.toHaveAccessibleName('');
+  }
 }

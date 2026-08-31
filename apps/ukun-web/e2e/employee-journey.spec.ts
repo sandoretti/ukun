@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { expectNoA11yViolations, expectVisibleFocusRing, tabFromStart } from './fixtures/a11y';
+import { expectNoA11yViolations, expectVisibleFocusRing } from './fixtures/a11y';
 import { EMPLOYEE, STORE, commitFilter, openSection, rail, signInAsStaff } from './fixtures/staff';
 
 /** Un SKU con la forma que pide el contrato y que no es de nadie: el buscador tiene que decirlo. */
@@ -90,7 +90,14 @@ test('una empleada gestiona el stock de su tienda y no puede entrar en la admini
 
     // El rail son cuatro a seis paradas antes del contenido en **todas** las pantallas del
     // back-office; su salto al contenido es el que más ahorra de los tres cascarones.
-    await tabFromStart(page);
+    //
+    // Recargando primero: a esta pantalla se ha llegado pulsando en el rail, y el primer tabulador
+    // solo significa «la primera parada de la página» sobre un documento recién cargado (ver
+    // `fixtures/a11y.ts`). La ruta la lleva la URL, así que recargar no pierde nada.
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1, name: `Stock de ${STORE}` })).toBeVisible();
+
+    await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: 'Saltar al contenido' })).toBeFocused();
     await expectVisibleFocusRing(page, 'salto al contenido del back-office');
     await expect(page).toHaveURL(/\/backoffice\/stock$/u);

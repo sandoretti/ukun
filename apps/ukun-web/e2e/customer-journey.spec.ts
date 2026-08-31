@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  expectNamedTabStops,
   expectNoA11yViolations,
   expectVisibleFocusRing,
   focusByKeyboard,
-  tabFromStart,
-  tabThrough,
 } from './fixtures/a11y';
 import { newCustomer, signUp } from './fixtures/customer';
 import { signIn, useSpanish } from './fixtures/session';
@@ -54,10 +53,12 @@ test('un cliente nuevo se da de alta, compra y encuentra su pedido en el histori
     // la primera donde se audita el conjunto ya pintado, con el CSS puesto.
     await expectNoA11yViolations(page, 'catálogo');
 
-    // Que se llegue con el tabulador, y que se vea dónde se está. La primera parada de cualquier
-    // ruta es el salto al contenido: seis paradas de barra por delante de la rejilla es lo que
-    // ahorra, y solo sirve si además lleva el foco (por eso el `<main>` es `tabIndex={-1}`).
-    await tabFromStart(page);
+    // Aquí, y no más abajo: sobre el documento del `goto` de arriba, antes de pulsar nada. Lo que se
+    // afirma es que al **cargar** una ruta la primera parada es el salto al contenido —seis paradas
+    // de barra por delante de la rejilla es lo que ahorra— y eso solo tiene sentido desde una carga
+    // limpia (ver `fixtures/a11y.ts`). Sirve además de que el `<main>` es `tabIndex={-1}`: sin eso el
+    // enlace desplaza la página pero no lleva el foco.
+    await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: 'Saltar al contenido' })).toBeFocused();
     await expectVisibleFocusRing(page, 'salto al contenido');
 
@@ -132,9 +133,11 @@ test('un cliente nuevo se da de alta, compra y encuentra su pedido en el histori
     await expectNoA11yViolations(page, 'historial de pedidos');
 
     // La barra completa, con sesión: las paradas van en el orden en que se leen, y ninguna es anónima
-    // — un control sin nombre en la cabecera es una parada que no se sabe qué hace.
-    await tabFromStart(page);
-    const stops = await tabThrough(page, 4);
-    expect(stops.filter((stop) => stop === '')).toHaveLength(0);
+    // — un control sin nombre en la cabecera es una parada que no se sabe qué hace. Recargando,
+    // porque contar paradas desde el principio exige empezar desde el principio de verdad.
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1, name: 'Mis pedidos' })).toBeVisible();
+
+    await expectNamedTabStops(page, 4);
   });
 });
