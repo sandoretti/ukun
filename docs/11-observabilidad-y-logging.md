@@ -223,6 +223,13 @@ public final class BusinessEvents {
 | **DEBUG** | detalle interno útil solo mientras se depura | `auth.token.issued`, `stock.decremented.checkout`, SQL de Hibernate |
 | **TRACE** | nunca en un entorno compartido | — |
 
+Dos precisiones sobre esa fila, las dos aprendidas al escribirla en los `application.yaml` (issue #52):
+
+- **`dev.sandoretti.ukun` es el paquete, no los loggers de negocio.** La primera redacción decía `ukun.*`, que se lee como si `ukun.business` y `ukun.access` colgaran de él. No cuelgan: llevan nombre propio precisamente para poder afinarlos sin tocar el árbol de clases, y por eso van nombrados uno a uno en el documento de producción.
+- **`ukun.access` faltaba en esta tabla**, escrita antes de que el gateway existiera. Con `root: WARN` y sin nombrarlo, producción se quedaría sin el access log que §6 define como el único punto de verdad del tráfico HTTP.
+
+Y una consecuencia de `root: WARN` que conviene conocer antes de encontrársela: **apaga también los `INFO` de arranque de Spring**, incluido el «Started UkunApiApplication in N seconds». Un servicio recién desplegado deja de anunciarse, y eso se parece mucho a un arranque fallido sin serlo — quien responde por él es `/actuator/health`, que es lo que sondea el contenedor.
+
 Dos reglas que evitan la degeneración habitual:
 
 - **Un `400` de validación no es un ERROR.** El legacy hace `log.error("Hay errores al intentar validar el producto: {}", result)`: un usuario que deja un campo vacío no es un fallo del sistema. Va a DEBUG, o a nada — el `ProblemDetail` ya se lo cuenta al usuario. Si todo es ERROR, ERROR no significa nada y nadie mira los logs.
@@ -233,7 +240,7 @@ Dos reglas que evitan la degeneración habitual:
 | | Local (Tilt) | Producción |
 |---|---|---|
 | Formato | patrón legible con color | JSON ECS a stdout |
-| Nivel raíz | `INFO`; `ukun.*` en `DEBUG` | `WARN`; `ukun.business` en `INFO` |
+| Nivel raíz | `INFO`; `dev.sandoretti.ukun` en `DEBUG` | `WARN`; `ukun.business` en `INFO`, y `ukun.access` en el gateway |
 | SQL | `spring.jpa.show-sql=false` siempre; para depurar, `org.hibernate.SQL=DEBUG` a mano y temporalmente | apagado |
 | Spring Security | `DEBUG` permitido | prohibido (vuelca detalle de autenticación) |
 | Máscara de secretos (`SecretMaskingJsonCustomizer`, §4 capa 3) | desactivada — un secreto mal logueado tiene que verse para arreglarse | activada, con el formato ECS que la lleva |

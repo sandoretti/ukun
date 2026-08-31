@@ -215,6 +215,17 @@ management:
         # to read than the exception of a failing verify(). Development only (docs/14-modules.md §6).
         include: health,modulith
 
+# El otro lado de la tabla de docs/11 §7. En desarrollo interesa lo contrario que en producción: el
+# arranque se lee, y el código propio habla más que nadie.
+#
+# `dev.sandoretti.ukun` es el paquete —las clases—, distinto de los loggers `ukun.business` y
+# `ukun.access`, que llevan nombre propio y no cuelgan de él. Y nada de SQL: docs/11 §7 lo deja
+# apagado siempre, y para depurar una consulta se sube `org.hibernate.SQL` a mano y a ratos.
+logging:
+  level:
+    root: INFO
+    dev.sandoretti.ukun: DEBUG
+
 ---
 # El formato de producción, en un documento `!dev` y no en un perfil `prod`.
 #
@@ -247,3 +258,16 @@ logging:
       # La cuarta capa de docs/11 §4. Solo aquí: en local un secreto mal logueado tiene que verse para
       # que se corrija, y este documento no se activa bajo `dev`.
       customizer: dev.sandoretti.ukun.api.shared.observability.SecretMaskingJsonCustomizer
+
+  # Los niveles que docs/11 §7 promete para producción, que hasta ahora el documento afirmaba y el
+  # código no cumplía. Lo que hacen juntos: apagar el ruido y dejar encendido exactamente lo que la
+  # tabla de eventos de §3 emite, para que «solo lo que afecta al usuario» sea una configuración y no
+  # una promesa. Por eso BusinessEvents tiene logger propio.
+  #
+  # `root: WARN` tiene una consecuencia que conviene saber antes de verla en un despliegue: **apaga
+  # también los INFO de arranque de Spring**, incluido el «Started UkunApiApplication in N seconds».
+  # Un servicio recién desplegado dejará de anunciarse, y eso parece un arranque fallido cuando no lo
+  # es — quien responde por él es /actuator/health, que es lo que sondea el contenedor.
+  level:
+    root: WARN
+    ukun.business: INFO
