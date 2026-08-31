@@ -33,7 +33,13 @@ import dev.sandoretti.ukun.api.AbstractIntegrationTest;
  *
  * <p>Asserting that something is <em>absent</em> from a log line is the same shape
  * {@code AccessLogWebFilterTest} already uses, and it does not break the rule against asserting on
- * log message contents: what is pinned is the secret not being there, not the wording around it.
+ * log message contents ({@code docs/13-testing.md} §1): what is pinned is the secret not being there,
+ * not the wording around it.
+ *
+ * <p>It logs through {@code ukun.business} for a reason that is not decoration: that is the one logger
+ * production keeps at {@code INFO} while the root sits at {@code WARN} (§7), so it is the only name
+ * under which this line survives to be captured. The text itself is not an event — the closed registry
+ * of §3 governs what production emits, not what a test writes to check a formatter.
  */
 @ExtendWith(OutputCaptureExtension.class)
 @SpringBootTest(properties = "logging.structured.format.console=ecs")

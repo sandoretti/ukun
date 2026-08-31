@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.FieldSource;
 import org.springframework.http.HttpStatus;
 
 /**
@@ -39,8 +39,7 @@ class ActuatorExposureIT extends GatewayIntegrationTest {
      * fallback either — an {@code index.html} with status 200 would pass a laxer assertion.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"/actuator/env", "/actuator/beans", "/actuator/configprops", "/actuator/metrics",
-        "/actuator/heapdump", "/actuator/loggers", "/actuator/mappings"})
+    @FieldSource("dev.sandoretti.ukun.actuator.ActuatorEndpoints#SENSITIVE")
     @DisplayName("does not answer anything else, and does not fall back to the SPA")
     void doesNotAnswerAnythingElse(String endpoint) {
         HttpStatus status = HttpStatus.valueOf(http.get().uri(endpoint)

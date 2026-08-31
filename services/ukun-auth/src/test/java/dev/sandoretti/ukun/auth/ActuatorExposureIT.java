@@ -6,7 +6,7 @@ import java.net.URI;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.FieldSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -52,8 +52,7 @@ class ActuatorExposureIT extends AbstractIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/actuator/env", "/actuator/beans", "/actuator/configprops", "/actuator/metrics",
-        "/actuator/heapdump", "/actuator/loggers", "/actuator/mappings"})
+    @FieldSource("dev.sandoretti.ukun.actuator.ActuatorEndpoints#SENSITIVE")
     @DisplayName("does not answer anything else")
     void doesNotAnswerAnythingElse(String endpoint) {
         var response = restTestClient.get().uri(endpoint).exchange().returnResult(Void.class);
