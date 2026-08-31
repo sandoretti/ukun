@@ -44,7 +44,8 @@ export const STORE = 'Ukun Online';
  *
  * **Marca de tiempo, como `newCustomer()`.** Un literal daría `DUPLICATE_VALUE` en la segunda
  * pasada, y el criterio de terminado de esta slice es justamente que dos pasadas seguidas pasen sin
- * `db-reset` en medio.
+ * `db-reset` en medio. Los tres patrones son además el contrato con `scripts/e2e-cleanup.sh`: si
+ * cambian aquí, hay que cambiarlos allí o la limpieza deja de encontrar nada sin decirlo.
  */
 export function newSku(): string {
   // El patrón del contrato es `^[A-Z0-9-]{3,32}$`: mayúsculas, cifras y guiones, nada más.

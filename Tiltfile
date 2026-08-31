@@ -177,6 +177,19 @@ local_resource(
     labels=['ops'],
 )
 
+# La versión dirigida del anterior: en vez del volumen entero, solo las filas que dejan escritas los
+# recorridos de Playwright (scripts/e2e-cleanup.sh). Sirve para poder mirar el catálogo o el back
+# office a ojo después de un rato de smokes sin pagar el re-sembrado de Liquibase ni perder lo que
+# hayas creado tú probando a mano.
+local_resource(
+    name='e2e-cleanup',
+    cmd='./scripts/e2e-cleanup.sh',
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    auto_init=False,
+    resource_deps=['db'],
+    labels=['ops'],
+)
+
 local_resource(
     name='swagger-ui',
     cmd=(

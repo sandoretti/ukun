@@ -8,7 +8,8 @@ import type { Credentials } from './session';
  * **Cada ejecución da de alta a una persona nueva.** El alta escribe en la base y el smoke se lanza
  * muchas veces: reutilizar un correo daría un `409 EMAIL_ALREADY_EXISTS` en la segunda pasada, y
  * borrar la cuenta al terminar exigiría un endpoint que no existe (ni debe: la baja no es RF de este
- * release). La base se limpia con el botón `db-reset` de Tilt, que es manual a propósito.
+ * release). Lo que se acumula se borra con `npm run test:e2e:cleanup`, que limpia por este mismo
+ * patrón de correo y respeta los datos demo (`docs/06-entorno-local-tilt.md`).
  *
  * Fijar el idioma e identificarse no están aquí sino en `fixtures/session.ts`: los tres recorridos
  * los hacen igual, y el de back-office no tiene por qué importar del cliente para entrar.

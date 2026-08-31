@@ -105,6 +105,23 @@ por tamaño (~1,2 GB, y `compose.dev.yaml` lo levanta también el job `e2e` de C
 
 Botón **`db-reset`** en la UI de Tilt (etiqueta `ops`, es manual — no se ejecuta solo). Borra el volumen de Postgres; el siguiente arranque recrea el esquema con el baseline de Liquibase y los datos demo en unos segundos. Úsalo sin miedo cuando quieras partir de datos limpios. Borra el volumen **del proyecto activo**, así que desde un worktree no toca la base del checkout principal.
 
+### Borrar solo lo que dejan los recorridos de Playwright
+
+Botón **`e2e-cleanup`** (misma etiqueta `ops`, también manual), o `scripts/e2e-cleanup.sh` desde la
+terminal — con `--dry-run` para ver qué borraría sin tocar nada.
+
+Cada pasada del smoke da de alta datos nuevos y no los borra: los correos y los SKU llevan marca de
+tiempo justamente para que dos ejecuciones seguidas no choquen (`13-testing.md` §3). Tras un rato de
+smokes, el catálogo y el back-office locales se llenan de «Tipo E2E …» y de cuentas
+`e2e-…@example.com`, que es ruido para mirar cualquier pantalla a ojo. Este script borra **solo** lo
+que casa con los patrones que generan las fixtures —cliente, empleado, tipo, producto con su foto en
+`resources/uploads`, pedido, cuenta en `ukun_auth` y su rastro en `audit_log`— y deja intactos los
+datos demo y lo que hayas creado tú probando, que es lo que `db-reset` sí se lleva.
+
+Lo que **no** hace es reponer el stock que el recorrido consumió: esas cantidades son datos demo
+modificados, no filas nuevas, y para volver al catálogo recién sembrado el camino sigue siendo
+`db-reset`.
+
 ## Varios worktrees a la vez
 
 Dos stacks simultáneos colisionan en los puertos del host y, peor, en el nombre del proyecto de compose: con el mismo nombre, el segundo `tilt up` no levanta un stack nuevo, sino que **reutiliza los contenedores del primero**.
