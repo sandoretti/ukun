@@ -1,5 +1,6 @@
 package dev.sandoretti.ukun.api.shared.error;
 
+import dev.sandoretti.ukun.api.shared.observability.TraceIds;
 import org.springframework.http.ProblemDetail;
 
 /**

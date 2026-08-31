@@ -18,23 +18,26 @@ Derivada de los 12 controllers y 11 entidades del legacy (`ukun-clientes`/`ukun-
 | Módulo | Tablas que posee | RF / casos de uso | `allowedDependencies` |
 |---|---|---|---|
 | `shared` | — | `UkunException` + jerarquía, `@RestControllerAdvice`, `Clock`, tipos comunes | módulo abierto (`type = OPEN`) |
-| `catalog` | `product`, `product_type` | RF-01 (listar, ficha), RF-10 (CRUD admin, imagen) | `storage`, `shared` |
+| `audit` | `audit_log` | Rastro de ADR-0014: `AuditTrail` + el registro cerrado `AuditedEvent` | — |
+| `catalog` | `product`, `product_type` | RF-01 (listar, ficha), RF-10 (CRUD admin, imagen) | `storage`, `shared`, `audit` |
 | `stores` | `store`, `address` de tienda | RF-02, resolución de la tienda online (`is_online`) | — |
 | `storage` | — | `FileStoragePort` + adaptador (filesystem hoy, S3/MinIO en v1.1) | — |
 | `identity` | — | `AccountsPort` + adaptador HTTP a `ukun-auth`; principal del JWT | — |
-| `inventory` | `store_stock` | RF-09 (upsert/borrado por empleado, optimista), descuento en checkout (pesimista) | `catalog`, `stores`, `identity`, `shared` |
-| `customers` | `customer`, `address`, `card` de perfil | RF-05, RF-06 (lado datos + saga) | `stores`, `identity`, `shared` |
-| `staff` | `employee` | RF-11 (alta y listado por tienda) | `stores`, `identity`, `shared` |
+| `inventory` | `store_stock` | RF-09 (upsert/borrado por empleado, optimista), descuento en checkout (pesimista) | `catalog`, `stores`, `identity`, `shared`, `audit` |
+| `customers` | `customer`, `address`, `card` de perfil | RF-05, RF-06 (lado datos + saga) | `stores`, `identity`, `shared`, `audit` |
+| `staff` | `employee` | RF-11 (alta y listado por tienda) | `stores`, `identity`, `shared`, `audit` |
 | `cart` | `cart_item` | RF-03 | `catalog`, `inventory`, `customers`, `shared` |
-| `orders` | `customer_order`, `order_line`, `idempotency_key`, intento de checkout | RF-04 + ADR-0016 | `cart`, `inventory`, `customers`, `catalog`, `shared` |
+| `orders` | `customer_order`, `order_line`, `idempotency_key`, intento de checkout | RF-04 + ADR-0016 | `cart`, `inventory`, `customers`, `catalog`, `shared`, `audit` |
 
-Grafo acíclico, orden topológico: `shared` → (`catalog`, `stores`, `storage`, `identity`) → (`inventory`, `customers`, `staff`) → `cart` → `orders`. `orders` es el único módulo con cuatro dependencias de dominio declaradas, y debe serlo: es el orquestador del checkout, el caso de uso que toca más agregados a la vez.
+Grafo acíclico, orden topológico: `shared` → `audit` → (`catalog`, `stores`, `storage`, `identity`) → (`inventory`, `customers`, `staff`) → `cart` → `orders`. `orders` es el único módulo con cuatro dependencias de dominio declaradas, y debe serlo: es el orquestador del checkout, el caso de uso que toca más agregados a la vez.
+
+**`audit` se añadió en v0.7** (issue #47), al poner en uso la tabla que ADR-0014 había decidido tres releases antes. Es la única fila que esta tabla ha ganado después de escribirse, y el motivo de que sea un módulo y no unas clases más en `shared` merece quedar aquí: `shared` es el módulo **abierto**, así que una `@Entity` suya sería una fila de auditoría que cualquier módulo puede escribir a mano — lo contrario de para lo que existe un rastro. Encapsulada en un módulo cerrado, lo único que sale es `AuditTrail` y el enum `AuditedEvent`, que es la regla de oro de `docs/14-modules.md` §2 aplicada al módulo que más la necesita. Cinco módulos lo declaran; `audit` no declara lista —usa `shared`— y no depende de nadie más, que es lo que mantiene el grafo acíclico.
 
 **Por qué `shared` aparece en la columna pese a ser abierto.** La primera redacción de este ADR daba por hecho que un módulo `type = OPEN` está fuera de la comprobación y que nadie tiene que declararlo. **No es así**, comprobado contra Modulith 2.1.0 al escribir el primer módulo con código (v0.3, `catalog`): `OPEN` levanta la *encapsulación* de los subpaquetes del módulo destino —se puede importar `shared.web.PageResponse` sin publicarlo como `NamedInterface`—, pero `allowedDependencies` es una lista **cerrada**, y cualquier destino fuera de ella es una violación, `shared` incluido. El primer `import` de `PageResponse` desde `catalog` rompía `verify()` con *«Module 'catalog' depends on module 'shared'… Allowed targets: storage»*.
 
 Son dos mecanismos independientes, y conviene no confundirlos: uno decide **qué se ve** de un módulo, el otro **a quién se puede llamar**. `stores`, `storage` e `identity` no declaran lista —es decir, la tienen sin restringir— y por eso su columna sigue vacía: no necesitan nombrar a `shared` ni a nadie.
 
-**Qué NO es módulo, y por qué:** `address` y `card` no son un módulo propio — son datos sin comportamiento propio que pertenecen a `customers` y a `stores` (y en el pedido dejan de ser tablas referenciadas para pasar a columnas embebidas por ADR-0011). Convertirlos en módulo `addresses` sería una tabla compartida disfrazada de frontera de dominio. `identity` y `storage` son, al contrario, módulos **sin ninguna tabla**: existen únicamente para encapsular un puerto (`AccountsPort`, `FileStoragePort`), que es exactamente la frontera externa real que `03-analisis-y-patrones.md` §3 ya había identificado como los "dos puertos, y solo dos" de este dominio.
+**Qué NO es módulo, y por qué:** `address` y `card` no son un módulo propio — son datos sin comportamiento propio que pertenecen a `customers` y a `stores` (y en el pedido dejan de ser tablas referenciadas para pasar a columnas embebidas por ADR-0011). Convertirlos en módulo `addresses` sería una tabla compartida disfrazada de frontera de dominio. `identity` y `storage` son, al contrario, módulos **sin ninguna tabla**: existen únicamente para encapsular un puerto (`AccountsPort`, `FileStoragePort`), que es exactamente la frontera externa real que `03-analisis-y-patrones.md` §3 ya había identificado como los "dos puertos, y solo dos" de este dominio. `audit` es el caso simétrico —una tabla y ninguna regla de negocio—, y por eso tampoco es un módulo de dominio: lo que encapsula es un mecanismo transversal con estado, no un agregado.
 
 ### 2. El cambio real que impone: referencias por id, no por entidad, entre módulos
 

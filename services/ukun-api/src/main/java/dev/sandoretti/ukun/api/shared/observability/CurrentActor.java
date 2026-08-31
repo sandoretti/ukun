@@ -1,7 +1,11 @@
 package dev.sandoretti.ukun.api.shared.observability;
 
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
@@ -31,6 +35,14 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
  */
 public final class CurrentActor {
 
+    private static final String ROLE_PREFIX = "ROLE_";
+
+    /**
+     * Most specific first. The three of RF-12, in the order that decides which one names an actor
+     * holding more than one.
+     */
+    private static final List<String> BY_PRECEDENCE = List.of("ADMIN", "EMPLOYEE", "CUSTOMER");
+
     private CurrentActor() {}
 
     /**
@@ -47,5 +59,35 @@ public final class CurrentActor {
         return authentication instanceof JwtAuthenticationToken token
                 ? token.getToken().getSubject()
                 : null;
+    }
+
+    /**
+     * The role this account acts under, or {@code null} on anonymous traffic.
+     *
+     * <p><strong>The highest one held, not the one the operation required.</strong> An administrator
+     * carries {@code EMPLOYEE} and {@code ADMIN} at once — ADR-0006 makes {@code ADMIN} a sub-flag that
+     * only ever travels alongside {@code EMPLOYEE} — so "the role" needs a rule. This one answers
+     * <em>who the actor is</em>, which is what {@code audit_log.actor_role} is for; the capacity the
+     * operation demanded is already implied by its {@code action}, so recording that instead would be
+     * the same fact written twice.
+     *
+     * <p>Reads the {@code ROLE_} authorities the resource server minted from the token's {@code roles}
+     * claim, the same way {@code identity.internal.AuthorizationDeniedListener} does. Text again, and
+     * not the {@code identity.Role} enum: this class lives in {@code shared}, which owns no domain
+     * vocabulary and must not depend on a module that everything else depends on.
+     */
+    public static String role() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return null;
+        }
+
+        Set<String> held = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authority -> authority.startsWith(ROLE_PREFIX))
+                .map(authority -> authority.substring(ROLE_PREFIX.length()))
+                .collect(Collectors.toSet());
+
+        return BY_PRECEDENCE.stream().filter(held::contains).findFirst().orElse(null);
     }
 }

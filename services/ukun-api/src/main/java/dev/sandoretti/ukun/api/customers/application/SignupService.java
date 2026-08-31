@@ -1,15 +1,16 @@
 package dev.sandoretti.ukun.api.customers.application;
 
+import dev.sandoretti.ukun.api.audit.Actor;
+import dev.sandoretti.ukun.api.audit.AuditTrail;
+import dev.sandoretti.ukun.api.audit.AuditedEvent;
 import dev.sandoretti.ukun.api.identity.AccountRegistrationService;
 import dev.sandoretti.ukun.api.identity.CreateAccountCommand;
 import dev.sandoretti.ukun.api.identity.EmailAlreadyExistsException;
 import dev.sandoretti.ukun.api.identity.Registration;
 import dev.sandoretti.ukun.api.identity.RegistrationOutcome;
 import dev.sandoretti.ukun.api.identity.Role;
-import dev.sandoretti.ukun.api.shared.observability.BusinessEvents;
 import java.util.Map;
 import java.util.Set;
-import org.slf4j.event.Level;
 import org.springframework.stereotype.Service;
 
 /**
@@ -27,6 +28,16 @@ import org.springframework.stereotype.Service;
  * <p><strong>Still deliberately not {@code @Transactional}</strong>, and for the same reason as before:
  * the saga makes two calls over the network, so the only transaction in the flow is
  * {@link CustomerRegistrar}'s.
+ *
+ * <p>That is also why {@code signup.completed} is the one audited event of this service whose row does
+ * <strong>not</strong> join the transaction of the change it audits — there is none to join here, and
+ * {@link AuditTrail} opens its own. The guarantee ADR-0014 asks for survives anyway, in the only
+ * direction that matters: by the time this line runs the profile has already committed, so the row can
+ * be missing (if the insert fails) but never orphaned from a change that was rolled back.
+ *
+ * <p>The actor is stated explicitly rather than read from the request, because there is no token to
+ * read: {@code POST /api/signup} is {@code permitAll} ({@code docs/08} §3). Whoever the trail names for
+ * this row, it is the account the saga has just created.
  */
 @Service
 public class SignupService {
@@ -37,13 +48,18 @@ public class SignupService {
     private final AccountRegistrationService registrations;
     private final CustomerRegistrar registrar;
     private final FavoriteStores favoriteStores;
+    private final AuditTrail auditTrail;
 
     SignupService(
-            AccountRegistrationService registrations, CustomerRegistrar registrar, FavoriteStores favoriteStores) {
+            AccountRegistrationService registrations,
+            CustomerRegistrar registrar,
+            FavoriteStores favoriteStores,
+            AuditTrail auditTrail) {
 
         this.registrations = registrations;
         this.registrar = registrar;
         this.favoriteStores = favoriteStores;
+        this.auditTrail = auditTrail;
     }
 
     /**
@@ -60,9 +76,10 @@ public class SignupService {
                 accountId -> registrar.register(accountId, request));
 
         if (registration.outcome() == RegistrationOutcome.COMPLETED) {
-            BusinessEvents.emit(
-                    Level.INFO,
-                    "signup.completed",
+            auditTrail.record(
+                    AuditedEvent.SIGNUP_COMPLETED,
+                    new Actor(String.valueOf(registration.accountId()), Role.CUSTOMER.name()),
+                    registration.localId(),
                     Map.of(
                             "registrationId", registration.registrationId(),
                             "accountId", registration.accountId(),

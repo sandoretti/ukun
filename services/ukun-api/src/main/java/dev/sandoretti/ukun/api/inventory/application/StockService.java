@@ -1,5 +1,7 @@
 package dev.sandoretti.ukun.api.inventory.application;
 
+import dev.sandoretti.ukun.api.audit.AuditTrail;
+import dev.sandoretti.ukun.api.audit.AuditedEvent;
 import dev.sandoretti.ukun.api.catalog.CatalogApi;
 import dev.sandoretti.ukun.api.catalog.ProductSummary;
 import dev.sandoretti.ukun.api.inventory.domain.StoreStock;
@@ -45,25 +47,35 @@ public class StockService {
     private static final String STOCK_LINE = "StockLine";
     private static final String PRODUCT = "Product";
 
-    private static final String UPDATED_EVENT = "stock.updated";
-    private static final String DELETED_EVENT = "stock.deleted";
+    /**
+     * The one event of this service that leaves no audit row: a collision changed nothing, and what it
+     * measures is how often two employees work on the same line ({@code docs/11} §3). The other two go
+     * through {@link AuditedEvent}, which owns their names.
+     */
     private static final String CONFLICT_EVENT = "stock.optimistic.conflict";
+
+    private static final String PRODUCT_ID = "productId";
+    private static final String STORE_ID = "storeId";
+    private static final String EMPLOYEE_ID = "employeeId";
 
     private final StoreStockRepository stock;
     private final EmployeeStoreResolver employees;
     private final CatalogApi catalog;
     private final StockMapper mapper;
+    private final AuditTrail auditTrail;
 
     StockService(
             StoreStockRepository stock,
             EmployeeStoreResolver employees,
             CatalogApi catalog,
-            StockMapper mapper) {
+            StockMapper mapper,
+            AuditTrail auditTrail) {
 
         this.stock = stock;
         this.employees = employees;
         this.catalog = catalog;
         this.mapper = mapper;
+        this.auditTrail = auditTrail;
     }
 
     /**
@@ -178,12 +190,14 @@ public class StockService {
         stock.delete(line);
 
         Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("productId", line.getProductId());
-        fields.put("storeId", line.getStoreId());
+        fields.put(PRODUCT_ID, line.getProductId());
+        fields.put(STORE_ID, line.getStoreId());
         fields.put("previousQuantity", line.getQuantity());
-        fields.put("employeeId", employee.employeeId());
+        fields.put(EMPLOYEE_ID, employee.employeeId());
 
-        BusinessEvents.emit(Level.WARN, DELETED_EVENT, fields);
+        // The line and not the product: ADR-0015 gave it its own identity and its own URL, so it is
+        // what the trail addresses. Two lines of the same product in two stores are two resources.
+        auditTrail.record(AuditedEvent.STOCK_DELETED, line.getId(), fields);
     }
 
     /**
@@ -218,13 +232,13 @@ public class StockService {
     /** {@code stock.updated} — the same event for a line created and a line edited ({@code docs/11} §3). */
     private void emitUpdated(StoreStock line, CurrentEmployee employee, int before) {
         Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("productId", line.getProductId());
-        fields.put("storeId", line.getStoreId());
+        fields.put(PRODUCT_ID, line.getProductId());
+        fields.put(STORE_ID, line.getStoreId());
         fields.put("before", before);
         fields.put("after", line.getQuantity());
-        fields.put("employeeId", employee.employeeId());
+        fields.put(EMPLOYEE_ID, employee.employeeId());
 
-        BusinessEvents.emit(Level.INFO, UPDATED_EVENT, fields);
+        auditTrail.record(AuditedEvent.STOCK_UPDATED, line.getId(), fields);
     }
 
     /**
@@ -236,9 +250,9 @@ public class StockService {
      */
     private VersionConflictException conflict(StoreStock line, CurrentEmployee employee) {
         Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("productId", line.getProductId());
-        fields.put("storeId", line.getStoreId());
-        fields.put("employeeId", employee.employeeId());
+        fields.put(PRODUCT_ID, line.getProductId());
+        fields.put(STORE_ID, line.getStoreId());
+        fields.put(EMPLOYEE_ID, employee.employeeId());
 
         BusinessEvents.emit(Level.WARN, CONFLICT_EVENT, fields);
 

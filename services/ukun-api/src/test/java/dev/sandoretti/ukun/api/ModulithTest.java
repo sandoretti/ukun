@@ -24,8 +24,11 @@ class ModulithTest {
     private static final ApplicationModules MODULES = ApplicationModules.of(UkunApiApplication.class);
 
     /**
-     * ADR-0017 §1, transcribed. Topological order: shared -> (catalog, stores, storage, identity) ->
-     * (inventory, customers, staff) -> cart -> orders.
+     * ADR-0017 §1, transcribed. Topological order: shared -> audit -> (catalog, stores, storage,
+     * identity) -> (inventory, customers, staff) -> cart -> orders.
+     *
+     * <p>{@code Map.ofEntries} and not {@code Map.of}: the latter tops out at ten pairs, and this graph
+     * reached exactly ten before {@code audit} arrived in v0.7.
      *
      * <p>Every module that declares a list names {@code shared} in it. That is not redundancy against
      * {@code shared} being open: {@code type = OPEN} lifts the encapsulation of its subpackages, but a
@@ -33,17 +36,18 @@ class ModulithTest {
      * violation. {@code stores}, {@code storage} and {@code identity} declare no list at all — an
      * unrestricted one — which is why they stay empty here.
      */
-    private static final Map<String, Set<String>> EXPECTED_GRAPH = Map.of(
-            "shared", Set.of(),
-            "catalog", Set.of("storage", "shared"),
-            "stores", Set.of(),
-            "storage", Set.of(),
-            "identity", Set.of(),
-            "inventory", Set.of("catalog", "stores", "identity", "shared"),
-            "customers", Set.of("stores", "identity", "shared"),
-            "staff", Set.of("stores", "identity", "shared"),
-            "cart", Set.of("catalog", "inventory", "customers", "shared"),
-            "orders", Set.of("cart", "inventory", "customers", "catalog", "shared"));
+    private static final Map<String, Set<String>> EXPECTED_GRAPH = Map.ofEntries(
+            Map.entry("shared", Set.of()),
+            Map.entry("audit", Set.of()),
+            Map.entry("catalog", Set.of("storage", "shared", "audit")),
+            Map.entry("stores", Set.of()),
+            Map.entry("storage", Set.of()),
+            Map.entry("identity", Set.of()),
+            Map.entry("inventory", Set.of("catalog", "stores", "identity", "shared", "audit")),
+            Map.entry("customers", Set.of("stores", "identity", "shared", "audit")),
+            Map.entry("staff", Set.of("stores", "identity", "shared", "audit")),
+            Map.entry("cart", Set.of("catalog", "inventory", "customers", "shared")),
+            Map.entry("orders", Set.of("cart", "inventory", "customers", "catalog", "shared", "audit")));
 
     @Test
     @DisplayName("no module reaches into another one's internals")

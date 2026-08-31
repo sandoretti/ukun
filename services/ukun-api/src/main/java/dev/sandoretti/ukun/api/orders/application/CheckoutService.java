@@ -1,5 +1,7 @@
 package dev.sandoretti.ukun.api.orders.application;
 
+import dev.sandoretti.ukun.api.audit.AuditTrail;
+import dev.sandoretti.ukun.api.audit.AuditedEvent;
 import dev.sandoretti.ukun.api.cart.CartApi;
 import dev.sandoretti.ukun.api.cart.CartLineSnapshot;
 import dev.sandoretti.ukun.api.catalog.CatalogApi;
@@ -82,6 +84,7 @@ public class CheckoutService {
     private final CustomersApi customers;
     private final ObjectMapper json;
     private final Clock clock;
+    private final AuditTrail auditTrail;
 
     public CheckoutService(
             CheckoutAttemptRepository attempts,
@@ -93,7 +96,8 @@ public class CheckoutService {
             InventoryApi inventory,
             CustomersApi customers,
             ObjectMapper json,
-            Clock clock) {
+            Clock clock,
+            AuditTrail auditTrail) {
 
         this.attempts = attempts;
         this.idempotency = idempotency;
@@ -105,6 +109,7 @@ public class CheckoutService {
         this.customers = customers;
         this.json = json;
         this.clock = clock;
+        this.auditTrail = auditTrail;
     }
 
     /**
@@ -238,9 +243,9 @@ public class CheckoutService {
         // be thrown away — the order's lines and the idempotency record among it.
         cart.clear(customerId);
 
-        BusinessEvents.emit(
-                Level.INFO,
-                "order.created",
+        auditTrail.record(
+                AuditedEvent.ORDER_CREATED,
+                placed.getId(),
                 Map.of(
                         "orderId", placed.getId(),
                         "customerId", customerId,

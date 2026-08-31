@@ -25,7 +25,7 @@ CREATE TABLE audit_log (
   actor_account_id UUID         NOT NULL,
   actor_role       VARCHAR(20)  NOT NULL,
   action           VARCHAR(50)  NOT NULL,   -- STOCK_UPDATED, PRODUCT_DELETED...
-  resource_type    VARCHAR(30)  NOT NULL,   -- product | store_stock | employee | customer | customer_order
+  resource_type    VARCHAR(30)  NOT NULL,   -- product | product_type | store_stock | employee | customer | customer_order
   resource_id      VARCHAR(64)  NOT NULL,   -- texto: mismo campo para ids numéricos y UUIDs
   details          JSONB,                   -- {"before":{"quantity":5},"after":{"quantity":3}}
   trace_id         VARCHAR(32)
@@ -35,6 +35,8 @@ CREATE INDEX ix_audit_log_actor    ON audit_log (actor_account_id, occurred_at D
 ```
 
 `trace_id` es la pieza que impide que sean dos sistemas separados: desde una fila de auditoría se salta al log completo de esa petición, y al revés.
+
+`resource_type` lleva seis valores y no cinco. La primera redacción listaba cinco, escrita antes de que existiera RF-13; los tres eventos `product_type.*` de §3 están marcados como auditables y renombrar un tipo cambia lo que ve el catálogo público entero, así que `product_type` es un recurso del rastro como los demás.
 
 **Por qué tabla y no fichero para esta mitad:** la consulta natural es "todo lo que le ha pasado a este producto", que sobre ficheros exige un agregador (Loki/ELK) — infraestructura que este proyecto no tiene, y se descartaría por el mismo criterio que descartó Redis en `03-analisis-y-patrones.md` §4. Con una tabla es un `SELECT` con un índice y un endpoint. Se escribe **en la misma transacción** que el cambio, así que no puede quedar auditoría de algo que se revirtió.
 
@@ -77,9 +79,11 @@ CREATE INDEX ix_audit_log_actor    ON audit_log (actor_account_id, occurred_at D
 | `product_type.deletion.rejected` | INFO | api | `productTypeId`, `inProducts` | — |
 | `employee.created` | INFO | api | `employeeId`, `accountId`, `storeId`, `isAdmin`, `adminId` | ✅ |
 | `profile.updated` | INFO | api | `customerId`, `changedFields` (nombres, no valores) | ✅ |
-| `profile.email.changed` | INFO | auth + api | `accountId` | ✅ |
+| `profile.email.changed` | INFO | auth + api | `accountId` | ✅ (sin caso de uso) |
 | `profile.password.changed` | INFO | auth | `accountId` | — |
 | `favorite_store.changed` | INFO | api | `customerId`, `previousStoreId`, `newStoreId` | — |
+
+**`profile.email.changed` no tiene todavía operación que lo emita.** No hay endpoint de cambio de correo en `docs/api/openapi/ukun-api.yaml` ni código que lo dispare: la fila describe el evento que *tendrá* esa operación cuando exista, no un hueco en la implementación de la auditoría. Los otros catorce ✅ sí están en uso desde v0.7 (`AuditedEvent`, ADR-0014), y `AuditedEventRegistryTest` compara esta tabla con ese enum para que documento y código no puedan separarse.
 
 `product_type.updated` es el único evento que registra el valor **anterior y el nuevo** de un texto libre: renombrar un tipo cambia lo que ve todo el catálogo público (RF-13) y sin el nombre previo la línea de log no permite reconstruir qué pasó. Frente a `profile.updated`, que registra solo *qué campos* cambiaron y nunca sus valores, la diferencia es que un nombre de tipo no es dato personal.
 

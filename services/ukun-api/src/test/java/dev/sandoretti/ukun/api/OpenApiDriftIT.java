@@ -90,7 +90,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
         properties = {"spring.liquibase.contexts=prod", "springdoc.api-docs.enabled=true"})
 class OpenApiDriftIT extends AbstractIntegrationTest {
 
-    private static final Path CONTRACT = repositoryRoot().resolve("docs/api/openapi/ukun-api.yaml");
+    private static final Path CONTRACT = RepositoryRoot.resolve("docs/api/openapi/ukun-api.yaml");
 
     /**
      * Operations the contract declares and no release has implemented yet. The contract is written
@@ -251,19 +251,4 @@ class OpenApiDriftIT extends AbstractIntegrationTest {
         }
     }
 
-    /**
-     * The contract lives in {@code docs/}, outside this Gradle project, so the path is resolved from the
-     * repository root instead of from a working directory that Gradle and an IDE set differently.
-     */
-    private static Path repositoryRoot() {
-        Path directory = Path.of("").toAbsolutePath();
-        while (!Files.exists(directory.resolve("settings.gradle.kts"))) {
-            directory = directory.getParent();
-            if (directory == null) {
-                throw new IllegalStateException("No settings.gradle.kts above " + Path.of("").toAbsolutePath());
-            }
-        }
-
-        return directory;
-    }
 }

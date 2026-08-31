@@ -7,6 +7,6 @@
  * (ADR-0017 §3).
  */
 @org.springframework.modulith.ApplicationModule(
-        allowedDependencies = {"storage", "shared"}
+        allowedDependencies = {"storage", "shared", "audit"}
 )
 package dev.sandoretti.ukun.api.catalog;

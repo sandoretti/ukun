@@ -1,5 +1,7 @@
 package dev.sandoretti.ukun.api.catalog.application;
 
+import dev.sandoretti.ukun.api.audit.AuditTrail;
+import dev.sandoretti.ukun.api.audit.AuditedEvent;
 import dev.sandoretti.ukun.api.catalog.ProductReferenceKind;
 import dev.sandoretti.ukun.api.catalog.domain.Product;
 import dev.sandoretti.ukun.api.catalog.domain.ProductType;
@@ -10,6 +12,7 @@ import dev.sandoretti.ukun.api.shared.error.DuplicateValueException;
 import dev.sandoretti.ukun.api.shared.error.ResourceNotFoundException;
 import dev.sandoretti.ukun.api.shared.observability.BusinessEvents;
 import dev.sandoretti.ukun.api.shared.observability.CurrentActor;
+
 import dev.sandoretti.ukun.api.shared.web.PageResponse;
 import dev.sandoretti.ukun.api.shared.web.PaginationParams;
 import dev.sandoretti.ukun.api.storage.FileStoragePort;
@@ -54,31 +57,34 @@ public class ProductAdminService {
     private static final String PRODUCT_ID = "productId";
     private static final String ADMIN_ID = "adminId";
 
-    private static final String CREATED_EVENT = "product.created";
-    private static final String UPDATED_EVENT = "product.updated";
-    private static final String DELETED_EVENT = "product.deleted";
+    /**
+     * The one event of this service that leaves no audit row, hence the only name still spelled out
+     * here: a rejected deletion changed nothing, so there is nothing to audit ({@code docs/11} §3). The
+     * other five go through {@link AuditedEvent}, which owns their names.
+     */
     private static final String DELETION_REJECTED_EVENT = "product.deletion.rejected";
-    private static final String DISCONTINUED_EVENT = "product.discontinued";
-    private static final String REACTIVATED_EVENT = "product.reactivated";
 
     private final ProductRepository products;
     private final ProductTypeRepository types;
     private final ProductReferences references;
     private final FileStoragePort storage;
     private final ProductMapper mapper;
+    private final AuditTrail auditTrail;
 
     ProductAdminService(
             ProductRepository products,
             ProductTypeRepository types,
             ProductReferences references,
             FileStoragePort storage,
-            ProductMapper mapper) {
+            ProductMapper mapper,
+            AuditTrail auditTrail) {
 
         this.products = products;
         this.types = types;
         this.references = references;
         this.storage = storage;
         this.mapper = mapper;
+        this.auditTrail = auditTrail;
     }
 
     /**
@@ -131,7 +137,7 @@ public class ProductAdminService {
         fields.put(PRODUCT_ID, saved.getId());
         fields.put("name", saved.getName());
         fields.put(ADMIN_ID, CurrentActor.accountId());
-        BusinessEvents.emit(Level.INFO, CREATED_EVENT, fields);
+        auditTrail.record(AuditedEvent.PRODUCT_CREATED, saved.getId(), fields);
 
         return mapper.toAdminResponse(saved);
     }
@@ -174,7 +180,7 @@ public class ProductAdminService {
         Map<String, Object> fields = new LinkedHashMap<>();
         fields.put(PRODUCT_ID, saved.getId());
         fields.put("changedFields", String.join(",", changed));
-        BusinessEvents.emit(Level.INFO, UPDATED_EVENT, fields);
+        auditTrail.record(AuditedEvent.PRODUCT_UPDATED, saved.getId(), fields);
 
         return mapper.toAdminResponse(saved);
     }
@@ -226,7 +232,7 @@ public class ProductAdminService {
         fields.put(PRODUCT_ID, id);
         fields.put("name", product.getName());
         fields.put(ADMIN_ID, CurrentActor.accountId());
-        BusinessEvents.emit(Level.WARN, DELETED_EVENT, fields);
+        auditTrail.record(AuditedEvent.PRODUCT_DELETED, id, fields);
     }
 
     /**
@@ -243,7 +249,7 @@ public class ProductAdminService {
      */
     @Transactional
     public AdminProductResponse discontinue(Long id) {
-        return setActive(id, false, DISCONTINUED_EVENT);
+        return setActive(id, false, AuditedEvent.PRODUCT_DISCONTINUED);
     }
 
     /**
@@ -254,14 +260,14 @@ public class ProductAdminService {
      */
     @Transactional
     public AdminProductResponse reactivate(Long id) {
-        return setActive(id, true, REACTIVATED_EVENT);
+        return setActive(id, true, AuditedEvent.PRODUCT_REACTIVATED);
     }
 
     /**
      * The shared half of the two idempotent operations. The event is emitted only on a real change, so
      * that a screen refreshed twice does not read as two withdrawals in the audit trail.
      */
-    private AdminProductResponse setActive(Long id, boolean active, String event) {
+    private AdminProductResponse setActive(Long id, boolean active, AuditedEvent event) {
         Product product = require(id);
 
         if (product.isActive() == active) {
@@ -275,7 +281,7 @@ public class ProductAdminService {
         fields.put(PRODUCT_ID, saved.getId());
         fields.put(SKU, saved.getSku());
         fields.put(ADMIN_ID, CurrentActor.accountId());
-        BusinessEvents.emit(Level.INFO, event, fields);
+        auditTrail.record(event, saved.getId(), fields);
 
         return mapper.toAdminResponse(saved);
     }

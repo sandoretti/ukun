@@ -1,5 +1,7 @@
 package dev.sandoretti.ukun.api.catalog.application;
 
+import dev.sandoretti.ukun.api.audit.AuditTrail;
+import dev.sandoretti.ukun.api.audit.AuditedEvent;
 import dev.sandoretti.ukun.api.catalog.domain.ProductType;
 import dev.sandoretti.ukun.api.catalog.infra.ProductRepository;
 import dev.sandoretti.ukun.api.catalog.infra.ProductTypeRepository;
@@ -46,19 +48,31 @@ public class ProductTypeAdminService {
 
     private static final String NAME = "name";
 
-    private static final String CREATED_EVENT = "product_type.created";
-    private static final String UPDATED_EVENT = "product_type.updated";
-    private static final String DELETED_EVENT = "product_type.deleted";
+    /**
+     * The one event of this service that leaves no audit row, hence the only name still spelled out
+     * here: a rejected deletion changed nothing, so there is nothing to audit ({@code docs/11} §3). The
+     * other three go through {@link AuditedEvent}, which owns their names.
+     */
     private static final String DELETION_REJECTED_EVENT = "product_type.deletion.rejected";
+
+    private static final String PRODUCT_TYPE_ID = "productTypeId";
+    private static final String ADMIN_ID = "adminId";
 
     private final ProductTypeRepository types;
     private final ProductRepository products;
     private final ProductTypeMapper mapper;
+    private final AuditTrail auditTrail;
 
-    ProductTypeAdminService(ProductTypeRepository types, ProductRepository products, ProductTypeMapper mapper) {
+    ProductTypeAdminService(
+            ProductTypeRepository types,
+            ProductRepository products,
+            ProductTypeMapper mapper,
+            AuditTrail auditTrail) {
+
         this.types = types;
         this.products = products;
         this.mapper = mapper;
+        this.auditTrail = auditTrail;
     }
 
     /** Every type with its product count, in one statement — see {@code findAllWithProductCount}. */
@@ -89,10 +103,10 @@ public class ProductTypeAdminService {
         ProductType saved = types.save(type);
 
         Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("productTypeId", saved.getId());
+        fields.put(PRODUCT_TYPE_ID, saved.getId());
         fields.put(NAME, saved.getName());
-        fields.put("adminId", CurrentActor.accountId());
-        BusinessEvents.emit(Level.INFO, CREATED_EVENT, fields);
+        fields.put(ADMIN_ID, CurrentActor.accountId());
+        auditTrail.record(AuditedEvent.PRODUCT_TYPE_CREATED, saved.getId(), fields);
 
         return mapper.toAdminResponse(saved, 0);
     }
@@ -124,11 +138,11 @@ public class ProductTypeAdminService {
         ProductType saved = types.save(type);
 
         Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("productTypeId", saved.getId());
+        fields.put(PRODUCT_TYPE_ID, saved.getId());
         fields.put("previousName", previousName);
         fields.put("newName", saved.getName());
-        fields.put("adminId", CurrentActor.accountId());
-        BusinessEvents.emit(Level.INFO, UPDATED_EVENT, fields);
+        fields.put(ADMIN_ID, CurrentActor.accountId());
+        auditTrail.record(AuditedEvent.PRODUCT_TYPE_UPDATED, saved.getId(), fields);
 
         return withCount(saved);
     }
@@ -156,7 +170,7 @@ public class ProductTypeAdminService {
 
         if (inProducts > 0) {
             Map<String, Object> rejected = new LinkedHashMap<>();
-            rejected.put("productTypeId", id);
+            rejected.put(PRODUCT_TYPE_ID, id);
             rejected.put("inProducts", inProducts);
             BusinessEvents.emit(Level.INFO, DELETION_REJECTED_EVENT, rejected);
 
@@ -166,10 +180,10 @@ public class ProductTypeAdminService {
         types.delete(type);
 
         Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("productTypeId", id);
+        fields.put(PRODUCT_TYPE_ID, id);
         fields.put(NAME, type.getName());
-        fields.put("adminId", CurrentActor.accountId());
-        BusinessEvents.emit(Level.WARN, DELETED_EVENT, fields);
+        fields.put(ADMIN_ID, CurrentActor.accountId());
+        auditTrail.record(AuditedEvent.PRODUCT_TYPE_DELETED, id, fields);
     }
 
     /**

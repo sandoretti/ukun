@@ -137,6 +137,16 @@ public abstract class AbstractIntegrationTest {
     protected static final String BACKOFFICE_DATABASE = "ukun_app_backoffice";
 
     /**
+     * Schema only, for the transactional guarantee of the audit trail (ADR-0014).
+     *
+     * <p>A database of its own for a reason none of the others have: this suite <em>counts</em>
+     * {@code audit_log} after deliberately rolling a transaction back, and every other write in this
+     * project now leaves a row in that table. Sharing would make the assertion "no row was written"
+     * depend on nobody else having written one — which is the same as not asserting it.
+     */
+    protected static final String AUDIT_DATABASE = "ukun_app_audit";
+
+    /**
      * Connections per application context, against Hikari's default of ten.
      *
      * <p>The contexts of this suite are <strong>cached, not closed</strong>: every one of them keeps its
