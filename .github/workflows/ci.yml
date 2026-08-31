@@ -79,7 +79,7 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       # Una sola invocación de `build`, y a propósito. `jacocoTestCoverageVerification` lee los
       # ficheros `.exec` del disco en vez de depender de la tarea que los produce, de modo que
@@ -112,7 +112,7 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - uses: actions/setup-node@v4
         with:
