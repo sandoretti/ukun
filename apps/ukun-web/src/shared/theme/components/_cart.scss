@@ -89,3 +89,14 @@
 .cart-summary__notice:not(:empty) {
   margin-top: 1rem;
 }
+
+// La raya que separa las dos filas del resumen. Era un `<hr class="my-3">` dentro del `<dl>`, que no
+// es marcado válido —`<dl>` solo admite `<dt>`, `<dd>`, `<script>`, `<template>` y `<div>`— y partía
+// la lista en dos para quien la recorre con un lector. Aquí hace lo mismo sin meter un elemento que
+// no pinta nada: mismo hueco (1rem a cada lado, como `my-3`) y el color de borde del tema, que es el
+// token que existe justo para separar.
+.cart-summary__lines > div + div {
+  margin-top: bootstrap.$spacer;
+  padding-top: bootstrap.$spacer;
+  border-top: bootstrap.$border-width solid var(--bs-border-color);
+}

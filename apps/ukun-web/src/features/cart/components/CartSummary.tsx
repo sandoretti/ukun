@@ -50,15 +50,11 @@ export function CartSummary({ cart }: CartSummaryProps) {
           <dd className="mb-0 text-tabular-nums">{total}</dd>
         </div>
 
-        {/* El separador va envuelto: `<hr>` no es hijo válido de `<dl>` —solo lo son `<dt>`, `<dd>`,
-            `<script>`, `<template>` y `<div>`— y un lector de pantalla se encuentra la lista rota por
-            la mitad. Lo encontró axe en el navegador; en jsdom la regla no llega a evaluarse porque
-            solo mira contenido visible, y allí nada tiene tamaño. `.cart-summary__lines` no tiene
-            estilos propios, así que el `<div>` no cambia nada de lo que se ve. */}
-        <div>
-          <hr className="my-3" />
-        </div>
-
+        {/* Sin `<hr>` entre los dos grupos, y el separador lo dibuja el tema. Un `<hr>` no es hijo
+            válido de `<dl>` —solo lo son `<dt>`, `<dd>`, `<script>`, `<template>` y `<div>`— y quien
+            recorre el resumen con un lector se encontraba la lista partida por la mitad. Envolverlo
+            en un `<div>` tampoco vale: la regla pide que cada grupo lleve su `<dt>` y su `<dd>`, y
+            eso está comprobado, no supuesto. */}
         <div className="d-flex justify-content-between align-items-baseline gap-3">
           <dt className="fw-semibold">{t('summary.total')}</dt>
           <dd className="mb-0 fs-4 fw-semibold text-tabular-nums">{total}</dd>
