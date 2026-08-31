@@ -77,17 +77,34 @@ public final class CurrentActor {
      * vocabulary and must not depend on a module that everything else depends on.
      */
     public static String role() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Set<String> held = rolesOf(SecurityContextHolder.getContext().getAuthentication());
+
+        return BY_PRECEDENCE.stream().filter(held::contains).findFirst().orElse(null);
+    }
+
+    /**
+     * The business roles an authentication carries, with Spring Security's {@code ROLE_} prefix taken
+     * off — the three of RF-12, as {@code ukun-auth} minted them into the token's {@code roles} claim.
+     *
+     * <p>Public and taking its {@link Authentication} as an argument, rather than reading the context
+     * like the two methods above, because its second caller does not have one to read:
+     * {@code identity.internal.AuthorizationDeniedListener} is handed the authentication of the request
+     * that was denied, by the event Spring Security publishes. It shapes the answer differently —
+     * every role it holds, for "why was this denied" — and that difference is the reason this returns
+     * the set and not a formatted string.
+     *
+     * <p>The prefix is a Spring Security convention, which is exactly why it belongs in one place: if
+     * it ever moves, both readings move with it, and neither is left silently matching nothing.
+     */
+    public static Set<String> rolesOf(Authentication authentication) {
         if (authentication == null) {
-            return null;
+            return Set.of();
         }
 
-        Set<String> held = authentication.getAuthorities().stream()
+        return authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .filter(authority -> authority.startsWith(ROLE_PREFIX))
                 .map(authority -> authority.substring(ROLE_PREFIX.length()))
                 .collect(Collectors.toSet());
-
-        return BY_PRECEDENCE.stream().filter(held::contains).findFirst().orElse(null);
     }
 }
