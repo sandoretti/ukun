@@ -37,3 +37,14 @@ blob-report/
 # Tilt
 tilt_modules/
 .tilt-gradle.lock
+
+# Las fotos que sube el back-office. `compose.yaml` monta ./resources/uploads dentro del árbol de
+# trabajo y desde v0.7 el bind ya no es de solo lectura, así que cada foto de RF-10 —la del smoke de
+# admin incluida— aparece aquí como fichero sin trackear. Un `git status` sucio en cada sesión acaba
+# colando una subida de prueba en un commit.
+#
+# Se ignora por la forma del nombre, no por el directorio: el servidor las nombra con un UUID
+# (`LocalFileSystemStorage`, y `docs/08-identidad-y-seguridad.md` §9 explica por qué el nombre no lo
+# elige quien sube). Las 24 fotos demo, versionadas y con nombre descriptivo (`cama-dia.jpg`), no
+# empiezan por ocho hexadecimales y un guion, así que siguen viéndose y una nueva no se colará sola.
+resources/uploads/[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-*
