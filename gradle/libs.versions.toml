@@ -12,9 +12,9 @@
 
 [versions]
 # Plataformas. Verificadas contra Maven Central en agosto de 2026.
-spring-boot = "4.1.0"
-spring-cloud = "2025.1.2"
-spring-modulith = "2.1.0"
+spring-boot = "4.1.1"
+spring-cloud = "2025.1.3"
+spring-modulith = "2.1.1"
 
 # No cubiertas por ningún BOM de plataforma.
 mapstruct = "1.6.3"
