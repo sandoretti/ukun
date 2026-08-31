@@ -187,7 +187,14 @@ class LoginPageIT extends LoginIntegrationTest {
         return page.replaceAll("value=\"[^\"]+\"", "value=\"?\"");
     }
 
-    /** Fails a login on purpose and follows the redirect to read the page it lands on. */
+    /**
+     * Fails a login on purpose and follows the redirect to read the page it lands on.
+     *
+     * <p>Declares the language for the same reason {@link #openLoginPage(String, String)} does, and
+     * this method is why the rule is worth stating twice: it was the one request in the class that
+     * did not, so the page it read came back in the system locale — Spanish on a laptop, English on
+     * a CI runner, and an assertion on a Spanish sentence that only passed on one of the two.
+     */
     private String pageAfterFailing(String email, String password) {
         LoginAttempt attempt = logIn(email, password);
 
@@ -196,6 +203,7 @@ class LoginPageIT extends LoginIntegrationTest {
         return http.get()
                 .uri(attempt.location())
                 .accept(MediaType.TEXT_HTML)
+                .header(HttpHeaders.ACCEPT_LANGUAGE, "es-ES")
                 .header(HttpHeaders.COOKIE, attempt.sessionCookie())
                 .exchange()
                 .expectStatus()

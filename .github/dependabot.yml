@@ -1,0 +1,56 @@
+# Actualizaciones de dependencias. Lo decide `docs/05-stack-y-versiones.md` §Política de
+# actualización: «Dependabot/Renovate se activa en v1.0 junto con el resto de CI, no antes — antes
+# de tener CI, un PR automático de actualización no se puede verificar y es ruido». Con el pipeline
+# de `ci.yml` delante, cada PR suyo llega con build, tests y recorridos ejecutados.
+#
+# Este fichero solo cubre las **actualizaciones de versión**. Las **alertas de seguridad** son un
+# ajuste del repositorio (Settings → Advanced Security), y hoy están desactivadas: sin ellas,
+# Dependabot propone versiones nuevas pero no avisa de una vulnerabilidad conocida.
+#
+# Aviso sobre un falso positivo que va a aparecer: el `override` de `js-yaml` en
+# `apps/ukun-web/package.json` es deliberado y cierra CVE-2026-59870, que llega por la vía
+# transitiva `openapi-typescript → @redocly/openapi-core`. Se quita cuando Redocly publique una
+# versión que ya no la arrastre, y no antes (`docs/05-stack-y-versiones.md`).
+version: 2
+updates:
+  # Las versiones del backend viven en `gradle/libs.versions.toml`, que es lo que Dependabot lee.
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - pista:P4-infra
+    groups:
+      # Spring Boot, Spring Cloud y Spring Security se mueven juntos por diseño: un PR que suba uno
+      # solo deja el conjunto en una combinación que nadie ha probado.
+      spring:
+        patterns:
+          - org.springframework*
+          - org.springframework.boot*
+          - org.springframework.cloud*
+          - org.springframework.security*
+
+  - package-ecosystem: npm
+    directory: /apps/ukun-web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - pista:P3-frontend
+    groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+
+  # Las propias `actions/*` de este pipeline. Es el ecosistema que más se olvida y el que antes se
+  # queda obsoleto, porque nadie lo lista en ningún manifiesto del proyecto.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels:
+      - pista:P4-infra
