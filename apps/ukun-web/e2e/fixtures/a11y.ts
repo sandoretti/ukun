@@ -63,22 +63,6 @@ export async function expectVisibleFocusRing(page: Page, what: string): Promise<
 }
 
 /**
- * **Por qué el primer tabulador solo se puede pedir sobre un documento recién cargado.**
- *
- * Chromium no tabula «desde el principio»: tabula desde su *sequential focus navigation starting
- * point*, que es donde estuvo el último foco. Un `blur()` no lo reinicia — lo deja donde estaba—, así
- * que pedir el primer tabulador a mitad de recorrido devuelve la parada siguiente a lo último que se
- * pulsó, no la primera de la página. Esto costó un CI en rojo, y con una ironía: lo que lo destapa es
- * `useRouteFocus`, que al navegar deja el foco en el `<main>`, o sea **pasado** el salto al contenido.
- *
- * Y está bien que sea así: quien acaba de aterrizar en el contenido no necesita un enlace para
- * saltárselo. Lo que el salto al contenido promete es otra cosa —que al **cargar** una ruta sea la
- * primera parada—, y es exactamente lo que `useRouteFocus` respeta al no robar el foco en el primer
- * render. Por eso estas comprobaciones van detrás de un `goto` o un `reload` y no de un helper: la
- * carga limpia no es un detalle de montaje, es la condición que se está afirmando.
- */
-
-/**
  * Lleva el foco a un control **como lo haría el teclado**, y no con `focus()` a secas.
  *
  * La diferencia no es cosmética. Chromium decide `:focus-visible` por la última modalidad de entrada:
@@ -96,21 +80,62 @@ export async function focusByKeyboard(page: Page, locator: Locator): Promise<voi
 }
 
 /**
- * Tabula `limit` veces y exige que **cada parada tenga nombre accesible**.
+ * El salto al contenido cumple sus tres promesas: es la primera parada, se ve al enfocarlo, y lleva
+ * el foco al contenido.
+ *
+ * **La primera se comprueba en el DOM y no tabulando**, y esa decisión costó dos CI en rojo. Chromium
+ * no tabula «desde el principio» sino desde su *sequential focus navigation starting point*, que es
+ * donde estuvo el último foco y que ni un `blur()` ni —resulta— una recarga reinician de forma
+ * fiable en un recorrido largo. Afirmar «el primer tabulador cae aquí» acaba midiendo ese estado
+ * invisible en vez de la página. El orden de tabulación es una propiedad del documento, así que se le
+ * pregunta al documento: de todo lo tabulable, esto va primero.
+ *
+ * Las otras dos sí necesitan teclado, y son las que de verdad hacen falta: un salto al contenido que
+ * no se ve no sirve, y uno que desplaza la página sin mover el foco deja al siguiente tabulador
+ * volviendo a la barra que se acababa de saltar — que es lo que pasaba antes de que el `<main>` fuese
+ * `tabIndex={-1}`.
+ */
+export async function expectSkipLinkWorks(page: Page, shell: string): Promise<void> {
+  const first = await page.evaluate(() => {
+    const candidates = Array.from(
+      document.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]'),
+    );
+    const tabbable = candidates.filter(
+      (el) => !el.hasAttribute('disabled') && (el.getAttribute('tabindex') ?? '0') !== '-1',
+    );
+
+    return tabbable[0]?.className ?? '(no hay nada tabulable)';
+  });
+
+  expect(first, `en «${shell}», lo primero tabulable no es el salto al contenido`).toContain('skip-link');
+
+  const skip = page.getByRole('link', { name: 'Saltar al contenido' });
+  await focusByKeyboard(page, skip);
+  await expectVisibleFocusRing(page, `salto al contenido de ${shell}`);
+
+  await page.keyboard.press('Enter');
+  await expect(
+    page.locator('#main-content'),
+    `en «${shell}», el salto al contenido no lleva el foco al contenido`,
+  ).toBeFocused();
+}
+
+/**
+ * Desde el salto al contenido, las siguientes `limit` paradas tienen nombre accesible.
  *
  * Una parada anónima es un control al que se llega y del que no se sabe qué hace: para quien navega
- * con teclado y lector, un «enlace» a secas en mitad de la cabecera.
+ * con teclado y lector, un «enlace» a secas en mitad de la cabecera. Arranca desde el salto al
+ * contenido —enfocado con teclado, no con `focus()`— para no depender de dónde estuviera el foco.
  *
  * El nombre lo calcula Playwright y no este fichero, y esa es la parte que importa. La primera
- * versión lo aproximaba con `aria-label ?? textContent` y daba por anónimo el enlace de la marca,
- * que se llama por el `alt` de su imagen — una aproximación que no falla del lado seguro: además de
+ * versión lo aproximaba con `aria-label ?? textContent` y daba por anónimo el enlace de la marca, que
+ * se llama por el `alt` de su imagen — una aproximación que no falla del lado seguro: además de
  * inventarse fallos, habría aprobado un `aria-labelledby` roto. `toHaveAccessibleName` aplica el
  * algoritmo de verdad, con sus `alt`, sus `aria-labelledby` y su texto visually-hidden.
- *
- * Cuenta desde el principio de la página, así que quien lo llame tiene que venir de una carga limpia
- * — la razón está arriba, en el bloque sobre el punto de partida de la navegación secuencial.
  */
 export async function expectNamedTabStops(page: Page, limit: number): Promise<void> {
+  await focusByKeyboard(page, page.getByRole('link', { name: 'Saltar al contenido' }));
+
   for (let stop = 1; stop <= limit; stop += 1) {
     await page.keyboard.press('Tab');
 

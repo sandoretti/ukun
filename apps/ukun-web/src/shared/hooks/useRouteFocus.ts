@@ -29,19 +29,25 @@ export const MAIN_CONTENT_ID = 'main-content';
  * una región live que se rellena con el título de la pantalla *anterior* es peor que ninguna. Lo que
  * cuenta la espera es el `role="status"` de `LoadingState`, que ya está.
  *
- * No se hace en el primer render: al abrir la aplicación el foco pertenece al documento, y robarlo
- * para ponerlo tras la barra se salta el salto al contenido antes de que a nadie le dé tiempo a
- * usarlo.
+ * No se hace al abrir la aplicación: ahí el foco pertenece al documento, y robarlo para ponerlo tras
+ * la barra se salta el salto al contenido antes de que a nadie le dé tiempo a usarlo.
+ *
+ * **Esa condición se comprueba contra la ruta anterior y no con una bandera de «primer render»**, y
+ * la diferencia no es de estilo. `StrictMode` —que `main.tsx` monta— invoca el efecto dos veces al
+ * montar: una bandera que la primera pasada apaga, la segunda ya la encuentra apagada, y el foco
+ * acaba robado justo en la carga inicial que se quería respetar. Comparar la ruta es idempotente, así
+ * que da igual cuántas veces se invoque. Lo destapó el CI: con el foco en el `<main>` desde el
+ * arranque, el primer tabulador de una página recién cargada ya no llegaba al salto al contenido.
  */
 export function useRouteFocus(): void {
   const { pathname } = useLocation();
-  const isFirstRender = useRef(true);
+  const previousPathname = useRef(pathname);
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    if (previousPathname.current === pathname) {
       return;
     }
+    previousPathname.current = pathname;
 
     // `tabIndex={-1}` en el `<main>` es lo que lo hace enfocable, y de paso arregla el salto al
     // contenido: un ancla hacia un elemento no enfocable desplaza la página pero no lleva el foco,

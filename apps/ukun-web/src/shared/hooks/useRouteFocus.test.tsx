@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Link, Route, Routes } from 'react-router-dom';
@@ -10,19 +11,37 @@ import { useRouteFocus } from './useRouteFocus';
 const GO_ON = 'Seguir';
 const OTHER_SCREEN = 'La otra pantalla';
 
-/** Los tres cascarones, reducidos a lo que este hook necesita de ellos: un `<main>` enfocable. */
-function Shell() {
+/**
+ * El cascarón, reducido a lo que este hook necesita: un `<main>` enfocable. El hook se llama aquí,
+ * **dentro** del `StrictMode` que monta `Shell`, porque es la llamada la que tiene que doblarse.
+ */
+function Content() {
   useRouteFocus();
 
   return (
-    <>
-      <main id="main-content" tabIndex={-1}>
-        <Routes>
-          <Route path="/" element={<Link to="/other">{GO_ON}</Link>} />
-          <Route path="/other" element={<h1>{OTHER_SCREEN}</h1>} />
-        </Routes>
-      </main>
-    </>
+    <main id="main-content" tabIndex={-1}>
+      <Routes>
+        <Route path="/" element={<Link to="/other">{GO_ON}</Link>} />
+        <Route path="/other" element={<h1>{OTHER_SCREEN}</h1>} />
+      </Routes>
+    </main>
+  );
+}
+
+/**
+ * Montado en `StrictMode`, que es como lo monta `main.tsx`, y no es un detalle del andamiaje.
+ *
+ * `StrictMode` invoca el efecto dos veces al montar. La primera versión de este hook guardaba el
+ * primer render con una bandera: la primera pasada la apagaba y la segunda ya la encontraba apagada,
+ * así que robaba el foco justo en la carga inicial que quería respetar. Este test pasaba porque no
+ * montaba en `StrictMode`; lo cazó el CI, en el navegador, con el primer tabulador de una página
+ * recién cargada que ya no llegaba al salto al contenido.
+ */
+function Shell() {
+  return (
+    <StrictMode>
+      <Content />
+    </StrictMode>
   );
 }
 
