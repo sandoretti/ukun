@@ -12,8 +12,11 @@ import { signIn, useSpanish, type Credentials } from './session';
  */
 
 /**
- * La contraseña de las catorce cuentas demo (`docs/06-entorno-local-tilt.md`, el único sitio donde
- * está en claro; en `ukun_auth` solo existe su hash de BCrypt).
+ * La contraseña de las catorce cuentas demo, la misma para todas (`docs/06-entorno-local-tilt.md`).
+ *
+ * En claro está aquí y en ese documento, y en ningún sitio más: en `ukun_auth` solo existe su hash de
+ * BCrypt. Escribirla aquí no es filtrar nada —siembra un stack local y no existe fuera de él—, pero
+ * si algún día hubiera que cambiarla, estos son los dos sitios.
  */
 export const DEMO_PASSWORD = 'ukun-demo-2026';
 
