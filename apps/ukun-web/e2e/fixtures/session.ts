@@ -1,5 +1,8 @@
 import type { Page } from '@playwright/test';
 
+/** Lo que responde `ukun-auth` cuando el cupo de intentos de esa cuenta se ha agotado. */
+const TOO_MANY_REQUESTS = 429;
+
 /**
  * Lo que los tres recorridos hacen igual antes de tener nada que probar: fijar el idioma y meter unas
  * credenciales en la página de `ukun-auth`.
@@ -44,5 +47,22 @@ export async function signIn(page: Page, credentials: Credentials): Promise<void
   // Los `name` del formulario son los de Spring Security, no etiquetas traducidas.
   await page.locator('input[name="username"]').fill(credentials.email);
   await page.locator('input[name="password"]').fill(credentials.password);
-  await page.locator('form').getByRole('button').click();
+
+  const [response] = await Promise.all([
+    page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/login'),
+    page.locator('form').getByRole('button').click(),
+  ]);
+
+  // `ukun-auth` limita los intentos por IP + correo (`LoginAttemptBuckets`, `docs/08` §8): veinte a
+  // la hora, y las cuentas de plantilla del back-office son siempre las mismas dos, así que repetir
+  // estos recorridos varias veces seguidas agota el cupo. El 429 llega con el cuerpo vacío —es
+  // deliberado, no filtra si el correo existe—, de modo que sin esta comprobación el síntoma es una
+  // página en blanco y un timeout esperando el menú de cuenta, que no se parece en nada a su causa.
+  if (response.status() === TOO_MANY_REQUESTS) {
+    throw new Error(
+      `ukun-auth rechazó el login de ${credentials.email} con 429: el cupo de intentos de esta ` +
+        'cuenta está agotado. No es un fallo del recorrido. El contador vive en memoria, así que se ' +
+        'vacía reiniciando el servicio (`docker restart ukun-ukun-auth-1`); si no, se repone solo.',
+    );
+  }
 }
