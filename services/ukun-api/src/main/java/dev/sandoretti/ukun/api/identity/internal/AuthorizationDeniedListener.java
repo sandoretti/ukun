@@ -2,11 +2,11 @@ package dev.sandoretti.ukun.api.identity.internal;
 
 import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied;
 import dev.sandoretti.ukun.api.shared.observability.AuthorizationDenied.Reason;
+import dev.sandoretti.ukun.api.shared.observability.CurrentActor;
 import java.util.stream.Collectors;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authorization.event.AuthorizationDeniedEvent;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
@@ -33,8 +33,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 class AuthorizationDeniedListener {
-
-    private static final String ROLE_PREFIX = "ROLE_";
 
     @EventListener
     void onAuthorizationDenied(AuthorizationDeniedEvent<?> event) {
@@ -65,13 +63,14 @@ class AuthorizationDeniedListener {
         return ((JwtAuthenticationToken) authentication).getToken().getSubject();
     }
 
-    /** What the caller <em>does</em> hold, which is the useful half of "why was this denied". */
+    /**
+     * What the caller <em>does</em> hold, which is the useful half of "why was this denied".
+     *
+     * <p>The reading of the authorities is {@code CurrentActor}'s since v0.7, when the audit trail
+     * needed the same one to name an actor. What stays here is the shaping: every role, sorted, in one
+     * field — where the trail wants the single highest one.
+     */
     private static String rolesOf(Authentication authentication) {
-        return authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .filter(authority -> authority.startsWith(ROLE_PREFIX))
-                .map(authority -> authority.substring(ROLE_PREFIX.length()))
-                .sorted()
-                .collect(Collectors.joining(","));
+        return CurrentActor.rolesOf(authentication).stream().sorted().collect(Collectors.joining(","));
     }
 }

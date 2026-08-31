@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 
 import dev.sandoretti.ukun.api.identity.AccountRef;
+import dev.sandoretti.ukun.api.audit.AuditRows;
 import dev.sandoretti.ukun.api.identity.AccountsPort;
 import dev.sandoretti.ukun.api.identity.CreateAccountCommand;
 import dev.sandoretti.ukun.api.identity.EmailAlreadyExistsException;
@@ -50,6 +51,9 @@ class EmployeeCreationIT extends StaffIntegrationTest {
     void reservationSucceedsByDefault() {
         reservedAccount = UUID.randomUUID();
         given(accounts.reserve(any(), any())).willReturn(new AccountRef(reservedAccount, true));
+        // The audited altas below count rows, and nothing truncates audit_log between tests: it is
+        // nobody's fixture, so the suite that reads it clears it.
+        AuditRows.clear(jdbc);
     }
 
     @Test
@@ -174,6 +178,49 @@ class EmployeeCreationIT extends StaffIntegrationTest {
     }
 
     /** Mutable on purpose: half the tests here are one field away from the plain case. */
+    /**
+     * The row the alta leaves in {@code audit_log} (ADR-0014). It lives in this class rather than in an
+     * audit suite of its own because the assertion needs the {@code AccountsPort} double that makes an
+     * alta possible at all, and a second class would be that fixture copied.
+     *
+     * <p><strong>Written inside the local transaction</strong>, which is what {@code EmployeeRegistrar}
+     * is a bean for: an alta whose employee row rolls back leaves no audit of having created one.
+     */
+    @Test
+    @DisplayName("an alta records EMPLOYEE_CREATED against the new employee, attributed to the admin")
+    void auditsTheAlta() {
+        create(anEmployee()).expectStatus().isCreated();
+
+        AuditRows.Row row = AuditRows.only(jdbc);
+
+        assertThat(row.action()).isEqualTo("EMPLOYEE_CREATED");
+        assertThat(row.resourceType()).isEqualTo("employee");
+        assertThat(row.actorAccountId()).isEqualTo(CARMEN);
+        assertThat(row.actorRole()).isEqualTo("ADMIN");
+        // The new employee's own account, and the store it landed in — never taken from the request.
+        assertThat(AuditRows.detailsOf(row))
+                .containsEntry("accountId", reservedAccount.toString())
+                .containsEntry("storeId", (int) alcalaId())
+                .containsEntry("isAdmin", false);
+    }
+
+    /**
+     * The password travels in the request body of this very endpoint, which makes it the sharpest place
+     * to assert the rule of {@code docs/11} §4: {@code details} is an open JSONB column and nothing
+     * secret may reach it. The email is checked too — it is PII, and only the three events of §3 where
+     * it is the subject may carry one.
+     */
+    @Test
+    @DisplayName("the audited alta carries neither the password nor the email")
+    void auditsWithoutTheCredentials() {
+        create(anEmployee()).expectStatus().isCreated();
+
+        assertThat(AuditRows.only(jdbc).details())
+                .doesNotContain("una-contrasena-larga")
+                .doesNotContain("password")
+                .doesNotContain("nuria@ukun.com");
+    }
+
     private static Map<String, Object> anEmployee() {
         Map<String, Object> request = new HashMap<>();
         request.put("email", "nuria@ukun.com");

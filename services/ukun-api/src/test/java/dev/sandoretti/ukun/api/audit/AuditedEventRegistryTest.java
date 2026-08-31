@@ -1,0 +1,148 @@
+package dev.sandoretti.ukun.api.audit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import dev.sandoretti.ukun.api.RepositoryRoot;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Ties {@link AuditedEvent} to the closed registry it transcribes, by reading
+ * {@code docs/11-observabilidad-y-logging.md} §3 rather than by trusting a copy of it.
+ *
+ * <p><strong>Why parse the document instead of restating the list here.</strong> A second hand-written
+ * list is a third place to keep in sync, and the failure it is supposed to catch —somebody adds an
+ * audited event to the table and not to the enum, or the other way round— is exactly the one it would
+ * miss, because whoever edits the enum would edit the list next to it. Reading §3 makes the document
+ * the authority it claims to be: an event ticked there and missing here fails the build, and there is
+ * no way to add one to the enum without the table agreeing.
+ *
+ * <p>Pure text and bytecode, no Spring and no container, so it belongs to the {@code test} task.
+ */
+class AuditedEventRegistryTest {
+
+    /**
+     * The one ticked row of §3 that no code emits: there is no email-change operation in the contract
+     * (the document says so where the row is). Listing it here, rather than quietly relaxing the
+     * comparison, is what keeps the exception visible — the day the operation lands, this line goes and
+     * the enum gains its value.
+     */
+    private static final Set<String> WITHOUT_A_USE_CASE = Set.of("profile.email.changed");
+
+    /** Events of §3 that {@code ukun-auth} owns: this enum is {@code ukun-api}'s. */
+    private static final String API = "api";
+
+    /**
+     * The escaped pipes of the {@code fields} column are content, not cell boundaries. Splitting on
+     * them would shift every column after the third, so they are parked under a sentinel that cannot
+     * appear in the table and put back afterwards.
+     *
+     * <p>Printable ASCII on purpose. The first version used a NUL byte, which worked and made git
+     * classify this source file as <em>binary</em> — no diff, no blame, no review.
+     */
+    private static final String ESCAPED_PIPE = "{{PIPE}}";
+
+    private static final List<String[]> REGISTRY = readRegistry();
+
+    @Test
+    @DisplayName("the enum holds exactly the audited events of docs/11 §3")
+    void enumMatchesTheDocumentedRegistry() {
+        Set<String> documented = REGISTRY.stream()
+                .filter(row -> row[4].contains("✅"))
+                .filter(row -> row[2].contains(API))
+                .map(row -> row[0])
+                .filter(event -> !WITHOUT_A_USE_CASE.contains(event))
+                .collect(Collectors.toSet());
+
+        Set<String> declared =
+                Arrays.stream(AuditedEvent.values()).map(AuditedEvent::eventName).collect(Collectors.toSet());
+
+        assertThat(declared).containsExactlyInAnyOrderElementsOf(documented);
+    }
+
+    @Test
+    @DisplayName("every event keeps the level docs/11 §3 gave it")
+    void levelsMatchTheDocumentedRegistry() {
+        Map<String, String> documented = REGISTRY.stream()
+                .collect(Collectors.toMap(row -> row[0], row -> row[1].replace("*", "").trim(), (first, second) -> first));
+
+        Map<String, String> declared = new LinkedHashMap<>();
+        for (AuditedEvent event : AuditedEvent.values()) {
+            declared.put(event.eventName(), event.level().name());
+        }
+
+        assertThat(declared).allSatisfy((event, level) -> assertThat(level)
+                .as("level of %s", event)
+                .isEqualTo(documented.get(event)));
+    }
+
+    /**
+     * The three destructive ones are {@code WARN} and not {@code INFO}, which §3 calls out explicitly
+     * because it is the part of the table that surprises. Asserted on its own so that flattening them
+     * back to INFO fails with a sentence about deletions rather than with a diff of two maps.
+     */
+    @Test
+    @DisplayName("deleting a stock line, a product or a type stands out as WARN")
+    void deletionsAreWarnings() {
+        assertThat(List.of(AuditedEvent.STOCK_DELETED, AuditedEvent.PRODUCT_DELETED, AuditedEvent.PRODUCT_TYPE_DELETED))
+                .allSatisfy(event -> assertThat(event.level().name()).isEqualTo("WARN"));
+    }
+
+    /**
+     * {@code resource_type} is a closed list too, declared in §2's schema comment. Six values since
+     * v0.7 — RF-13 did not exist when the first five were written.
+     */
+    @Test
+    @DisplayName("the resource types are the ones docs/11 §2 lists")
+    void resourceTypesMatchTheDocumentedColumn() {
+        String comment = readDocument()
+                .lines()
+                .filter(line -> line.contains("resource_type") && line.contains("--"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("docs/11 §2 no declara el comentario de resource_type"));
+
+        Set<String> documented = Arrays.stream(
+                        comment.substring(comment.indexOf("--") + 2).split("\\|"))
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
+        Set<String> declared =
+                Arrays.stream(ResourceType.values()).map(ResourceType::value).collect(Collectors.toSet());
+
+        assertThat(declared).containsExactlyInAnyOrderElementsOf(documented);
+    }
+
+    /** Rows of §3 as {@code [event, level, service, fields, audited]}. */
+    private static List<String[]> readRegistry() {
+        return readDocument()
+                .lines()
+                .map(line -> line.replace("\\|", ESCAPED_PIPE))
+                .filter(line -> line.startsWith("| `"))
+                .map(line -> Arrays.stream(line.split("\\|"))
+                        .map(cell -> cell.replace(ESCAPED_PIPE, "|").trim())
+                        .toArray(String[]::new))
+                .filter(cells -> cells.length >= 6)
+                // The leading pipe leaves an empty first cell, so the columns start at 1.
+                .map(cells -> new String[] {
+                    cells[1].replace("`", ""), cells[2], cells[3], cells[4], cells[5],
+                })
+                .toList();
+    }
+
+    private static String readDocument() {
+        try {
+            return Files.readString(RepositoryRoot.resolve("docs/11-observabilidad-y-logging.md"));
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo leer docs/11-observabilidad-y-logging.md", e);
+        }
+    }
+}

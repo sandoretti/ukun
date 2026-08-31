@@ -13,6 +13,6 @@
  * already declares, and it closes no cycle: {@code identity} depends on nobody.
  */
 @org.springframework.modulith.ApplicationModule(
-        allowedDependencies = {"catalog", "stores", "identity", "shared"}
+        allowedDependencies = {"catalog", "stores", "identity", "shared", "audit"}
 )
 package dev.sandoretti.ukun.api.inventory;

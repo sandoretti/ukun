@@ -27,7 +27,7 @@ Module 'catalog' depends on module 'shared' via
   Allowed targets: storage.
 ```
 
-Un módulo que **no** declara lista (`stores`, `storage`, `identity`) la tiene sin restringir y no necesita nombrar a nadie. Verificado contra Modulith 2.1.0; ver ADR-0017 §1.
+Un módulo que **no** declara lista (`stores`, `storage`, `identity`, `audit`) la tiene sin restringir y no necesita nombrar a nadie. Verificado contra Modulith 2.1.0; ver ADR-0017 §1.
 
 Estructura interna de un módulo, coherente con lo que ya prescribe la skill `spring-api`:
 

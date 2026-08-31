@@ -1,12 +1,12 @@
 package dev.sandoretti.ukun.api.staff.application;
 
-import dev.sandoretti.ukun.api.shared.observability.BusinessEvents;
+import dev.sandoretti.ukun.api.audit.AuditTrail;
+import dev.sandoretti.ukun.api.audit.AuditedEvent;
 import dev.sandoretti.ukun.api.shared.observability.CurrentActor;
 import dev.sandoretti.ukun.api.staff.domain.Employee;
 import dev.sandoretti.ukun.api.staff.infra.EmployeeRepository;
 import java.util.Map;
 import java.util.UUID;
-import org.slf4j.event.Level;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,20 +21,22 @@ import org.springframework.transaction.annotation.Transactional;
  * owns no address and no card, so the single transaction here writes a single row.
  *
  * <p>The {@code employee.created} event is emitted <strong>inside</strong> this transaction, which is
- * where {@code docs/11-observabilidad-y-logging.md} §2 puts the events that generate an audit trail —
- * and where the {@code audit_log} row of issue #47 will be written without moving anything.
+ * where {@code docs/11-observabilidad-y-logging.md} §2 puts the events that generate an audit trail.
+ * Since v0.7 that is literal: {@link AuditTrail#record} writes the log line and the {@code audit_log}
+ * row in this same transaction, so an alta that rolls back leaves no trace of having happened
+ * (ADR-0014).
  */
 @Component
 class EmployeeRegistrar {
 
-    private static final String CREATED_EVENT = "employee.created";
-
     private final EmployeeRepository employees;
     private final EmployeeMapper mapper;
+    private final AuditTrail auditTrail;
 
-    EmployeeRegistrar(EmployeeRepository employees, EmployeeMapper mapper) {
+    EmployeeRegistrar(EmployeeRepository employees, EmployeeMapper mapper, AuditTrail auditTrail) {
         this.employees = employees;
         this.mapper = mapper;
+        this.auditTrail = auditTrail;
     }
 
     /**
@@ -50,9 +52,9 @@ class EmployeeRegistrar {
         // ukun-auth, and this copy is refreshed from the token's claim on its owner's next request.
         Employee employee = employees.save(mapper.toEmployee(request, accountId, storeId));
 
-        BusinessEvents.emit(
-                Level.INFO,
-                CREATED_EVENT,
+        auditTrail.record(
+                AuditedEvent.EMPLOYEE_CREATED,
+                employee.getId(),
                 Map.of(
                         "employeeId", employee.getId(),
                         "accountId", accountId,

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 
 import dev.sandoretti.ukun.api.AbstractIntegrationTest;
+import dev.sandoretti.ukun.api.audit.AuditRows;
 import dev.sandoretti.ukun.api.identity.AccountRef;
 import dev.sandoretti.ukun.api.identity.AccountRejectedException;
 import dev.sandoretti.ukun.api.identity.AccountsPort;
@@ -77,6 +78,9 @@ class SignupIT extends AbstractIntegrationTest {
     void reservationSucceedsByDefault() {
         reservedAccount = UUID.randomUUID();
         given(accounts.reserve(any(), any())).willReturn(new AccountRef(reservedAccount, true));
+        // The audited signups below count rows, and nothing truncates audit_log between tests: it is
+        // nobody's fixture, so the suite that reads it clears it.
+        AuditRows.clear(jdbc);
     }
 
     @Test
@@ -261,6 +265,63 @@ class SignupIT extends AbstractIntegrationTest {
     }
 
     // ---------------------------------------------------------------------------------------------
+
+    /**
+     * The row a finished signup leaves in {@code audit_log} (ADR-0014), asserted here rather than in an
+     * audit suite of its own: it needs the {@code AccountsPort} double this class already owns, and the
+     * saga's failure modes — the ones that must leave <em>no</em> row — are only reachable through it.
+     *
+     * <p><strong>The actor is the account the saga has just created.</strong> {@code POST /api/signup}
+     * is public, so there is no token to attribute the row to, and it is the one audited event of this
+     * service that states its actor instead of reading it.
+     */
+    @Test
+    @DisplayName("a finished signup records SIGNUP_COMPLETED, attributed to the new account")
+    void auditsACompletedSignup() {
+        signup(aSignup()).expectStatus().isCreated();
+
+        AuditRows.Row row = AuditRows.only(jdbc);
+
+        assertThat(row.action()).isEqualTo("SIGNUP_COMPLETED");
+        assertThat(row.resourceType()).isEqualTo("customer");
+        assertThat(row.resourceId()).isEqualTo(String.valueOf(customerOf(reservedAccount).get("id")));
+        assertThat(row.actorAccountId()).isEqualTo(reservedAccount);
+        assertThat(row.actorRole()).isEqualTo("CUSTOMER");
+    }
+
+    /**
+     * The sharpest place in this service to assert {@code docs/11} §4: the request body that reaches
+     * this endpoint carries a password and a card, and {@code details} is an open JSONB column. None of
+     * it may end up there — not the password, not the card, not the street.
+     */
+    @Test
+    @DisplayName("the audited signup carries no password, no card and no address")
+    void auditsWithoutAnythingPersonal() {
+        Map<String, Object> request = aSignup();
+
+        signup(request).expectStatus().isCreated();
+
+        assertThat(AuditRows.only(jdbc).details())
+                .doesNotContain("correct-horse-battery")
+                .doesNotContain("password")
+                .doesNotContain("4242")
+                .doesNotContain("Calle Mayor 1")
+                .doesNotContain(String.valueOf(request.get("email")));
+    }
+
+    /**
+     * A signup that never completes leaves nothing, which is the trail's half of the compensation: the
+     * reservation happened, the profile did not, and there is no customer to have a history.
+     */
+    @Test
+    @DisplayName("a signup that fails before the profile leaves no row")
+    void doesNotAuditAFailedSignup() {
+        willThrow(new EmailAlreadyExistsException()).given(accounts).reserve(any(), any());
+
+        signup(aSignup()).expectStatus().isEqualTo(HttpStatus.CONFLICT);
+
+        assertThat(AuditRows.count(jdbc)).isZero();
+    }
 
     private RestTestClient.ResponseSpec signup(Map<String, Object> request) {
         return http.post()

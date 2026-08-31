@@ -1,5 +1,7 @@
 package dev.sandoretti.ukun.api.customers.application;
 
+import dev.sandoretti.ukun.api.audit.AuditTrail;
+import dev.sandoretti.ukun.api.audit.AuditedEvent;
 import dev.sandoretti.ukun.api.customers.domain.Customer;
 import dev.sandoretti.ukun.api.customers.infra.CustomerRepository;
 import dev.sandoretti.ukun.api.identity.CurrentAccount;
@@ -30,18 +32,30 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class MyProfileService {
 
-    private static final String PROFILE_UPDATED = "profile.updated";
+    /**
+     * Not audited, so its name still lives here: which store somebody prefers is a convenience of the
+     * catalogue, not a change to a resource anyone can claim later ({@code docs/11} §3).
+     */
     private static final String FAVORITE_STORE_CHANGED = "favorite_store.changed";
+
     private static final String FAVORITE_STORE_FIELD = "favoriteStoreId";
+    private static final String CUSTOMER_ID = "customerId";
 
     private final CustomerRepository customers;
     private final ProfileMapper mapper;
     private final FavoriteStores favoriteStores;
+    private final AuditTrail auditTrail;
 
-    public MyProfileService(CustomerRepository customers, ProfileMapper mapper, FavoriteStores favoriteStores) {
+    public MyProfileService(
+            CustomerRepository customers,
+            ProfileMapper mapper,
+            FavoriteStores favoriteStores,
+            AuditTrail auditTrail) {
+
         this.customers = customers;
         this.mapper = mapper;
         this.favoriteStores = favoriteStores;
+        this.auditTrail = auditTrail;
     }
 
     /**
@@ -88,13 +102,17 @@ public class MyProfileService {
         return mapper.toResponse(customer, account.email());
     }
 
-    /** Field names, never their values: a profile is personal data ({@code docs/11} §3). */
-    private static void emitUpdated(long customerId, List<String> changedFields) {
+    /**
+     * Field names, never their values: a profile is personal data ({@code docs/11} §4). That rule is why
+     * this event can be audited at all — {@code details} is an open JSONB column, and what goes in it
+     * here is {@code ["address","card"]}, not what the address or the card now say.
+     */
+    private void emitUpdated(long customerId, List<String> changedFields) {
         Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("customerId", customerId);
+        fields.put(CUSTOMER_ID, customerId);
         fields.put("changedFields", changedFields);
 
-        BusinessEvents.emit(Level.INFO, PROFILE_UPDATED, fields);
+        auditTrail.record(AuditedEvent.PROFILE_UPDATED, customerId, fields);
     }
 
     /**
@@ -104,7 +122,7 @@ public class MyProfileService {
      */
     private static void emitFavoriteStoreChanged(long customerId, Long previousStoreId, Long newStoreId) {
         Map<String, Object> fields = new LinkedHashMap<>();
-        fields.put("customerId", customerId);
+        fields.put(CUSTOMER_ID, customerId);
         fields.put("previousStoreId", previousStoreId);
         fields.put("newStoreId", newStoreId);
 
