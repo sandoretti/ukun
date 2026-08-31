@@ -26,6 +26,13 @@ async function fillProductForm(
   page: Page,
   product: { sku: string; name: string; price: string; type: string },
 ): Promise<void> {
+  // El formulario tiene que estar en pantalla **antes** de escribir en él. El listado del que se
+  // llega rotula su filtro «SKU» exactamente igual que este campo, así que rellenar mientras el SPA
+  // todavía no ha desmontado el listado escribe el SKU en el filtro: el alta se envía sin SKU, la
+  // pantalla responde con la validación del campo y el `409` que este recorrido busca no llega a
+  // pedirse nunca. Esperar aquí, y no en cada llamada, es lo que hace que no vuelva a pasar.
+  await expect(page.getByRole('heading', { level: 1, name: 'Nuevo producto' })).toBeVisible();
+
   await page.getByLabel('SKU', { exact: true }).fill(product.sku);
   await page.getByLabel('Nombre', { exact: true }).fill(product.name);
   await page.getByLabel('Descripción').fill('Alta del recorrido de back-office.');
@@ -100,7 +107,6 @@ test('un administrador da de alta un tipo, un producto con foto y un empleado', 
   await test.step('crea un producto de ese tipo', async () => {
     await openSection(page, 'Productos');
     await page.getByRole('link', { name: 'Nuevo producto' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Nuevo producto' })).toBeVisible();
 
     await fillProductForm(page, { sku, name: productName, price: '199,95', type: typeName });
     await page.getByRole('button', { name: 'Crear producto' }).click();
