@@ -90,7 +90,7 @@ Las dos tandas no se solapan nunca: una clase entra en una o en la otra según s
 
 ### Cómo se ejecuta el smoke de Playwright
 
-Vive en `apps/ukun-web/e2e/`, dentro del proyecto npm que ya existe — no hay un segundo `package.json` que mantener. Un recorrido por fichero; el de cliente (v0.6) es `customer-journey.spec.ts` y los dos de back-office llegan en v0.7.
+Vive en `apps/ukun-web/e2e/`, dentro del proyecto npm que ya existe — no hay un segundo `package.json` que mantener. Un recorrido por fichero, y son tres: el de cliente (v0.6) en `customer-journey.spec.ts`, y los dos de back-office (v0.7) en `admin-journey.spec.ts` y `employee-journey.spec.ts`.
 
 ```bash
 tilt up                       # en otra pestaña: el smoke NO levanta el stack, solo lo usa
