@@ -222,6 +222,22 @@
   flex: 1 1 auto;
 }
 
+// Todo contenedor de texto decide qué hace cuando el contenido no cabe (docs/07 §Accesibilidad), y
+// las cuatro tablas del back-office no lo decidían: llevan datos que escribe una persona y que el
+// contrato deja largos —un correo de hasta 255 caracteres, un nombre de producto o de tipo de otros
+// tantos—, y un correo es además un único token sin espacios, así que el navegador no tiene por
+// dónde partirlo y lo saca fuera de la tabla arrastrando el ancho de la página con él.
+//
+// `anywhere` y no `break-word`: es el que permite partir dentro de una palabra *y* además reduce el
+// ancho mínimo intrínseco de la celda, que es lo que hace que la columna deje de empujar. Se parte
+// en vez de truncar a propósito: un correo a medias no sirve para nada, y aquí el dato es el trabajo.
+//
+// En el cascarón y no en `_admin-product.scss`, porque solo una de las cuatro tablas lleva la clase
+// `.admin-table`; lo que las cuatro comparten es estar aquí dentro.
+.bo-main td {
+  overflow-wrap: anywhere;
+}
+
 // --- Lo que el rail desplaza ----------------------------------------------------------------------
 
 // La barra de acciones de la ficha de producto está `position: fixed` con `inset-inline: 0`, que

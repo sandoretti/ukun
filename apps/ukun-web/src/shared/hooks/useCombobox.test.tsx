@@ -44,6 +44,9 @@ function ComboboxProbe() {
         {combobox.expanded && (
           <ul id={combobox.listboxId} role="listbox">
             {OPTIONS.map((option, index) => (
+              // El doble reproduce el patrón de `SearchBox`: el teclado va en el campo y la opción
+              // solo atiende al ratón. Misma exención y por la misma razón.
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
               <li
                 key={option}
                 id={combobox.optionId(index)}

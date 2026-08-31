@@ -15,7 +15,8 @@
     "priceFrom": "Desde",
     "priceTo": "Hasta",
     "activeCount_one": "{{count}} filtro activo",
-    "activeCount_other": "{{count}} filtros activos"
+    "activeCount_other": "{{count}} filtros activos",
+    "failed": "No se han podido cargar los filtros."
   },
   "chips": {
     "name": "«{{value}}»",
@@ -43,6 +44,8 @@
   },
   "viewer": {
     "title": "Imagen de {{name}}",
+    "frame": "Imagen de {{name}} ampliable. Usa las flechas para moverla.",
+    "enlarge": "Ampliar la imagen de {{name}}",
     "close": "Cerrar la imagen",
     "zoomIn": "Ampliar",
     "zoomOut": "Reducir",

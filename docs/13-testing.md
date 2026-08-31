@@ -74,8 +74,8 @@ Test de persistencia con contador de sentencias (Hibernate `Statistics.getPrepar
 |---|---|---|
 | `./gradlew test` | `*Test` backend — sin Testcontainers, sin contexto de Spring salvo `@WebMvcTest`/`@DataJpaTest` puntual | cada build local y cada push |
 | `./gradlew integrationTest` | `*IT` backend — Testcontainers, `@SpringBootTest` de los 4 recorridos end-to-end (`03` §3) | CI, antes de merge |
-| Vitest | componentes y hooks del frontend, incluida paridad de traducciones | cada build local y cada push |
-| Playwright | los tres recorridos de `03` §3 (cliente completo, admin crea producto, empleado edita stock) | a mano contra el stack de Tilt, y en CI en cada PR desde v1.0 (issue #51) |
+| Vitest | componentes y hooks del frontend, la paridad de traducciones y la auditoría de accesibilidad con axe | cada build local y cada push |
+| Playwright | los tres recorridos de `03` §3 (cliente completo, admin crea producto, empleado edita stock), con el escaneo de accesibilidad que necesita un navegador | a mano contra el stack de Tilt, y en CI en cada PR desde v1.0 |
 | Jacoco (`jacocoTestReport`) | cobertura informativa en todo el backend, sobre las dos tandas | CI |
 | Jacoco (`jacocoTestCoverageVerification`) | **umbral obligatorio solo en `orders` e `inventory`** (`03` §3 — es donde está el dinero y la concurrencia), 90% de línea y 75% de rama por paquete | CI |
 
@@ -88,6 +88,32 @@ Test de persistencia con contador de sentencias (Hibernate `Statistics.getPrepar
 ```
 
 Las dos tandas no se solapan nunca: una clase entra en una o en la otra según su nombre, y ninguna corre dos veces. Es comprobable comparando los informes de `build/test-results/test/` y `build/test-results/integrationTest/`.
+
+### La auditoría de accesibilidad corre en dos sitios, y no por duplicar
+
+`07-frontend-ux-ui.md` §Accesibilidad pide una auditoría con axe sobre lo ya construido. Está partida
+en dos porque **hay dos preguntas distintas y solo una de ellas se le puede hacer a jsdom**.
+
+| Dónde | Qué comprueba | Por qué ahí |
+|---|---|---|
+| `npm run test:a11y` (Vitest) | axe sobre las pantallas de los tres recorridos y sobre los tres cascarones, con MSW en la frontera HTTP | Corre sin stack, en segundos, sobre el código de la rama. Es el que se ejecuta mientras se escribe |
+| `@axe-core/playwright`, dentro de los tres recorridos | contraste de color, anillo de foco y orden de tabulación | jsdom no maqueta: no hay cajas ni colores compuestos, así que esas tres preguntas no tienen respuesta ahí. **Los dos defectos de más alcance de v1.0 solo se veían aquí** |
+
+Dos reglas que se ganaron a base de equivocarse:
+
+- **Lo que jsdom no puede juzgar se apaga explícitamente** (`src/test/a11y.ts`), no se deja pasar. axe
+  devuelve esos casos como `incomplete`, y una auditoría que trata un «no lo sé» como un aprobado es
+  peor que no tenerla.
+- **Cuidado con la regla `region`**: solo mira contenido *visible*, y en jsdom nada tiene tamaño, así
+  que pasa igual con los landmarks puestos que sin ellos. La contención en landmarks se comprueba con
+  aserciones de rol (`getByRole('banner')`) en los tests de los cascarones, y con axe en el navegador.
+- **El check lleva una guarda contra sí mismo**, como la del registro de errores: un test que
+  comprueba que axe *detecta* un incumplimiento conocido. Sin ella, un axe mal configurado o un
+  contenedor vacío dan una fila de verdes indistinguible de la de verdad.
+
+El escaneo de navegador crece dentro de los tres recorridos que ya existen —más `test.step`, nunca un
+cuarto fichero— porque aprovecha que el recorrido ya ha llegado hasta ahí con sesión, que es la única
+forma de auditar las pantallas que la piden.
 
 ### Cómo se ejecuta el smoke de Playwright
 

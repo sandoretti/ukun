@@ -22,7 +22,7 @@ type ResultCountProps = {
  */
 export function ResultCount({ label }: ResultCountProps) {
   return (
-    <p className="text-body-secondary" aria-live="polite">
+    <p className="text-body-secondary text-tabular-nums" aria-live="polite">
       {label ?? null}
     </p>
   );

@@ -8,9 +8,21 @@
 // Bootstrap deriva $theme-colors de $primary/$secondary, así que configurarlos basta y evita
 // reescribir el mapa entero. `@use`/`@forward` en vez de `@import`: sass 1.80+ deprecó @import y lo
 // elimina en 3.0.
+// `$secondary` **no** es el acento, por mucho que sea el otro verde de la marca.
+//
+// Bootstrap no trata `$secondary` como un color decorativo: de él deriva el color de *texto* de
+// `.btn-outline-secondary` y de `.link-secondary`. Con el acento ahí (#5d9d0b, 3.34:1) el rótulo de
+// nueve botones y ocho enlaces quedaba por debajo de AA —los ± del carrito, «quitar línea», «volver
+// al carrito» del checkout, «descartar cambios» del perfil—, contra la regla dura de
+// `docs/07-frontend-ux-ui.md` §Paleta: ningún token bajo 4.5:1 se asigna a texto normal, y
+// `--bs-accent` solo vale para elementos gráficos grandes.
+//
+// Apuntarlo a `$primary` (6.02:1, AA) conserva el verde y cambia solo el tono. El acento sigue
+// existiendo en `_tokens.scss` para sus dos usos legítimos, que ya lo leen de allí y no de aquí: el
+// punto de estado del catálogo y el de la línea de tiempo de la portada.
 @forward "bootstrap/scss/bootstrap" with (
   $primary: tokens.$primary,
-  $secondary: tokens.$accent,
+  $secondary: tokens.$primary,
   $component-active-bg: tokens.$primary,
   $headings-font-family: tokens.$display-font
 );

@@ -8,8 +8,10 @@ import { ACCOUNT_PATH } from '../features/auth/routes';
 import { useMyEmployment } from '../features/backoffice/api/employment';
 import { useAuth } from '../shared/hooks/useAuth';
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
+import { MAIN_CONTENT_ID, useRouteFocus } from '../shared/hooks/useRouteFocus';
 import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher';
 import { LoadingState } from '../shared/ui/LoadingState';
+import { RouteErrorBoundary } from '../shared/ui/RouteErrorBoundary';
 import { BackofficeRail } from './BackofficeRail';
 import { useRailExpanded } from './useRailExpanded';
 
@@ -54,6 +56,7 @@ export function BackofficeLayout() {
   const employment = useMyEmployment();
   const { expanded, toggle } = useRailExpanded();
   useLocaleSync();
+  useRouteFocus();
 
   return (
     // El ancho del rail lo publica el cascarón como custom property, porque hay una tercera cosa
@@ -62,7 +65,7 @@ export function BackofficeLayout() {
     <div className={`bo-shell${expanded ? ' bo-shell--wide-rail' : ''}`}>
       {/* Worth more here than in the shop: the rail is four to six stops before the content, on every
           single screen of the back-office. */}
-      <a href="#main-content" className="skip-link">
+      <a href={`#${MAIN_CONTENT_ID}`} className="skip-link">
         {t('common:nav.skipToContent')}
       </a>
 
@@ -78,7 +81,10 @@ export function BackofficeLayout() {
             the screen: the catalogue of `/admin/products` is global and belongs to no store
             (ADR-0020), so a store name with the presence of a heading over it would be claiming
             something false. Grouped with the email, it reads as the pair it is. */}
-        <div className="bo-topbar">
+        {/* `<header>`, no un `<div>` suelto: el idioma, la tienda y la cuenta quedaban fuera del
+            rail (que es el `<nav>`) y fuera del `<main>`, o sea fuera de todo landmark. Para quien
+            navega por regiones eso es contenido que no existe. */}
+        <header className="bo-topbar">
           <LanguageSwitcher />
           {employment.data !== undefined && (
             <p className="bo-topbar__store mb-0">
@@ -93,17 +99,19 @@ export function BackofficeLayout() {
               {user.email}
             </Link>
           )}
-        </div>
+        </header>
 
-        <main id="main-content" className="bo-main">
+        <main id={MAIN_CONTENT_ID} tabIndex={-1} className="bo-main">
           {/* The width is decided once, here, and not eight times: every back-office screen used to
               open with its own `<Container className="py-5">`. */}
           <Container fluid="xxl" className="py-4">
-            <Suspense fallback={<LoadingState />}>
-              <RequireRole role="EMPLOYEE">
-                <Outlet />
-              </RequireRole>
-            </Suspense>
+            <RouteErrorBoundary>
+              <Suspense fallback={<LoadingState />}>
+                <RequireRole role="EMPLOYEE">
+                  <Outlet />
+                </RequireRole>
+              </Suspense>
+            </RouteErrorBoundary>
           </Container>
         </main>
       </div>

@@ -241,10 +241,22 @@ export function useStockView(
   ];
 
   const answered = halves.every((half) => half.data !== undefined);
+  /**
+   * At least one half is here. It is a weaker condition than `answered` on purpose, and only the
+   * rows use it: if the stocked half arrives and the candidates fail, throwing away the lines the
+   * store really holds in order to report the other request is the very thing
+   * `docs/07-frontend-ux-ui.md` §Estados forbids — the error replaces the screen only when there is
+   * nothing to show. `QueryBoundary` paints what comes back and counts the failure beside it.
+   *
+   * The counts stay on `answered`, because they are the one thing that cannot be told honestly from
+   * half an answer: a sum missing an addend is not a smaller total, it is a wrong one. `ResultCount`
+   * already renders nothing while they are `undefined`.
+   */
+  const arrived = halves.some((half) => half.data !== undefined);
 
   return {
     // Stocked first, always: what the store has comes before what it could have.
-    items: answered
+    items: arrived
       ? [
           ...(wantsStocked ? (stocked.data?.items ?? []) : []),
           ...(wantsUnstocked ? (unstocked.data?.items ?? []) : []),

@@ -113,7 +113,10 @@ export default function NewProductPage() {
                 type="text"
                 maxLength={SKU_MAX}
                 autoComplete="off"
-                autoFocus
+                // Sin `autoFocus`: en una pantalla completa roba el foco al montar la ruta y se
+                // salta el salto al contenido y el rail, así que quien navega con teclado aparece a
+                // mitad del formulario sin haber oído de qué pantalla se trata. En un diálogo sí
+                // procede —ahí el foco tiene que entrar— y por eso `EditQuantityModal` lo conserva.
                 {...register('sku')}
               />
             }

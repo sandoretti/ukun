@@ -76,3 +76,14 @@
 .site-footer__legal {
   border-top: bootstrap.$border-width solid rgba(255, 255, 255, 0.25);
 }
+
+// Los enlaces inactivos de la barra no llegaban a AA. Bootstrap los pinta al 55 % de blanco sobre el
+// fondo, y sobre el verde de marca eso da **3.01:1** — el activo sí pasa, porque va en blanco puro
+// (6.02:1), así que el fallo solo estaba en los que no son la página actual y no saltaba a la vista.
+// Al 85 % sube a 4.85:1, que es el mismo valor que ya usa el rail del back-office sobre su verde.
+//
+// Lo encontró axe en un navegador de verdad, no la lectura de los tokens: la paleta se había medido
+// contra blanco, y aquí el fondo es verde.
+.navbar[data-bs-theme="dark"] {
+  --bs-navbar-color: rgb(255 255 255 / 85%);
+}

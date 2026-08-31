@@ -25,22 +25,27 @@ import { CART_PATH } from '../../../shared/routes';
 export function CartIndicator() {
   const { t } = useTranslation('cart');
   const { hasRole } = useAuth();
-  const { data: cart } = useCart();
+  const { data: cart, isError } = useCart();
 
   if (!hasRole('CUSTOMER')) {
     return null;
   }
 
-  const units = cartUnitCount(cart);
+  // Una lectura que falló no es un carrito vacío. Sin esto el indicador se quedaba en cero y lo
+  // anunciaba —«Carrito, 0 unidades»—, que es afirmar lo que no se sabe: el peor de los dos errores,
+  // porque quien tuviera algo dentro se iba convencido de que no. El enlace se queda (es la vía de
+  // entrada al carrito, y allí sí se explica el fallo con todo el espacio de la pantalla); lo que se
+  // calla es la cuenta. Un error en la barra de navegación no cabe y no es donde se resuelve.
+  const units = isError ? undefined : cartUnitCount(cart);
 
   return (
     <Link
       to={CART_PATH}
       className="nav-link d-inline-flex align-items-center gap-1"
-      aria-label={t('indicator.label', { count: units })}
+      aria-label={units === undefined ? t('indicator.labelUnknown') : t('indicator.label', { count: units })}
     >
       <Icon name="shopping_cart" />
-      {units > 0 && (
+      {units !== undefined && units > 0 && (
         <Badge bg="light" text="dark" pill className="text-tabular-nums">
           {units}
         </Badge>

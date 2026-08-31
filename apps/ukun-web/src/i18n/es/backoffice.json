@@ -288,6 +288,8 @@
       "rules": "JPEG, PNG o WebP, hasta 5 MB. La nueva sustituye a la anterior.",
       "upload": "Subir foto",
       "remove": "Quitar foto",
+      "uploaded": "Foto actualizada.",
+      "removed": "Foto quitada.",
       "rejected": {
         "type": "Ese fichero no es JPEG, PNG ni WebP.",
         "size": "Ese fichero pasa de 5 MB."

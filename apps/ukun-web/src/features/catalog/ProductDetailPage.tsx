@@ -6,7 +6,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useFavoriteStoreAvailability, useOnlineAvailability } from '../../shared/api/availability';
 import { ProblemDetailError, toProblem } from '../../shared/api/http';
 import { ErrorState } from '../../shared/ui/ErrorState';
-import { LoadingState } from '../../shared/ui/LoadingState';
+import { ResourceBoundary } from '../../shared/ui/ResourceBoundary';
 import { useProduct } from './api/queries';
 import { ProductSheet } from './components/ProductSheet';
 import { RelatedProducts } from './components/RelatedProducts';
@@ -57,34 +57,36 @@ export default function ProductDetailPage() {
   );
 
   const renderBody = () => {
+    // A discontinued product (ADR-0013) is a 404 with its own message, never the generic "something
+    // failed on our side": the reader has to be able to tell "this is gone" from "try again". It is
+    // the one case `ResourceBoundary` cannot serve, because it is not a state of the read — it is a
+    // dead end, and a dead end needs a way out of its own. An id that is not a positive integer
+    // never existed, so it lands here too instead of being sent to the API to be rejected there.
     if (productId === undefined) {
       return deadEndWithExit(NOT_FOUND);
     }
-    if (productQuery.isPending) {
-      return <LoadingState />;
-    }
     if (productQuery.isError) {
       const problem = toProblem(productQuery.error);
-      // A discontinued product (ADR-0013) is a 404 with its own message, never the generic "something
-      // failed on our side": the reader has to be able to tell "this is gone" from "try again".
-      return problem.code === 'RESOURCE_NOT_FOUND' ? (
-        deadEndWithExit(problem)
-      ) : (
-        <ErrorState error={problem} />
-      );
+      if (problem.code === 'RESOURCE_NOT_FOUND') {
+        return deadEndWithExit(problem);
+      }
     }
 
-    const product = productQuery.data;
-
+    // Everything else is the ordinary chain of a screen that reads one resource, and it is written
+    // once in the base component instead of again here — which is what it was doing.
     return (
-      <>
-        <ProductSheet
-          product={product}
-          availability={availability}
-          favoriteAvailability={favoriteAvailability}
-        />
-        <RelatedProducts typeId={product.typeId} excludeId={product.id} />
-      </>
+      <ResourceBoundary query={productQuery} data={productQuery.data}>
+        {(product) => (
+          <>
+            <ProductSheet
+              product={product}
+              availability={availability}
+              favoriteAvailability={favoriteAvailability}
+            />
+            <RelatedProducts typeId={product.typeId} excludeId={product.id} />
+          </>
+        )}
+      </ResourceBoundary>
     );
   };
 

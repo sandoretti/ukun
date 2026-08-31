@@ -141,6 +141,12 @@ function EditQuantityForm({ storeId, line, isRefreshing, onClose }: EditQuantity
           min={0}
           step={1}
           inputMode="numeric"
+          autoComplete="off"
+          // En un diálogo el foco **tiene** que entrar: es el patrón ARIA de `dialog`, y
+          // react-bootstrap ya lo atrapa y lo devuelve al cerrar. La regla desaconseja `autoFocus`
+          // porque en una pantalla completa desorienta —ahí sí se ha quitado, en `NewProductPage` y
+          // `SkuFinder`—, pero aquí lo que desorienta es lo contrario.
+          // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
           error={messageOf(errors.quantity)}
           {...register('quantity', { valueAsNumber: true })}

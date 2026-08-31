@@ -1,3 +1,4 @@
+import { useRef, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
@@ -43,6 +44,14 @@ type RailLinkProps = {
   label: string;
   expanded: boolean;
   end?: boolean;
+  /**
+   * Dónde se pinta el tooltip. Por defecto react-bootstrap lo porta al `<body>`, o sea fuera de
+   * cualquier landmark: axe lo señala en el navegador —`region`— y tiene razón, porque quien recorre
+   * la página por regiones se encuentra un texto suelto que no pertenece a ninguna. Portándolo dentro
+   * del propio rail queda donde está lo que describe. El rail no recorta (no tiene `overflow`), así
+   * que el globo sigue saliéndose por la derecha como antes.
+   */
+  container: RefObject<HTMLElement | null>;
 };
 
 /**
@@ -53,7 +62,7 @@ type RailLinkProps = {
  * its own text either way, and the tooltip is left as what it actually is — a way of showing sighted
  * readers the same word the markup already carries.
  */
-function RailLink({ to, icon, label, expanded, end }: RailLinkProps) {
+function RailLink({ to, icon, label, expanded, end, container }: RailLinkProps) {
   const link = (
     // `NavLink` sets `aria-current="page"` on the active one, so which screen you are on is said and
     // not only coloured.
@@ -68,7 +77,11 @@ function RailLink({ to, icon, label, expanded, end }: RailLinkProps) {
   }
 
   return (
-    <OverlayTrigger placement="right" overlay={<Tooltip id={`bo-rail-tip-${to}`}>{label}</Tooltip>}>
+    <OverlayTrigger
+      placement="right"
+      container={container}
+      overlay={<Tooltip id={`bo-rail-tip-${to}`}>{label}</Tooltip>}
+    >
       {link}
     </OverlayTrigger>
   );
@@ -99,11 +112,19 @@ type BackofficeRailProps = {
 export function BackofficeRail({ expanded, onToggle }: BackofficeRailProps) {
   const { t } = useTranslation(['backoffice', 'common']);
   const { hasRole } = useAuth();
+  const rail = useRef<HTMLElement>(null);
 
   const items = RAIL_ITEMS.filter((item) => hasRole(item.role));
 
   return (
-    <div className={`bo-rail${expanded ? ' bo-rail--expanded' : ''}`}>
+    // El landmark es el rail entero y no solo su lista de enlaces. Antes el `<nav>` empezaba después
+    // de la cabecera, así que la marca y el botón de plegar quedaban fuera de toda región: contenido
+    // que, para quien navega por landmarks, no existe. Un solo `<nav>` en vez de dos anidados.
+    <nav
+      ref={rail}
+      aria-label={t('rail.label')}
+      className={`bo-rail${expanded ? ' bo-rail--expanded' : ''}`}
+    >
       <div className="bo-rail__head">
         {/* The brand as type and not as the logotype: the wordmark is a wide bitmap that does not fit
             a four-rem rail, and `docs/07-frontend-ux-ui.md` already sets the precedent of drawing the
@@ -123,7 +144,7 @@ export function BackofficeRail({ expanded, onToggle }: BackofficeRailProps) {
         </button>
       </div>
 
-      <nav aria-label={t('rail.label')} className="bo-rail__nav">
+      <div className="bo-rail__nav">
         <ul className="bo-rail__group">
           {items.map((item) => (
             <li key={item.key}>
@@ -133,6 +154,7 @@ export function BackofficeRail({ expanded, onToggle }: BackofficeRailProps) {
                 label={t(item.titleKey)}
                 expanded={expanded}
                 end={item.end}
+                container={rail}
               />
             </li>
           ))}
@@ -143,7 +165,7 @@ export function BackofficeRail({ expanded, onToggle }: BackofficeRailProps) {
             {/* Its own caption and not `account.backHome`: that one belongs to the «this page is not
                 for your account» screen, which can be in the content while this is in the rail — two
                 links to the same place with the same name on the same page. */}
-            <RailLink to="/" icon="storefront" label={t('rail.shop')} expanded={expanded} />
+            <RailLink to="/" icon="storefront" label={t('rail.shop')} expanded={expanded} container={rail} />
           </li>
           <li className="bo-rail__signout">
             {/* Signing out is a whole `<form>` posting to the gateway, so it is not a `RailLink` and
@@ -155,7 +177,7 @@ export function BackofficeRail({ expanded, onToggle }: BackofficeRailProps) {
             />
           </li>
         </ul>
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 }

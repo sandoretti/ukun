@@ -29,6 +29,10 @@ export function OrderLines({ order }: OrderLinesProps) {
       <h2 className="h5 mb-3">{t('lines.title')}</h2>
 
       <Table responsive className="align-middle mb-0">
+        {/* El `<h2>` de arriba está fuera de la tabla, así que no la nombra: quien recorre la página
+            por tablas la oía como «tabla» a secas. Es la única del proyecto que no lo tenía; las
+            cuatro del back-office ya llevan su `caption` oculto. */}
+        <caption className="visually-hidden">{t('lines.title')}</caption>
         <thead>
           <tr>
             <th scope="col">{t('lines.product')}</th>

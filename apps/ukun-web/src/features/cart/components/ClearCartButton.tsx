@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Modal } from 'react-bootstrap';
 
+import { Dialog } from '../../../shared/ui/Dialog';
 import { Icon } from '../../../shared/ui/Icon';
 
 type ClearCartButtonProps = {
@@ -38,24 +39,30 @@ export function ClearCartButton({ busy, onConfirm }: ClearCartButtonProps) {
         {t('clear.action')}
       </Button>
 
-      <Modal show={asking} onHide={() => setAsking(false)} centered aria-labelledby="clear-cart-title">
-        {/* The cross closes, it does not cancel: two controls with the same accessible name in one
-            dialog are two things a screen reader cannot tell apart. */}
-        <Modal.Header closeButton closeLabel={t('clear.close')}>
-          <Modal.Title id="clear-cart-title" className="h5">
-            {t('clear.title')}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>{t('clear.body')}</Modal.Body>
-        <Modal.Footer>
-          <Button variant="light" onClick={() => setAsking(false)}>
-            {t('clear.cancel')}
-          </Button>
-          <Button variant="danger" onClick={confirm}>
-            {t('clear.confirm')}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {/* Por `Dialog` como los otros cinco, y no por un `Modal` propio: era el único que se lo
+          montaba aparte, y con él volvía el `id` literal (`"clear-cart-title"`) que `Dialog`
+          documenta como la razón de existir — único solo mientras alguien siga comprobando que lo
+          es. El `useId` de dentro lo resuelve, y de paso este diálogo hereda el título como
+          encabezado de verdad. */}
+      {asking && (
+        <Dialog
+          title={t('clear.title')}
+          // La cruz cierra, no cancela: dos controles con el mismo nombre accesible en un mismo
+          // diálogo son dos cosas que un lector de pantalla no puede distinguir.
+          closeLabel={t('clear.close')}
+          onClose={() => setAsking(false)}
+        >
+          <Modal.Body>{t('clear.body')}</Modal.Body>
+          <Modal.Footer>
+            <Button variant="light" onClick={() => setAsking(false)}>
+              {t('clear.cancel')}
+            </Button>
+            <Button variant="danger" onClick={confirm}>
+              {t('clear.confirm')}
+            </Button>
+          </Modal.Footer>
+        </Dialog>
+      )}
     </>
   );
 }

@@ -56,7 +56,7 @@ export function StoreFilter({ value, onChange, status }: StoreFilterProps) {
       </InputGroup>
       {/* What changes without the user looking at it has to be announced (docs/07 §Accesibilidad):
           the count moves with every keystroke, and the eyes are on the field. */}
-      <p className="mt-2 mb-0 small text-body-secondary" role="status">
+      <p className="mt-2 mb-0 small text-body-secondary text-tabular-nums" role="status">
         {status}
       </p>
     </Form>

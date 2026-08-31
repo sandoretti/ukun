@@ -50,8 +50,11 @@ export function CartSummary({ cart }: CartSummaryProps) {
           <dd className="mb-0 text-tabular-nums">{total}</dd>
         </div>
 
-        <hr className="my-3" />
-
+        {/* Sin `<hr>` entre los dos grupos, y el separador lo dibuja el tema. Un `<hr>` no es hijo
+            válido de `<dl>` —solo lo son `<dt>`, `<dd>`, `<script>`, `<template>` y `<div>`— y quien
+            recorre el resumen con un lector se encontraba la lista partida por la mitad. Envolverlo
+            en un `<div>` tampoco vale: la regla pide que cada grupo lleve su `<dt>` y su `<dd>`, y
+            eso está comprobado, no supuesto. */}
         <div className="d-flex justify-content-between align-items-baseline gap-3">
           <dt className="fw-semibold">{t('summary.total')}</dt>
           <dd className="mb-0 fs-4 fw-semibold text-tabular-nums">{total}</dd>

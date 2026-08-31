@@ -4,7 +4,7 @@ import { Col, Container, Offcanvas, Row } from 'react-bootstrap';
 
 import { useFavoriteStoreAvailability, useOnlineAvailability } from '../../shared/api/availability';
 import { useProductTypes } from '../../shared/api/productTypes';
-import { ErrorState } from '../../shared/ui/ErrorState';
+import { FailureNote } from '../../shared/ui/FailureNote';
 import { Pagination } from '../../shared/ui/Pagination';
 import { QueryBoundary } from '../../shared/ui/QueryBoundary';
 import { ActiveFilters } from './components/ActiveFilters';
@@ -80,7 +80,20 @@ export default function CatalogPage() {
               />
             </Offcanvas.Body>
           </Offcanvas>
-          {typesQuery.isError && <ErrorState error={typesQuery.error} />}
+          {/* Los dos apoyos del panel de filtros: la lista de tipos y el tope del rango de precio.
+              Si cualquiera falla, su control desaparece —`CatalogFilters` no pinta el rango sin
+              `maxPrice`—, y un filtro que se esfuma callando se lee como «aquí no se puede filtrar
+              por precio», no como «no se ha podido cargar».
+
+              Es una línea y no un `ErrorState`, que es lo que había: los dos apoyos salen del mismo
+              `/api/products` que alimenta la rejilla, así que cuando esa lectura falla fallan los
+              tres a la vez y la pantalla enseñaba dos paneles idénticos diciendo «algo ha fallado
+              por nuestra parte» — uno de ellos sin explicar de qué hablaba. Aquí el fallo es de una
+              parte secundaria de la pantalla, y así es como esta misma pantalla ya lo cuenta en los
+              otros dos sitios donde le pasa (`loadMore.failed`, `availabilityFailed`). */}
+          {(typesQuery.isError || maxPriceQuery.isError) && (
+            <FailureNote message={t('filters.failed')} className="mt-3" />
+          )}
         </Col>
 
         <Col lg={9}>

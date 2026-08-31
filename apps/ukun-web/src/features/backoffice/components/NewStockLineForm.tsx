@@ -113,6 +113,7 @@ export function NewStockLineForm({ employment, product, onChangeSku }: NewStockL
         min={0}
         step={1}
         inputMode="numeric"
+        autoComplete="off"
         error={messageOf(errors.quantity)}
         {...register('quantity', { valueAsNumber: true })}
       />

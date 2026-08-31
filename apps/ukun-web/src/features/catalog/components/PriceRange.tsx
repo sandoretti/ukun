@@ -2,6 +2,8 @@ import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Col, Form, InputGroup, Row } from 'react-bootstrap';
 
+import { currencyAffix } from '../../../shared/format/money';
+import { useLocale } from '../../../shared/hooks/useLocale';
 import type { CatalogFilterInput } from '../api/productKeys';
 
 type PriceRangeProps = {
@@ -28,6 +30,9 @@ const STEP = 10;
  */
 export function PriceRange({ priceMin, priceMax, ceiling, onCommit }: PriceRangeProps) {
   const { t } = useTranslation('catalog');
+  // El símbolo y su lado salen de `Intl`, no del marcado: en `es` va detrás (`1.234,00 €`) y en `en`
+  // delante (`€1,234.00`). Escrito a mano quedaba siempre detrás, y en inglés al lado equivocado.
+  const currency = currencyAffix(useLocale());
 
   const urlLow = priceMin === '' ? '0' : priceMin;
   const urlHigh = priceMax === '' ? String(ceiling) : priceMax;
@@ -117,6 +122,7 @@ export function PriceRange({ priceMin, priceMax, ceiling, onCommit }: PriceRange
             {t('filters.priceFrom')}
           </Form.Label>
           <InputGroup size="sm">
+            {currency.position === 'prefix' && <InputGroup.Text>{currency.symbol}</InputGroup.Text>}
             <Form.Control
               id="catalog-price-from"
               type="number"
@@ -124,13 +130,14 @@ export function PriceRange({ priceMin, priceMax, ceiling, onCommit }: PriceRange
               max={ceiling}
               step={STEP}
               inputMode="decimal"
+              autoComplete="off"
               className="text-tabular-nums"
               value={lowText}
               onChange={(event) => setLowText(event.target.value)}
               onKeyDown={commitOnEnter}
               onBlur={commit}
             />
-            <InputGroup.Text>€</InputGroup.Text>
+            {currency.position === 'suffix' && <InputGroup.Text>{currency.symbol}</InputGroup.Text>}
           </InputGroup>
         </Col>
         <Col xs={6}>
@@ -138,6 +145,7 @@ export function PriceRange({ priceMin, priceMax, ceiling, onCommit }: PriceRange
             {t('filters.priceTo')}
           </Form.Label>
           <InputGroup size="sm">
+            {currency.position === 'prefix' && <InputGroup.Text>{currency.symbol}</InputGroup.Text>}
             <Form.Control
               id="catalog-price-to"
               type="number"
@@ -145,13 +153,14 @@ export function PriceRange({ priceMin, priceMax, ceiling, onCommit }: PriceRange
               max={ceiling}
               step={STEP}
               inputMode="decimal"
+              autoComplete="off"
               className="text-tabular-nums"
               value={highText}
               onChange={(event) => setHighText(event.target.value)}
               onKeyDown={commitOnEnter}
               onBlur={commit}
             />
-            <InputGroup.Text>€</InputGroup.Text>
+            {currency.position === 'suffix' && <InputGroup.Text>{currency.symbol}</InputGroup.Text>}
           </InputGroup>
         </Col>
       </Row>

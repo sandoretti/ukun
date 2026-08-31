@@ -183,6 +183,7 @@
 }
 
 .product-viewer__frame {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
@@ -190,6 +191,24 @@
   align-items: center;
   justify-content: center;
   cursor: zoom-in;
+
+  &:focus-visible {
+    outline: 0.125rem solid tokens.$primary;
+    outline-offset: -0.125rem;
+  }
+}
+
+// «Pulsa para ampliar», que es un botón de verdad y no un `onClick` sobre el marco: así lo alcanza
+// el tabulador, responde a Enter y a Espacio sin que nadie lo programe, y tiene nombre accesible.
+// Invisible porque lo que se ve es la foto que hay debajo — pero solo invisible, nunca ausente: al
+// enfocarlo se dibuja el anillo dentro del marco.
+.product-viewer__enlarge {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  cursor: inherit;
 
   &:focus-visible {
     outline: 0.125rem solid tokens.$primary;
@@ -312,6 +331,31 @@
 
 .price-range input[type="range"]::-webkit-slider-thumb { @include price-range-thumb; }
 .price-range input[type="range"]::-moz-range-thumb { @include price-range-thumb; }
+
+// El foco se marca en el pomo, no en el input.
+//
+// Los dos inputs ocupan el mismo rectángulo (`inset-inline: 0; width: 100%`), así que el anillo
+// genérico de `_base.scss` rodeaba la pista entera y era **exactamente el mismo para los dos**: al
+// tabular del mínimo al máximo el indicador no cambiaba y no había forma de saber cuál se estaba
+// moviendo. Anular ahí el contorno es legítimo porque se sustituye por algo visible y además más
+// preciso (`docs/07-frontend-ux-ui.md` §Accesibilidad): un anillo alrededor del pomo que sí se mueve.
+//
+// El doble `box-shadow` es lo que separa el anillo del pomo con el color del fondo, para que se lea
+// también cuando el pomo queda encima de la barra rellena.
+.price-range input[type="range"]:focus-visible {
+  outline: none;
+}
+
+@mixin price-range-thumb-focus {
+  box-shadow:
+    0 0 0 2px var(--bs-body-bg),
+    0 0 0 4px tokens.$primary-hover;
+}
+
+// En reglas separadas por el mismo motivo que las de arriba: un selector que mezcle `::-webkit-` y
+// `::-moz-` lo descarta entero el navegador que no reconoce el otro.
+.price-range input[type="range"]:focus-visible::-webkit-slider-thumb { @include price-range-thumb-focus; }
+.price-range input[type="range"]:focus-visible::-moz-range-thumb { @include price-range-thumb-focus; }
 
 // La pista nativa se apaga: la que se ve es la de arriba, y son dos inputs, así que si cada uno
 // pintase la suya se verían dos. En reglas separadas a propósito — un selector que mezcle

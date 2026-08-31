@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
 
+import {
+  expectNamedTabStops,
+  expectNoA11yViolations,
+  expectSkipLinkWorks,
+  expectVisibleFocusRing,
+  focusByKeyboard,
+} from './fixtures/a11y';
 import { newCustomer, signUp } from './fixtures/customer';
 import { signIn, useSpanish } from './fixtures/session';
 
@@ -43,6 +50,14 @@ test('un cliente nuevo se da de alta, compra y encuentra su pedido en el histori
     await expect(card).toBeVisible();
     const name = (await card.getByRole('heading').innerText()).trim();
 
+    // El catálogo es la pantalla más cargada del recorrido —barra, filtros, rejilla, paginación— y
+    // la primera donde se audita el conjunto ya pintado, con el CSS puesto.
+    await expectNoA11yViolations(page, 'catálogo');
+
+    // Seis paradas de barra por delante de la rejilla es lo que ahorra el salto al contenido, y solo
+    // las ahorra si además lleva el foco (por eso el `<main>` es `tabIndex={-1}`).
+    await expectSkipLinkWorks(page, 'la tienda');
+
     await card.click();
     await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 
@@ -62,6 +77,10 @@ test('un cliente nuevo se da de alta, compra y encuentra su pedido en el histori
     await expect(page.getByRole('heading', { level: 1, name: 'Tu carrito' })).toBeVisible();
     await expect(page.getByRole('link', { name: productName })).toBeVisible();
 
+    // Con sesión y con contenido: es la primera pantalla del recorrido que solo existe habiendo
+    // entrado, y ninguna pasada sin navegador puede llegar hasta aquí.
+    await expectNoA11yViolations(page, 'carrito');
+
     const summary = page.getByRole('complementary', { name: 'Resumen del pedido' });
     // El total del resumen: la última pareja de la lista de definiciones, que es la que va rotulada
     // «Total» y en grande.
@@ -76,7 +95,14 @@ test('un cliente nuevo se da de alta, compra y encuentra su pedido en el histori
 
     // El intento lo emite el servidor (ADR-0016); la pantalla no inventa ninguna clave.
     await expect(page.getByRole('heading', { level: 1, name: 'Confirmar pedido' })).toBeVisible();
-    await page.getByRole('button', { name: 'Confirmar pedido' }).click();
+    await expectNoA11yViolations(page, 'checkout');
+
+    // El paso que cobra se puede dar sin ratón, y el botón enseña que lo tiene. Es donde el anillo
+    // del tema importa más: era uno de los que Bootstrap tapaba con `outline: 0`.
+    const confirm = page.getByRole('button', { name: 'Confirmar pedido' });
+    await focusByKeyboard(page, confirm);
+    await expectVisibleFocusRing(page, 'confirmar pedido');
+    await confirm.click();
 
     // Aterriza en el detalle del pedido recién hecho, que es la misma pantalla que el historial
     // enlaza: una pantalla con dos entradas, no dos.
@@ -99,5 +125,11 @@ test('un cliente nuevo se da de alta, compra y encuentra su pedido en el histori
     // El número del pedido **es** el enlace: diez enlaces «Ver el pedido» serían diez enlaces
     // idénticos para quien navega por lista de enlaces.
     await expect(page.getByRole('link', { name: `Pedido n.º ${orderId}` })).toBeVisible();
+
+    await expectNoA11yViolations(page, 'historial de pedidos');
+
+    // La barra completa, con sesión: ninguna de sus paradas es anónima — un control sin nombre en la
+    // cabecera es una parada a la que se llega sin saber qué hace.
+    await expectNamedTabStops(page, 4);
   });
 });

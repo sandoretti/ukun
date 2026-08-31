@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, test, type Page } from '@playwright/test';
 
+import { expectNoA11yViolations, expectVisibleFocusRing, focusByKeyboard } from './fixtures/a11y';
 import {
   ADMIN,
   DEMO_PASSWORD,
@@ -74,6 +75,9 @@ test('un administrador da de alta un tipo, un producto con foto y un empleado', 
     }
 
     await expect(page.getByText(`Tu tienda: ${STORE}`)).toBeVisible();
+
+    // La portada del back-office, que es la que estrena el cascarón: rail, topbar y contenido.
+    await expectNoA11yViolations(page, 'portada del back-office');
   });
 
   await test.step('crea un tipo de producto, y repetir el nombre lo rechaza', async () => {
@@ -115,6 +119,16 @@ test('un administrador da de alta un tipo, un producto con foto y un empleado', 
     // foto es un sub-recurso aparte y no un campo del alta (RF-10).
     await expect(page.getByRole('heading', { level: 1, name: productName })).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/products\/\d+$/u);
+
+    // La ficha del producto: la pantalla con más controles del back-office —el formulario, el panel
+    // de foto, la barra fija de acciones— y la que más cosas tiene que nombrar.
+    await expectNoA11yViolations(page, 'ficha de producto del back-office');
+
+    // Cada acción destructiva se alcanza sin ratón y enseña dónde está el foco. Era uno de los
+    // controles a los que Bootstrap le quitaba el contorno.
+    const discontinue = page.getByRole('button', { name: /Descatalogar/u }).first();
+    await focusByKeyboard(page, discontinue);
+    await expectVisibleFocusRing(page, 'descatalogar');
   });
 
   await test.step('repetir el SKU lo rechaza y enseña de quién es', async () => {
@@ -234,6 +248,10 @@ test('un administrador da de alta un tipo, un producto con foto y un empleado', 
     await expect(
       page.getByRole('heading', { level: 1, name: 'Dar de alta un empleado' }),
     ).toBeVisible();
+
+    // El formulario más largo del back-office —credenciales y datos personales agrupados— y el que
+    // más etiquetas, pistas y mensajes tiene que emparejar bien.
+    await expectNoA11yViolations(page, 'alta de empleado');
 
     // No hay ningún selector de tienda, y no es un olvido: el nuevo empleado se incorpora a la del
     // administrador que rellena esto, resuelta desde su `account_id` (RF-11, `docs/08` §3).

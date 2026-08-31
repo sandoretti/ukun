@@ -67,6 +67,32 @@ describe('QueryBoundary', () => {
     expect(screen.queryByText('Algo ha fallado por nuestra parte. Inténtalo de nuevo')).toBeNull();
   });
 
+  it('keeps the table on screen when the page that failed took the data away with it', async () => {
+    // El caso real de los cinco listados paginados, y el que se escapaba: `keepPreviousData` solo
+    // sostiene los datos mientras el estado es `pending`, así que al fallar la página siguiente
+    // `data` vuelve a `undefined` y el boundary sustituía la tabla que se estaba leyendo por un
+    // panel de error. Lo que se perdía no era la página que falló, era la que ya estaba delante.
+    const { rerender } = renderBoundary({ query: query(), data: ['Sofás', 'Mesas'] });
+    expect(screen.getByText('Sofás')).toBeDefined();
+
+    // El efecto que recuerda la última lista corre tras el commit; `findBy*` de abajo espera a que
+    // el rerender haya pintado, que es donde se lee.
+    rerender(
+      <QueryBoundary query={query({ isError: true, error: new Error('socket hang up') })} data={undefined}>
+        {list}
+      </QueryBoundary>,
+    );
+
+    expect(screen.getByText('Sofás')).toBeDefined();
+    expect(screen.getByText('Mesas')).toBeDefined();
+    // El fallo se cuenta al lado, no en lugar de la lista, y se anuncia: quien no ve la tabla
+    // necesita que le digan que lo que está leyendo ya no es lo último.
+    expect(screen.getByRole('status').textContent).toMatch(
+      /No se han podido actualizar los resultados/u,
+    );
+    expect(screen.queryByText('Algo ha fallado por nuestra parte. Inténtalo de nuevo')).toBeNull();
+  });
+
   it('says why there is nothing when the read succeeds and comes back empty', () => {
     renderBoundary({ query: query(), data: [], empty: 'Todavía no hay categorías' });
 

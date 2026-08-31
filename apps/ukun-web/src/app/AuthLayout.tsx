@@ -4,9 +4,11 @@ import { Link, Outlet } from 'react-router-dom';
 import { Container, Navbar } from 'react-bootstrap';
 
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
+import { MAIN_CONTENT_ID, useRouteFocus } from '../shared/hooks/useRouteFocus';
 import { BrandMark } from '../shared/ui/BrandMark';
 import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher';
 import { LoadingState } from '../shared/ui/LoadingState';
+import { RouteErrorBoundary } from '../shared/ui/RouteErrorBoundary';
 
 /**
  * The frame of the sign-in screen: brand, language, and nothing else.
@@ -24,25 +26,32 @@ export function AuthLayout() {
   const { t } = useTranslation('common');
   // `<html lang>` follows the language here too — this screen can be the first one someone opens.
   useLocaleSync();
+  useRouteFocus();
   // No `useRestoreReturnTo` on purpose: coming back from the authorization server always lands on
   // `/`, which belongs to `AppLayout`. Nobody ever returns to this route.
 
   return (
     <div className="auth-shell">
-      {/* No skip link either: with two controls before the content there is no block to bypass. */}
-      <Navbar bg="primary" data-bs-theme="dark" aria-label={t('nav.primary')}>
-        <Container className="justify-content-between">
-          <Navbar.Brand as={Link} to="/">
-            <BrandMark />
-          </Navbar.Brand>
-          <LanguageSwitcher />
-        </Container>
-      </Navbar>
+      {/* No skip link either: with two controls before the content there is no block to bypass.
+          The `<header>` is not decoration: `Navbar` renders a `<nav>`, so without it this shell has
+          no banner landmark — same gap, and same fix, as in `AppLayout`. */}
+      <header>
+        <Navbar bg="primary" data-bs-theme="dark" aria-label={t('nav.primary')}>
+          <Container className="justify-content-between">
+            <Navbar.Brand as={Link} to="/">
+              <BrandMark />
+            </Navbar.Brand>
+            <LanguageSwitcher />
+          </Container>
+        </Navbar>
+      </header>
 
-      <main id="main-content" className="auth-shell__main">
-        <Suspense fallback={<LoadingState />}>
-          <Outlet />
-        </Suspense>
+      <main id={MAIN_CONTENT_ID} tabIndex={-1} className="auth-shell__main">
+        <RouteErrorBoundary>
+          <Suspense fallback={<LoadingState />}>
+            <Outlet />
+          </Suspense>
+        </RouteErrorBoundary>
       </main>
     </div>
   );

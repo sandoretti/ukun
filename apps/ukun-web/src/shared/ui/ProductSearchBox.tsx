@@ -72,6 +72,10 @@ export function ProductSearchBox({ size = 'md', className }: ProductSearchBoxPro
       className={className}
       size={size}
       label={t('search.label')}
+      // En la portada este mismo buscador aparece dos veces —el de la barra y el que encabeza la
+      // pantalla—, así que el grande se nombra por lo que es allí. Con el mismo nombre los dos, un
+      // lector de pantalla lista dos regiones de búsqueda indistinguibles.
+      landmarkLabel={size === 'lg' ? t('search.heroLandmark') : undefined}
       submitLabel={t('search.submit')}
       placeholder={t('search.placeholder')}
       value={term}
