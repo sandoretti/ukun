@@ -51,6 +51,9 @@ class EmployeeCreationIT extends StaffIntegrationTest {
     void reservationSucceedsByDefault() {
         reservedAccount = UUID.randomUUID();
         given(accounts.reserve(any(), any())).willReturn(new AccountRef(reservedAccount, true));
+        // The audited altas below count rows, and nothing truncates audit_log between tests: it is
+        // nobody's fixture, so the suite that reads it clears it.
+        AuditRows.clear(jdbc);
     }
 
     @Test
@@ -186,8 +189,6 @@ class EmployeeCreationIT extends StaffIntegrationTest {
     @Test
     @DisplayName("an alta records EMPLOYEE_CREATED against the new employee, attributed to the admin")
     void auditsTheAlta() {
-        AuditRows.clear(jdbc);
-
         create(anEmployee()).expectStatus().isCreated();
 
         AuditRows.Row row = AuditRows.only(jdbc);
@@ -212,8 +213,6 @@ class EmployeeCreationIT extends StaffIntegrationTest {
     @Test
     @DisplayName("the audited alta carries neither the password nor the email")
     void auditsWithoutTheCredentials() {
-        AuditRows.clear(jdbc);
-
         create(anEmployee()).expectStatus().isCreated();
 
         assertThat(AuditRows.only(jdbc).details())

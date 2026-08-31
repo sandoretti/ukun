@@ -78,6 +78,9 @@ class SignupIT extends AbstractIntegrationTest {
     void reservationSucceedsByDefault() {
         reservedAccount = UUID.randomUUID();
         given(accounts.reserve(any(), any())).willReturn(new AccountRef(reservedAccount, true));
+        // The audited signups below count rows, and nothing truncates audit_log between tests: it is
+        // nobody's fixture, so the suite that reads it clears it.
+        AuditRows.clear(jdbc);
     }
 
     @Test
@@ -275,8 +278,6 @@ class SignupIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("a finished signup records SIGNUP_COMPLETED, attributed to the new account")
     void auditsACompletedSignup() {
-        AuditRows.clear(jdbc);
-
         signup(aSignup()).expectStatus().isCreated();
 
         AuditRows.Row row = AuditRows.only(jdbc);
@@ -296,7 +297,6 @@ class SignupIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("the audited signup carries no password, no card and no address")
     void auditsWithoutAnythingPersonal() {
-        AuditRows.clear(jdbc);
         Map<String, Object> request = aSignup();
 
         signup(request).expectStatus().isCreated();
@@ -316,7 +316,6 @@ class SignupIT extends AbstractIntegrationTest {
     @Test
     @DisplayName("a signup that fails before the profile leaves no row")
     void doesNotAuditAFailedSignup() {
-        AuditRows.clear(jdbc);
         willThrow(new EmailAlreadyExistsException()).given(accounts).reserve(any(), any());
 
         signup(aSignup()).expectStatus().isEqualTo(HttpStatus.CONFLICT);
