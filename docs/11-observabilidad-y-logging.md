@@ -124,7 +124,11 @@ Los tres casos reales del legacy (defectos #10, #20a y #20b, catalogados en `03-
 
 2. **ArchUnit lo hace fallar en CI.** Son las dos últimas reglas de la lista de `03-analisis-y-patrones.md` §3 (clase `Request`/`Command` con campo `password|token|cvv|number|pan` debe declarar `toString()`; ningún método de producción pasa un `@Entity` a `log.*(...)`). La segunda habría cazado los tres casos reales antes de llegar a `main`.
 
-3. **Red final en Logback**: un `TurboFilter` que enmascara lo que se cuele (`"password"\s*:\s*"[^"]*"`, `\b\d{13,19}\b`, `Bearer [A-Za-z0-9._-]+`). No es la defensa principal — es cara y frágil a base de regex —, pero convierte un accidente futuro en un `***` en vez de en un incidente. **Se activa solo en el perfil de producción**: en local, un secreto mal logueado tiene que verse para que se corrija, no esconderse.
+3. **Red final al serializar el log**: un `StructuredLoggingJsonMembersCustomizer` que enmascara lo que se cuele (`"password"\s*:\s*"[^"]*"`, `\b\d{13,19}\b`, `Bearer [A-Za-z0-9._-]+`). No es la defensa principal — es cara y frágil a base de regex, y el patrón de tarjeta no distingue un PAN de un epoch en milisegundos —, pero convierte un accidente futuro en un `***` en vez de en un incidente. Se registra con `logging.structured.json.customizer` y alcanza **todas** las cadenas que escribe el encoder: el mensaje, la traza de la excepción y los campos que `BusinessEvents` estampa en el MDC. Implementado en `SecretMaskingJsonCustomizer`, uno por servicio (ADR-0001, la misma razón por la que `BusinessEvents` está triplicado).
+
+   **La primera redacción de esta capa decía `TurboFilter`, y era inejecutable**: `TurboFilter.decide(...)` devuelve un `FilterReply` — decide si el evento se registra — y no puede reescribir su mensaje. Queda anotado en vez de corregido en silencio porque el error es instructivo: el punto de extensión correcto depende del formato de salida, y este proyecto ya había elegido el suyo dos secciones más abajo.
+
+   **Se activa solo donde la salida es JSON**, que es exactamente producción: vive en el mismo documento `!dev` que `logging.structured.format.console: ecs` (§5). En local no está, y no por descuido — un secreto mal logueado tiene que verse para que se corrija, no esconderse.
 
 4. **Nada de logging de cuerpos.** Ni `CommonsRequestLoggingFilter` con `setIncludePayload(true)`, ni clientes HTTP en DEBUG en producción, ni `logging.level.org.springframework.security=DEBUG` en `ukun-auth` (a ese nivel Spring Security vuelca detalle de la autenticación). El gateway loguea método, ruta, estado y duración: nunca cuerpo ni `Authorization`/`Cookie`.
 
@@ -137,16 +141,20 @@ Los tres casos reales del legacy (defectos #10, #20a y #20b, catalogados en `03-
 Desde Boot 3.4 existe structured logging integrado con los formatos `ecs`, `logstash` y `gelf`, configurable por propiedad, y sigue presente en Boot 4.1. Antes hacía falta traer `net.logstash.logback:logstash-logback-encoder` y un `logback-spring.xml` a mano; hoy es una línea:
 
 ```yaml
-# application-prod.yaml
+# application.yaml — documento por defecto, que en este repo ES el de producción
 logging:
   structured:
     format:
       console: ecs
+    json:
+      customizer: dev.sandoretti.ukun.<servicio>.<paquete>.SecretMaskingJsonCustomizer
 ```
 
 **Recomendación: nativo + formato ECS**, sobre `logstash`, porque nombra los campos igual que cualquier stack Elastic/OpenSearch al que se envíen algún día, y **incluye el MDC en el JSON sin configuración adicional** — que es la mitad del valor de este diseño. Traer `logstash-logback-encoder` hoy es exactamente el tipo de dependencia que ya no hace falta. Para enriquecer campos globalmente existe el punto de extensión oficial (`StructuredLoggingJsonMembersCustomizer`), sin encoder de terceros. *(Verificar el nombre exacto de la propiedad contra la doc de 4.1 al fijarla, según la política de `05-stack-y-versiones.md`.)*
 
-En local, **sin** `logging.structured.*`: el patrón legible de siempre. Es una diferencia de perfil, no de dependencias.
+En local, **sin** `logging.structured.*`: el patrón legible de siempre. Es una diferencia de perfil, no de dependencias. Vive en un documento `spring.config.activate.on-profile: "!dev"` de cada `application.yaml`, y **no hace falta inventar un perfil `prod`**: el documento por defecto ya es el de producción, igual que con `springdoc` o con `spring.liquibase.contexts`.
+
+Que sea un documento aparte y no una propiedad arriba con un `console: ""` abajo es deliberado, aunque las dos formas funcionan —`DefaultLogbackConfiguration` elige entre `PatternLayoutEncoder` y `StructuredLogEncoder` con `StringUtils.hasLength(formato)`, así que la cadena vacía es exactamente «no estructurado», y es lo que usa la tanda de tests de Gradle—. La razón es que el formato y la máscara de §4 **tienen que ir juntos**: la máscara solo actúa sobre el JSON, de modo que un ECS activo sin su `customizer` es logging de producción sin la capa 3, y eso no lo nota nadie. En un solo documento no se pueden desalinear.
 
 ### Correlación: Micrometer Tracing
 
@@ -163,7 +171,7 @@ Con Micrometer Tracing en el classpath, Boot inyecta `traceId`/`spanId` en el MD
 |:-:|---|
 | v0.2–v0.4 | nada de tracing. Un solo servicio, log en consola, patrón legible. Instrumentar un salto entre procesos que aún no existe es coste sin señal |
 | **v0.5** | `micrometer-tracing` en gateway, api y auth en cuanto el gateway habla con los dos. Aquí el `traceId` deja de ser decorativo: una petición del navegador cruza tres procesos, y sin él la saga de signup no se puede depurar. Muestreo 1.0 |
-| **v1.0** | `spring-boot-starter-opentelemetry` + exportador OTLP + `logging.structured.format.console=ecs` en producción, junto al resto de observabilidad que el roadmap ya sitúa ahí (Actuator + Micrometer) |
+| **v1.0** | Hecho (issue #52). `spring-boot-starter-opentelemetry` sustituye al módulo de tracing en los tres servicios y trae con él `opentelemetry-exporter-otlp` y `micrometer-registry-otlp`: trazas **y** métricas por OTLP. El destino lo pone el entorno (`MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT` y `MANAGEMENT_OTLP_METRICS_EXPORT_URL`), nunca el `application.yaml`, de modo que sin colector no se instala exportador y el servicio arranca igual. En local ese destino es el `otel-collector` de `compose.dev.yaml`; en producción, el de ADR-0023. Más `logging.structured.format.console=ecs` y la capa 3 de §4, ambos en el documento `!dev` |
 
 ### MDC: `accountId`, y poco más
 
@@ -228,13 +236,16 @@ Dos reglas que evitan la degeneración habitual:
 | Nivel raíz | `INFO`; `ukun.*` en `DEBUG` | `WARN`; `ukun.business` en `INFO` |
 | SQL | `spring.jpa.show-sql=false` siempre; para depurar, `org.hibernate.SQL=DEBUG` a mano y temporalmente | apagado |
 | Spring Security | `DEBUG` permitido | prohibido (vuelca detalle de autenticación) |
-| Máscara de secretos (`TurboFilter`) | desactivada — un secreto mal logueado tiene que verse para arreglarse | activada |
+| Máscara de secretos (`SecretMaskingJsonCustomizer`, §4 capa 3) | desactivada — un secreto mal logueado tiene que verse para arreglarse | activada, con el formato ECS que la lleva |
 | Destino | stdout; la UI de Tilt agrupa por recurso | stdout; lo recoge el runtime del contenedor |
 | Muestreo de traces | 1.0 | 1.0 mientras el volumen sea este |
+| Exportación OTLP | trazas y métricas al `otel-collector` de `compose.dev.yaml` | al destino que fije el despliegue (ADR-0023) |
+| Métricas por OTLP | encendidas por `compose.dev.yaml` | encendidas por el despliegue. **Apagadas en el `application.yaml`**: el default de Boot es `true` y Micrometer cae a `localhost:4318`, así que sin esa línea cada test y cada PR publicarían contra un puerto cerrado |
+| Logs por OTLP | nunca | nunca (`management.logging.export.otlp.enabled: false`, §7) |
 
 ### Retención, sin inventar infraestructura que este proyecto no tiene
 
-- **Log de aplicación:** a stdout, nunca a fichero desde la aplicación (`logging.file.name` sin usar). La rotación es responsabilidad del runtime: `logging.driver: json-file` con `max-size: 10m`/`max-file: 3` en `compose.yaml` evita el único riesgo real hoy, que un log llene el disco de la máquina de desarrollo. Un agregador (Loki + Grafana, o lo que traiga el destino de despliegue) es decisión de v1.0, no antes.
+- **Log de aplicación:** a stdout, nunca a fichero desde la aplicación (`logging.file.name` sin usar). La rotación es responsabilidad del runtime: el ancla `x-log-rotation` de `compose.yaml` (`json-file`, `max-size: 10m`, `max-file: 3`, aplicada a los cinco servicios) evita el único riesgo real hoy, que un log llene el disco de la máquina de desarrollo — y pesa más desde que cada línea de producción es un JSON ECS y no el patrón corto. Un agregador (Loki + Grafana, o lo que traiga el destino de despliegue) es decisión de v1.0, no antes.
 - **Tabla `audit_log`:** se conserva sin purga automática. A este volumen (pocos miles de filas al año), un job de borrado es más código que el problema que evita. Se revisa el día que la tabla se acerque a ~1M de filas; y si llega ese día, la política será **particionar por `occurred_at`, no borrar** — un rastro de auditoría que se borra solo deja de servir para lo único para lo que sirve.
 - **`idempotency_key`:** sí se purga (>24h), pero eso no es auditoría, es estado técnico — ya está en el diseño acordado de `03-analisis-y-patrones.md`.
 

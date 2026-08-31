@@ -47,6 +47,7 @@ Regla práctica: worktree cuando el trabajo es **de verdad simultáneo** y de **
    | Postgres | `DB_PORT` | 5432 | 5532 | 5632 |
    | UI de Tilt | `TILT_PORT` | 10350 | 10450 | 10550 |
    | JDWP api/auth/gateway | `JDWP_*_PORT` | 5005-5007 | 5105-5107 | 5205-5207 |
+   | colector OTLP | `OTLP_PORT` | 4318 | 4418 | 4518 |
 
    Tilt también necesita nombre de proyecto distinto para no reutilizar contenedores: `COMPOSE_PROJECT_NAME=ukun-<slice>` en el mismo `.env.ports`. Sin él, el segundo `tilt up` se engancha a los contenedores del primero.
 

@@ -53,6 +53,7 @@ Nunca H2, tampoco como dependencia transitoria de test — `03-analisis-y-patron
 - `Thread.sleep` para sincronizar hilos — usa Awaitility (el test de concurrencia de sobreventa, `03` §3, es el caso de uso que lo exige).
 - `@SpringBootTest` cuando `@WebMvcTest`/`@DataJpaTest` bastan — el contexto completo es el último recurso, no el primero.
 - Aserciones sobre el contenido literal de un mensaje de log — acopla el test a texto que puede cambiar sin que el comportamiento cambie; si hace falta verificar que algo se logueó, se verifica el evento de negocio (`docs/11-observabilidad-y-logging.md`), no la cadena de texto.
+  - **La excepción, y por qué no lo es**: asertar que un secreto **no** aparece en una línea (`AccessLogWebFilterTest`, `EcsMaskedLoggingIT`) no fija el texto, fija su ausencia — el texto puede reescribirse entero sin romper el test, que es justo lo que la regla protege. Es la única forma de comprobar la capa 3 de `docs/11` §4, cuyo modo de fallo es silencioso: sin ella el log de producción sale perfecto y sin enmascarar.
 
 ### Verificación mecánica del N+1
 Test de persistencia con contador de sentencias (Hibernate `Statistics.getPrepareStatementCount()` o `datasource-proxy`) que falla si un listado emite más sentencias SQL de las declaradas como esperadas. Aplica a las cuatro consultas del defecto #12 (`03-analisis-y-patrones.md` §2, "N+1 y paginación") y a `AvailabilityQueryService` (`docs/14-modules.md` §3) — el cruce entre módulos es exactamente donde un N+1 nuevo podría colarse sin que nadie lo note hasta producción.
