@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { EmptyState } from './EmptyState';
 import { ErrorState } from './ErrorState';
+import { FailureNote } from './FailureNote';
 import { LoadingState } from './LoadingState';
 
 /**
@@ -81,9 +82,7 @@ export function QueryBoundary<T>({ query, data, empty, children }: QueryBoundary
     return (
       <>
         {children(kept)}
-        <p className="mt-3 mb-0 text-body-secondary small" role="status">
-          {t('list.refreshFailed')}
-        </p>
+        <FailureNote message={t('list.refreshFailed')} className="mt-3" />
       </>
     );
   }

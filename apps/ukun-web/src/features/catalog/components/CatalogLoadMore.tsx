@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Spinner } from 'react-bootstrap';
 
 import { useOnScreen } from '../../../shared/hooks/useOnScreen';
+import { FailureNote } from '../../../shared/ui/FailureNote';
 
 type CatalogLoadMoreProps = {
   /** Products already on screen, and how many there are in total for the current filters. */
@@ -34,11 +35,7 @@ export function CatalogLoadMore({ loaded, total, hasMore, isLoading, failed, onL
       <p className="mb-0 text-body-secondary text-tabular-nums" aria-live="polite">
         {t('loadMore.progress', { loaded, total })}
       </p>
-      {failed && (
-        <p className="mb-0 text-body-secondary small" role="status">
-          {t('loadMore.failed')}
-        </p>
-      )}
+      {failed && <FailureNote message={t('loadMore.failed')} />}
       {hasMore && (
         <Button type="button" variant="outline-primary" onClick={onLoadMore} disabled={isLoading}>
           {isLoading && <Spinner as="span" animation="border" size="sm" className="me-2" aria-hidden="true" />}

@@ -4,6 +4,7 @@ import { Col, Container, Offcanvas, Row } from 'react-bootstrap';
 
 import { useFavoriteStoreAvailability, useOnlineAvailability } from '../../shared/api/availability';
 import { useProductTypes } from '../../shared/api/productTypes';
+import { FailureNote } from '../../shared/ui/FailureNote';
 import { Pagination } from '../../shared/ui/Pagination';
 import { QueryBoundary } from '../../shared/ui/QueryBoundary';
 import { ActiveFilters } from './components/ActiveFilters';
@@ -91,9 +92,7 @@ export default function CatalogPage() {
               parte secundaria de la pantalla, y así es como esta misma pantalla ya lo cuenta en los
               otros dos sitios donde le pasa (`loadMore.failed`, `availabilityFailed`). */}
           {(typesQuery.isError || maxPriceQuery.isError) && (
-            <p className="mt-3 mb-0 text-body-secondary small" role="status">
-              {t('filters.failed')}
-            </p>
+            <FailureNote message={t('filters.failed')} className="mt-3" />
           )}
         </Col>
 

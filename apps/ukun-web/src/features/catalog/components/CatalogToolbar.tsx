@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Form } from 'react-bootstrap';
 
+import { FailureNote } from '../../../shared/ui/FailureNote';
 import { Icon } from '../../../shared/ui/Icon';
 import type { ProductSort } from '../api/productKeys';
 import { SORT_OPTIONS } from '../useCatalogParams';
@@ -82,10 +83,7 @@ export function CatalogToolbar({
         // Availability is secondary information: losing it hides the dots, it does not hide the
         // catalog, and it does not deserve a full-width banner either. What it never does is
         // degrade to "unknown" (RF-01).
-        <p role="status" className="small text-body-secondary d-flex align-items-center gap-1 mt-2 mb-0">
-          <Icon name="warning" size="sm" />
-          {t('availability.unknown')}
-        </p>
+        <FailureNote message={t('availability.unknown')} icon="warning" className="mt-2" />
       )}
     </div>
   );

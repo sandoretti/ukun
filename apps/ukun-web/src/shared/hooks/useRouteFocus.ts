@@ -1,8 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
-/** El contenido de la ruta, en los tres cascarones. Es también el destino del salto al contenido. */
-const MAIN_CONTENT_ID = 'main-content';
+/**
+ * El id del contenido de la ruta, compartido por los tres cascarones.
+ *
+ * Es un contrato entre tres sitios que no se ven entre sí —el `<main>` que lo lleva, el ancla del
+ * salto al contenido que apunta a él y este hook que lo busca— y los tres fallan **en silencio** si
+ * se desalinean: el salto lleva a ninguna parte y el foco de ruta no se mueve, sin que nada avise.
+ * Escrito una vez, eso no puede pasar.
+ */
+export const MAIN_CONTENT_ID = 'main-content';
 
 /**
  * Mueve el foco al contenido cada vez que cambia la ruta.

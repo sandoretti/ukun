@@ -4,7 +4,7 @@ import { Link, Outlet } from 'react-router-dom';
 import { Container, Navbar } from 'react-bootstrap';
 
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
-import { useRouteFocus } from '../shared/hooks/useRouteFocus';
+import { MAIN_CONTENT_ID, useRouteFocus } from '../shared/hooks/useRouteFocus';
 import { BrandMark } from '../shared/ui/BrandMark';
 import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher';
 import { LoadingState } from '../shared/ui/LoadingState';
@@ -45,7 +45,7 @@ export function AuthLayout() {
         </Navbar>
       </header>
 
-      <main id="main-content" tabIndex={-1} className="auth-shell__main">
+      <main id={MAIN_CONTENT_ID} tabIndex={-1} className="auth-shell__main">
         <Suspense fallback={<LoadingState />}>
           <Outlet />
         </Suspense>

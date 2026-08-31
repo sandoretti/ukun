@@ -6,7 +6,7 @@ import { SessionMenu } from '../features/auth/components/SessionMenu';
 import { useRestoreReturnTo } from '../features/auth/useRestoreReturnTo';
 import { CartIndicator } from '../features/cart/components/CartIndicator';
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
-import { useRouteFocus } from '../shared/hooks/useRouteFocus';
+import { MAIN_CONTENT_ID, useRouteFocus } from '../shared/hooks/useRouteFocus';
 import { LoadingState } from '../shared/ui/LoadingState';
 import { SiteFooter } from '../shared/ui/SiteFooter';
 import { SiteHeader } from '../shared/ui/SiteHeader';
@@ -30,7 +30,7 @@ export function AppLayout() {
     <div className="d-flex flex-column min-vh-100">
       {/* Primer tabulador de la página: con una barra que lleva navegación, buscador e idioma, saltar
           al contenido ahorra media docena de paradas en cada ruta. Solo se ve al enfocarlo. */}
-      <a href="#main-content" className="skip-link">
+      <a href={`#${MAIN_CONTENT_ID}`} className="skip-link">
         {t('nav.skipToContent')}
       </a>
 
@@ -48,7 +48,7 @@ export function AppLayout() {
       </header>
 
       {/* Sin `Container` aquí: el ancho lo decide cada pantalla, porque la de inicio va a sangre. */}
-      <main id="main-content" tabIndex={-1} className="flex-grow-1">
+      <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-grow-1">
         <Suspense fallback={<LoadingState />}>
           <Outlet />
         </Suspense>
