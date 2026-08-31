@@ -194,6 +194,12 @@ SQL
 # LocalFileSystemStorage, mientras que los del changelog demo son `mesa-madera.jpg` y demás— y solo
 # los que ya no referencia ninguna fila de `product`. Eso arrastra también las de ejecuciones
 # anteriores a este script.
+#
+# El directorio es el de ESTE checkout, igual que la base es la del proyecto de compose de este
+# checkout: las dos mitades de la limpieza tienen que mirar al mismo stack. Es coherente porque el
+# bind mount de `compose.yaml` es relativo (`./resources/uploads`), así que un worktree con su
+# propio stack tiene su propio directorio; y si el worktree NO tiene stack propio, la comprobación
+# de `db` de más arriba ya ha parado el script antes de llegar aquí.
 uploads_dir="$repo_root/resources/uploads"
 removed_images=0
 if [[ -d $uploads_dir ]]; then
