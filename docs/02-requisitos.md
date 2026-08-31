@@ -3,7 +3,7 @@
 > **Fuente de verdad de:** qué debe hacer el sistema (RF-01…RF-13), la matriz de permisos y los requisitos no funcionales.
 > **Léelo si:** vas a implementar un endpoint o una pantalla y necesitas saber qué comportamiento exacto se espera.
 > **No decide:** cómo se implementa (skills, `03-analisis-y-patrones.md`), ni la forma del contrato REST (`docs/api/openapi/`).
-> **Es el documento que sobrevive al legacy:** el código de `ukun-clientes`/`ukun-empleados` se borra; estos requisitos no.
+> **Es el documento que sobrevive al legacy:** el código de `ukun-clientes`/`ukun-empleados` ya se ha borrado; estos requisitos no.
 
 Extraídos leyendo los controllers, servicios y plantillas de `ukun-clientes` y `ukun-empleados` — no son aspiracionales, son lo que la aplicación legacy realmente hace. Sirven de base para el inventario de endpoints y el OpenAPI de v0.1. Donde el comportamiento actual es un bug y no una regla de negocio, se marca explícitamente para que **no** se traslade tal cual.
 
@@ -51,7 +51,7 @@ Extraídos leyendo los controllers, servicios y plantillas de `ukun-clientes` y 
 ### RF-07 Autenticación de cliente
 - Login por correo + contraseña. Logout.
 
-## 2. Requisitos funcionales — back-office (hoy `ukun-empleados`)
+## 2. Requisitos funcionales — back-office (el legacy `ukun-empleados`, borrado en v0.7)
 
 ### RF-08 Autenticación de empleado
 - Login por correo + contraseña. Logout.

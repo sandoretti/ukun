@@ -13,5 +13,5 @@ plugins {
     alias(libs.plugins.spring.boot) apply false
 }
 
-// El legacy que queda (ukun-empleados) no es subproyecto de este build: sigue en Maven con su propio
-// mvnw hasta que se borre en v0.7 (docs/04-roadmap.md, ADR-0001).
+// Aquí no hay más subproyectos que los de services/ y test-support/: el legacy nunca formó parte de
+// este build y desde v0.7 tampoco está en el árbol (ADR-0001, ADR-0021).

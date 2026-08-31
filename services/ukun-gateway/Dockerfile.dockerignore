@@ -19,9 +19,6 @@
 .env.*
 
 # Everything outside the new services.
-ukun-empleados/
-nginx/
-database/
 resources/
 scripts/
 docs/
@@ -30,7 +27,6 @@ apps/
 tilt_modules/
 Tiltfile
 compose*.yaml
-docker-compose*.yml
 *.md
 
 # The other projects' sources. Their build scripts are still needed to configure the build and are

@@ -1,6 +1,0 @@
-# Docker usa este fichero (no el .dockerignore general, que excluye target/) cuando
-# se construye con -f Dockerfile.dev — es lo que necesita target/classes y
-# target/dependency dentro del contexto de build.
-*
-!target/classes/**
-!target/dependency/**

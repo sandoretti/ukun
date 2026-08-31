@@ -9,7 +9,7 @@ Decisión base (ver `adr/0002-frontend-react-bootstrap.md`): **react-bootstrap**
 
 ## Qué se hereda y qué se corrige del diseño actual
 
-> Las rutas de `ukun-clientes/` de este apartado ya no están en el árbol: el módulo se borró en v0.6 (issue #40) y se lee en el tag `v0.0-legacy`. El tema nuevo ya no hereda nada de él salvo la tipografía, que está en `resources/`.
+> Ninguna de las rutas legacy de este apartado sigue en el árbol: `ukun-clientes/` se borró en v0.6 (issue #40) y `ukun-empleados/` en v0.7 (issue #50), y las dos se leen en el tag `v0.0-legacy`. El tema nuevo no hereda nada de ellos salvo la tipografía: el `.woff2` que sirve el SPA está en `apps/ukun-web/src/assets/fonts/`, y el `.otf` original se rescató del legacy antes de borrarlo y vive en `resources/fonts/`, junto a los originales de marca de `resources/logo/`.
 
 El CSS actual (`ukun-clientes/static/css/styles.css` y `ukun-empleados/static/css/styles.css`) son dos ficheros distintos con **dos paletas verdes distintas** (`#365a08`/`#e5f6db` en uno, `#5d9d0b`/`#456e0f`/`#E9F5D8` en otro), colores repetidos literalmente en vez de variables, y un color de marca puesto inline (`style="background-color: #5d9d0b"` en el layout de empleados). Se unifica en un único tema.
 

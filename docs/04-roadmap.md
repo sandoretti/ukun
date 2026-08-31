@@ -34,7 +34,7 @@ Cerrar issues desde los commits (`closes #42`) mantiene la barra de progreso del
 
 ## Punto de partida: no hay nada corriendo
 
-`ukun-clientes` y `ukun-empleados` **no están en servicio**. Están en el repo como especificación ejecutable de qué hace el negocio y como catálogo de defectos a no repetir — nada más. (`ukun-clientes/` ya se borró, en v0.6; se lee en el tag `v0.0-legacy`.) Esto tiene tres consecuencias que atraviesan todo el plan:
+`ukun-clientes` y `ukun-empleados` **no estuvieron en servicio** en ningún momento de este plan. Estuvieron en el repo como especificación ejecutable de qué hace el negocio y como catálogo de defectos a no repetir — nada más. (Ya no están: `ukun-clientes/` se borró en v0.6 y `ukun-empleados/` en v0.7; los dos se leen en el tag `v0.0-legacy`.) Esto tiene tres consecuencias que atraviesan todo el plan:
 
 - **No hay estrategia de convivencia.** Ni *strangler fig*, ni enrutado por path entre legacy y nuevo, ni feature flags de infraestructura. Se construye el sistema nuevo y punto.
 - **No hay migración de datos ni de esquema.** El esquema nace completo y en inglés en su baseline de Liquibase (`10-modelo-de-datos.md` §8, ADR-0018); no hay renombrados escalonados ni restricciones que entren en dos pasos por compatibilidad.
@@ -204,7 +204,7 @@ Aquí vive el trabajo de dominio serio: agregado `Order` con sus invariantes, bl
 **SINC-4**: smokes de Playwright del recorrido cliente en verde → paridad declarada.
 
 ### v0.7 — Back-office completo
-*Salida: paridad funcional con `ukun-empleados` — se borran `ukun-empleados/`, `nginx/`, `database/` y los composes legacy del repo.*
+*Salida: paridad funcional con `ukun-empleados` — declarada en SINC-5, y con ella se borraron `ukun-empleados/`, `nginx/`, `database/` y los composes legacy del repo (issue #50).*
 
 Paralelizable: **stock** · **CRUD de productos + tipos de producto + subida de imagen** · **gestión de empleados**. Los tres son independientes entre sí; dentro del segundo, el CRUD de tipos (RF-13) va **antes** que el de productos, porque dar de alta un producto exige elegir un tipo y es la primera pantalla que necesita el admin en una base recién creada.
 
@@ -214,7 +214,7 @@ Aquí entra también la tabla `audit_log` en uso (`11-observabilidad-y-logging.m
 
 ### v1.0 — Endurecimiento
 
-Sin funcionalidad nueva. CI (build + tests + check de deriva de OpenAPI + escaneo de dependencias), observabilidad (Actuator + Micrometer + OTLP), rate limiting en el gateway, accesibilidad y estados vacío/carga/error en React, despliegue en **Azure Container Apps** con infraestructura efímera descrita en Bicep (ADR-0023 — sustituye al despliegue Azure del legacy, no lo recupera), `docker-compose-azure.yml` borrado, documentación y ADRs al día.
+Sin funcionalidad nueva. CI (build + tests + check de deriva de OpenAPI + escaneo de dependencias), observabilidad (Actuator + Micrometer + OTLP), rate limiting en el gateway, accesibilidad y estados vacío/carga/error en React, despliegue en **Azure Container Apps** con infraestructura efímera descrita en Bicep (ADR-0023 — sustituye al despliegue Azure del legacy, no lo recupera), documentación y ADRs al día. El `docker-compose-azure.yml` que este release listaba ya no está: se fue en v0.7 con el resto de los composes legacy.
 
 ### v1.1+ / v2.0 — Post-paridad
 *Ya no es refactor, es evolución de producto.*

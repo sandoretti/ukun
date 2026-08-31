@@ -21,7 +21,7 @@ caso normal de un checkout único. Solo se tocan al levantar dos stacks a la vez
 
 `ukun-api` monta además `resources/uploads/` del repo en `/opt/resources/uploads`, que es de donde el módulo `storage` sirve `GET /media/products/{key}` — las fotos de los productos demo. **Desde v0.7 el bind ya no es de solo lectura**: la subida de RF-10 (`PUT /api/admin/products/{id}/image`) escribe ahí, así que trabajar con el back-office deja fotos nuevas en tu copia del repo. Las nombra el servidor con un UUID y `.gitignore` las ignora por esa forma, de modo que no ensucian el `git status` ni tapan a las demo. Es un bind mount de `compose.yaml`, no del override de desarrollo, así que **cambiarlo obliga a recrear el contenedor**: el live update sincroniza clases y recursos, no volúmenes.
 
-El monolito legacy que queda (`ukun-empleados`, con `nginx`) **no forma parte de este stack**: no está en servicio y no se levanta. Sus `docker-compose*.yml` siguen en el repo como referencia hasta que se borran (`04-roadmap.md` v0.7). `ukun-clientes` ya no está: se borró en v0.6 (issue #40).
+Ya no hay nada legacy con lo que convivir: `ukun-empleados`, `nginx/`, `database/` y los tres `docker-compose*.yml` se borraron en v0.7 al declarar la paridad del back-office (issue #50), como `ukun-clientes` en v0.6 (issue #40). Todo eso se lee en el tag `v0.0-legacy`. Este stack es el sistema nuevo entero y nada más.
 
 ## Instalación (una vez, Fedora, sin root)
 

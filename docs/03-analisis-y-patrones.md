@@ -5,9 +5,9 @@
 > **No decide:** cómo se escribe un test (`13-testing.md`), ni el registro de errores (`12-error-contract.md`), ni el esquema (`10-modelo-de-datos.md`).
 > **Los números de defecto de §1 son estables** y se citan desde el resto de documentos y desde las skills — no los renumeres.
 
-Cada patrón de esta lista está aquí porque resuelve un defecto **real y localizado** del código legacy, no porque sea buena práctica en abstracto. Las rutas son relativas a la raíz del repo. El legacy no está en marcha: esta lista es la especificación de qué **no** reproducir, no un plan de arreglo in situ.
+Cada patrón de esta lista está aquí porque resuelve un defecto **real y localizado** del código legacy, no porque sea buena práctica en abstracto. Las rutas son relativas a la raíz del repo. El legacy nunca estuvo en marcha durante el refactor: esta lista es la especificación de qué **no** reproducir, no un plan de arreglo in situ.
 
-> **Las rutas de `ukun-clientes/` que se citan abajo ya no están en el árbol.** El módulo se borró en v0.6 al declarar la paridad del recorrido de cliente (issue #40, ADR-0007); se lee en el tag `v0.0-legacy`. Los defectos y sus números siguen valiendo igual: la traza al fichero de origen es lo que hace verificable cada uno.
+> **Ninguna de las rutas legacy que se citan abajo sigue en el árbol.** `ukun-clientes/` se borró en v0.6 al declarar la paridad del recorrido de cliente (issue #40) y `ukun-empleados/` en v0.7 al declarar la del back-office (issue #50), y con él `nginx/nginx.conf` y `database/init.sql` (ADR-0007). Todo se lee en el tag `v0.0-legacy`. Los defectos y sus números siguen valiendo igual, y las rutas se conservan a propósito: la traza al fichero de origen es lo que hace verificable cada uno, y reescribirlas para que parezca que el legacy nunca existió destruiría justo eso.
 
 ## 1. Defectos concretos encontrados (referencia)
 
