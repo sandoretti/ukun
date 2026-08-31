@@ -39,6 +39,7 @@
   },
   "indicator": {
     "label_one": "Carrito, {{count}} unidad",
-    "label_other": "Carrito, {{count}} unidades"
+    "label_other": "Carrito, {{count}} unidades",
+    "labelUnknown": "Carrito"
   }
 }

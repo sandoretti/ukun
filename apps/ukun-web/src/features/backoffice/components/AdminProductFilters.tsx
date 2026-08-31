@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useProductTypes } from '../../../shared/api/productTypes';
 import type { FilterChip } from '../../../shared/ui/ActiveFilterChips';
+import { ErrorState } from '../../../shared/ui/ErrorState';
 import { FilterToolbar } from '../../../shared/ui/FilterToolbar';
 import { SearchField } from '../../../shared/ui/SearchField';
 import { SelectField } from '../../../shared/ui/SelectField';
@@ -151,6 +152,12 @@ export function AdminProductFilters({ filters, onChange, onClear }: AdminProduct
           </option>
         ))}
       </SelectField>
+
+      {/* La lista cerrada de tipos no llegó, así que el desplegable de arriba solo ofrece
+          «cualquiera» y filtrar por tipo es imposible. Se dice, en vez de dejar un control que
+          aparenta estar completo: es el mismo trato que `ProductFields` le da al mismo hook, y el
+          caso suelto que `docs/07-frontend-ux-ui.md` §Estados reserva para lo que no es una lista. */}
+      {types.isError && <ErrorState error={types.error} />}
     </FilterToolbar>
   );
 }

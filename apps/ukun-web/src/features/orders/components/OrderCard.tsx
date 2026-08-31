@@ -41,7 +41,7 @@ export function OrderCard({ order }: OrderCardProps) {
         </Badge>
       </div>
 
-      <p className="text-body-secondary small mb-0 mt-1">
+      <p className="text-body-secondary small text-tabular-nums mb-0 mt-1">
         {t('card.placedAt', { date: formatDate(order.placedAt, locale) })} ·{' '}
         {t('card.units', { count: units })}
       </p>

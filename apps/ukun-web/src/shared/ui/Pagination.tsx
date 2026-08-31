@@ -37,7 +37,7 @@ export function Pagination({ page, totalPages, label, onPageChange }: Pagination
       <Button variant="outline-primary" onClick={() => onPageChange(page - 1)} disabled={page <= 1}>
         {t('pagination.previous')}
       </Button>
-      <p className="mb-0 text-body-secondary" aria-live="polite">
+      <p className="mb-0 text-body-secondary text-tabular-nums" aria-live="polite">
         {t('pagination.status', { page, totalPages })}
       </p>
       <Button

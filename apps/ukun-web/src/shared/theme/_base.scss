@@ -10,9 +10,46 @@
   outline-offset: 2px;
 }
 
+// La regla de arriba, por sí sola, no llegaba a pintarse en ningún control de la aplicación.
+//
+// Bootstrap anula el contorno de sus propios componentes (`outline: 0`) y lo sustituye por un
+// `box-shadow` difuso derivado del color de marca. Ese sustituto, compuesto sobre blanco, mide
+// 1.44:1 — muy por debajo del 3:1 que exige un indicador de foco—, y sus selectores (`.btn:focus-
+// visible`, 0-2-0) ganan por especificidad al `:focus-visible` desnudo (0-1-0). Resultado: botones,
+// campos, selects, checkboxes, acordeón y la X de todos los diálogos se quedaban con un halo verde
+// casi imperceptible en vez del anillo de 8.01:1 que el tema define para todo lo demás.
+//
+// Aquí se recupera igualando esa especificidad. No hace falta `!important` ni subir a 0-3-0: este
+// parcial se carga después de `bootstrap` en `index.scss`, y a igual peso gana la última regla.
+// El halo de Bootstrap se conserva —suma, no estorba—; lo que se repone es el contorno.
+//
+// Ojo con `:focus-visible` y no `:focus`: varias de estas reglas de Bootstrap usan `:focus` a secas,
+// que dibuja el foco también al pulsar con el ratón. Eso es justo lo que §Accesibilidad prohíbe, así
+// que el contorno se repone solo para el foco de teclado y en el resto de casos no se pinta nada.
+.btn:focus-visible,
+.btn-check:focus-visible + .btn,
+.btn-close:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible,
+.form-range:focus-visible,
+.accordion-button:focus-visible,
+.nav-link:focus-visible,
+.navbar-toggler:focus-visible,
+.dropdown-item:focus-visible,
+.page-link:focus-visible {
+  outline: 2px solid tokens.$primary-hover;
+  outline-offset: 2px;
+}
+
 // Sobre las bandas verdes oscuras ese mismo anillo es invisible: ahí el foco se marca en blanco.
+// La barra de navegación es el tercer caso: lleva el verde de marca de fondo, así que un anillo
+// verde oscuro sobre ella se pierde igual que en el pie.
 .site-footer :focus-visible,
-.closing-cta :focus-visible {
+.closing-cta :focus-visible,
+.navbar[data-bs-theme="dark"] .nav-link:focus-visible,
+.navbar[data-bs-theme="dark"] .navbar-toggler:focus-visible,
+.navbar[data-bs-theme="dark"] .navbar-brand:focus-visible {
   outline-color: tokens.$on-dark;
 }
 

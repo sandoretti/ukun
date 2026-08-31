@@ -31,7 +31,7 @@ export function CatalogLoadMore({ loaded, total, hasMore, isLoading, failed, onL
 
   return (
     <div className="d-flex flex-column align-items-center gap-2 mt-5">
-      <p className="mb-0 text-body-secondary" aria-live="polite">
+      <p className="mb-0 text-body-secondary text-tabular-nums" aria-live="polite">
         {t('loadMore.progress', { loaded, total })}
       </p>
       {failed && (

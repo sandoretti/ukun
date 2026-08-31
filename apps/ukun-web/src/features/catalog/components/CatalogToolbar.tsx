@@ -53,7 +53,7 @@ export function CatalogToolbar({
             )}
           </Button>
           {/* The count moves under the user's feet as they filter, so it is announced. */}
-          <p className="mb-0 text-body-secondary" aria-live="polite">
+          <p className="mb-0 text-body-secondary text-tabular-nums" aria-live="polite">
             {totalElements === undefined ? '' : t('results', { count: totalElements })}
           </p>
         </div>

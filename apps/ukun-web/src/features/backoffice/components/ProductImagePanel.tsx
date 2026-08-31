@@ -150,10 +150,16 @@ export function ProductImagePanel({ product }: ProductImagePanelProps) {
         <Form.Text className="d-block">{t('products.image.rules')}</Form.Text>
       </Form.Group>
 
+      {/* Lo que cambia solo se anuncia, y aquí lo que cambiaba en silencio era el éxito: subir o
+          quitar la foto sustituía la imagen y no decía nada, así que quien no la ve no tenía forma
+          de saber si la operación había terminado — ni siquiera si había llegado a empezar. El fallo
+          sí se contaba desde el principio; faltaba la otra mitad. */}
       <div aria-live="polite">
         {rejection !== null && <Alert variant="warning">{t(`products.image.rejected.${rejection}`)}</Alert>}
         {upload.isError && <ErrorState error={upload.error} />}
         {remove.isError && <ErrorState error={remove.error} />}
+        {upload.isSuccess && <Alert variant="success">{t('products.image.uploaded')}</Alert>}
+        {remove.isSuccess && <Alert variant="success">{t('products.image.removed')}</Alert>}
       </div>
 
       <div className="d-flex flex-wrap gap-2">

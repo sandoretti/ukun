@@ -15,7 +15,8 @@
     "priceFrom": "From",
     "priceTo": "To",
     "activeCount_one": "{{count}} active filter",
-    "activeCount_other": "{{count}} active filters"
+    "activeCount_other": "{{count}} active filters",
+    "failed": "The filters could not be loaded."
   },
   "chips": {
     "name": "“{{value}}”",
@@ -43,6 +44,8 @@
   },
   "viewer": {
     "title": "Photo of {{name}}",
+    "frame": "Zoomable image of {{name}}. Use the arrow keys to pan.",
+    "enlarge": "Enlarge the photo of {{name}}",
     "close": "Close the photo",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",

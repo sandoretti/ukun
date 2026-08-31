@@ -15,6 +15,15 @@ export type SearchSuggestion = {
 type SearchBoxProps = {
   /** Accessible name of the field and of the suggestion list. Rendered visually hidden. */
   label: string;
+  /**
+   * Accessible name of the `search` landmark, when it has to differ from `label`.
+   *
+   * It exists because the landing page carries **two** of these — the one in the bar and the one it
+   * leads with — and they are the same search, so naming both from `label` gives the page two search
+   * regions called the same thing, which is one region as far as anybody listing them is concerned.
+   * The field keeps its own label in both: what changes is which of the two you are being sent to.
+   */
+  landmarkLabel?: string;
   submitLabel: string;
   placeholder?: string;
   value: string;
@@ -44,6 +53,7 @@ type SearchBoxProps = {
  */
 export function SearchBox({
   label,
+  landmarkLabel,
   submitLabel,
   placeholder,
   value,
@@ -78,7 +88,11 @@ export function SearchBox({
 
   return (
     <div className={`search-box search-box--${size} ${className}`} onBlur={combobox.handleBlur}>
-      <Form role="search" onSubmit={handleSubmit}>
+      {/* El landmark de búsqueda va nombrado. Sin nombre no es «la búsqueda», es «una búsqueda», y
+          esta convive en la misma página con la del `FilterToolbar`: dos regiones del mismo rol y sin
+          forma de distinguirlas al listarlas. Reutiliza la etiqueta del campo, que es la que ya dice
+          qué se busca aquí — lo detectó axe en el navegador, donde las dos coinciden de verdad. */}
+      <Form role="search" aria-label={landmarkLabel ?? label} onSubmit={handleSubmit}>
         <Form.Label htmlFor={combobox.inputId} className="visually-hidden">
           {label}
         </Form.Label>
@@ -112,6 +126,12 @@ export function SearchBox({
         <div className="search-suggestions">
           <ul id={combobox.listboxId} role="listbox" aria-label={label} className="list-unstyled mb-0">
             {suggestions.map((suggestion, index) => (
+              // El teclado de un combobox ARIA no vive en la opción, vive en el campo:
+              // `handleKeyDown` mueve `aria-activedescendant` y `Enter` selecciona, sin que la lista
+              // reciba el foco nunca. Un manejador de teclas aquí sería código muerto —esta `<li>`
+              // no es alcanzable con el tabulador, por diseño— y la regla no distingue ese patrón de
+              // un `<div onClick>`. El clic es la vía de ratón sobre lo que el teclado ya cubre.
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events
               <li
                 key={suggestion.id}
                 id={combobox.optionId(index)}

@@ -48,7 +48,8 @@ export function SkuFinder({ defaultSku, isSearching, notFound, onSearch }: SkuFi
         hint={t('newLine.sku.hint')}
         type="text"
         autoComplete="off"
-        autoFocus
+        // Sin `autoFocus`, por lo mismo que en `NewProductPage`: es una pantalla, no un diálogo, y
+        // enfocar al montar se salta el salto al contenido.
         // The typed rule comes from zod; "there is no such product" comes from the server. Both land
         // on the same field, which is the one place a field error is painted.
         error={notFound ? t('validation.skuNotFound') : messageOf(errors.sku)}

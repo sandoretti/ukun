@@ -6,6 +6,7 @@ import { SessionMenu } from '../features/auth/components/SessionMenu';
 import { useRestoreReturnTo } from '../features/auth/useRestoreReturnTo';
 import { CartIndicator } from '../features/cart/components/CartIndicator';
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
+import { useRouteFocus } from '../shared/hooks/useRouteFocus';
 import { LoadingState } from '../shared/ui/LoadingState';
 import { SiteFooter } from '../shared/ui/SiteFooter';
 import { SiteHeader } from '../shared/ui/SiteHeader';
@@ -18,6 +19,7 @@ import { SiteHeader } from '../shared/ui/SiteHeader';
 export function AppLayout() {
   const { t } = useTranslation('common');
   useLocaleSync();
+  useRouteFocus();
   // Volver de autenticarse aterriza en `/`, siempre: el destino lo guarda y lo restaura el cliente,
   // y este es el único sitio que lo hace.
   useRestoreReturnTo();
@@ -32,15 +34,21 @@ export function AppLayout() {
         {t('nav.skipToContent')}
       </a>
 
-      {/* El bloque de cuenta se compone aquí: la barra vive en `shared/ui/` y no puede importar de
+      {/* `<header>` de verdad, y no solo la barra: `Navbar` de react-bootstrap renderiza un `<nav>`,
+          así que la página tenía landmark de navegación pero ninguno de cabecera. Quien recorre la
+          página por regiones —que es como se orienta quien no la ve— no encontraba el banner.
+
+          El bloque de cuenta se compone aquí: la barra vive en `shared/ui/` y no puede importar de
           una feature, pero esta capa sí — es la que ya monta las pantallas. */}
-      <SiteHeader>
-        <CartIndicator />
-        <SessionMenu />
-      </SiteHeader>
+      <header>
+        <SiteHeader>
+          <CartIndicator />
+          <SessionMenu />
+        </SiteHeader>
+      </header>
 
       {/* Sin `Container` aquí: el ancho lo decide cada pantalla, porque la de inicio va a sangre. */}
-      <main id="main-content" className="flex-grow-1">
+      <main id="main-content" tabIndex={-1} className="flex-grow-1">
         <Suspense fallback={<LoadingState />}>
           <Outlet />
         </Suspense>

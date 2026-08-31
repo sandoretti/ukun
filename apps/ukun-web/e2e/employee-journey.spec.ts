@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { expectNoA11yViolations, expectVisibleFocusRing, tabFromStart } from './fixtures/a11y';
 import { EMPLOYEE, STORE, commitFilter, openSection, rail, signInAsStaff } from './fixtures/staff';
 
 /** Un SKU con la forma que pide el contrato y que no es de nadie: el buscador tiene que decirlo. */
@@ -82,6 +83,16 @@ test('una empleada gestiona el stock de su tienda y no puede entrar en la admini
     // La tienda está en el título y en ninguna parte de la URL: la resuelve el servidor desde
     // `account_id`, y este recorrido no intenta forzar otra —eso es un IT de backend—.
     await expect(page.getByRole('heading', { level: 1, name: `Stock de ${STORE}` })).toBeVisible();
+
+    // El back-office tiene cascarón propio (rail, topbar, tabla), así que se audita aparte del de la
+    // tienda: no comparten ni landmarks ni tema.
+    await expectNoA11yViolations(page, 'stock de la tienda');
+
+    // El rail son cuatro a seis paradas antes del contenido en **todas** las pantallas del
+    // back-office; su salto al contenido es el que más ahorra de los tres cascarones.
+    await tabFromStart(page);
+    await expect(page.getByRole('link', { name: 'Saltar al contenido' })).toBeFocused();
+    await expectVisibleFocusRing(page, 'salto al contenido del back-office');
     await expect(page).toHaveURL(/\/backoffice\/stock$/u);
     await expect(page.getByRole('navigation', { name: 'Paginación del stock' })).toBeVisible();
 
@@ -154,6 +165,10 @@ test('una empleada gestiona el stock de su tienda y no puede entrar en la admini
     // El producto queda resuelto antes de que haya nada que crear: el SKU no es un campo más del
     // formulario, es el paso uno.
     await expect(page.getByRole('group', { name: 'Nombre' })).toHaveText(candidate.name);
+
+    // Un formulario del back-office ya resuelto, con su campo, su etiqueta y su mensaje: es la
+    // pantalla donde más cosas hay que nombrar bien.
+    await expectNoA11yViolations(page, 'alta de línea de stock');
     await page.getByLabel(`Unidades en ${STORE}`).fill('7');
     await page.getByRole('button', { name: 'Dar de alta' }).click();
 

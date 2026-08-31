@@ -97,6 +97,11 @@ export function ProductTypeFormModal({ productType, onClose }: ProductTypeFormMo
             hint={t('productTypes.form.nameHint')}
             error={messageOf(errors.name)}
             type="text"
+            // Un nombre de catálogo no es ningún dato del navegador: `off` como el resto de campos
+            // equivalentes del back-office (`SkuFinder`, `NewProductPage`, `ProductFields`).
+            autoComplete="off"
+            // Diálogo: el foco entra a propósito, como en `EditQuantityModal`.
+            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
             spellCheck={false}
             maxLength={NAME_MAX}

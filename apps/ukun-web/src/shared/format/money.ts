@@ -27,3 +27,32 @@ export function formatMoney(amount: Money, locale: string): string {
     // The lib types only accept numeric literals; the runtime accepts any decimal string.
   }).format(amount as `${number}`);
 }
+
+/** Where the currency symbol goes and what it looks like, for the locale in force. */
+export type CurrencyAffix = {
+  symbol: string;
+  /** `es` writes `1.234,00 €`; `en` writes `€1,234.00`. The side is part of the locale, not decoration. */
+  position: 'prefix' | 'suffix';
+};
+
+/**
+ * The currency symbol as a standalone piece, for the one place that cannot use `formatMoney`: an
+ * input the reader is typing an amount **into**, where the symbol is an adornment beside the field
+ * and not part of its value.
+ *
+ * It is asked of `Intl` rather than written down because the side changes with the language — the
+ * catalogue's price filter used to carry a literal `€` after the field, which is right in Spanish
+ * and wrong in English. Reading it from `formatToParts` keeps that decision in the same place as
+ * `formatMoney`'s, so the two can never disagree.
+ */
+export function currencyAffix(locale: string): CurrencyAffix {
+  const parts = new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).formatToParts(0);
+  const index = parts.findIndex((part) => part.type === 'currency');
+
+  return {
+    // `Intl` always emits a currency part for `style: 'currency'`; the fallback is there so a missing
+    // one degrades to the symbol instead of to `undefined` on screen.
+    symbol: index === -1 ? '€' : parts[index].value,
+    position: parts.slice(0, index).some((part) => part.type === 'integer') ? 'suffix' : 'prefix',
+  };
+}

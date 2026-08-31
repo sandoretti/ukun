@@ -45,9 +45,14 @@ export default function OrderDetailPage() {
             {t('detail.back')}
           </Link>
 
+          {/* El rótulo del aviso **no** es un encabezado, aunque lo parezca. Era un `h2`, y como el
+              aviso va antes del `<h1>` del pedido, el documento empezaba por un nivel 2 y bajaba
+              después al 1: quien recorre la página por encabezados aterrizaba en la confirmación
+              creyendo que era el título. El `Alert` ya es `role="alert"` y se anuncia solo, que es lo
+              que tiene que hacer un aviso; el título de la pantalla es el número del pedido. */}
           {justPlaced && (
             <Alert variant="success">
-              <Alert.Heading as="h2" className="h5">
+              <Alert.Heading as="p" className="h5">
                 {t('detail.confirmed')}
               </Alert.Heading>
               <p className="mb-0">{t('detail.confirmedLead')}</p>

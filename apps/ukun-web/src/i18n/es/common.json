@@ -2,6 +2,9 @@
   "title": "Ukun",
   "loading": "Cargando...",
   "empty": "No hay resultados",
+  "list": {
+    "refreshFailed": "No se han podido actualizar los resultados. Sigues viendo los últimos que se cargaron."
+  },
   "nav": {
     "catalog": "Catálogo",
     "stores": "Tiendas",
@@ -59,6 +62,7 @@
   },
   "search": {
     "label": "Buscar productos",
+    "heroLandmark": "Buscar en el catálogo",
     "placeholder": "¿Qué buscas para tu casa?",
     "submit": "Buscar",
     "hint": "Pulsa Intro para ver todos los resultados",

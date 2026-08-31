@@ -288,6 +288,8 @@
       "rules": "JPEG, PNG or WebP, up to 5 MB. The new one replaces the previous one.",
       "upload": "Upload photo",
       "remove": "Remove photo",
+      "uploaded": "Photo updated.",
+      "removed": "Photo removed.",
       "rejected": {
         "type": "That file is not a JPEG, a PNG or a WebP.",
         "size": "That file is over 5 MB."

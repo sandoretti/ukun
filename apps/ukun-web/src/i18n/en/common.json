@@ -2,6 +2,9 @@
   "title": "Ukun",
   "loading": "Loading...",
   "empty": "No results found",
+  "list": {
+    "refreshFailed": "The results could not be updated. You are still seeing the last ones that loaded."
+  },
   "nav": {
     "catalog": "Catalogue",
     "stores": "Stores",
@@ -59,6 +62,7 @@
   },
   "search": {
     "label": "Search products",
+    "heroLandmark": "Search the catalogue",
     "placeholder": "What are you looking for?",
     "submit": "Search",
     "hint": "Press Enter to see every result",

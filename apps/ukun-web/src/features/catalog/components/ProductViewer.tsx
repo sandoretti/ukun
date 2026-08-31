@@ -59,18 +59,34 @@ export function ProductViewer({ show, onHide, imageUrl, name }: ProductViewerPro
       </Modal.Header>
 
       <Modal.Body className="product-viewer">
+        {/* El marco es dos cosas distintas según el estado, y antes era una sola que no era ninguna
+            de las dos: un `<div tabIndex={0} onClick>` cuyo «pulsa para ampliar» no respondía a
+            ninguna tecla (WCAG 2.1.1) y que, ajustado, era una parada de tabulación sin nombre sobre
+            un contenido que no se podía desplazar porque cabía entero.
+
+            Ajustada, la foto cabe y no hay nada que desplazar: lo único que ofrece es ampliar, y eso
+            es un botón de verdad. Ampliada, desborda y el desplazamiento lo hace el propio marco, que
+            entonces sí tiene que ser enfocable para que las flechas lo muevan — con su rol y su
+            nombre, porque una parada de tabulación anónima no le dice nada a quien no ve la foto. */}
         <div
           ref={frameRef}
           className={`product-viewer__frame${isZoomed ? ' is-zoomed' : ''}`}
           style={{ '--zoom': zoom } as CSSProperties}
-          // Focusable so the arrow keys scroll the enlarged photo — the keyboard's way of panning.
-          tabIndex={0}
-          // Clicking enlarges only from the fitted state: while zoomed the pointer belongs to the
-          // drag, and a click that fired at the end of one would undo what was just being framed.
-          onClick={() => !isZoomed && setLevel(CLICK_LEVEL)}
+          {...(isZoomed
+            ? { role: 'group' as const, 'aria-label': t('viewer.frame', { name }), tabIndex: 0 }
+            : {})}
           {...dragHandlers}
         >
           <img className="product-viewer__image" src={imageUrl} alt={name} />
+
+          {!isZoomed && (
+            <button
+              type="button"
+              className="product-viewer__enlarge"
+              aria-label={t('viewer.enlarge', { name })}
+              onClick={() => setLevel(CLICK_LEVEL)}
+            />
+          )}
         </div>
 
         <div className="product-viewer__controls">

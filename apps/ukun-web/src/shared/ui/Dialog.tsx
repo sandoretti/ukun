@@ -39,7 +39,12 @@ export function Dialog({ title, closeLabel, onClose, children }: DialogProps) {
   return (
     <Modal show onHide={onClose} centered aria-labelledby={titleId}>
       <Modal.Header closeButton closeLabel={closeLabel}>
-        <Modal.Title id={titleId} className="h5">
+        {/* `as="h2"` y no el `<div>` que `Modal.Title` renderiza por defecto. Nombrar el diálogo ya
+            lo hacía el `aria-labelledby`, pero el título no existía en el árbol de encabezados: el
+            contenido del diálogo colgaba del `<h1>` de la pantalla de detrás, así que un `<h3>` en el
+            cuerpo —`DeleteProductTypeModal`— era un salto de nivel. Con el título como `h2` la
+            jerarquía vuelve a ser continua, y quien navega por encabezados encuentra el diálogo. */}
+        <Modal.Title as="h2" id={titleId} className="h5">
           {title}
         </Modal.Title>
       </Modal.Header>

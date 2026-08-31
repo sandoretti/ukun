@@ -52,8 +52,10 @@ describe('StoresPage', () => {
     expect(within(gijon).getByText('Gijón · Asturias')).toBeDefined();
 
     // The dialler gets the raw E.164 value; the reader gets it grouped. The accessible name says
-    // which store is being called, so a list of links is not five identical numbers.
-    const call = within(gijon).getByRole('link', { name: 'Llamar a Ukun Gijón' });
+    // which store is being called, so a list of links is not five identical numbers — and it carries
+    // the number as well, because a name that replaces the visible text instead of containing it is
+    // what breaks voice control (WCAG 2.5.3).
+    const call = within(gijon).getByRole('link', { name: 'Llamar a Ukun Gijón, +34 900 000 002' });
     expect(call.getAttribute('href')).toBe('tel:+34900000002');
     expect(call.textContent).toBe('+34 900 000 002');
   });
@@ -88,7 +90,7 @@ describe('StoresPage', () => {
     ).toBeDefined();
     // It still carries what RF-02 asks a public listing for.
     expect(within(online).getByText('Polígono de Asipo, nave 12')).toBeDefined();
-    expect(within(online).getByRole('link', { name: 'Llamar a Ukun Online' })).toBeDefined();
+    expect(within(online).getByRole('link', { name: /^Llamar a Ukun Online, / })).toBeDefined();
     // Orders are served from it (RF-04), so what follows from reading it is the catalogue.
     expect(within(online).getByRole('link', { name: /Ver el catálogo/ }).getAttribute('href')).toBe('/products');
     // No route to walk to: it is a warehouse, and the grid's "how to get there" is not offered here.

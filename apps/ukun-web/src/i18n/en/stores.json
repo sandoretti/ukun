@@ -22,7 +22,7 @@
   },
   "card": {
     "region": "{{city}} · {{province}}",
-    "call": "Call {{store}}",
+    "call": "Call {{store}}, {{phone}}",
     "directions": "Get directions",
     "directionsLabel": "Get directions to {{store}} (opens in a new tab)"
   }
