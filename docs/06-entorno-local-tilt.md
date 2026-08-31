@@ -49,7 +49,7 @@ Al ejecutar `tilt up` se abre `http://localhost:10350`: cada servicio aparece co
 
 Con el stack arriba, `http://localhost:8080` sirve la aplicación completa a través del gateway. Las cuentas de prueba las siembra el changelog de Liquibase con `context: demo` (skill `liquibase`), ya con contraseña hasheada — nunca en texto plano, a diferencia del `database/init.sql` legacy.
 
-**Las 14 cuentas demo comparten contraseña: `ukun-demo-2026`.** Este documento es el único sitio donde aparece en claro; en `ukun_auth` solo existe su hash de BCrypt. Una de cada rol, para entrar rápido:
+**Las 14 cuentas demo comparten contraseña: `ukun-demo-2026`.** En `ukun_auth` solo existe su hash de BCrypt; en claro aparece aquí y en `apps/ukun-web/e2e/fixtures/staff.ts`, que es donde los smokes de Playwright entran con las dos cuentas de trabajo. No es un secreto que proteger —siembra un stack local y no existe fuera de él—, pero si alguna vez lo fuera, esos son los dos sitios que hay que tocar. Una de cada rol, para entrar rápido:
 
 | Rol | Correo |
 |---|---|
