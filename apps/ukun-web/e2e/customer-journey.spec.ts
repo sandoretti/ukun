@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-import { newCustomer, signIn, signUp, useSpanish } from './fixtures/customer';
+import { newCustomer, signUp } from './fixtures/customer';
+import { signIn, useSpanish } from './fixtures/session';
 
 /**
  * El recorrido de cliente completo, de punta a punta y contra el sistema de verdad: alta → catálogo
