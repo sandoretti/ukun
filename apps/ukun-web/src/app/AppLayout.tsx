@@ -8,6 +8,7 @@ import { CartIndicator } from '../features/cart/components/CartIndicator';
 import { useLocaleSync } from '../shared/hooks/useLocaleSync';
 import { MAIN_CONTENT_ID, useRouteFocus } from '../shared/hooks/useRouteFocus';
 import { LoadingState } from '../shared/ui/LoadingState';
+import { RouteErrorBoundary } from '../shared/ui/RouteErrorBoundary';
 import { SiteFooter } from '../shared/ui/SiteFooter';
 import { SiteHeader } from '../shared/ui/SiteHeader';
 
@@ -49,9 +50,13 @@ export function AppLayout() {
 
       {/* Sin `Container` aquí: el ancho lo decide cada pantalla, porque la de inicio va a sangre. */}
       <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-grow-1">
-        <Suspense fallback={<LoadingState />}>
-          <Outlet />
-        </Suspense>
+        {/* El borde va aquí dentro: si una pantalla no se monta, lo que se sustituye es la
+            pantalla, no el cascarón. La barra y el pie siguen ahí, y con ellos la salida. */}
+        <RouteErrorBoundary>
+          <Suspense fallback={<LoadingState />}>
+            <Outlet />
+          </Suspense>
+        </RouteErrorBoundary>
       </main>
 
       <SiteFooter />

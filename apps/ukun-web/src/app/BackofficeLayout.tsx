@@ -11,6 +11,7 @@ import { useLocaleSync } from '../shared/hooks/useLocaleSync';
 import { MAIN_CONTENT_ID, useRouteFocus } from '../shared/hooks/useRouteFocus';
 import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher';
 import { LoadingState } from '../shared/ui/LoadingState';
+import { RouteErrorBoundary } from '../shared/ui/RouteErrorBoundary';
 import { BackofficeRail } from './BackofficeRail';
 import { useRailExpanded } from './useRailExpanded';
 
@@ -104,11 +105,13 @@ export function BackofficeLayout() {
           {/* The width is decided once, here, and not eight times: every back-office screen used to
               open with its own `<Container className="py-5">`. */}
           <Container fluid="xxl" className="py-4">
-            <Suspense fallback={<LoadingState />}>
-              <RequireRole role="EMPLOYEE">
-                <Outlet />
-              </RequireRole>
-            </Suspense>
+            <RouteErrorBoundary>
+              <Suspense fallback={<LoadingState />}>
+                <RequireRole role="EMPLOYEE">
+                  <Outlet />
+                </RequireRole>
+              </Suspense>
+            </RouteErrorBoundary>
           </Container>
         </main>
       </div>

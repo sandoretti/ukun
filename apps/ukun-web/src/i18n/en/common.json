@@ -5,6 +5,9 @@
   "list": {
     "refreshFailed": "The results could not be updated. You are still seeing the last ones that loaded."
   },
+  "error": {
+    "reload": "Reload the page"
+  },
   "nav": {
     "catalog": "Catalogue",
     "stores": "Stores",

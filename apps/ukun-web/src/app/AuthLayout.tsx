@@ -8,6 +8,7 @@ import { MAIN_CONTENT_ID, useRouteFocus } from '../shared/hooks/useRouteFocus';
 import { BrandMark } from '../shared/ui/BrandMark';
 import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher';
 import { LoadingState } from '../shared/ui/LoadingState';
+import { RouteErrorBoundary } from '../shared/ui/RouteErrorBoundary';
 
 /**
  * The frame of the sign-in screen: brand, language, and nothing else.
@@ -46,9 +47,11 @@ export function AuthLayout() {
       </header>
 
       <main id={MAIN_CONTENT_ID} tabIndex={-1} className="auth-shell__main">
-        <Suspense fallback={<LoadingState />}>
-          <Outlet />
-        </Suspense>
+        <RouteErrorBoundary>
+          <Suspense fallback={<LoadingState />}>
+            <Outlet />
+          </Suspense>
+        </RouteErrorBoundary>
       </main>
     </div>
   );
