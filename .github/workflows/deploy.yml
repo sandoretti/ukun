@@ -102,7 +102,34 @@ jobs:
             echo "gateway-url=$(jq -r .gatewayUrl.value outputs.json)"
             echo "auth-url=$(jq -r .authUrl.value outputs.json)"
             echo "static-ip=$(jq -r .environmentStaticIp.value outputs.json)"
+            echo "storage-account=$(jq -r .storageAccountName.value outputs.json)"
           } >> "$GITHUB_OUTPUT"
+
+      # Las fotos de producto, al share que ukun-api monta en /opt/resources/uploads.
+      #
+      # No van dentro de ninguna imagen y no es un descuido: `product.image_key` es una clave de
+      # almacenamiento, no una ruta (docs/08 §5), y el adaptador de `FileStoragePort` la resuelve
+      # contra un directorio que en v1.1 pasa a ser un bucket (issue #57). Meterlas en la imagen del
+      # API las volvería inmutables y haría de la subida de RF-10 una excepción al mismo mecanismo.
+      #
+      # Son las 24 de `resources/uploads`, que es exactamente el conjunto al que apuntan las
+      # `image_key` de los 100 productos del changelog demo — cada tipo reutiliza las suyas. Sin este
+      # paso el catálogo se pinta entero y cada ficha da un 404 en su foto.
+      #
+      # `upload-batch` sobreescribe, así que redesplegar no duplica nada. Y va después del
+      # despliegue porque el share no existe hasta que la plantilla lo crea; no hace falta reiniciar
+      # nada después, porque el adaptador lee del disco en cada petición.
+      - name: Subir las fotos de producto al share
+        env:
+          ACCOUNT: ${{ steps.deployment.outputs.storage-account }}
+        run: |
+          KEY=$(az storage account keys list --account-name "$ACCOUNT" \
+                  --resource-group "$RESOURCE_GROUP" --query '[0].value' -o tsv)
+          az storage file upload-batch \
+            --account-name "$ACCOUNT" --account-key "$KEY" \
+            --destination uploads --source resources/uploads \
+            --no-progress --output none
+          echo "Subidas $(find resources/uploads -type f | wc -l) imágenes al share."
 
       # El despliegue devuelve control en cuanto ACA acepta la revisión, no cuando la aplicación
       # responde: por delante quedan el arranque de tres JVM y las migraciones de Liquibase sobre tres
@@ -128,6 +155,11 @@ jobs:
           curl -sf "$GATEWAY/api/products?page=0&size=1" > /dev/null
           # El documento de descubrimiento, que es lo que dice si el `iss` quedó bien compuesto.
           test "$(curl -sf "$AUTH/.well-known/openid-configuration" | jq -r .issuer)" = "$AUTH"
+          # Una foto de producto, que recorre entera la cadena que nada más prueba: el share de Azure
+          # Files montado, sus permisos de uid/gid, y la ruta /media/** que el gateway enruta hacia el
+          # módulo `storage` de ukun-api (ADR-0017 §1). `mesa-madera.jpg` es la del primer producto
+          # del changelog demo.
+          test "$(curl -sf -o /dev/null -w '%{content_type}' "$GATEWAY/media/products/mesa-madera.jpg")" = "image/jpeg"
 
       - name: Resumen
         run: |

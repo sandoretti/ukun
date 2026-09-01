@@ -98,3 +98,32 @@ El grupo `ukun-demo` queda creado y **vacío**, que no cuesta nada: `deploy.yml`
 Las tres imágenes están publicadas en GHCR desde el commit `c4dee40` —el job `images` corrió en verde en el CI de `main`— pero **los tres paquetes son privados**: un `GET` anónimo a su manifiesto devuelve `403`. Container Apps no podría bajarlas. Cambiar la visibilidad de un paquete **no tiene endpoint en la API REST de GitHub**: se hace en la página del paquete, una vez por paquete y para siempre.
 
 Y falta que el contenido del despliegue llegue a la rama por defecto, que es de lo que va el PR #178.
+
+## 2026-09-01 · Primer despliegue, y el entorno sembrado
+
+**El despliegue funcionó a la primera**, con los nueve pasos de `deploy.yml` en verde. Lo que eso valida de golpe, y no se podía comprobar de otra forma:
+
+- **El OIDC federado.** `azure/login` en verde es la credencial federada, su `--subject` sobre `main` y el rol Contributor, los tres a la vez.
+- **`azure.extensions` llegó a tiempo.** Si no, Liquibase no habría arrancado y el gateway no habría respondido `UP`.
+- **Los tiempos de la sonda de arranque bastaron** con los valores puestos a ojo (20 s de gracia, 30 fallos a 10 s).
+- **El firewall a los servicios de Azure deja pasar a las apps**, así que no hizo falta el rodeo por la IP saliente para el primer arranque.
+- **El `iss` compuesto por Bicep desde `defaultDomain` coincide** con el que publica el Authorization Server en su documento de descubrimiento. Era el punto donde ADR-0023 temía tener que desplegar dos veces, y no hizo falta.
+
+URLs del entorno (cambian con cada despliegue, que es el corolario incómodo de ADR-0023):
+
+| | |
+|---|---|
+| Aplicación | `https://ukun-gateway.ashydesert-78fc288a.francecentral.azurecontainerapps.io` |
+| Authorization Server | `https://ukun-auth.ashydesert-78fc288a.francecentral.azurecontainerapps.io` |
+| `ukun-api` | `ukun-api.internal.…` — interno, no alcanzable desde fuera |
+
+Comprobado a mano contra ese entorno: `/` y `/catalog` devuelven el SPA, `/api/products` responde 200 anónimo, `/internal/accounts` sigue en 404 y `http://` redirige a HTTPS con un 301.
+
+### Lo que faltaba para poder probarlo de verdad
+
+El primer despliegue salió **vacío**: `application.yaml` trae `contexts: prod` por defecto —y con razón, porque el modo de fallo de no fijarlo es que producción se siembre sola con cuentas cuya contraseña está escrita en `docs/06`— así que el catálogo no tenía un solo producto y no había con qué iniciar sesión. Dos cambios:
+
+- **`SPRING_LIQUIBASE_CONTEXTS=demo`** en `ukun-api` y `ukun-auth`, desde un parámetro `liquibaseContexts` de la plantilla que admite `demo` o `prod`. Es lo que ADR-0023 ya asumía de este entorno. **Con el aviso escrito al lado:** la contraseña de las catorce cuentas está en el repositorio y el ingress es público, así que quien dé con el FQDN entra como administrador. Se acepta porque no hay ni un dato real y el entorno se destruye al terminar.
+- **Las 24 fotos de producto**, subidas al share de Azure Files por `deploy.yml` con `az storage file upload-batch`, después de desplegar. No van dentro de ninguna imagen a propósito: `image_key` es una clave de almacenamiento y no una ruta, y el adaptador la resuelve contra un directorio que en v1.1 pasa a ser un bucket (issue #57).
+
+El humo gana además una petición que recorre entera la cadena que nada más prueba: `GET /media/products/mesa-madera.jpg` tiene que devolver `image/jpeg`. Eso valida el share montado, sus permisos de uid/gid —el riesgo que quedaba pendiente de las `mountOptions`— y la ruta `/media/**` del gateway hacia el módulo `storage`, todo de una vez.

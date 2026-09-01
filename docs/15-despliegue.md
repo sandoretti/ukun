@@ -171,8 +171,17 @@ Es la tabla que evita el fallo que no da un error claro. La partición que manda
 | `UKUN_API_URI` | gateway | `https://ukun-api.internal.<defaultDomain>`, **sin puerto** | `http://ukun-api:8081` |
 | `SPRING_DATASOURCE_URL` | los tres | FQDN de Postgres + **`?sslmode=require`** | `db:5432` |
 | `SERVER_REACTIVE_SESSION_COOKIE_SECURE` | gateway | `true` | sin definir |
+| `SPRING_LIQUIBASE_CONTEXTS` | api, auth | **`demo`** — parámetro `liquibaseContexts` | lo pone el perfil `dev` |
 | `UKUN_SIGNING_KEY` | auth | secreto de la container app | `.env` |
 | `MANAGEMENT_*_OTLP_*` | los tres | **sin definir** | las pone `compose.dev.yaml` |
+
+### El entorno se siembra con los datos de prueba
+
+`SPRING_LIQUIBASE_CONTEXTS=demo` es lo que hace que este despliegue **no** arranque vacío: el mismo changelog que puebla `tilt up` siembra aquí los 100 productos con sus tipos y su stock, las tiendas, y las **14 cuentas demo, que comparten la contraseña `ukun-demo-2026`** (`06-entorno-local-tilt.md`). Una de cada rol para entrar rápido: `joel.sandoval@email.com` (cliente), `laura.martinez@ukun.com` (empleada), `salvador.oton@ukun.com` (empleado + admin).
+
+Es lo que ADR-0023 asume de este entorno —se levanta para una demo, sus datos son desechables (ADR-0007)—, pero conviene decir lo que implica: **la contraseña está escrita en este repositorio y el ingress es público**, así que quien dé con el FQDN entra como administrador. Se acepta porque aquí no hay ni un dato real y el entorno se destruye al terminar. El día que eso deje de ser cierto, el parámetro `liquibaseContexts` pasa a `prod` y deja de sembrar; el valor por defecto de `application.yaml` ya es ese, así que el cambio es quitar la variable.
+
+**Las fotos de producto no viajan dentro de ninguna imagen.** `product.image_key` es una clave de almacenamiento y no una ruta (`08-identidad-y-seguridad.md` §5), así que las 24 de `resources/uploads` —a las que apuntan las `image_key` de los 100 productos, reutilizadas por tipo— las sube `deploy.yml` al share de Azure Files después de desplegar, con `az storage file upload-batch`. Meterlas en la imagen las volvería inmutables y convertiría la subida de RF-10 en una excepción al mismo mecanismo. Sin ese paso el catálogo se pinta entero y cada ficha da un 404 en su foto.
 
 Cuatro cosas de esa tabla que no son evidentes:
 
@@ -265,6 +274,8 @@ Salida de datos y transacciones de almacenamiento, que a esta escala son ruido. 
 | `401` intermitentes en `ukun-api` | `UKUN_AUTH_ISSUER` no es exactamente la misma cadena en los dos lados. Se compara literalmente |
 | La subida de imágenes falla por permisos sobre un directorio que existe | Las `mountOptions` del volumen de Azure Files. Los contenedores corren como `app` (uid=100, gid=101) y un share SMB aparece con uid/gid 0 |
 | La sesión se pierde al navegar | Falta `SERVER_REACTIVE_SESSION_COOKIE_SECURE=true`, o el navegador está descartando la cookie |
+| El catálogo sale vacío y no hay con qué iniciar sesión | `SPRING_LIQUIBASE_CONTEXTS` no llegó a `demo`, y `application.yaml` trae `prod` por defecto |
+| El catálogo se pinta pero cada foto da 404 | No se subieron las imágenes al share, o se subieron a un subdirectorio: van a la raíz, que es lo que se monta en `/opt/resources/uploads` |
 | Un contenedor se reinicia solo, sin excepción en el log | Se pasó del límite de memoria y ACA lo mató. Mira el dimensionado de §7 antes de buscar una fuga |
 | `429` durante una demo con varias personas | El limitador cuenta por IP y todos salen por la misma NAT. Se sube con `UKUN_GATEWAY_RATELIMIT_API_CAPACITY` (y `UKUN_GATEWAY_RATELIMIT_SIGNUP_CAPACITY`, que son 5 cada 10 minutos y los agotan cinco altas seguidas desde la misma red) |
 | El servicio arranca y no dice «Started …» | Es lo esperado: `root: WARN` en producción apaga los INFO de arranque de Spring (`docs/11` §7). Quien responde por él es `/actuator/health` |
