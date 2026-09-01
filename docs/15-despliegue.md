@@ -30,6 +30,24 @@ Tres contenedores Java y una base de datos — **no cuatro contenedores**: el ga
 
 Nada de esto lo puede hacer un workflow: es lo que crea la identidad con la que el workflow se autentica. Hace falta `az` en la máquina (ADR-0023 ya lo anota como requisito) y ser Owner de la suscripción, que es lo normal en Azure for Students.
 
+### Instalar `az`
+
+En Fedora está en los repositorios de la distribución y no hace falta añadir el de Microsoft:
+
+```bash
+sudo dnf install azure-cli
+```
+
+La extensión de Container Apps **no hace falta para desplegar** —el despliegue es Bicep, y `az deployment group create` es un comando del núcleo—, sí para diagnosticar (`az containerapp logs show`, `az containerapp revision list`):
+
+```bash
+az extension add --name containerapp
+```
+
+El compilador de Bicep se descarga solo la primera vez que se invoca (`az bicep build`). En CI eso lo hace el job `infra` de `ci.yml`.
+
+### Autenticarse y elegir la suscripción
+
 ```bash
 az login
 az account set --subscription <ID de la suscripción>
@@ -104,6 +122,8 @@ gh secret set UKUN_SIGNING_KEY --body "$(openssl genpkey -algorithm RSA -pkeyopt
 Los dos secretos de OAuth2 tienen **dos lectores cada uno** y los dos tienen que coincidir, igual que en local: `UKUN_OAUTH2_GATEWAY_SECRET` lo registra `ukun-auth` y lo presenta el gateway al canjear el código —un desajuste sale como `invalid_client` al final del login, no al arrancar—, y `UKUN_OAUTH2_API_SECRET` es el mismo emparejamiento un salto más allá. La plantilla los pasa a las dos apps de cada par desde el mismo parámetro, así que no se pueden desalinear por descuido.
 
 ## 3. Levantar y actualizar
+
+**Antes del primer despliegue, dos cosas tienen que haber pasado ya, y las dos son consecuencia de cómo funciona GitHub, no del diseño.** Una: `workflow_dispatch` solo aparece en la pestaña Actions si el workflow está en la **rama por defecto**, así que mientras `deploy.yml` viva en una rama de trabajo, el botón «Run workflow» no existe. Dos: el job `images` solo corre en `push` a `main`, así que hasta que eso ocurra no hay ninguna imagen que desplegar — y sus tres paquetes de GHCR se crean **privados**, hay que marcarlos públicos una vez a mano. El orden, entonces, es: mergear a `main` → esperar a que CI publique → marcar los paquetes públicos → desplegar.
 
 Son la misma operación. `deploy.yml` ejecuta el Bicep completo, que es idempotente, y ACA crea una revisión nueva por cada cambio de imagen:
 
