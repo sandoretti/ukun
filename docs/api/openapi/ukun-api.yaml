@@ -2838,6 +2838,7 @@ components:
         - REFERENTIAL_INTEGRITY
         - UNSUPPORTED_MEDIA_TYPE
         - PAYLOAD_TOO_LARGE
+        - RATE_LIMITED
         - INTERNAL_ERROR
 
     ProblemDetail:

@@ -164,7 +164,7 @@ spring-security-test = { module = "org.springframework.security:spring-security-
 # normales con AssertJ, que es lo que exige la skill `testing`.
 archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
 
-# --- Bucket4j (solo ukun-auth) ----------------------------------------------------------------
+# --- Bucket4j (ukun-auth y ukun-gateway) ----------------------------------------------------------------
 bucket4j-core = { module = "com.bucket4j:bucket4j_jdk17-core", version.ref = "bucket4j" }
 
 # --- Solo para :ukun-test-support (versión gestionada por spring-boot-bom) ---------------------

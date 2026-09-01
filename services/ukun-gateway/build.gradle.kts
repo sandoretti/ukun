@@ -36,6 +36,11 @@ dependencies {
     // ReactiveOAuth2AuthorizedClientManager en el contexto, y la del propio cliente.
     implementation(libs.spring.boot.starter.security.oauth2.client)
 
+    // El limitador de tasa de docs/08 §8, el mismo artefacto que ya usa ukun-auth para el límite de
+    // intentos de login. Ojo al nombre: desde 8.10 Bucket4j se publica partido por JDK y el
+    // `bucket4j-core` a secas que sale en cualquier ejemplo antiguo ya no existe (libs.versions.toml).
+    implementation(libs.bucket4j.core)
+
     // Genera spring-configuration-metadata.json para GatewayProperties: sin él el IDE marca
     // `ukun.gateway.api-uri` como propiedad no resuelta.
     annotationProcessor(platform(libs.spring.boot.bom))

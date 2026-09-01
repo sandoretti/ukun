@@ -19,5 +19,6 @@
   "REFERENTIAL_INTEGRITY": "No se puede hacer: hay datos que dependen de esto",
   "UNSUPPORTED_MEDIA_TYPE": "Ese tipo de fichero no se admite",
   "PAYLOAD_TOO_LARGE": "El fichero es demasiado grande",
+  "RATE_LIMITED": "Demasiadas peticiones. Vuelve a intentarlo en {{retryAfterSeconds}} segundos",
   "INTERNAL_ERROR": "Algo ha fallado por nuestra parte. Inténtalo de nuevo"
 }

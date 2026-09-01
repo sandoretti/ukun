@@ -1,6 +1,7 @@
 package dev.sandoretti.ukun.gateway.config;
 
 import java.net.URI;
+import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.unit.DataSize;
 
@@ -54,4 +55,32 @@ public record UkunGatewayProperties(
          * to relax it for Vite's dev server; the other three have one correct value and live in
          * {@code GatewaySecurityConfig}.
          */
-        String contentSecurityPolicy) {}
+        String contentSecurityPolicy,
+
+        /**
+         * The budgets of the rate limiter, {@code docs/08-identidad-y-seguridad.md} §8. They are
+         * configuration rather than constants for one reason and it is not tuning: an integration
+         * test that has to run out of budget cannot afford the production numbers, and a limiter
+         * whose only test is a unit test is a limiter nobody has seen answer over the wire.
+         */
+        RateLimit rateLimit) {
+
+    /**
+     * Two budgets, because one cannot be both lenient and hostile — the same shape as the two
+     * bandwidths of {@code LoginAttemptBuckets} in {@code ukun-auth}, for the same reason.
+     */
+    public record RateLimit(
+            /** Everything under {@code /api/**}. Generous: a person browsing the shop must never see it. */
+            Tier api,
+
+            /**
+             * {@code POST /api/signup} alone. The half of "login and signup" that this service sees:
+             * the login form posts to {@code ukun-auth}'s own origin and never crosses the gateway,
+             * which is why the login budget lives there and is not duplicated here.
+             */
+            Tier signup) {
+
+        /** A capacity that refills whole, once per window — Bucket4j's {@code refillIntervally}. */
+        public record Tier(int capacity, Duration window) {}
+    }
+}

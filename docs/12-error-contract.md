@@ -56,6 +56,7 @@ Aplica a `ukun-api` y a `ukun-auth`; el registro es único y compartido entre lo
 | `EMPTY_CART` | 422 | — | checkout, carrito vacío (RF-04; bug del legacy, no requisito) | v0.6 |
 | `EMAIL_ALREADY_EXISTS` | 409 | — | `ukun-auth`, saga de signup | v0.4 |
 | `REFERENTIAL_INTEGRITY` | 409 | — | red de seguridad: `DataIntegrityViolationException` (SQLState `23503`) que se cuela sin pasar por una comprobación explícita | v0.3 |
+| `RATE_LIMITED` | 429 | `retryAfterSeconds` | limitador de tasa del gateway (`08-identidad-y-seguridad.md` §8) | v1.0 |
 | `INTERNAL_ERROR` | 500 | — | fallback genérico, sin detalle al cliente | v0.3 |
 
 La columna *Release* dice cuándo el `code` **se emite por primera vez**; todos están en el OpenAPI congelado en SINC-1 desde v0.1, porque el frontend genera de ahí el `enum` con el que hace el lookup.
@@ -70,11 +71,12 @@ Ninguno de los dos lo puede provocar el SPA, que solo llama a rutas y verbos gen
 
 **Desde v0.4, a quien no presenta token no le llega ninguno de los dos.** La cadena de filtros del resource server decide antes que el *handler mapping*, así que un anónimo que pide una ruta inexistente —o un verbo de escritura sobre un endpoint de solo lectura— recibe `401 UNAUTHENTICATED`, no `404 RESOURCE_NOT_FOUND` ni `405 METHOD_NOT_ALLOWED`. No es una pérdida a lamentar: responder `404` a un desconocido le confirma qué rutas existen y cuáles no, que es justo lo que busca quien escanea. Los dos códigos siguen intactos para quien está autenticado, y hay un test de cada mitad (`ProductCatalogIT` para el anónimo, `ResourceServerIT` para el portador de un token). Por lo mismo, la fila de `RESOURCE_NOT_FOUND` cubre «también la ruta que no existe» solo dentro de la superficie pública del contrato o con token por delante.
 
-### Tres fronteras que es fácil confundir
+### Cuatro fronteras que es fácil confundir
 
 - **`DUPLICATE_VALUE` frente a `REFERENTIAL_INTEGRITY`**: el segundo es la red de seguridad para una violación de **clave ajena** (`SQLState 23503`) que se cuela sin comprobación previa; el primero es una violación de **unicidad** (`23505`) de un dato de negocio que el caso de uso comprueba *antes* de escribir para poder decir qué campo choca. No son el mismo error con distinto nombre: uno dice "esto está referenciado", el otro "esto ya existe".
 - **`DUPLICATE_VALUE` frente a `EMAIL_ALREADY_EXISTS`**: el correo tiene `code` propio porque su unicidad la impone **otro servicio** (`ukun-auth`) y llega propagada a través de la saga de alta, no de una comprobación local. Ambos se pintan igual en pantalla —bajo el campo del formulario—, pero su origen es distinto y el registro lo refleja.
 - **`PAYLOAD_TOO_LARGE` puede no nacer en `ukun-api`.** Un fichero por encima del límite lo corta el gateway antes de que llegue al servicio, así que ese `ProblemDetail` lo emite el gateway; es el único `code` de esta tabla con dos emisores posibles, y los dos deben producir exactamente la misma forma de respuesta (skill `spring-gateway`). Que el límite del gateway y el de `spring.servlet.multipart.max-file-size` valgan lo mismo es lo que evita reproducir el defecto #17.
+- **`RATE_LIMITED` lo emite solo el gateway, y el 429 del login no es este `code`.** El limitador de intentos de login vive en `ukun-auth` (`08-identidad-y-seguridad.md` §8) y responde un `429` desnudo con `Retry-After`, sin cuerpo: `/login` es una página renderizada del Authorization Server, no una operación de ninguno de los dos OpenAPI, y por eso no la gobierna este contrato — el mismo razonamiento por el que `/media/**` responde un `404` pelado. `/api/**` sí lo es, y ahí el SPA decide qué pinta a partir de `code`: un 429 sin él acabaría en `INTERNAL_ERROR` («algo ha fallado por nuestra parte») para algo que no ha fallado.
 
 `type` sigue el patrón `https://ukun.dev/errors/<kebab-case-del-code>` (p. ej. `INSUFFICIENT_STOCK` → `https://ukun.dev/errors/insufficient-stock`); no hace falta declararlo fila a fila, se deriva mecánicamente del `code`.
 

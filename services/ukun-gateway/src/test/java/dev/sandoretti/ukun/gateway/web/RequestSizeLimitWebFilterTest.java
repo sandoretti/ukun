@@ -6,6 +6,7 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import dev.sandoretti.ukun.gateway.config.UkunGatewayProperties;
 import dev.sandoretti.ukun.gateway.error.ProblemDetailWriter;
+import dev.sandoretti.ukun.gateway.support.GatewayProperties;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.DisplayName;
@@ -107,7 +108,8 @@ class RequestSizeLimitWebFilterTest {
                 URI.create("http://ukun-web:5173"),
                 "file:/opt/app/web/",
                 DataSize.ofBytes(MAX_BYTES),
-                "default-src 'self'");
+                "default-src 'self'",
+                GatewayProperties.anyRateLimit());
     }
 
     private static ProblemDetailWriter writer() {

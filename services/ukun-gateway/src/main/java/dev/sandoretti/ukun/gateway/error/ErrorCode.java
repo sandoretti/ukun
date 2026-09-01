@@ -5,7 +5,7 @@ import java.util.Locale;
 import org.springframework.http.HttpStatus;
 
 /**
- * The three codes of {@code docs/12-error-contract.md} §2 that <em>this</em> service emits. The
+ * The four codes of {@code docs/12-error-contract.md} §2 that <em>this</em> service emits. The
  * registry is closed and shared with {@code ukun-api}; what is not closed is how many of its rows a
  * given service can produce, and a gateway can produce very few.
  *
@@ -16,14 +16,15 @@ import org.springframework.http.HttpStatus;
  * duplication is bounded by design: the contract says the <em>shape</em> must match, and the shape
  * is four fields.
  *
- * <h2>Why only three</h2>
+ * <h2>Why only four</h2>
  *
  * {@link #PAYLOAD_TOO_LARGE} is the reason this class exists — {@code docs/12} §2 calls it the one
  * code of the registry with two possible emitters, because the gateway cuts an oversized upload
  * before it ever reaches {@code ukun-api}, and the frontend cannot tell which of the two answered.
  * {@link #UNAUTHENTICATED} and {@link #FORBIDDEN} come with the coarse role filter of ADR-0020: a
  * request rejected at the edge must look exactly like the same rejection made by the resource
- * server one hop later.
+ * server one hop later. {@link #RATE_LIMITED} is the only one this service emits <em>alone</em>: the
+ * rate limiter runs here and nowhere else, and {@code ukun-api} has no exception that produces it.
  *
  * <p>Nothing else belongs here. Adding a constant this service cannot emit would leave the frontend
  * a value to look up and nothing to produce it — the same reason {@code ukun-api} keeps its own copy
@@ -38,7 +39,17 @@ enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN),
 
     /** Extension: {@code maxBytes}. {@code docs/08-identidad-y-seguridad.md} §9. */
-    PAYLOAD_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE);
+    PAYLOAD_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE),
+
+    /**
+     * Out of budget at the edge. Extension: {@code retryAfterSeconds}, alongside the
+     * {@code Retry-After} header — {@code docs/08-identidad-y-seguridad.md} §8.
+     *
+     * <p>Not to be confused with the bare 429 of {@code ukun-auth}'s login limiter: {@code /login} is
+     * a rendered page outside both OpenAPI documents, so it is not governed by this contract at all
+     * ({@code docs/12} §2). {@code /api/**} is, and the SPA paints from {@code code}.
+     */
+    RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS);
 
     private static final String TYPE_PREFIX = "https://ukun.dev/errors/";
 

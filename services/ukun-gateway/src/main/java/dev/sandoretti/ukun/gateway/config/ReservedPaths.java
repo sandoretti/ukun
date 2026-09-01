@@ -57,6 +57,16 @@ public final class ReservedPaths {
      * is a perfectly good client-side route and must not be captured by {@code /api}.
      */
     public static boolean covers(String path) {
-        return PREFIXES.stream().anyMatch(prefix -> path.equals(prefix) || path.startsWith(prefix + "/"));
+        return PREFIXES.stream().anyMatch(prefix -> isUnder(path, prefix));
+    }
+
+    /**
+     * The segment boundary on its own, for whoever cares about a single prefix rather than the whole
+     * list — {@code RequestRateLimitWebFilter} meters {@code /api/**} and only that one. Written once
+     * because {@code startsWith} alone is the bug, not the implementation: it captures {@code /apix}
+     * too, and a second copy is how the two halves of this rule stop agreeing.
+     */
+    public static boolean isUnder(String path, String prefix) {
+        return path.equals(prefix) || path.startsWith(prefix + "/");
     }
 }
