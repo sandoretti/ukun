@@ -127,3 +127,24 @@ El primer despliegue salió **vacío**: `application.yaml` trae `contexts: prod`
 - **Las 24 fotos de producto**, subidas al share de Azure Files por `deploy.yml` con `az storage file upload-batch`, después de desplegar. No van dentro de ninguna imagen a propósito: `image_key` es una clave de almacenamiento y no una ruta, y el adaptador la resuelve contra un directorio que en v1.1 pasa a ser un bucket (issue #57).
 
 El humo gana además una petición que recorre entera la cadena que nada más prueba: `GET /media/products/mesa-madera.jpg` tiene que devolver `image/jpeg`. Eso valida el share montado, sus permisos de uid/gid —el riesgo que quedaba pendiente de las `mountOptions`— y la ruta `/media/**` del gateway hacia el módulo `storage`, todo de una vez.
+
+## 2026-09-01 · El entorno sembrado, y el fallo que el humo no veía
+
+Segundo despliegue completo, esta vez desde cero (un `teardown` en curso hizo fallar el intento anterior con `ResourceGroupBeingDeleted` — ver más abajo). En verde, y con el entorno ya poblado: **100 productos, 4 tiendas, 10 tipos**, y las **24 imágenes servidas**, comprobadas una a una contra `/media/products/{key}` y no solo la del humo. Con eso cae el último riesgo abierto de la lista original: las `mountOptions` con `uid=100,gid=101` bastan para que `ukun-api` lea del share.
+
+### Y entonces los recorridos de Playwright encontraron lo que el humo no
+
+Lanzados contra la URL de ACA con `E2E_BASE_URL`: **pasó el de empleada, fallaron el de cliente y el de administrador.** Los dos que fallan son los que dan de alta a alguien; el que pasa es el único que no.
+
+La primera hipótesis —el limitador de tasa por IP, que es lo que uno espera cuando un cliente automatizado dispara desde una sola dirección— **quedó descartada** al lanzar el recorrido de cliente aislado: falló igual. El trace de red de Playwright dio la respuesta: `POST /api/signup` con estado `-1`, o sea una petición que nunca se completa. Y el `429` del limitador, cuando de verdad ocurre, llega instantáneo y con `retryAfterSeconds` — otro síntoma, comprobado a mano.
+
+**La causa es una variable que falta en la plantilla, y es la cuarta URL hacia `ukun-auth`:** `ukun.auth.base-url`, contra quien `HttpAccountsAdapter` llama a `/internal/accounts`. Su valor por defecto en `AuthProperties` es `http://ukun-auth:9000`, un nombre de la red de Docker, y **no aparece en `compose.yaml`** —allí ese default ya es correcto—, así que no estaba en la lista de nombres que había que traducir. Se cayó por omisión, no por mezclar las dos familias de variables que `compose.yaml` distingue con tanto cuidado. Es la última consecuencia de ADR-0023, cometida de la única forma que ese aviso no cubría.
+
+Dos correcciones, y la segunda importa más que la primera:
+
+- **`UKUN_AUTH_BASE_URL` en `ukun-api`**, apuntando al FQDN de auth.
+- **El humo hace ahora un alta de cliente de verdad.** Las cuatro comprobaciones que tenía —el SPA, el catálogo, el documento de descubrimiento y una foto— pasaban todas con la saga rota, porque ninguna hace hablar a `ukun-api` con `ukun-auth`. Un despliegue en verde con el alta caída es precisamente lo que un humo tiene que impedir, y este no lo impedía.
+
+### Nota de operación: `teardown` y `deploy` se pisan
+
+`teardown.yml` usa `--no-wait` y termina en verde mientras Azure sigue borrando unos diez minutos. Desplegar en esa ventana falla con `ResourceGroupBeingDeleted`, en el paso 5 de 9. El mensaje es claro pero el fallo llega tarde; merece o una espera en `deploy.yml` o una línea en el resumen del teardown diciendo desde cuándo se puede volver a desplegar.

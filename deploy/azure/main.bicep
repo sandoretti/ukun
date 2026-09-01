@@ -386,6 +386,17 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'UKUN_AUTH_TOKEN_URI'
               value: '${authUrl}/oauth2/token'
             }
+            // LA CUARTA URL HACIA ukun-auth, y la que se olvida: `ukun.auth.base-url` es contra
+            // quien `HttpAccountsAdapter` llama a /internal/accounts para la saga de signup. No está
+            // en compose.yaml —allí el default de AuthProperties, `http://ukun-auth:9000`, ya es el
+            // bueno— y por eso no aparece en la lista de variables que hay que traducir; en ACA ese
+            // nombre no existe y el alta de un cliente se queda sin responder, con el resto del
+            // servicio funcionando. Es exactamente el fallo que ADR-0023 anuncia en su última
+            // consecuencia, cometido por omisión en vez de por mezclar las dos familias.
+            {
+              name: 'UKUN_AUTH_BASE_URL'
+              value: authUrl
+            }
             {
               name: 'UKUN_OAUTH2_API_SECRET'
               secretRef: 'oauth2-api-secret'

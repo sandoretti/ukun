@@ -161,6 +161,32 @@ jobs:
           # del changelog demo.
           test "$(curl -sf -o /dev/null -w '%{content_type}' "$GATEWAY/media/products/mesa-madera.jpg")" = "image/jpeg"
 
+          # Y un alta de cliente de verdad, que es el ÚNICO camino que hace hablar a ukun-api con
+          # ukun-auth: la saga de signup llama a /internal/accounts con client_credentials (docs/08
+          # §3). Las cuatro comprobaciones de arriba pasaban con esa llamada apuntando a un host que
+          # no existe, porque ninguna la ejercita — un despliegue en verde con el alta rota es lo que
+          # este paso existe para impedir.
+          #
+          # Deja una cuenta por despliegue en un entorno cuyos datos son desechables (ADR-0007), y el
+          # dominio es `example.com`, reservado por la RFC 2606 justamente para esto. El límite de
+          # `/api/signup` —5 cada 10 minutos por IP— no molesta aquí: cada ejecución sale de un runner
+          # distinto.
+          JAR=$(mktemp)
+          curl -sf -c "$JAR" -o /dev/null "$GATEWAY/"
+          XSRF=$(awk '/XSRF-TOKEN/ {print $NF}' "$JAR")
+          SIGNUP=$(curl -s -m 60 -b "$JAR" -o /dev/null -w '%{http_code}' -X POST "$GATEWAY/api/signup" \
+            -H 'Content-Type: application/json' -H "X-XSRF-TOKEN: $XSRF" \
+            -d "{\"email\":\"smoke-$(date +%s)@example.com\",
+                 \"password\":\"humo del despliegue 2026\",
+                 \"name\":\"Humo\",\"lastName\":\"Despliegue\",
+                 \"address\":{\"street\":\"Calle Mayor, 1\",\"city\":\"Alcala\",
+                              \"province\":\"Madrid\",\"postalCode\":\"28801\"},
+                 \"card\":{\"last4\":\"4242\",\"brand\":\"VISA\",\"expMonth\":9,\"expYear\":2028}}")
+          if [ "$SIGNUP" != "201" ]; then
+            echo "::error::El alta de cliente respondió $SIGNUP en vez de 201. Si no responde nada, mira UKUN_AUTH_BASE_URL: es contra quien ukun-api llama a /internal/accounts."
+            exit 1
+          fi
+
       - name: Resumen
         run: |
           {
