@@ -45,6 +45,17 @@ param oauth2GatewaySecret string
 @description('Secreto del cliente OAuth2 `ukun-api`, con el que AccountsPort pide su token para /internal/accounts.')
 param oauth2ApiSecret string
 
+@description('''Contextos de Liquibase de ukun-api y ukun-auth. Por defecto `demo`, que es lo que
+ADR-0023 asume de este entorno: se levanta para una demo y sus datos son desechables (ADR-0007), así
+que cada arranque siembra el catálogo de 100 productos, las tiendas, el stock y las catorce cuentas.
+
+LO QUE ESO IMPLICA, PORQUE NO ES INOCUO: las contraseñas de esas cuentas están escritas en
+`docs/06-entorno-local-tilt.md` y el ingress de este entorno es público. Cualquiera que dé con el
+FQDN entra como administrador. Se acepta porque aquí no hay ni un dato real y el entorno se destruye
+al terminar; el día que eso deje de ser cierto, este parámetro pasa a `prod` y deja de sembrar.''')
+@allowed(['demo', 'prod'])
+param liquibaseContexts string = 'demo'
+
 @secure()
 @description('Clave RSA con la que ukun-auth firma los access tokens: PKCS#8, base64 del DER, en una línea (ADR-0024). Sin valor por defecto a propósito — un servicio que arranca con una clave conocida es peor que uno que se niega a arrancar.')
 param signingKey string
@@ -342,6 +353,12 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'SPRING_DATASOURCE_URL'
               value: 'jdbc:postgresql://${postgres.properties.fullyQualifiedDomainName}:5432/ukun_app${jdbcOptions}'
             }
+            // Sin esto el valor por defecto de application.yaml es `prod` y la base queda vacía: el
+            // catálogo sale sin un solo producto y no hay ninguna cuenta con la que iniciar sesión.
+            {
+              name: 'SPRING_LIQUIBASE_CONTEXTS'
+              value: liquibaseContexts
+            }
             {
               name: 'SPRING_DATASOURCE_USERNAME'
               value: postgresUser
@@ -476,6 +493,12 @@ resource auth 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'SPRING_DATASOURCE_URL'
               value: 'jdbc:postgresql://${postgres.properties.fullyQualifiedDomainName}:5432/ukun_auth${jdbcOptions}'
+            }
+            // Sin esto el valor por defecto de application.yaml es `prod` y la base queda vacía: el
+            // catálogo sale sin un solo producto y no hay ninguna cuenta con la que iniciar sesión.
+            {
+              name: 'SPRING_LIQUIBASE_CONTEXTS'
+              value: liquibaseContexts
             }
             {
               name: 'SPRING_DATASOURCE_USERNAME'
