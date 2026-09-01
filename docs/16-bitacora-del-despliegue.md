@@ -76,3 +76,25 @@ Cambios en `main.bicep`:
 Efecto en el coste: **ninguno para el uso puntual** —una demo de tres horas sigue costando 0,07 USD, porque sigue dentro de la franja gratuita de Container Apps—. Lo que se estrecha es el margen: la franja pasa de cubrir 40 horas encendido al mes a cubrir 33, y el escenario 24/7 sube de 46,15 a 52,06 USD/mes. `15-despliegue.md` §7 lleva las cifras rehechas.
 
 Y la respuesta a la pregunta que originó todo: **para cuatro personas concurrentes sobra**. Postgres B1ms admite del orden de 50 conexiones contra las 15 que abren los tres pools juntos, y ninguno de los servicios se acerca a su techo. Lo único que hay que vigilar es el limitador de tasa, que cuenta **por IP**: varias personas detrás de la misma NAT comparten los 120 req/min de `/api/**` y las 5 altas cada 10 minutos. No se ha cambiado el valor por defecto —el límite existe por algo (`08-identidad-y-seguridad.md` §8)— pero §8 del runbook dice ahora qué variable subir si aparece un `429` en mitad de una demo.
+
+## 2026-09-01 · La plantilla, validada contra Azure de verdad
+
+Sin desplegar nada y sin coste. Es lo más lejos que se puede llegar antes de que los paquetes de GHCR sean públicos, y cubre una clase de fallo que `az bicep build` no ve: aquel valida contra los tipos que trae el compilador, esto valida contra el ARM real de la suscripción.
+
+```bash
+az group create --name ukun-demo --location francecentral
+az deployment group validate --resource-group ukun-demo --template-file deploy/azure/main.bicep --parameters …
+az deployment group what-if  --resource-group ukun-demo --template-file deploy/azure/main.bicep --parameters …
+```
+
+- **`validate` → `Succeeded`, sin errores.** ARM acepta la plantilla, sus `apiVersion`, sus propiedades y sus parámetros.
+- **`what-if` → 15 recursos, todos `Create`** y ninguno de más: el entorno y su almacenamiento, las tres apps, el servidor de Postgres con sus tres bases, `azure.extensions` y la regla de firewall, Log Analytics, y la cuenta de almacenamiento con su share.
+- **Disponibilidad en `francecentral` comprobada**, que es lo que la política de regiones obligaba a mirar: `Microsoft.App/managedEnvironments` está en France Central, `Standard_B1ms` está entre los SKU Burstable, y PostgreSQL 17 entre las versiones ofrecidas (18 también existe ya; se mantiene 17 por paridad con el `postgres:17` del entorno local).
+
+El grupo `ukun-demo` queda creado y **vacío**, que no cuesta nada: `deploy.yml` lo crea de forma idempotente, así que encontrárselo hecho no cambia nada.
+
+### Lo que bloquea el primer despliegue, y no es Azure
+
+Las tres imágenes están publicadas en GHCR desde el commit `c4dee40` —el job `images` corrió en verde en el CI de `main`— pero **los tres paquetes son privados**: un `GET` anónimo a su manifiesto devuelve `403`. Container Apps no podría bajarlas. Cambiar la visibilidad de un paquete **no tiene endpoint en la API REST de GitHub**: se hace en la página del paquete, una vez por paquete y para siempre.
+
+Y falta que el contenido del despliegue llegue a la rama por defecto, que es de lo que va el PR #178.
