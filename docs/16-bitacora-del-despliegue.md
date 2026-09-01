@@ -63,3 +63,16 @@ El resultado en una línea: **el uso puntual sale por céntimos** —0,07 USD un
 - Existe un medidor **`Environment Management Hour` de 0,125 USD/h** —91 USD/mes— que **no** aplica aquí porque es de los entornos con *workload profiles*, y `main.bicep` no declara ninguno. Queda anotado porque añadir un `workloadProfiles` parecería una mejora y sería el cambio más caro que se le puede hacer a esta plantilla.
 
 Nada de esto sustituye a mirar el consumo real: el primer despliegue es también la primera medida de verdad, y si difiere, la cifra que manda es la del portal y se corrige aquí.
+
+## 2026-09-01 · Dimensionado corregido antes del primer despliegue
+
+Al preguntarse si el entorno aguanta a cuatro personas a la vez salió que el problema no era ese: **`ukun-auth` no cabía en su propio límite ni vacío.** `docker stats` sobre el stack local en reposo da 368 MiB al gateway, **412 MiB a auth** y 603 MiB a api, y ADR-0023 tabulaba 0,5 GiB para auth — el 80 % ocupado antes de que nadie iniciara sesión. En Container Apps eso no se degrada, se muere: pasarse del límite mata el contenedor.
+
+Cambios en `main.bicep`:
+
+- `ukun-auth` pasa de 0,25 vCPU / 0,5 GiB a **0,5 vCPU / 1 GiB**. Las combinaciones de Consumption van en pares fijos, así que ese es el escalón siguiente.
+- Los tres reciben **`JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=70`**. Por defecto la JVM toma el 25 % de la memoria del contenedor, o sea 256 MiB de heap dentro de 1 GiB: el resto se paga sin usarse y el síntoma sería GC continuo con memoria libre en el panel.
+
+Efecto en el coste: **ninguno para el uso puntual** —una demo de tres horas sigue costando 0,07 USD, porque sigue dentro de la franja gratuita de Container Apps—. Lo que se estrecha es el margen: la franja pasa de cubrir 40 horas encendido al mes a cubrir 33, y el escenario 24/7 sube de 46,15 a 52,06 USD/mes. `15-despliegue.md` §7 lleva las cifras rehechas.
+
+Y la respuesta a la pregunta que originó todo: **para cuatro personas concurrentes sobra**. Postgres B1ms admite del orden de 50 conexiones contra las 15 que abren los tres pools juntos, y ninguno de los servicios se acerca a su techo. Lo único que hay que vigilar es el limitador de tasa, que cuenta **por IP**: varias personas detrás de la misma NAT comparten los 120 req/min de `/api/**` y las 5 altas cada 10 minutos. No se ha cambiado el valor por defecto —el límite existe por algo (`08-identidad-y-seguridad.md` §8)— pero §8 del runbook dice ahora qué variable subir si aparece un `429` en mitad de una demo.

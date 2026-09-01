@@ -328,6 +328,16 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = {
             memory: '1Gi'
           }
           env: [
+            // Sin esto la JVM se queda con el 25 % de la memoria del contenedor —el valor por
+            // defecto de MaxRAMPercentage—, o sea 256 MiB de heap dentro de 1 GiB, y los otros 750
+            // se pagan sin usarse. El síntoma no sería un OOM del contenedor sino GC continuo: la
+            // aplicación se arrastra mientras el panel de ACA enseña memoria de sobra, que es de los
+            // diagnósticos más difíciles. Se deja en 70 y no en 90: fuera del heap están el
+            // metaspace, el code cache y las pilas, y quien mata al contenedor es el kernel.
+            {
+              name: 'JAVA_TOOL_OPTIONS'
+              value: '-XX:MaxRAMPercentage=70'
+            }
             {
               name: 'SPRING_DATASOURCE_URL'
               value: 'jdbc:postgresql://${postgres.properties.fullyQualifiedDomainName}:5432/ukun_app${jdbcOptions}'
@@ -443,11 +453,26 @@ resource auth 'Microsoft.App/containerApps@2024-03-01' = {
         {
           name: authAppName
           image: '${registry}/${authAppName}:${imageTag}'
+          // 0,5 vCPU y 1 GiB, no los 0,25/0,5 que ADR-0023 tabulaba. Medido sobre el stack local con
+          // `docker stats`: este servicio ocupa ~412 MiB EN REPOSO, o sea el 80 % de un límite de
+          // 512 MiB antes de que nadie inicie sesión. Y en ACA pasarse del límite no degrada nada:
+          // el contenedor muere. Las combinaciones de Consumption van en pares (0,25/0,5 · 0,5/1 ·
+          // 0,75/1,5 …), así que el siguiente escalón es este.
           resources: {
-            cpu: json('0.25')
-            memory: '0.5Gi'
+            cpu: json('0.5')
+            memory: '1Gi'
           }
           env: [
+            // Sin esto la JVM se queda con el 25 % de la memoria del contenedor —el valor por
+            // defecto de MaxRAMPercentage—, o sea 256 MiB de heap dentro de 1 GiB, y los otros 750
+            // se pagan sin usarse. El síntoma no sería un OOM del contenedor sino GC continuo: la
+            // aplicación se arrastra mientras el panel de ACA enseña memoria de sobra, que es de los
+            // diagnósticos más difíciles. Se deja en 70 y no en 90: fuera del heap están el
+            // metaspace, el code cache y las pilas, y quien mata al contenedor es el kernel.
+            {
+              name: 'JAVA_TOOL_OPTIONS'
+              value: '-XX:MaxRAMPercentage=70'
+            }
             {
               name: 'SPRING_DATASOURCE_URL'
               value: 'jdbc:postgresql://${postgres.properties.fullyQualifiedDomainName}:5432/ukun_auth${jdbcOptions}'
@@ -544,6 +569,16 @@ resource gateway 'Microsoft.App/containerApps@2024-03-01' = {
             memory: '1Gi'
           }
           env: [
+            // Sin esto la JVM se queda con el 25 % de la memoria del contenedor —el valor por
+            // defecto de MaxRAMPercentage—, o sea 256 MiB de heap dentro de 1 GiB, y los otros 750
+            // se pagan sin usarse. El síntoma no sería un OOM del contenedor sino GC continuo: la
+            // aplicación se arrastra mientras el panel de ACA enseña memoria de sobra, que es de los
+            // diagnósticos más difíciles. Se deja en 70 y no en 90: fuera del heap están el
+            // metaspace, el code cache y las pilas, y quien mata al contenedor es el kernel.
+            {
+              name: 'JAVA_TOOL_OPTIONS'
+              value: '-XX:MaxRAMPercentage=70'
+            }
             {
               name: 'SPRING_DATASOURCE_URL'
               value: 'jdbc:postgresql://${postgres.properties.fullyQualifiedDomainName}:5432/ukun_gateway${jdbcOptions}'

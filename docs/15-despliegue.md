@@ -17,7 +17,7 @@ Tres contenedores Java y una base de datos — **no cuatro contenedores**: el ga
 |---|---|---|
 | Container Apps Environment | Consumption | Con su Log Analytics, que ACA exige |
 | `ukun-gateway` | 0,5 vCPU / 1 GiB, `min=1`, **`max=1`** | Ingress **externo**. El único origen que ve el navegador |
-| `ukun-auth` | 0,25 vCPU / 0,5 GiB, `min=1`, `max=3` | Ingress **externo** también — el navegador teclea ahí la contraseña |
+| `ukun-auth` | 0,5 vCPU / 1 GiB, `min=1`, `max=3` | Ingress **externo** también — el navegador teclea ahí la contraseña |
 | `ukun-api` | 0,5 vCPU / 1 GiB, `min=1`, `max=3` | Ingress **interno**. Solo lo alcanza el gateway |
 | PostgreSQL Flexible Server | Burstable B1ms, 32 GB, sin HA | Un servidor, **tres** bases: `ukun_app`, `ukun_auth`, `ukun_gateway` |
 | Azure Files | Standard, 5 GB | Montado en `ukun-api`, sustituye el bind mount de `resources/uploads` |
@@ -219,24 +219,32 @@ Lo que esto **no** es: acceso público con contraseña. Lo que sí es: cualquier
 | Postgres B1ms (cómputo) | 0,019 USD/hora | 0,019 USD/h encendido |
 | Postgres, disco de 32 GB | 0,133 USD/GB/mes | 4,26 USD/mes → 0,0058 USD/h |
 | Postgres, backup 7 días | incluido hasta el tamaño aprovisionado | 0 |
-| Container Apps, vCPU en reposo | 0,000003 USD/vCPU-segundo | 1,25 vCPU entre las tres |
-| Container Apps, memoria | 0,000003 USD/GiB-segundo | 2,5 GiB entre las tres |
+| Container Apps, vCPU en reposo | 0,000003 USD/vCPU-segundo | 1,5 vCPU entre las tres |
+| Container Apps, memoria | 0,000003 USD/GiB-segundo | 3 GiB entre las tres |
 | Log Analytics, ingesta | **5 GB/mes gratis**, después 2,76 USD/GB | ~0 con `root: WARN` |
 | Azure Files LRS | 0,075 USD/GB/mes | céntimos |
 
-**La franja gratuita mensual de Container Apps decide casi todo.** Son 180 000 vCPU-segundos y 360 000 GiB-segundos por suscripción y mes, y con el reparto de recursos de este despliegue —1,25 vCPU y 2,5 GiB sumando las tres apps— las dos se agotan exactamente a las **40 horas de entorno encendido al mes**. Por debajo de esa marca, Container Apps no cuesta nada y lo único que corre el contador es Postgres.
+**La franja gratuita mensual de Container Apps decide casi todo.** Son 180 000 vCPU-segundos y 360 000 GiB-segundos por suscripción y mes, y con el reparto de recursos de este despliegue —1,5 vCPU y 3 GiB sumando las tres apps— las dos se agotan a las **33 horas de entorno encendido al mes**. Por debajo de esa marca, Container Apps no cuesta nada y lo único que corre el contador es Postgres.
 
 | Escenario | Horas/mes | Coste |
 |---|--:|--:|
 | Una demo de 3 h | 3 | **0,07 USD** |
 | Una tarde de trabajo | 8 | **0,20 USD** |
 | Cuatro demos de 3 h | 12 | **0,30 USD** |
-| Una semana laboral de 8 h | 40 | **1,00 USD** |
-| Un fin de semana entero encendido | 48 | 1,52 USD |
-| Dos semanas laborales | 80 | 3,61 USD |
-| **Un mes 24/7** | 730 | **46,15 USD** |
+| Una semana laboral de 8 h | 40 | **1,32 USD** |
+| Un fin de semana entero encendido | 48 | 1,91 USD |
+| Dos semanas laborales | 80 | 4,26 USD |
+| **Un mes 24/7** | 730 | **52,06 USD** |
 
-O sea: **el uso puntual para el que está pensado esto cuesta céntimos**, del orden de 0,025 USD por hora encendido mientras se esté por debajo de las 40 h/mes. Y dejarlo encendido sin querer cuesta 1,52 USD al día, con lo que el crédito de 100 USD se agota en **2,2 meses**. Esa diferencia —dos órdenes de magnitud— es toda la justificación del entorno efímero y de que `teardown.yml` exista.
+O sea: **el uso puntual para el que está pensado esto cuesta céntimos**, del orden de 0,025 USD por hora encendido mientras se esté por debajo de las 33 h/mes. Y dejarlo encendido sin querer cuesta 1,71 USD al día, con lo que el crédito de 100 USD se agota en **1,9 meses**. Esa diferencia —dos órdenes de magnitud— es toda la justificación del entorno efímero y de que `teardown.yml` exista.
+
+### El dimensionado, y por qué es el que es
+
+Las cifras de arriba salen de 1,5 vCPU y 3 GiB repartidos en tres apps de 0,5/1 GiB cada una. **`ukun-auth` no lleva los 0,25 vCPU / 0,5 GiB que tabulaba ADR-0023**, y el motivo es una medida y no una precaución: sobre el stack local en reposo, `docker stats` da **368 MiB al gateway, 412 MiB a auth y 603 MiB a api**, sin nadie usando el sistema. Un límite de 512 MiB para algo que ocupa 412 en vacío no deja sitio para el primer login, y en Container Apps pasarse del límite no degrada el servicio: mata el contenedor.
+
+Los tres llevan además `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=70`. Sin él la JVM se queda con el 25 % de la memoria del contenedor —256 MiB de heap dentro de 1 GiB— y el resto se paga sin usarse; el síntoma no sería un contenedor muerto sino GC continuo mientras el panel enseña memoria libre, que es de los diagnósticos más difíciles de atribuir.
+
+**Para cuatro personas a la vez esto sobra**, y el cuello de botella no sería ninguno de los tres servicios: Postgres B1ms da 1 vCore y admite del orden de 50 conexiones, contra las 15 como mucho que abren los tres pools juntos (5 cada uno). Lo que hay que vigilar con varias personas no es la capacidad sino el **limitador de tasa**, que cuenta por IP: si todos navegan desde la misma red con NAT, el gateway ve una sola dirección y los 120 req/min de `/api/**` se reparten entre todos. Ver §8.
 
 ### El cargo que convertiría esto en otra cosa
 
@@ -244,7 +252,7 @@ Container Apps tiene un medidor **`Environment Management Hour` de 0,125 USD/hor
 
 ### Lo que estas cifras no incluyen
 
-Salida de datos y transacciones de almacenamiento, que a esta escala son ruido. Tampoco impuestos, que en una suscripción de estudiante no se aplican: se consume crédito, no se factura. Y la franja gratuita de Container Apps no viene en la API de precios —es una franja de producto, no un precio—, así que si algún día desapareciera habría que sumar 0,0405 USD por hora encendido.
+Salida de datos y transacciones de almacenamiento, que a esta escala son ruido. Tampoco impuestos, que en una suscripción de estudiante no se aplican: se consume crédito, no se factura. Y la franja gratuita de Container Apps no viene en la API de precios —es una franja de producto, no un precio—, así que si algún día desapareciera habría que sumar 0,0486 USD por hora encendido.
 
 ## 8. Fallos que no dicen su causa
 
@@ -257,4 +265,6 @@ Salida de datos y transacciones de almacenamiento, que a esta escala son ruido. 
 | `401` intermitentes en `ukun-api` | `UKUN_AUTH_ISSUER` no es exactamente la misma cadena en los dos lados. Se compara literalmente |
 | La subida de imágenes falla por permisos sobre un directorio que existe | Las `mountOptions` del volumen de Azure Files. Los contenedores corren como `app` (uid=100, gid=101) y un share SMB aparece con uid/gid 0 |
 | La sesión se pierde al navegar | Falta `SERVER_REACTIVE_SESSION_COOKIE_SECURE=true`, o el navegador está descartando la cookie |
+| Un contenedor se reinicia solo, sin excepción en el log | Se pasó del límite de memoria y ACA lo mató. Mira el dimensionado de §7 antes de buscar una fuga |
+| `429` durante una demo con varias personas | El limitador cuenta por IP y todos salen por la misma NAT. Se sube con `UKUN_GATEWAY_RATELIMIT_API_CAPACITY` (y `UKUN_GATEWAY_RATELIMIT_SIGNUP_CAPACITY`, que son 5 cada 10 minutos y los agotan cinco altas seguidas desde la misma red) |
 | El servicio arranca y no dice «Started …» | Es lo esperado: `root: WARN` en producción apaga los INFO de arranque de Spring (`docs/11` §7). Quien responde por él es `/actuator/health` |
