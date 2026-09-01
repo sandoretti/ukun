@@ -88,6 +88,15 @@ class JwkSourceConfig {
      * a private key in a log is the defect this whole slice exists to remove.
      */
     private static RSAPrivateCrtKey readPkcs8(String configured) {
+        // El caso que de verdad ocurre, y que sin esta rama sale como «no es una clave PKCS#8»:
+        // compose interpola una variable de entorno ausente a cadena vacía, así que olvidarse de
+        // UKUN_SIGNING_KEY no da un placeholder sin resolver — da esto. Costó un CI en rojo.
+        if (configured.isBlank()) {
+            throw new IllegalStateException(
+                    "ukun.signing-key is empty. Generate one: openssl genpkey -algorithm RSA "
+                            + "-pkeyopt rsa_keygen_bits:2048 | openssl pkcs8 -topk8 -nocrypt -outform DER | base64 -w0");
+        }
+
         String base64 = configured
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")

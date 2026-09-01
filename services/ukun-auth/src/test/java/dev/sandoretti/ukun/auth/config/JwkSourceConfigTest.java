@@ -59,6 +59,21 @@ class JwkSourceConfigTest {
                 .hasMessageContaining("ukun.signing-key");
     }
 
+    /**
+     * El caso que rompió el CI de la propia rama que introdujo esta clase: compose interpola una
+     * variable de entorno ausente a cadena vacía, así que olvidar {@code UKUN_SIGNING_KEY} no llega
+     * aquí como placeholder sin resolver sino como {@code ""} — y el mensaje decía «no es PKCS#8»,
+     * que manda a leer la clave en vez de a escribirla.
+     */
+    @Test
+    @DisplayName("says the key is missing, not malformed, when the variable is unset")
+    void shouldTellApartAnAbsentKeyFromAMalformedOne() {
+        assertThatThrownBy(() -> publishedKeyOf(""))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("is empty")
+                .hasMessageContaining("openssl genpkey");
+    }
+
     @Test
     @DisplayName("refuses to start on base64 that is not a PKCS#8 RSA key")
     void shouldRefuseAKeyThatIsNotPkcs8() {

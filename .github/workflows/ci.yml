@@ -153,7 +153,17 @@ jobs:
           POSTGRES_DB: ukun_app
           UKUN_OAUTH2_GATEWAY_SECRET: ci-gateway-secret
           UKUN_OAUTH2_API_SECRET: ci-api-secret
-        run: docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+        # La clave de firma se genera aquí en vez de escribirse arriba, y por dos motivos. Uno: no
+        # tiene valor por defecto a propósito (ADR-0024), así que sin ella `ukun-auth` se niega a
+        # arrancar — y como compose interpola una variable ausente a cadena vacía, el stack sube
+        # igual y solo se cae el login, que es como se descubrió. Dos: una clave privada, aunque sea
+        # de usar y tirar, no se escribe en un fichero versionado. Es el mismo comando que
+        # `.env.example` le da a quien monta el entorno en su máquina.
+        run: |
+          UKUN_SIGNING_KEY=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null \
+            | openssl pkcs8 -topk8 -nocrypt -outform DER | base64 -w0)
+          export UKUN_SIGNING_KEY
+          docker compose -f compose.yaml -f compose.dev.yaml up -d --build
 
       # Sondeo propio en vez de `up --wait`: las imágenes de desarrollo no declaran HEALTHCHECK, así
       # que compose daría por listo un contenedor que aún está migrando con Liquibase. Y hay que
