@@ -169,6 +169,7 @@ Es la tabla que evita el fallo que no da un error claro. La partición que manda
 | `UKUN_GATEWAY_BASE_URL` | auth, gateway | `https://ukun-gateway.<defaultDomain>` | `http://localhost:8080` |
 | `UKUN_AUTH_TOKEN_URI` / `_JWK_SET_URI` | api, gateway | el mismo FQDN de auth | nombre de contenedor `ukun-auth:9000` |
 | `UKUN_API_URI` | gateway | `https://ukun-api.internal.<defaultDomain>`, **sin puerto** | `http://ukun-api:8081` |
+| `UKUN_AUTH_BASE_URL` | api | el FQDN de auth | `http://ukun-auth:9000` (default del código) |
 | `SPRING_DATASOURCE_URL` | los tres | FQDN de Postgres + **`?sslmode=require`** | `db:5432` |
 | `SERVER_REACTIVE_SESSION_COOKIE_SECURE` | gateway | `true` | sin definir |
 | `SPRING_LIQUIBASE_CONTEXTS` | api, auth | **`demo`** — parámetro `liquibaseContexts` | lo pone el perfil `dev` |
@@ -186,6 +187,7 @@ Es lo que ADR-0023 asume de este entorno —se levanta para una demo, sus datos 
 Cuatro cosas de esa tabla que no son evidentes:
 
 - **Ninguna URL se escribe a mano.** El FQDN de ACA es `<app>.<defaultDomain>` y `defaultDomain` se conoce en cuanto existe el entorno, así que la plantilla las compone sola. Escribirlas obligaría a desplegar en dos pasadas y a mantener sincronizado a mano el `iss`, que `ukun-api` compara **literalmente** contra el claim del token.
+- **`UKUN_AUTH_BASE_URL` es la cuarta URL hacia `ukun-auth` y la que se olvida.** Es contra quien `HttpAccountsAdapter` llama a `/internal/accounts` para la saga de signup, y **no aparece en `compose.yaml`**: allí el valor por defecto de `AuthProperties` (`http://ukun-auth:9000`) ya es el bueno, así que no está en la lista de nombres que hay que traducir y se cae por omisión, no por confundir las dos familias de variables. El síntoma es que todo funciona menos el alta de un cliente, que se queda sin responder.
 - **`UKUN_API_URI` no lleva puerto.** El ingress interno de ACA escucha en 443 y enruta al `targetPort` de la app. Poner `:8081` es el error clásico de traducir el nombre de la red de Docker.
 - **`?sslmode=require` no es opcional.** Flexible Server rechaza las conexiones en claro y el driver JDBC no lo negocia solo. Va con un `maximum-pool-size` de 5, porque un B1ms admite del orden de 50 conexiones para todo: tres servicios que pueden escalar, más Liquibase en cada arranque.
 - **Las variables de OTLP se quedan sin definir, y esa ausencia es la configuración** (`docs/11` §5): sin ellas no se instala exportador y los tres arrancan igual. Los logs van a stdout y los recoge Log Analytics, que es lo que ACA hace de serie. No hay colector desplegado.
@@ -274,6 +276,7 @@ Salida de datos y transacciones de almacenamiento, que a esta escala son ruido. 
 | `401` intermitentes en `ukun-api` | `UKUN_AUTH_ISSUER` no es exactamente la misma cadena en los dos lados. Se compara literalmente |
 | La subida de imágenes falla por permisos sobre un directorio que existe | Las `mountOptions` del volumen de Azure Files. Los contenedores corren como `app` (uid=100, gid=101) y un share SMB aparece con uid/gid 0 |
 | La sesión se pierde al navegar | Falta `SERVER_REACTIVE_SESSION_COOKIE_SECURE=true`, o el navegador está descartando la cookie |
+| El alta de un cliente no responde, con todo lo demás funcionando | `UKUN_AUTH_BASE_URL`. La saga es el único camino que hace hablar a `ukun-api` con `ukun-auth`, así que es lo único que se rompe |
 | El catálogo sale vacío y no hay con qué iniciar sesión | `SPRING_LIQUIBASE_CONTEXTS` no llegó a `demo`, y `application.yaml` trae `prod` por defecto |
 | El catálogo se pinta pero cada foto da 404 | No se subieron las imágenes al share, o se subieron a un subdirectorio: van a la raíz, que es lo que se monta en `/opt/resources/uploads` |
 | Un contenedor se reinicia solo, sin excepción en el log | Se pasó del límite de memoria y ACA lo mató. Mira el dimensionado de §7 antes de buscar una fuga |
