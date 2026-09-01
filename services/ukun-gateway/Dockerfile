@@ -11,6 +11,26 @@
 # The per-service ignore list is services/ukun-gateway/Dockerfile.dockerignore, which BuildKit
 # picks up in place of any .dockerignore at the context root.
 
+# The SPA, built here and not in apps/ukun-web because the artefact never ships on its own: this
+# service serves it in production (skill `spring-gateway` §6), which is what keeps the browser on a
+# single origin and makes the BFF session cookie possible at all (ADR-0003). Under `tilt up` none of
+# this runs — Vite serves its own dev server with HMR and DevSpaRouteConfig routes to it.
+FROM node:24-alpine AS web
+WORKDIR /web
+
+# Manifests first, sources after, for the same layering reason as the Gradle stage below. `ci` and
+# not `install`, matching the frontend job of .github/workflows/ci.yml: it respects the exact lock.
+COPY apps/ukun-web/package.json apps/ukun-web/package-lock.json ./
+RUN npm ci
+
+# The whole directory, e2e/ and playwright.config.ts included, and that is not an oversight: the
+# build script is `tsc -b && vite build`, and tsconfig.json references tsconfig.e2e.json, so leaving
+# those two out fails the type build before Vite is ever reached. Nothing of it survives this stage
+# — the runtime below copies dist/ and nothing else.
+COPY apps/ukun-web/ ./
+RUN npm run build
+
+
 FROM eclipse-temurin:25-jdk-alpine AS builder
 WORKDIR /build
 
@@ -60,6 +80,12 @@ COPY --from=builder --chown=app:app /extracted/dependencies/          ./
 COPY --from=builder --chown=app:app /extracted/spring-boot-loader/    ./
 COPY --from=builder --chown=app:app /extracted/snapshot-dependencies/ ./
 COPY --from=builder --chown=app:app /extracted/application/           ./
+
+# The SPA build, at the path `ukun.gateway.web-root` already defaults to (file:/opt/app/web/). Until
+# this stage existed the directory was simply absent and the fallback answered 404; SpaFallbackConfig
+# checks exists() on every request rather than at startup, so neither side had to know which of the
+# two situations it was in.
+COPY --from=web --chown=app:app /web/dist/ ./web/
 
 USER app
 EXPOSE 8080

@@ -14,20 +14,31 @@
 .gitignore
 .gitattributes
 
-# Secrets. .env.example is the versioned template and is not needed in the image either.
-.env
-.env.*
+# Secrets. .env.example is the versioned template and is not needed in the image either. The `**/`
+# is what reaches apps/ukun-web/.env.development: a bare `.env.*` only matches the context root.
+**/.env
+**/.env.*
 
-# Everything outside the new services.
+# Everything outside the new services. `apps/` is NOT on this list, unlike in the other two images:
+# this is the service that serves the SPA (skill `spring-gateway` §6), so its `web` stage builds
+# apps/ukun-web from this same context. Removing it here would not break the build loudly — the
+# COPY would fail outright, which is the good outcome; the bad one is adding it back later to "tidy
+# up" and shipping a gateway whose fallback answers 404 on every page.
 resources/
 scripts/
 docs/
-apps/
 .claude/
 tilt_modules/
 Tiltfile
 compose*.yaml
 *.md
+
+# Of apps/ukun-web, what the build does not read. e2e/ and playwright.config.ts stay in: `npm run
+# build` runs `tsc -b`, and tsconfig.json references tsconfig.e2e.json. These are their outputs, and
+# they would invalidate the layer cache on every local smoke run.
+apps/ukun-web/playwright-report/
+apps/ukun-web/test-results/
+apps/ukun-web/blob-report/
 
 # The other projects' sources. Their build scripts are still needed to configure the build and are
 # copied explicitly by the Dockerfile, so only src/ is excluded here. :ukun-test-support carries the
@@ -37,9 +48,13 @@ services/ukun-api/src/
 services/ukun-auth/src/
 test-support/ukun-test-support/src/
 
-# Frontend and IDE noise.
-node_modules/
-dist/
+# Frontend and IDE noise. The three `**/` prefixes are load-bearing since apps/ is in the context:
+# a bare `node_modules/` only matches the context root, so the host's glibc node_modules would ride
+# into an Alpine image and the `npm ci` of the web stage would be overwritten by it — the same
+# failure apps/ukun-web/.dockerignore documents for the dev image, one layer over.
+**/node_modules/
+**/dist/
+**/*.tsbuildinfo
 .idea/
 .vscode/
 *.iml
