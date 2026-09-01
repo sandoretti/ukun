@@ -55,6 +55,14 @@ tilt up             # db + ukun-api + ukun-auth + ukun-gateway + ukun-web, live 
 
 Orchestrates `compose.yaml` + `compose.dev.yaml` (non-destructive override) with fast Java recompilation and container restart instead of full image rebuilds — see `docs/06-entorno-local-tilt.md` for the manual (including the port table) and the `tilt-dev` skill for how to extend the `Tiltfile`. `.env` at the repo root supplies the Postgres credentials (gitignored — copy `.env.example`; it used to be committed with a real password, now purged from tracking but still present in history).
 
+### Deployment (Azure Container Apps)
+
+Nothing here runs from a shell by default: the environment is driven by two `workflow_dispatch` workflows, `deploy.yml` and `teardown.yml`, over the Bicep template in `deploy/azure/main.bicep`. Images come from GHCR, tagged by commit SHA, published by the `images` job of `ci.yml` on pushes to `main`.
+
+**The environment is ephemeral on purpose** — the subscription is Azure for Students, whose spending limit *suspends* resources rather than billing them, so leaving it running is what makes the credit disappear. Updating it means running `deploy.yml` again, never `az containerapp update --image`: that is faster and leaves the template out of sync with the environment. Whoever deploys by hand needs `az` (ADR-0023); nothing in the normal path does.
+
+The runbook — the one-time bootstrap, where each variable comes from, how to tear it down, and the failures whose error message does not name their cause — is `docs/15-despliegue.md`. The decision behind it is ADR-0023, and ADR-0024 is why only the gateway still carries `max=1`.
+
 ## Architecture of the legacy (historical — read it in the `v0.0-legacy` tag)
 
 None of the paths in this section exist in the working tree any more. It stays because it is what explains the defect list below and why the two apps became one API service.

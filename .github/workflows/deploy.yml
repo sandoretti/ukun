@@ -1,0 +1,146 @@
+# Levanta o actualiza el entorno de Azure Container Apps de ADR-0023 (issue #55).
+#
+# Se dispara A MANO y nunca por push, y eso es la mitad del diseño: la suscripción es Azure for
+# Students —100 USD para doce meses, con límite de gasto que SUSPENDE los recursos en vez de
+# facturarlos—, así que el entorno existe mientras dura una demo y `teardown.yml` lo borra después.
+# Un despliegue automático en cada merge convertiría ese crédito en un goteo que nadie mira.
+#
+# ACTUALIZAR ES DESPLEGAR OTRA VEZ. Este workflow ejecuta el Bicep completo, no un
+# `az containerapp update --image`: lo segundo es más rápido y deja la plantilla desincronizada del
+# entorno, que con infraestructura efímera es exactamente lo que hace que el siguiente despliegue
+# desde cero se comporte distinto del que está corriendo. Bicep es idempotente y ACA crea una
+# revisión nueva por cada cambio de imagen.
+#
+# NO HAY NINGUNA CREDENCIAL DE AZURE EN ESTE REPOSITORIO: la autenticación es OIDC federado sobre una
+# managed identity de usuario (ADR-0023). El bootstrap que eso necesita —crear la identidad, la
+# credencial federada y la asignación de rol— es manual y está en `docs/15-despliegue.md`.
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: 'SHA del commit cuyas imágenes se despliegan (el que publicó el job `images` de CI). No uses `main`: un despliegue tiene que poder repetirse dando el mismo resultado.'
+        required: true
+        type: string
+
+# Dos despliegues a la vez sobre el mismo grupo de recursos se pisan, y `cancel-in-progress` sería
+# peor que la espera: cortar un `az deployment group create` a mitad deja recursos creados a medias.
+concurrency:
+  group: azure-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # Lo que la federación de OIDC necesita para pedirle a GitHub el token que Azure valida. Sin esta
+  # línea `azure/login` falla con un mensaje que habla de credenciales y no de permisos.
+  id-token: write
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+
+    env:
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'ukun-demo' }}
+      LOCATION: ${{ vars.AZURE_LOCATION || 'westeurope' }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Antes de tocar Azure. Las tres imágenes son paquetes PÚBLICOS de GHCR, así que esto se
+      # comprueba sin autenticarse — y comprobarlo aquí convierte el fallo más probable de este
+      # workflow (un SHA que nunca llegó a publicarse, o un paquete que sigue privado) en un error de
+      # una línea en vez de en tres container apps en ImagePullBackOff, que es un síntoma que no
+      # nombra su causa.
+      - name: Las tres imágenes existen y se pueden bajar sin credencial
+        run: |
+          for s in ukun-api ukun-auth ukun-gateway; do
+            image="ghcr.io/${{ github.repository_owner }}/$s:${{ inputs.image-tag }}"
+            echo "::group::$image"
+            docker manifest inspect "$image" > /dev/null
+            echo "::endgroup::"
+          done
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Idempotente: si el grupo ya existe no pasa nada. Se crea aquí y no en la plantilla para que
+      # `main.bicep` sea de ámbito `resourceGroup` y se pueda desplegar a mano contra cualquier grupo.
+      - name: Grupo de recursos
+        run: az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
+
+      # El despliegue entero, y de él salen las URLs. `UKUN_AUTH_ISSUER` y `UKUN_GATEWAY_BASE_URL` no
+      # se escriben en ninguna parte: la plantilla los compone desde el `defaultDomain` del entorno,
+      # porque el FQDN cambia con el nombre del entorno y el `iss` se compara literalmente contra el
+      # claim del token en ukun-api.
+      - name: Desplegar
+        id: deployment
+        run: |
+          az deployment group create \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "ukun-$(date +%Y%m%d%H%M%S)" \
+            --template-file deploy/azure/main.bicep \
+            --parameters \
+              imageTag='${{ inputs.image-tag }}' \
+              registry='ghcr.io/${{ github.repository_owner }}' \
+              postgresPassword='${{ secrets.POSTGRES_PASSWORD }}' \
+              oauth2GatewaySecret='${{ secrets.UKUN_OAUTH2_GATEWAY_SECRET }}' \
+              oauth2ApiSecret='${{ secrets.UKUN_OAUTH2_API_SECRET }}' \
+              signingKey='${{ secrets.UKUN_SIGNING_KEY }}' \
+            --query properties.outputs \
+            --output json > outputs.json
+
+          {
+            echo "gateway-url=$(jq -r .gatewayUrl.value outputs.json)"
+            echo "auth-url=$(jq -r .authUrl.value outputs.json)"
+            echo "static-ip=$(jq -r .environmentStaticIp.value outputs.json)"
+          } >> "$GITHUB_OUTPUT"
+
+      # El despliegue devuelve control en cuanto ACA acepta la revisión, no cuando la aplicación
+      # responde: por delante quedan el arranque de tres JVM y las migraciones de Liquibase sobre tres
+      # bases. Los mismos 300 segundos que espera el trabajo `e2e` de ci.yml, y por el mismo motivo.
+      - name: Esperar a que el gateway esté sano
+        run: |
+          timeout 300 bash -c \
+            'until curl -sf "${{ steps.deployment.outputs.gateway-url }}/actuator/health" | grep -q "\"status\":\"UP\""; do sleep 10; done'
+
+      # Humo mínimo, y cada una de las tres comprueba algo que las otras no. Lo que este workflow no
+      # puede validar es el recorrido de login → catálogo → carrito → pedido, que es la condición de
+      # salida del issue #55: eso se hace a mano contra la URL de abajo.
+      - name: Humo
+        env:
+          GATEWAY: ${{ steps.deployment.outputs.gateway-url }}
+          AUTH: ${{ steps.deployment.outputs.auth-url }}
+        run: |
+          set -e
+          # El SPA que sirve la propia imagen del gateway (skill `spring-gateway` §6).
+          curl -sf -H 'Accept: text/html' "$GATEWAY/" | grep -q '<div id="root"'
+          # La ruta hacia ukun-api por su FQDN interno, que es la traducción que compose.yaml no
+          # necesitaba hacer. Anónimo a propósito: el catálogo es público (docs/08 §4).
+          curl -sf "$GATEWAY/api/products?page=0&size=1" > /dev/null
+          # El documento de descubrimiento, que es lo que dice si el `iss` quedó bien compuesto.
+          test "$(curl -sf "$AUTH/.well-known/openid-configuration" | jq -r .issuer)" = "$AUTH"
+
+      - name: Resumen
+        run: |
+          {
+            echo "## Entorno desplegado"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Aplicación | ${{ steps.deployment.outputs.gateway-url }} |"
+            echo "| Authorization Server | ${{ steps.deployment.outputs.auth-url }} |"
+            echo "| Imágenes | \`${{ inputs.image-tag }}\` |"
+            echo "| Grupo de recursos | \`$RESOURCE_GROUP\` |"
+            echo "| IP estática del entorno | \`${{ steps.deployment.outputs.static-ip }}\` |"
+            echo
+            echo "La regla de firewall de Postgres está abierta a los servicios de Azure. Para"
+            echo "estrecharla a este entorno, ver \`docs/15-despliegue.md\`."
+            echo
+            echo "**Acuérdate de \`teardown.yml\` cuando termines la demo:** el crédito de estudiante"
+            echo "se agota solo si esto se queda encendido."
+          } >> "$GITHUB_STEP_SUMMARY"

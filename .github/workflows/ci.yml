@@ -1,17 +1,17 @@
-# CI de ukun. Tres trabajos de comprobación que corren a la vez, uno por naturaleza de lo que
-# verifican —el frontend (segundos), el backend (la tanda larga con Testcontainers) y los recorridos
-# de Playwright contra el stack de verdad—, y un cuarto que no comprueba nada: `images` publica las
-# imágenes de producción en GHCR y cuelga de los tres anteriores.
+# CI de ukun. Cuatro trabajos de comprobación que corren a la vez —el frontend (segundos), el
+# backend (la tanda larga con Testcontainers), los recorridos de Playwright contra el stack de
+# verdad, y `infra`, que solo comprueba que la plantilla de despliegue compila—, y un quinto que no
+# comprueba nada: `images` publica las imágenes de producción en GHCR y cuelga de los tres primeros.
 #
 # El reparto de los tres primeros no se decide aquí: lo fija `docs/13-testing.md` §3 «Reparto por
-# fase de CI», y este fichero lo implementa. Si los dos discrepan, manda el documento. `images` no
-# sale de ese documento sino de ADR-0023 (issue #55), que es quien elige GHCR y el etiquetado por
-# SHA.
+# fase de CI», y este fichero lo implementa. Si los dos discrepan, manda el documento. `images` e
+# `infra` no salen de ese documento sino de ADR-0023 (issue #55), que es quien elige GHCR, el
+# etiquetado por SHA y Bicep.
 #
 # LO QUE ESTE PIPELINE NO PUEDE HACER: impedir un merge. Las reglas de protección de rama no están
 # disponibles en un repositorio privado del plan gratuito, así que el resultado es informativo. El
-# día que el repo sea público o de pago, los checks a marcar como obligatorios son los tres primeros
-# nombres de job de abajo — `images` no, que no juzga nada y solo corre después de ellos. Está
+# día que el repo sea público o de pago, los checks a marcar como obligatorios son los cuatro
+# trabajos de comprobación — `images` no, que no juzga nada y solo corre después de ellos. Está
 # anotado también en `docs/13-testing.md` §3.
 name: CI
 
@@ -205,6 +205,26 @@ jobs:
       - name: Logs del stack
         if: failure()
         run: docker compose -f compose.yaml -f compose.dev.yaml logs --no-color --tail=400
+
+  # La plantilla de despliegue de ADR-0023 (issue #55) compila. Es el trabajo más barato de este
+  # fichero y cubre el fallo más caro de los suyos: un Bicep que no compila no se descubre al
+  # escribirlo —no hay `az` en la máquina de desarrollo, y el ADR ya lo anota como requisito de quien
+  # despliega a mano— sino en mitad de un `workflow_dispatch`, con el grupo de recursos ya creado.
+  #
+  # `az bicep build` valida además las `apiVersion` y las propiedades de cada recurso contra los
+  # tipos que trae el compilador, así que también caza una propiedad inventada, que es la clase de
+  # error que en una plantilla no se ve leyéndola.
+  #
+  # No se autentica contra Azure ni lo necesita: compilar es una operación local.
+  infra:
+    name: infra
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # `az` viene preinstalado en el runner y se descarga el compilador de Bicep la primera vez.
+      - name: La plantilla de Bicep compila
+        run: az bicep build --file deploy/azure/main.bicep --outfile /dev/null
 
   # Las tres imágenes de producción, publicadas en GHCR y etiquetadas por SHA. Es el insumo del
   # despliegue de ADR-0023 (issue #55): `deploy.yml` recibe una etiqueta y Bicep la pasa a las tres
