@@ -131,9 +131,31 @@ jobs:
             --no-progress --output none
           echo "Subidas $(find resources/uploads -type f | wc -l) imágenes al share."
 
-      # El despliegue devuelve control en cuanto ACA acepta la revisión, no cuando la aplicación
-      # responde: por delante quedan el arranque de tres JVM y las migraciones de Liquibase sobre tres
-      # bases. Los mismos 300 segundos que espera el trabajo `e2e` de ci.yml, y por el mismo motivo.
+      # DOS ESPERAS, y hacen falta las dos. Ésta es la primera: que la revisión nueva de CADA app esté
+      # lista, no solo aceptada. `az deployment group create` devuelve control en cuanto ACA acepta la
+      # revisión, y por delante quedan el arranque de tres JVM y las migraciones de Liquibase.
+      #
+      # Sin esta espera, un despliegue que solo cambia una variable de `ukun-api` deja el gateway
+      # intacto —y por tanto sano desde el primer segundo—, así que el humo arrancaba mientras la
+      # revisión nueva del API todavía estaba subiendo. Pasó: el alta se quedó sin responder y el
+      # despliegue se declaró fallido con la plantilla correcta. Comprobar la salud del gateway no
+      # dice nada sobre las otras dos apps.
+      - name: Esperar a que las tres revisiones estén listas
+        run: |
+          for app in ukun-api ukun-auth ukun-gateway; do
+            echo "::group::$app"
+            timeout 300 bash -c "
+              until [ \"\$(az containerapp show -n $app -g $RESOURCE_GROUP --query properties.latestRevisionName -o tsv)\" \
+                    = \"\$(az containerapp show -n $app -g $RESOURCE_GROUP --query properties.latestReadyRevisionName -o tsv)\" ]; do
+                sleep 10
+              done"
+            az containerapp show -n "$app" -g "$RESOURCE_GROUP" --query '{app:name, revision:properties.latestReadyRevisionName}' -o tsv
+            echo "::endgroup::"
+          done
+
+      # Y la segunda: que la aplicación responda de verdad. Una revisión lista es un contenedor que
+      # pasó su sonda, no necesariamente un stack que sirve — los mismos 300 segundos que espera el
+      # trabajo `e2e` de ci.yml, y por el mismo motivo.
       - name: Esperar a que el gateway esté sano
         run: |
           timeout 300 bash -c \
