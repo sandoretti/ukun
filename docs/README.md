@@ -24,6 +24,8 @@ Cada documento arranca con un bloque de cuatro líneas (*fuente de verdad de · 
 | [`12-error-contract.md`](./12-error-contract.md) | Registro cerrado de `code`s de error y proceso para añadir uno |
 | [`13-testing.md`](./13-testing.md) | Cómo se escribe un test: nomenclatura, AssertJ, object mothers, Testcontainers, fases de CI |
 | [`14-modules.md`](./14-modules.md) | Cómo se escribe un módulo de Spring Modulith y qué hacer si `verify()` falla — **solo `ukun-api`**; `ukun-auth` va por capas (ADR-0022) |
+| [`15-despliegue.md`](./15-despliegue.md) | Runbook del entorno desplegado: preparación única, levantar, actualizar, destruir, y de dónde sale cada variable |
+| [`16-bitacora-del-despliegue.md`](./16-bitacora-del-despliegue.md) | Qué está provisionado hoy en Azure, cuándo se hizo, y lo que se descubrió al hacerlo |
 | [`adr/`](./adr/) | Decisiones estructurales, una por fichero, con su alternativa descartada |
 | [`api/openapi/`](./api/openapi/) | El contrato REST (`ukun-api.yaml`, `ukun-auth.yaml`), en inglés, escrito antes que la implementación |
 
@@ -41,7 +43,8 @@ Para no buscar la misma decisión en tres sitios:
 | la ruta de un endpoint | `docs/api/openapi/*.yaml` — congelado desde SINC-1 |
 | cómo se escribe código en una tecnología | `.claude/skills/` (`spring-api`, `react-web`, …) |
 | cómo se construyen los servicios Java, o qué versión usa un plugin del build | `05-stack-y-versiones.md` §Build, y el porqué en ADR-0021 |
-| dónde y cómo corre el sistema desplegado | ADR-0023 — y el runbook en `15-despliegue.md` cuando exista |
+| dónde y cómo corre el sistema desplegado | el porqué en ADR-0023, el cómo en `15-despliegue.md` |
+| qué hay levantado ahora mismo en Azure, y qué falló al montarlo | `16-bitacora-del-despliegue.md` |
 | qué estado se comparte entre réplicas, y dónde vive | ADR-0024 — y el porqué de que no sea Redis |
 | cuándo entra algo | `04-roadmap.md` |
 | en qué estado está una tarea | issues y milestones de GitHub — `./scripts/roadmap-status.sh` |
