@@ -40,6 +40,15 @@ dependencies {
     // Límite de intentos de login (docs/08 §8). Corta la fuerza bruta sin bloquear una cuenta
     // legítima por un ataque dirigido a otra, que es lo que hace un bloqueo por cuenta a secas.
     implementation(libs.bucket4j.core)
+    // Y su presupuesto compartido entre réplicas, sobre ukun_auth (ADR-0024): con los buckets en un
+    // ConcurrentHashMap por JVM, N réplicas dan un presupuesto real de N×5/min y el límite no limita.
+    implementation(libs.bucket4j.postgresql)
+
+    // Exclusión mutua de los @Scheduled entre réplicas (ADR-0024). Lo lleva AccountReconciliationJob;
+    // NO lo llevan las purgas de mapas de LoginAttemptBuckets, que son estado de esta JVM y tienen
+    // que correr en todas las réplicas — esa es la mitad de la regla que se olvida.
+    implementation(libs.shedlock.spring)
+    implementation(libs.shedlock.provider.jdbc.template)
 
     // Liquibase es el dueño del esquema de ukun_auth (skill `liquibase`, regla 3): Hibernate no lo
     // crea nunca, `ddl-auto: validate` solo lo comprueba. Y es el artefacto de Boot, no
@@ -48,6 +57,13 @@ dependencies {
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.liquibase)
     runtimeOnly(libs.postgresql)
+
+    // La sesión del formulario de login y del endpoint de autorización, fuera del heap y en ukun_auth
+    // (ADR-0024). Sin esto, el callback del código que cae en otra réplica no encuentra la petición
+    // de autorización que lo inició y el login falla de forma intermitente. La tabla la crea
+    // Liquibase (releases/v1.0), no el schema.sql de la librería: la regla 3 de la skill `liquibase`
+    // no hace excepción porque el DDL venga de fuera, y por eso `initialize-schema: never`.
+    implementation(libs.spring.boot.session.jdbc)
 
     // A diferencia de ukun-api, aquí no hay MapStruct: este servicio es anémico (ADR-0004) y sus
     // DTOs son tres records que se construyen a mano. Lombok sí, porque la regla dura de CLAUDE.md

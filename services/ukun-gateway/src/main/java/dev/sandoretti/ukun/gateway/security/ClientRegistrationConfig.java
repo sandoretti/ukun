@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.InMemoryReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.client.web.server.WebSessionServerOAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
@@ -67,6 +69,29 @@ class ClientRegistrationConfig {
      * matches the one registered — both derive from the same base.
      */
     private static final String REDIRECT_URI = "{baseUrl}/login/oauth2/code/{registrationId}";
+
+    /**
+     * <strong>Los tokens del BFF van a la sesión, no a un mapa de este proceso</strong> (ADR-0024,
+     * issue #118).
+     *
+     * <p>Sin este bean, Boot autoconfigura el repositorio sobre un
+     * {@code InMemoryReactiveOAuth2AuthorizedClientService}
+     * ({@code ReactiveOAuth2ClientWebSecurityAutoConfiguration}), y entonces el access token y el
+     * refresh token viven en un {@code ConcurrentHashMap} de esta JVM aunque la sesión esté en
+     * Postgres. El modo de fallo es el que se midió levantando el entorno con réplicas: tras
+     * reiniciar el gateway, la sesión se restaura —el log de acceso trae el {@code accountId}— pero la
+     * primera petición a {@code /api/**} sale con un {@code 302} hacia {@code /oauth2/authorize} en
+     * vez de con su respuesta, porque no hay token que relevar. Se ve como «la sesión no sobrevivió»
+     * y no lo es.
+     *
+     * <p>Con el repositorio de sesión, los tokens viajan dentro de {@code web_session.attributes}, que
+     * es lo que hace cierto lo que ADR-0024 promete — y lo que convierte esa fila en material tan
+     * sensible como {@code account.password_hash} (docs/11 §4).
+     */
+    @Bean
+    ServerOAuth2AuthorizedClientRepository authorizedClientRepository() {
+        return new WebSessionServerOAuth2AuthorizedClientRepository();
+    }
 
     @Bean
     ReactiveClientRegistrationRepository clientRegistrations(UkunOAuth2Properties properties) {

@@ -36,6 +36,12 @@ dependencies {
     // crea nunca, `ddl-auto: validate` solo lo comprueba.
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.liquibase)
+
+    // Exclusión mutua de los @Scheduled entre réplicas (ADR-0024, issue #118). Este servicio no tenía
+    // ninguno hasta v1.0; el primero es CheckoutPurgeJob, y lleva lock no porque un DELETE ... WHERE
+    // repetido sea un defecto —no lo es— sino porque es el molde del que se copiará el siguiente.
+    implementation(libs.shedlock.spring)
+    implementation(libs.shedlock.provider.jdbc.template)
     runtimeOnly(libs.postgresql)
 
     implementation(libs.springdoc.openapi.starter.webmvc.ui)

@@ -29,6 +29,9 @@ archunit = "1.5.0"
 # no se publica — comprobado resolviendo las tres variantes, no supuesto.
 bucket4j = "8.19.0"
 
+# Exclusión mutua de los @Scheduled entre réplicas (ADR-0024, issue #118). No lo gestiona ningún BOM.
+shedlock = "6.6.0"
+
 # Plugins de Gradle. La versión de Gradle en sí vive en gradle/wrapper/gradle-wrapper.properties.
 test-logger = "4.0.0"
 
@@ -61,6 +64,20 @@ spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-
 # pero no la autoconfiguración, y el changelog no se ejecutaría. Este artefacto trae las dos
 # (skill `liquibase`, regla 8).
 spring-boot-liquibase = { module = "org.springframework.boot:spring-boot-liquibase" }
+# La sesión de ukun-auth fuera del heap (ADR-0024, issue #118). Misma partición por tecnología que la
+# línea de arriba: `spring-boot-session-jdbc` es la autoconfiguración y arrastra `spring-session-jdbc`.
+# Es la mitad servlet del problema; la reactiva del gateway NO tiene artefacto — Spring Session 4.x
+# publica solo `core`, `data-redis` y `jdbc`, y este último es servlet, así que el repositorio del
+# gateway es código de este repositorio.
+spring-boot-session-jdbc = { module = "org.springframework.boot:spring-boot-session-jdbc" }
+# La sesión del gateway. Solo el núcleo: aporta ReactiveSessionRepository, MapSession y
+# @EnableSpringWebSession, y la implementación la escribe este repo (JdbcWebSessionRepository) porque
+# no existe ninguna sobre JDBC para WebFlux. No hay artefacto de Boot que autoconfigure esto: su
+# SessionAutoConfiguration reactiva solo aporta el timeout, así que el gateway lo habilita él.
+spring-session-core = { module = "org.springframework.session:spring-session-core" }
+# JdbcClient y Hikari para esa sesión, y Liquibase como dueño del esquema de ukun_gateway. El gateway
+# no lleva JPA: una tabla que se lee y escribe entera por clave primaria no necesita un ORM.
+spring-boot-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
 # El Authorization Server de ukun-auth. Boot 4 publica también el nombre heredado
 # `spring-boot-starter-oauth2-authorization-server`, que resuelve al mismo árbol salvo por una capa
 # de alias: se usa este, que sigue la partición por tecnología del resto de Boot 4.
@@ -166,6 +183,15 @@ archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" 
 
 # --- Bucket4j (ukun-auth y ukun-gateway) ----------------------------------------------------------------
 bucket4j-core = { module = "com.bucket4j:bucket4j_jdk17-core", version.ref = "bucket4j" }
+# El presupuesto del limitador de login, compartido entre réplicas sobre ukun_auth (ADR-0024). Mismo
+# reparto por JDK que el artefacto de arriba, y la misma versión: mezclarlas no compila.
+bucket4j-postgresql = { module = "com.bucket4j:bucket4j_jdk17-postgresql", version.ref = "bucket4j" }
+
+# --- ShedLock (ADR-0024) -----------------------------------------------------------------------
+# `shedlock-spring` aporta @EnableSchedulerLock y @SchedulerLock; el proveedor es JDBC y no Redis por
+# la misma razón que todo lo demás de ese ADR — la base ya está pagada y un recurso nuevo no.
+shedlock-spring = { module = "net.javacrumbs.shedlock:shedlock-spring", version.ref = "shedlock" }
+shedlock-provider-jdbc-template = { module = "net.javacrumbs.shedlock:shedlock-provider-jdbc-template", version.ref = "shedlock" }
 
 # --- Solo para :ukun-test-support (versión gestionada por spring-boot-bom) ---------------------
 # Las reglas de ArchUnit hablan de @Entity y de SLF4J sin ser un servicio, así que necesitan las dos

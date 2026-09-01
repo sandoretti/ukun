@@ -43,6 +43,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
             "spring.liquibase.contexts=prod",
+            "ukun.signing-key=" + AbstractIntegrationTest.SIGNING_KEY,
             "ukun.oauth2.gateway.secret=" + AbstractIntegrationTest.GATEWAY_SECRET,
             "ukun.oauth2.api.secret=" + AbstractIntegrationTest.API_SECRET
         })

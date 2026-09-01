@@ -115,6 +115,18 @@ ukun:
     # disappears with it (docs/04-roadmap.md).
     local-root: /opt/resources/uploads
 
+  checkout:
+    # La purga diaria que docs/10 §4 daba por supuesta al decidir que estas dos tablas no llevan
+    # índice, y que hasta v1.0 no existía (ADR-0024, issue #118). Ver CheckoutPurgeJob.
+    purge:
+      # A una hora a la que nadie despliega, como el job equivalente de ukun-auth.
+      cron: "0 45 3 * * *"
+      # Dos ventanas porque son dos ciclos de vida. El intento caduca por su propia columna
+      # `expires_at` (30 minutos, ADR-0016) y no necesita retención configurable: ya la lleva la fila.
+      # La fila de idempotencia tiene que sobrevivir al reintento al que existe para responder, y
+      # docs/11 (§retención) fija esa ventana en un día.
+      idempotency-retention: P1D
+
 server:
   port: 8081
 

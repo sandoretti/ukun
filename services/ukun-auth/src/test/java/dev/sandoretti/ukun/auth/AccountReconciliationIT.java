@@ -35,6 +35,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(
         properties = {
             "spring.liquibase.contexts=prod",
+            "ukun.signing-key=" + AbstractIntegrationTest.SIGNING_KEY,
             "ukun.oauth2.gateway.secret=" + AbstractIntegrationTest.GATEWAY_SECRET,
             "ukun.oauth2.api.secret=" + AbstractIntegrationTest.API_SECRET,
             "ukun.password.compromised-check.enabled=false",
@@ -57,6 +58,41 @@ class AccountReconciliationIT extends AbstractIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    /**
+     * The lock of ADR-0024, asserted from the outside: with the row already held, the job does not run.
+     *
+     * <p>This is the only test in this suite that can tell whether {@code @SchedulerLock} is wired at
+     * all, and it earns its place by what happened while it was being written — a
+     * {@code lockAtLeastFor} of one minute made every invocation after the first a silent no-op, and
+     * two of the three tests below went on passing because what they assert is that nothing is
+     * deleted. A skipped job passes those. It does not pass this one.
+     */
+    @Test
+    @DisplayName("does not run while another replica holds the lock")
+    void doesNotRunWhileTheLockIsHeld() {
+        AccountMother mother = new AccountMother(jdbc, passwordEncoder);
+        UUID abandoned = mother.reserved("locked-out-" + UUID.randomUUID() + "@ukun.dev");
+        agedBy(abandoned, Duration.ofHours(25));
+        holdTheLockFor(Duration.ofMinutes(5));
+
+        job.collectAbandonedReservations();
+
+        assertThat(accountsWithId(abandoned)).isOne();
+    }
+
+    /** What the other replica's row looks like while it is running the job. */
+    private void holdTheLockFor(Duration remaining) {
+        jdbc.update(
+                """
+                INSERT INTO shedlock (name, lock_until, locked_at, locked_by)
+                     VALUES ('account-reconciliation', now() + ?::interval, now(), 'another-replica')
+                ON CONFLICT (name) DO UPDATE SET lock_until = excluded.lock_until,
+                                                 locked_at = excluded.locked_at,
+                                                 locked_by = excluded.locked_by
+                """,
+                remaining.toSeconds() + " seconds");
+    }
 
     @Test
     @DisplayName("a reservation older than the retention window is deleted, and its key with it")

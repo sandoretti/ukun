@@ -18,16 +18,18 @@ Lo que hay que desplegar son **tres contenedores Java y una base de datos**, no 
 | Recurso | SKU / perfil | Notas |
 |---|---|---|
 | Container Apps Environment | Consumption | Uno solo, con su Log Analytics workspace (que ACA exige) |
-| `ukun-gateway` | 0,5 vCPU / 1 GiB, `min=max=1` | Ingress **externo**. Es el único origen que ve el navegador |
-| `ukun-auth` | 0,25 vCPU / 0,5 GiB, `min=max=1` | Ingress **externo** también |
-| `ukun-api` | 0,5 vCPU / 1 GiB, `min=max=1` | Ingress **interno** |
-| PostgreSQL Flexible Server | Burstable **B1ms**, 32 GB, sin HA, backup 7 días | Un servidor, las dos bases: `ukun_app` y `ukun_auth` |
+| `ukun-gateway` | 0,5 vCPU / 1 GiB, `min=max=1` | Ingress **externo**. Es el único origen que ve el navegador. Sigue a una réplica tras ADR-0024, con su motivo escrito allí |
+| `ukun-auth` | 0,25 vCPU / 0,5 GiB, `min=1` | Ingress **externo** también. `max=1` dejó de ser obligatorio con ADR-0024 |
+| `ukun-api` | 0,5 vCPU / 1 GiB, `min=1` | Ingress **interno**. `max=1` dejó de ser obligatorio con ADR-0024 |
+| PostgreSQL Flexible Server | Burstable **B1ms**, 32 GB, sin HA, backup 7 días | Un servidor, **tres** bases desde ADR-0024: `ukun_app`, `ukun_auth` y `ukun_gateway` |
 | Azure Files share | Standard | Montado en `ukun-api`, sustituye el bind mount de `resources/uploads` |
 
 Tres puntos de esa tabla no son evidentes y son justamente los que se decidieron:
 
 - **`ukun-auth` necesita ingress externo**, igual que el gateway. No es un servicio interno aunque el diagrama de `docs/01-arquitectura.md` §2 lo dibuje detrás del BFF: el navegador tiene que poder seguir la redirección a `/oauth2/authorize` y teclear ahí la contraseña. Lo que sí es interno es su contrato `/internal/accounts` (`docs/08-identidad-y-seguridad.md` §3), y eso lo protege `client_credentials` con el scope `accounts:write`, no la topología de red.
-- **Una sola réplica en todos, y `max=1` explícito**, no por coste sino porque la sesión vive en memoria en el gateway *y* en `ukun-auth` (ADR-0003, skill `spring-gateway` §5, issue #118). Un `max=2` no daría un error: daría logins que fallan de forma intermitente cuando el callback del código cae en la réplica que no inició el flujo. Que el límite esté escrito en la plantilla de Bicep es la mitad de esta decisión.
+- **Una sola réplica en todos, y `max=1` explícito**, no por coste sino porque la sesión vivía en memoria en el gateway *y* en `ukun-auth` (ADR-0003, skill `spring-gateway` §5). Un `max=2` no daría un error: daría logins que fallan de forma intermitente cuando el callback del código cae en la réplica que no inició el flujo. Que el límite esté escrito en la plantilla de Bicep es la mitad de esta decisión.
+
+  **ADR-0024 (issue #118) levanta esa restricción para `ukun-auth` y `ukun-api`, y no para el gateway.** Los cinco motivos por los que nada era desplegable con más de una réplica están resueltos —clave de firma, sesión, purga, jobs y limitador— pero el limitador de tasa del gateway sigue con sus buckets en memoria a propósito, así que ese servicio conserva su `max=1` **con el motivo escrito al lado**, que es lo que impide que alguien lo suba «porque los otros dos ya se puede». Los tres siguen con `min=1`.
 - **El acceso a Postgres es público con regla de firewall**, restringido a la IP saliente estática del Container Apps Environment, no un Private Endpoint sobre VNet. La red privada obliga a integrar el entorno en una VNet propia y a pagar el enlace privado, que es coste fijo mensual sobre un crédito de 100 USD. Se acepta conscientemente: es la decisión que se revisaría primero si esto dejara de ser un proyecto de estudio.
 
 ### El entorno es efímero a propósito
@@ -56,12 +58,12 @@ Volver a Azure **no** es volver al despliegue de Azure. `docker-compose-azure.ym
 - Requisito nuevo de la máquina de quien despliega a mano: `az` CLI y las extensiones de Container Apps. El camino normal, aun así, es el workflow.
 - **Los nombres internos de `compose.yaml` no valen tal cual.** `UKUN_API_URI=http://ukun-api:8081` resuelve dentro de la red de Docker; dentro de un Container Apps Environment el destino interno es el FQDN que ACA asigna a la app. Es la traducción que hay que hacer con cuidado, porque el comentario de `compose.yaml` que distingue las variables «que sigue el navegador» de las «que resuelve el servicio» sigue mandando: mezclarlas es el fallo que no da un error claro.
 
-Y seis cosas del código de hoy que el despliegue destapa. Ninguna se arregla en este ADR: se documentan aquí y se ejecutan en la issue #55.
+Y seis cosas del código de hoy que el despliegue destapa. Ninguna se arregló en este ADR: se documentaron aquí para ejecutarse en la issue #55, y **tres de ellas las resolvió antes la issue #118** (ADR-0024) porque eran la misma deuda vista desde el otro lado. Quedan tachadas abajo con lo que el despliegue todavía tiene que aportar.
 
 1. **`CREATE EXTENSION` falla si la extensión no está en la allowlist del servidor.** El baseline crea `citext` y `releases/v0.3/002-unaccent.yaml` crea `unaccent`; en Flexible Server las dos exigen figurar en el parámetro de servidor `azure.extensions`. El síntoma es que Liquibase no arranca, y el mensaje no menciona Azure por ninguna parte.
-2. **La clave de firma de `ukun-auth` se genera al arrancar.** `JwkSourceConfig` hace `KeyPairGenerator.getInstance("RSA")` con un `keyID` aleatorio, así que cada revisión nueva de la container app invalida todos los tokens emitidos. Pasa a ser un PEM en un secreto de la aplicación. Es el punto 1 de la issue #118, y aquí deja de ser deuda teórica: cada despliegue la ejerce.
-3. **La sesión en memoria fija el número de réplicas en uno**, en gateway y en auth. Escrito en la plantilla, no confiado a la configuración por defecto.
-4. **`forward-headers-strategy` no está configurado en ningún servicio.** Detrás del ingress de ACA, que termina el TLS, Spring construiría el `redirect_uri` del login sobre `http://` y el flujo OAuth2 se rompe. Va junto con el punto 5 de la issue #118: el limitador de intentos de login usa `getRemoteAddr()`, que detrás de un proxy es la misma IP para todo el mundo, y `LoginEventListener` ya razona por qué hoy no se lee `X-Forwarded-For` — con un balanceador delante, esa decisión correcta pasa a ser un requisito de configuración.
+2. ~~**La clave de firma de `ukun-auth` se genera al arrancar.**~~ **Resuelto en v1.0** (ADR-0024, issue #118 punto 1): sale de `UKUN_SIGNING_KEY`, un secreto de la aplicación sin valor por defecto, y el `kid` se deriva de la propia clave. Lo que este despliegue tiene que aportar es el secreto; generarlo está en `.env.example`.
+3. ~~**La sesión en memoria fija el número de réplicas en uno**, en gateway y en auth.~~ **Resuelto para auth en v1.0** (ADR-0024, issue #118 punto 2): su sesión vive en `ukun_auth`. La del gateway también salió del heap, a la base nueva `ukun_gateway`, pero ese servicio conserva `max=1` por su limitador de tasa — sigue escrito en la plantilla y no confiado al valor por defecto.
+4. ~~**`forward-headers-strategy` no está configurado en ningún servicio.**~~ **Resuelto en v1.0** (ADR-0024, issue #118 punto 5). `ukun-auth` usa la variante `native`, que es la única con lista de proxies de confianza, y el gateway la `framework`, que es la única que hay en WebFlux — y por eso las dos viven en el documento `!dev` del `application.yaml`: en local no hay proxy delante y confiar ahí en `X-Forwarded-For` sería dejar que cualquiera eligiera su propia dirección. Lo que este despliegue tiene que garantizar es que el ingress sea el único camino de entrada.
 5. **`UKUN_AUTH_ISSUER` y `UKUN_GATEWAY_BASE_URL` dejan de ser `localhost`.** El `iss` se compara literalmente contra el claim del token en `ukun-api`, así que los dos lados tienen que recibir exactamente la misma cadena `https://…`.
 6. **No hay imagen de producción del SPA.** `apps/ukun-web` solo tiene `Dockerfile.dev`, que arranca el dev server de Vite. Para que el gateway sirva el estático que la skill `spring-gateway` §6 promete, hace falta el build de producción y una etapa que lo copie dentro de la imagen del gateway.
 

@@ -1,0 +1,91 @@
+# El esquema completo de ukun_gateway: una tabla (ADR-0024).
+#
+# Guarda la sesión del BFF, que es lo que ADR-0003 pone del lado del servidor para que el navegador
+# solo tenga una cookie: el SecurityContext de quien ha iniciado sesión y el OAuth2AuthorizedClient
+# con su access token y su refresh token. **Es material tan sensible como account.password_hash en
+# ukun_auth** — no se vuelca en ningún log (docs/11 §4) y no se lee desde ningún otro servicio.
+#
+# El modelo es de una tabla y no de dos, a diferencia de spring_session/spring_session_attributes en
+# ukun_auth. Aquella es de la librería y guarda un atributo por fila; esta la escribe este repo y la
+# sesión se lee y se escribe **entera** en cada petición —no hay ninguna consulta que quiera un
+# atributo suelto—, así que partirla en dos tablas sería un JOIN por petición a cambio de nada.
+#
+# Tipos: `id` es VARCHAR(36) porque el generador por defecto de Spring Session es un UUID en texto,
+# el mismo ancho que usa la propia librería en su esquema. `max_inactive_interval` en segundos,
+# porque es lo que Session expone. `expires_at` es derivado —último acceso más el intervalo— y está
+# materializado a propósito: es la única columna por la que se consulta algo que no sea la clave
+# primaria, y calcularlo en la consulta impediría indexarlo.
+databaseChangeLog:
+
+  - changeSet:
+      id: 001-01-table-web-session
+      author: sandoretti
+      comment: web_session — la sesión del BFF, fuera del heap (ADR-0024)
+      changes:
+        - createTable:
+            tableName: web_session
+            columns:
+              - column:
+                  name: id
+                  type: VARCHAR(36)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_web_session
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_accessed_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: max_inactive_interval
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              # El mapa de atributos serializado entero. NOT NULL: una sesión sin atributos es un mapa
+              # vacío serializado, no la ausencia de mapa — distinguir las dos cosas no le sirve a
+              # nadie y sí obligaría a que quien lee compruebe null en cada petición.
+              - column:
+                  name: attributes
+                  type: BYTEA
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 001-02-check-web-session
+      author: sandoretti
+      comment: invariantes de la fila; en `sql` porque AddCheckConstraintChange es Liquibase Pro
+      changes:
+        - sql:
+            sql: |
+              ALTER TABLE web_session
+                ADD CONSTRAINT ck_web_session_max_inactive_interval CHECK (max_inactive_interval > 0);
+              ALTER TABLE web_session
+                ADD CONSTRAINT ck_web_session_expires_after_access CHECK (expires_at > last_accessed_at);
+      rollback:
+        - sql:
+            sql: |
+              ALTER TABLE web_session DROP CONSTRAINT ck_web_session_expires_after_access;
+              ALTER TABLE web_session DROP CONSTRAINT ck_web_session_max_inactive_interval;
+
+  - changeSet:
+      id: 001-03-index-web-session-expires-at
+      author: sandoretti
+      comment: la única consulta que no es por clave primaria — la purga de sesiones caducadas
+      changes:
+        - createIndex:
+            tableName: web_session
+            indexName: ix_web_session_expires_at
+            columns:
+              - column:
+                  name: expires_at

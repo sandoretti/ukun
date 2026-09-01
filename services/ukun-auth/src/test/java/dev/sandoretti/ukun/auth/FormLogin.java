@@ -27,6 +27,15 @@ final class FormLogin {
     /** The default form login lands here on success and on {@code /login?error} on failure. */
     static final String LOGIN_PATH = "/login";
 
+    /**
+     * Still {@code JSESSIONID} after v1.0 moved the session into {@code ukun_auth} (ADR-0024), and
+     * that is pinned in {@code application.yaml} rather than left at Spring Session's default of
+     * {@code SESSION} — which is the name the gateway's own session already uses. Cookies do not
+     * distinguish port, so on {@code localhost} the two would be one cookie overwriting the other,
+     * and the visible symptom is not a session error but a login that never completes.
+     */
+    private static final String SESSION_COOKIE = "JSESSIONID=";
+
     private static final Pattern CSRF_TOKEN =
             Pattern.compile("name=\"_csrf\".*?value=\"([^\"]+)\"", Pattern.DOTALL);
 
@@ -80,7 +89,7 @@ final class FormLogin {
      */
     private static String firstSessionCookie(HttpHeaders headers) {
         return headers.getOrEmpty(HttpHeaders.SET_COOKIE).stream()
-                .filter(cookie -> cookie.startsWith("JSESSIONID="))
+                .filter(cookie -> cookie.startsWith(SESSION_COOKIE))
                 .map(cookie -> cookie.split(";", 2)[0])
                 .findFirst()
                 .orElse(null);

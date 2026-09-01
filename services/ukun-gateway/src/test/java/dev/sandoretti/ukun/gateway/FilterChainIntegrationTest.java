@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.reactive.server.SecurityMock
 import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
 
 import dev.sandoretti.ukun.gateway.support.AccessTokens;
+import dev.sandoretti.ukun.gateway.support.GatewayDatabase;
 import dev.sandoretti.ukun.gateway.support.UpstreamStub;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -40,6 +41,10 @@ abstract class FilterChainIntegrationTest {
     @DynamicPropertySource
     static void upstreams(DynamicPropertyRegistry registry) {
         UpstreamStub.bind(registry);
+        // Since ADR-0024 the session lives in a table, so no context of this service starts without a
+        // database. Registered here and not in a shared method: this one is part of the context cache
+        // key (skill `testing`).
+        GatewayDatabase.bind(registry);
     }
 
     @Autowired

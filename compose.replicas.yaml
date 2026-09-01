@@ -1,0 +1,116 @@
+# Dos réplicas de ukun-api y dos de ukun-auth, que es la condición de salida del issue #118: el
+# recorrido completo tiene que funcionar con las dos levantadas a la vez y sin 401 intermitentes.
+#
+# NO lo usa Tilt y no es entorno de desarrollo (docs/06). Es una comprobación manual:
+#
+#   docker compose -f compose.yaml -f compose.replicas.yaml up --build -d \
+#     db ukun-api ukun-auth ukun-auth-b auth-lb ukun-gateway
+#   ./scripts/replicas-journey.sh
+#
+# Ese script es la parte comprobable a máquina: el recorrido completo, un solo `kid` entre réplicas y
+# el presupuesto del limitador de login. Lo que exige parar una réplica —crear la sesión en una y
+# usarla en la otra, reiniciar el gateway sin perder la sesión— está en docs/06-entorno-local-tilt.md.
+#
+# Tres cosas de este fichero no son evidentes y cada una tiene un modo de fallo detrás.
+#
+# 1. **Se ejecuta sobre `compose.yaml` a secas, sin `compose.dev.yaml`.** Aquel publica JDWP en
+#    puertos fijos y un puerto del host no lo pueden tener dos contenedores. Consecuencia: el perfil
+#    activo NO es `dev`, así que se ejerce la configuración de producción — incluido el
+#    `forward-headers-strategy` que solo vive en el documento `!dev` (ADR-0024), que es justo lo que
+#    interesa probar. `ukun-web` se queda fuera: no tiene Dockerfile de producción (ADR-0023, punto 6
+#    de su lista), y para este recorrido el SPA no hace falta.
+#
+# 2. **`ukun-api` escala con `deploy.replicas` y `ukun-auth` no.** El API es interno: el gateway lo
+#    alcanza por nombre de contenedor y el DNS de Docker reparte solo. `ukun-auth` **tiene que ser
+#    alcanzable por el navegador** —la página de login se sirve desde su propio origen (docs/08 §8), y
+#    ahí `deploy.replicas` no sirve porque dos contenedores no pueden publicar el mismo puerto del
+#    host—. De ahí la segunda réplica como servicio con nombre propio y un balanceador delante.
+#
+# 3. **El balanceador es nginx y eso no resucita nada.** `nginx/` se borró en v0.7 porque el gateway
+#    lo sustituyó (skill `spring-gateway` §4); esto es un aparejo de prueba que ocupa el sitio que en
+#    el despliegue real ocupa el ingress de Azure Container Apps, y no entra en ninguna imagen. Que
+#    ponga `X-Forwarded-*` es parte de la prueba: detrás de él, `ukun-auth` tiene que leer la
+#    dirección real del cliente o su limitador de login cuenta a todo el mundo en el mismo bucket.
+services:
+  # Interno: sin puerto publicado, y el DNS de Docker reparte entre las dos réplicas.
+  ukun-api:
+    ports: !override []
+    deploy:
+      replicas: 2
+
+  # Primera réplica de auth. Pierde el puerto publicado: delante va el balanceador.
+  ukun-auth:
+    ports: !override []
+
+  # Segunda réplica, idéntica. Servicio con nombre propio y no `deploy.replicas` por el motivo 2 de
+  # arriba — y de propina permite reiniciar UNA sola réplica, que es la otra mitad de la condición de
+  # salida: hacerlo no puede invalidar los tokens ya emitidos.
+  ukun-auth-b:
+    extends:
+      file: compose.yaml
+      service: ukun-auth
+    ports: !override []
+    depends_on:
+      - db
+
+  auth-lb:
+    image: nginx:1.29-alpine
+    ports:
+      - "${AUTH_PORT:-9000}:9000"
+    configs:
+      - source: auth-lb-conf
+        target: /etc/nginx/conf.d/default.conf
+    depends_on:
+      - ukun-auth
+      - ukun-auth-b
+
+  # El gateway habla con auth a través del balanceador, no con una réplica concreta. Es lo que hace
+  # real la prueba de la clave de firma: cada llamada al JWKS o al endpoint de token puede caer en
+  # una réplica distinta, y antes de v1.0 cada una publicaba un `kid` propio.
+  ukun-gateway:
+    environment:
+      - UKUN_AUTH_URI=http://auth-lb:9000
+      - UKUN_AUTH_TOKEN_URI=http://auth-lb:9000/oauth2/token
+      - UKUN_AUTH_JWK_SET_URI=http://auth-lb:9000/oauth2/jwks
+    depends_on:
+      - db
+      - ukun-api
+      - auth-lb
+
+configs:
+  auth-lb-conf:
+    content: |
+      # Reparto por petición entre las dos réplicas. `upstream` con dos nombres y no uno con dos
+      # contenedores detrás: así el reparto es de nginx y no del orden en que el DNS de Docker
+      # devuelva los registros, que es lo que hace la prueba repetible.
+      # OJO: las variables de nginx van con `$$`. Compose interpola `$$VAR` dentro de `content`, y sin
+      # escaparlas llegan vacías al contenedor — nginx arranca, no falla, y reenvía sin Host.
+      upstream ukun_auth_replicas {
+          server ukun-auth:9000;
+          server ukun-auth-b:9000;
+      }
+
+      # El upstream en el log es lo que permite comprobar que las dos réplicas sirvieron de verdad; sin
+      # esto, «funciona con dos réplicas» y «funciona con una y otra parada» se ven exactamente igual.
+      #
+      # Al leerlo: con pocas peticiones parece que solo responde una. El round-robin de nginx es
+      # estado POR PROCESO worker, y con cuatro workers las primeras peticiones de cada uno van todas
+      # al primer servidor de la lista. Con treinta ya se ve el reparto.
+      log_format lb '$$upstream_addr $$status $$request';
+
+      server {
+          listen 9000;
+          access_log /dev/stdout lb;
+
+          location / {
+              proxy_pass http://ukun_auth_replicas;
+
+              # El Host tiene que llegar tal cual: el `iss` que ukun-auth publica y el que ukun-api
+              # compara son literalmente la misma cadena, `http://localhost:9000`.
+              proxy_set_header Host $$http_host;
+              proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $$scheme;
+              proxy_set_header X-Forwarded-Host $$http_host;
+              proxy_set_header X-Forwarded-Port 9000;
+          }
+      }

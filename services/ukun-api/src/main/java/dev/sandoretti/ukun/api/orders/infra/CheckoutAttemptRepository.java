@@ -1,10 +1,14 @@
 package dev.sandoretti.ukun.api.orders.infra;
 
 import dev.sandoretti.ukun.api.orders.domain.CheckoutAttempt;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * {@code checkout_attempt} and, through the aggregate's cascade, its lines.
@@ -30,4 +34,18 @@ public interface CheckoutAttemptRepository extends JpaRepository<CheckoutAttempt
      */
     @EntityGraph(attributePaths = "lines")
     Optional<CheckoutAttempt> findByIdAndCustomerId(UUID id, Long customerId);
+
+    /**
+     * The daily purge of {@code CheckoutPurgeJob} (ADR-0016 promised it, ADR-0024 is where it got
+     * written). One statement and not a derived {@code deleteBy…}: the derived form loads every
+     * attempt and then its lines to delete them one by one, which is an N+1 over rows nobody is going
+     * to look at again.
+     *
+     * <p>The lines go with it through the {@code ON DELETE CASCADE} of the v0.6 changeset, not through
+     * JPA — a bulk delete does not cascade in the persistence context, and the constraint is what
+     * makes this correct. It is also why nothing here mentions {@code checkout_attempt_line}.
+     */
+    @Modifying
+    @Query("delete from CheckoutAttempt attempt where attempt.expiresAt < :threshold")
+    long deleteExpiredBefore(@Param("threshold") Instant threshold);
 }

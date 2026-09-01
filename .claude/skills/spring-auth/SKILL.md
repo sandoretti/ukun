@@ -17,7 +17,7 @@ dev.sandoretti.ukun.auth/
   infra/        AccountRepository
   application/  AccountsService, AccountCredentials
   config/       AuthorizationServerConfig, JwkSourceConfig, PasswordEncoderConfig,
-                RegisteredClientProperties, RegisteredClientSeeder
+                RegisteredClientProperties, RegisteredClientSeeder, SchedulerLockConfig
   security/     AccountUserDetailsService, TokenClaimsCustomizer, LoginEventListener,
                 BusinessEvents, LoginAttemptBuckets, LoginRateLimiter
   web/          los @RestController de /internal/accounts
@@ -32,6 +32,10 @@ account(id UUID PK, email CITEXT UNIQUE, password_hash, enabled, created_at, upd
 account_role(account_id, role)   -- CUSTOMER | EMPLOYEE | ADMIN
 registration_request(idempotency_key PK, account_id, created_at)   -- idempotencia de altas
 + tablas propias de spring-security-oauth2-authorization-server (oauth2_registered_client, oauth2_authorization, ...)
++ desde v1.0 (ADR-0024), tres piezas de estado que estaban en el heap y con N réplicas dejaban de funcionar:
+  spring_session / spring_session_attributes   -- la sesión del login y del endpoint de autorización
+  shedlock                                     -- un @Scheduled corre una vez por disparo, no una por réplica
+  login_attempt_bucket                         -- el presupuesto del límite de intentos, uno y no N
 ```
 
 **`name`, `last_name` NO viven aquí** — son datos de perfil, viven en `ukun-api` (ver ADR-0004). Si te piden añadir un campo de perfil a `account`, para y relee el ADR antes de hacerlo: probablemente pertenece a `ukun-api`. Nombres de tabla y de código en inglés desde el primer commit (ADR-0018) — este servicio nace en inglés, no tiene fase transitoria con esquema legacy.
@@ -44,14 +48,23 @@ registration_request(idempotency_key PK, account_id, created_at)   -- idempotenc
 4. **Alta de cuenta siempre en dos pasos: reserva (`enabled=false`) + activación.** Nunca una cuenta se crea ya activa de un solo paso — así un fallo de `ukun-api` a mitad de la saga de signup no deja cuentas activas huérfanas. Detalle exacto de la saga en `docs/08-identidad-y-seguridad.md`.
 5. **`/internal/accounts` y sus variantes (`:activate`, `:release`) requieren `client_credentials` con scope `accounts:write`** — no son endpoints públicos, los llama `ukun-api`, nunca el navegador.
 6. **Idempotencia real vía `Idempotency-Key`**, no "confiar en que el cliente no reintente". La tabla `registration_request` existe para esto.
-7. **Reconciliación por job programado**: cuentas `enabled=false` con más de 24h se borran. Sin esto, una saga de signup interrumpida deja basura para siempre.
+7. **Reconciliación por job programado**: cuentas `enabled=false` con más de 24h se borran. Sin esto, una saga de signup interrumpida deja basura para siempre. Lleva `@SchedulerLock` desde v1.0 — ver la regla 13.
 8. **`storeId` nunca aparece en un claim del JWT.** Es un dato de negocio, vive en `ukun-api`; meterlo aquí acopla este servicio al dominio de tiendas (ver `docs/08-identidad-y-seguridad.md`).
-9. **Límite de intentos de login con Bucket4j** (bucket por IP+email, backoff progresivo) y **respuesta genérica en fallo** ("credenciales incorrectas" tanto si el correo no existe como si la contraseña es incorrecta) — el detalle real solo va al log, nunca a la respuesta HTTP. Ver `docs/08-identidad-y-seguridad.md` §8.
+9. **Límite de intentos de login con Bucket4j** (bucket por IP+email, backoff progresivo), **con el presupuesto en `ukun_auth` y no en el heap** desde v1.0 (ADR-0024) — y su otra mitad inseparable, `server.forward-headers-strategy: native` en el documento `!dev`: un presupuesto compartido con la IP equivocada cuenta todos los intentos del mundo contra un solo bucket y no limita nada. `native` y no `framework` porque es la única variante con lista de proxies de confianza. Y **respuesta genérica en fallo** ("credenciales incorrectas" tanto si el correo no existe como si la contraseña es incorrecta) — el detalle real solo va al log, nunca a la respuesta HTTP. Ver `docs/08-identidad-y-seguridad.md` §8.
 10. **La página de login es de este servicio, y es la única vista renderizada en servidor de todo el sistema nuevo.** No es un regreso del Thymeleaf del legacy: el frontend sigue siendo React contra REST (ADR-0002), pero la contraseña se teclea aquí y nunca en el SPA (ADR-0003), así que esa pantalla cae de este lado. Cuatro cosas que no se deducen del código y cuestan una tarde cada una:
     - **`/login` se permite por ruta en `authorizeHttpRequests`, no solo con el `permitAll()` de `formLogin`.** Ese registra un `ExactUrlRequestMatcher`: permite `/login` y nada más, así que `/login?lang=en` cae en `anyRequest().authenticated()` y el entry point lo rebota quitándole el parámetro. Su hoja de estilo necesita el suyo propio (`/css/**`) por lo mismo.
     - **`spring.messages.fallback-to-system-locale: false`.** Con el valor por defecto, un idioma servido desde el fichero base —`es`, que vive en `messages.properties`— cae al locale **del sistema** antes que a ese fichero. La imagen trae `LANG=en_US`: la página salía en inglés para todo el mundo, y en español en la máquina de quien la construyó. El idioma de quien compila no decide el de quien lee.
     - **Thymeleaf prohíbe leer `param` dentro de una expresión de enlace** (`th:href="@{...}"`), a propósito, para que un parámetro de la petición no acabe tejido en una URL que la página emite. Lo que dependa de la query se decide en el controlador y llega como atributo de modelo.
     - **La paleta está copiada de `_tokens.scss` y vigilada por `PaletteParityTest`**, no compartida: los dos artefactos los construyen cadenas de herramientas distintas y acoplarlas costaría poder construir este servicio solo. Cambiar un color aquí sin cambiarlo allí rompe el build, que es exactamente lo que se quiere.
+
+11. **La clave de firma sale de configuración, nunca del arranque** (ADR-0024). `ukun.signing-key` es un PKCS#8 en base64 **sin valor por defecto**, igual que los dos secretos de cliente: el servicio se niega a arrancar antes que arrancar con una clave conocida. El `kid` es el thumbprint RFC 7638 de la propia clave, así que dos réplicas publican el mismo sin ponerse de acuerdo. Si te piden rotación con solapamiento de `kid`, relee ADR-0024: está descartada a propósito hasta que haya una rotación real que gestionar.
+12. **La sesión vive en `ukun_auth`** (`spring-session-jdbc`, ADR-0024), con sus dos tablas creadas por Liquibase y `initialize-schema: never` — el esquema de esta base tiene un solo dueño. Y **el nombre de la cookie se fija a `JSESSIONID` a mano**: el defecto de Spring Session es `SESSION`, que es el mismo que usa la sesión del gateway, y las cookies **no distinguen puerto**, así que sobre `localhost` se pisan y el login deja de completarse — el gateway pierde su `code_verifier` de PKCE y responde `/login?error` sin decir por qué. Si quitas esa línea, el stack local deja de dejar entrar a nadie. La cadena `/internal/**` sigue siendo `STATELESS` y no toca nada de esto.
+13. **Cuándo un `@Scheduled` lleva `@SchedulerLock`**, que es la regla que este servicio estrena y que tiene tres casos y no uno:
+    - **Obligatorio** si el efecto no es repetible entre réplicas: manda un correo, cobra, llama a un tercero, o escribe estado derivado. Hoy no hay ningún job así en todo el sistema — por eso ninguno lo lleva por necesidad.
+    - **Basta la idempotencia** en un `DELETE … WHERE`: N réplicas ejecutándolo es desperdicio, no un defecto. `AccountReconciliationJob` lo lleva igualmente, porque es el molde del que se copiará el siguiente; `LoginAttemptBuckets.discardIdleBuckets` no, porque corre cada diez minutos y una fila de lock reescrita a ese ritmo cuesta más contención que el borrado que protege.
+    - **Prohibido** si el estado es de la JVM. `RequestRateLimitBuckets.discardIdleBuckets` del gateway purga un mapa en memoria: ponerle lock dejaría a todas las réplicas menos una creciendo ese mapa para siempre, y el limitador se convertiría en la denegación de servicio que existe para evitar. **Esta es la mitad de la regla que se olvida.**
+
+    Y una trampa medida, no supuesta: **`lockAtLeastFor` hace que el job se salte en silencio** durante ese tiempo tras cada ejecución. Con `usingDbTime()` hay un solo reloj y no absorbe nada; lo que sí hizo fue que dos tests de `AccountReconciliationIT` pasaran sin ejecutar el job. No lo pongas.
 
 ## Claims del access token
 

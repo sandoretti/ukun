@@ -42,6 +42,7 @@ Para no buscar la misma decisión en tres sitios:
 | cómo se escribe código en una tecnología | `.claude/skills/` (`spring-api`, `react-web`, …) |
 | cómo se construyen los servicios Java, o qué versión usa un plugin del build | `05-stack-y-versiones.md` §Build, y el porqué en ADR-0021 |
 | dónde y cómo corre el sistema desplegado | ADR-0023 — y el runbook en `15-despliegue.md` cuando exista |
+| qué estado se comparte entre réplicas, y dónde vive | ADR-0024 — y el porqué de que no sea Redis |
 | cuándo entra algo | `04-roadmap.md` |
 | en qué estado está una tarea | issues y milestones de GitHub — `./scripts/roadmap-status.sh` |
 

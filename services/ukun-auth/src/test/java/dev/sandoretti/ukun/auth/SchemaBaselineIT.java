@@ -37,7 +37,11 @@ import org.springframework.test.context.DynamicPropertySource;
  * baseline, and it takes the schema-only database so no demo changeset ever runs against it —
  * whichever order the classes of this suite execute in.
  */
-@SpringBootTest(properties = "spring.liquibase.contexts=prod")
+@SpringBootTest(
+        properties = {
+            "spring.liquibase.contexts=prod",
+            "ukun.signing-key=" + AbstractIntegrationTest.SIGNING_KEY
+        })
 class SchemaBaselineIT extends AbstractIntegrationTest {
 
     @DynamicPropertySource
@@ -48,6 +52,11 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
     /**
      * {@code docs/10-modelo-de-datos.md} §8: three tables of this service's own plus the three the
      * Authorization Server brings, and the baseline creates all six at once.
+     *
+     * <p>The other four are what it takes to run this service with more than one replica (ADR-0024,
+     * {@code releases/v1.0/}): the two {@code spring_session*} so a session survives a replica and a
+     * deployment, {@code shedlock} so a scheduled job runs once per firing rather than once per
+     * replica, and {@code login_attempt_bucket} so the login budget is one budget and not N.
      */
     private static final List<String> EXPECTED_TABLES = List.of(
             "account",
@@ -55,7 +64,11 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
             "registration_request",
             "oauth2_registered_client",
             "oauth2_authorization",
-            "oauth2_authorization_consent");
+            "oauth2_authorization_consent",
+            "spring_session",
+            "spring_session_attributes",
+            "shedlock",
+            "login_attempt_bucket");
 
     /**
      * The two unique constraints and the single explicit index. Primary keys are excluded — they are
@@ -66,27 +79,33 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
      * reconciliation job, anything on the {@code oauth2_*} tables), and an index that creeps in
      * "just in case" fails here.
      */
-    private static final List<String> EXPECTED_INDEXES =
-            List.of("ux_account_email", "ux_oauth2_registered_client_id", "ix_registration_request_account");
+    private static final List<String> EXPECTED_INDEXES = List.of(
+            "ux_account_email",
+            "ux_oauth2_registered_client_id",
+            "ix_registration_request_account",
+            "ux_spring_session_id",
+            "ix_spring_session_expiry",
+            "ix_login_attempt_bucket_expires_at");
 
-    /** Both children belong to the account and go with it — {@code docs/10} §6. */
+    /** Both children belong to the account and go with it — {@code docs/10} §6; an attribute to its session. */
     private static final Map<String, String> EXPECTED_DELETE_RULES = Map.of(
             "fk_account_role_account", "CASCADE",
-            "fk_registration_request_account", "CASCADE");
+            "fk_registration_request_account", "CASCADE",
+            "fk_spring_session_attributes_session", "CASCADE");
 
     /** {@code docs/10} §1 (every mandatory text is non-blank) and ADR-0006 (the role list). */
     private static final Map<String, Long> EXPECTED_CHECKS_PER_TABLE = Map.of("account", 2L, "account_role", 1L);
 
     private static final String CHANGE_LOG = "classpath:db/changelog/db.changelog-master.yaml";
 
-    /** The eleven changesets of {@code baseline/001-esquema-inicial.yaml}. */
-    private static final int EXPECTED_CHANGESETS = 11;
+    /** The eleven changesets of {@code baseline/001-esquema-inicial.yaml} plus the seven of v1.0. */
+    private static final int EXPECTED_CHANGESETS = 18;
 
     @Autowired
     private JdbcTemplate jdbc;
 
     @Test
-    @DisplayName("the baseline creates the six tables of docs/10 §8 and nothing else")
+    @DisplayName("the schema is the six tables of docs/10 §8 plus the four v1.0 added, and nothing else")
     void createsEveryTableOfTheDataModel() {
         List<String> tables = jdbc.queryForList(
                 """
@@ -118,7 +137,7 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("the indexes are exactly the ones the baseline justifies, with their agreed names")
+    @DisplayName("the indexes are exactly the ones a query justifies, with their agreed names")
     void createsExactlyTheJustifiedIndexes() {
         List<String> indexes = jdbc.queryForList(
                 """

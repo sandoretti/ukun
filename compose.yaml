@@ -80,9 +80,12 @@ services:
       - UKUN_AUTH_ISSUER=${UKUN_AUTH_ISSUER:-http://localhost:${AUTH_PORT:-9000}}
       - UKUN_GATEWAY_BASE_URL=${UKUN_GATEWAY_BASE_URL:-http://localhost:${GATEWAY_PORT:-8080}}
       # Sin valor por defecto: .env los define (ver .env.example) y sin ellos el servicio no arranca,
-      # que es justo lo que se quiere frente a un secreto de cliente conocido.
+      # que es justo lo que se quiere frente a un secreto de cliente conocido. La clave de firma va
+      # en la misma lista y por la misma razón (ADR-0024): desde v1.0 sale de aquí y no del arranque,
+      # así que reiniciar este contenedor ya no cierra la sesión de nadie.
       - UKUN_OAUTH2_GATEWAY_SECRET=${UKUN_OAUTH2_GATEWAY_SECRET}
       - UKUN_OAUTH2_API_SECRET=${UKUN_OAUTH2_API_SECRET}
+      - UKUN_SIGNING_KEY=${UKUN_SIGNING_KEY}
     depends_on:
       - db
 
@@ -118,7 +121,16 @@ services:
       # El mismo secreto con el que ukun-auth registró el cliente, y por eso sin default: si falta,
       # la propiedad sin default de application.yaml impide arrancar con un mensaje que lo dice.
       - UKUN_OAUTH2_GATEWAY_SECRET=${UKUN_OAUTH2_GATEWAY_SECRET}
+
+      # Desde v1.0 este servicio tiene base propia: la sesión del BFF vive en ukun_gateway y no en el
+      # heap (ADR-0024, issue #118), así que un reinicio del contenedor ya no cierra la sesión de
+      # nadie. La base la crea scripts/postgres-init-databases.sh, que SOLO corre sobre un volumen
+      # virgen: sobre uno de antes de v1.0 hace falta un `db-reset` (docs/06).
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/ukun_gateway
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
     depends_on:
+      - db
       - ukun-api
       - ukun-auth
 

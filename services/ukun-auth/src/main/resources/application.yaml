@@ -34,6 +34,21 @@ spring:
   messages:
     fallback-to-system-locale: false
 
+  # La sesión de este servicio vive en ukun_auth y no en el heap (ADR-0024, issue #118). Es la del
+  # formulario de login y la del endpoint de autorización: sin esto, con dos réplicas el callback del
+  # código puede caer en la que no inició el flujo, y con una sola cada despliegue cierra la sesión de
+  # todo el mundo. La cadena /internal/** no la usa — es STATELESS y así sigue.
+  session:
+    # Las dos tablas las crea Liquibase (releases/v1.0/002-spring-session.yaml), no la librería: el
+    # esquema de esta base tiene un solo dueño (skill `liquibase`, regla 3). El valor por defecto es
+    # `embedded`, que contra Postgres tampoco haría nada — se escribe `never` porque la intención no
+    # se deduce de que la base «no sea embebida».
+    jdbc:
+      initialize-schema: never
+    # Media jornada. La sesión del navegador vive en el gateway; esta solo tiene que durar lo que
+    # dura tener abierta la pestaña de la tienda sin volver a teclear la contraseña.
+    timeout: 8h
+
   jpa:
     hibernate:
       # `validate`, never `create`/`update`: Hibernate checks the schema Liquibase created and never
@@ -63,6 +78,15 @@ spring:
 # There is no default for either secret on purpose: a service that starts with a well-known client
 # secret is worse than one that refuses to start.
 ukun:
+  # La clave con la que se firman los access token, y la que publica /oauth2/jwks. PKCS#8 en base64
+  # (con o sin la armadura PEM), y SIN valor por defecto por el mismo motivo que los dos secretos de
+  # cliente de abajo. Hasta v1.0 se generaba en cada arranque: con dos réplicas eso son dos JWKS
+  # detrás del balanceador y 401 intermitentes, y con una sola —que es lo que lo convierte en defecto
+  # y no en un límite de escala— cada despliegue invalidaba todos los tokens emitidos. Ver ADR-0024 y
+  # JwkSourceConfig, que además deriva el `kid` de la propia clave para que dos réplicas publiquen el
+  # mismo sin ponerse de acuerdo. Cómo generar una: .env.example.
+  signing-key: ${UKUN_SIGNING_KEY}
+
   # A dónde vuelve el enlace «Volver a la tienda» de la página de login. Es la dirección del gateway
   # y no la de este servicio: aquí solo se teclea la contraseña, la tienda está al otro lado. Misma
   # variable de entorno que las redirect URIs de abajo, porque es literalmente el mismo sitio.
@@ -100,6 +124,23 @@ ukun:
 
 server:
   port: 9000
+
+  servlet:
+    session:
+      cookie:
+        # **`JSESSIONID` fijado a mano, y no es nostalgia.** Spring Session llama `SESSION` a su
+        # cookie, que es exactamente el nombre que ya usa la sesión del gateway (es el de WebFlux por
+        # defecto). Las cookies **no distinguen puerto**: sobre `localhost` las dos son la misma, y la
+        # segunda pisa a la primera. El síntoma no es un error de sesión sino un login roto entero —
+        # el navegador vuelve al callback del gateway con la cookie de ukun-auth, el gateway no
+        # encuentra su petición de autorización ni su `code_verifier` de PKCE, y responde
+        # `/login?error` sin que ningún log diga por qué. Medido levantando las dos réplicas, no
+        # supuesto.
+        #
+        # En el despliegue de ADR-0023 los dos servicios tienen FQDN distintos y no colisionarían,
+        # pero `tilt up` y cualquier despliegue que comparta host sí. El nombre se fija aquí para que
+        # no dependa de la topología.
+        name: JSESSIONID
 
 management:
   endpoints:
@@ -206,6 +247,26 @@ spring:
   config:
     activate:
       on-profile: "!dev"
+
+# Detrás de un balanceador que termina el TLS, y SOLO ahí (ADR-0024, issue #118 punto 5; ADR-0023
+# punto 4 de su lista de seis). Dos cosas dependen de esto y las dos fallan en silencio sin ello:
+#
+#   * El `redirect_uri` del login se construiría sobre http:// y el flujo OAuth2 se rompería después
+#     de teclear la contraseña, no al arrancar.
+#   * `getRemoteAddr()` devolvería la dirección del ingress para todo el mundo, así que el límite de
+#     intentos de login —compartido entre réplicas desde v1.0— contaría todos los intentos del planeta
+#     contra un único bucket. Un limitador compartido con la IP equivocada no limita nada.
+#
+# `native` y no `framework`: la variante nativa es la única de las dos que tiene noción de proxy de
+# confianza (`server.tomcat.remoteip.internal-proxies`, cuyo valor por defecto son los rangos
+# privados, que es exactamente por dónde llega el ingress). `framework` registra un filtro que se cree
+# la cabecera venga de donde venga — y `X-Forwarded-For` la pone quien llama, que es el razonamiento
+# que LoginEventListener lleva escrito desde v0.4.
+#
+# Está en el documento `!dev` y no en el general a propósito: en `tilt up` no hay proxy delante, así
+# que confiar en esas cabeceras allí sería dejar que cualquiera eligiera su propia dirección.
+server:
+  forward-headers-strategy: native
 
 logging:
   structured:

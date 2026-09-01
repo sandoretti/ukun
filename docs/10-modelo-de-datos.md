@@ -193,7 +193,7 @@ Ambos entran en **v0.3**, con el endpoint de catálogo.
 | Descartado | Motivo |
 |---|---|
 | Cualquier índice de búsqueda por nombre | 24 filas — ver comparativa arriba |
-| `idempotency_key(created_at)` para la purga diaria | tabla de decenas/centenas de filas, un `DELETE` diario es un seq scan de una página. Reconsiderar por encima de ~100k filas, y entonces probablemente BRIN, no btree |
+| `idempotency_key(created_at)` para la purga diaria | tabla de decenas/centenas de filas, un `DELETE` diario es un seq scan de una página. Reconsiderar por encima de ~100k filas, y entonces probablemente BRIN, no btree. **La purga que esta línea daba por supuesta existe desde v1.0** y no antes: `CheckoutPurgeJob` (ADR-0024, issue #118), con ventana de 24 h para esta tabla y el `expires_at` del propio intento para `checkout_attempt` |
 | `account(created_at) WHERE NOT enabled` (reconciliación de la saga) | mismo argumento, con menos filas todavía |
 | `cart_item(customer_id)`, `order_line(order_id)` | ya son columna líder de su PK compuesta |
 | `customer_order(placed_at)` a secas | ningún RF pide un listado global de pedidos por fecha |
@@ -298,6 +298,7 @@ El idioma del esquema (inglés, sin fase de renombrado) lo decide **ADR-0018**, 
 |---|:-:|---|
 | `ukun_app` | **v0.2** | todas las tablas de este documento con sus tipos, `CHECK`, `UNIQUE`, índices y `ON DELETE` definitivos: `product`, `product_type`, `store`, `address`, `store_stock`, `customer`, `employee`, `cart_item`, `customer_order`, `order_line`, `card`, `idempotency_key`, `audit_log` |
 | `ukun_auth` | **v0.4** | `CREATE EXTENSION citext` · `account`, `account_role` · `registration_request` · las tablas de `oauth2_registered_client`/`oauth2_authorization` que aporta el Authorization Server |
+| `ukun_gateway` | **v1.0** | `web_session`, y nada más. Nace con ADR-0024: hasta v1.0 el gateway no tenía persistencia de ningún tipo, y sigue sin tener dominio — aquí no entra ninguna tabla de negocio (skill `spring-gateway`) |
 
 Los datos demo van en changesets aparte con `context: demo` (skill `liquibase`), no en el baseline.
 
@@ -306,6 +307,7 @@ Después del baseline, un changeset nuevo solo entra si el diseño **descubre** 
 | Release | Cambio | Motivo |
 |:-:|---|---|
 | **v0.6** | `checkout_attempt` + `checkout_attempt_line` (`releases/v0.6/003-checkout-attempt.yaml`) | **descubierto al implementar el checkout**, que es exactamente el caso que esta tabla contempla: ADR-0016 exige que el intento congele el precio de cada línea y lleve un `expiresAt`, y que confirmar con un `attemptId` inexistente o caducado sea `410 CHECKOUT_EXPIRED`. La única tabla que el baseline creó para ese endpoint es `idempotency_key`, cuya fila —según la tabla del propio ADR— se inserta **al confirmar**: no tiene dónde guardar las líneas congeladas ni qué buscar para decidir si el intento existe. Sin índice propio (única consulta, por PK) y con `ON DELETE CASCADE` en ambas FK: un intento es un borrador de 30 minutos, no historia |
+| **v1.0** | `ukun_app`: `shedlock` (`releases/v1.0/004-shedlock.yaml`) · `ukun_auth`: `spring_session` + `spring_session_attributes`, `shedlock`, `login_attempt_bucket` (`releases/v1.0/002…004`) · **base nueva `ukun_gateway`** con `web_session` | **descubierto al hacer el sistema desplegable con más de una réplica** (ADR-0024, issue #118). Ninguna es de dominio: son las tres formas de estado que vivían en el heap de un proceso —la sesión, el presupuesto del limitador de login y la exclusión mutua de los `@Scheduled`— y que con N réplicas dejan de funcionar. El gateway pasa a tener esquema propio por primera vez, que es el coste más alto de ese ADR |
 | v1.1+ | valores nuevos de `status` (`PAID`/`SHIPPED`/`DELIVERED`) + `order_status_history` | llegan con la pasarela de pago real (`04-roadmap.md`) |
 | v1.1+ | `pg_trgm` + `ix_product_name_trgm` | solo si se cruza el umbral de §4 |
 | v1.1+ | token de pasarela de pago en `card` | sustituye a `last4`/`brand` como dato de negocio |

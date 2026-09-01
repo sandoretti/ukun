@@ -48,6 +48,10 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
      * two of {@code releases/v0.6}, which are the schema checkout discovered it needed: ADR-0016
      * requires the attempt to freeze its lines and to carry an expiry, and the baseline has nowhere to
      * put either ({@code checkout_attempt/003-checkout-attempt.yaml} explains it in full).
+     *
+     * <p>And {@code shedlock}, from {@code releases/v1.0}: this service gained its first scheduled job
+     * in v1.0 ({@code CheckoutPurgeJob}), and a job that runs once per replica instead of once per
+     * firing is one of the five things that kept this system at a single replica (ADR-0024).
      */
     private static final List<String> EXPECTED_TABLES = List.of(
             "address",
@@ -63,6 +67,7 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
             "order_line",
             "product",
             "product_type",
+            "shedlock",
             "store",
             "store_stock");
 
@@ -149,10 +154,11 @@ class SchemaBaselineIT extends AbstractIntegrationTest {
     /**
      * The nineteen changesets of {@code baseline/001-esquema-inicial.yaml}, the one of
      * {@code releases/v0.3/002-unaccent.yaml} and the five of
-     * {@code releases/v0.6/003-checkout-attempt.yaml}. None of them carries a context, so all of them
-     * apply here: schema is schema, whichever context is active — only data is filtered.
+     * {@code releases/v0.6/003-checkout-attempt.yaml}, and the one of
+     * {@code releases/v1.0/004-shedlock.yaml}. None of them carries a context, so all of them apply
+     * here: schema is schema, whichever context is active — only data is filtered.
      */
-    private static final int EXPECTED_CHANGESETS = 25;
+    private static final int EXPECTED_CHANGESETS = 26;
 
     @Test
     @DisplayName("the changelog creates the tables of docs/10 §8 plus the checkout attempt, and nothing else")
