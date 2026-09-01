@@ -1,14 +1,18 @@
-# CI de ukun. Tres trabajos independientes que corren a la vez, uno por naturaleza de lo que
-# comprueba: el frontend (segundos), el backend (la tanda larga con Testcontainers) y los recorridos
-# de Playwright contra el stack de verdad.
+# CI de ukun. Tres trabajos de comprobación que corren a la vez, uno por naturaleza de lo que
+# verifican —el frontend (segundos), el backend (la tanda larga con Testcontainers) y los recorridos
+# de Playwright contra el stack de verdad—, y un cuarto que no comprueba nada: `images` publica las
+# imágenes de producción en GHCR y cuelga de los tres anteriores.
 #
-# El reparto no se decide aquí: lo fija `docs/13-testing.md` §3 «Reparto por fase de CI», y este
-# fichero lo implementa. Si los dos discrepan, manda el documento.
+# El reparto de los tres primeros no se decide aquí: lo fija `docs/13-testing.md` §3 «Reparto por
+# fase de CI», y este fichero lo implementa. Si los dos discrepan, manda el documento. `images` no
+# sale de ese documento sino de ADR-0023 (issue #55), que es quien elige GHCR y el etiquetado por
+# SHA.
 #
 # LO QUE ESTE PIPELINE NO PUEDE HACER: impedir un merge. Las reglas de protección de rama no están
 # disponibles en un repositorio privado del plan gratuito, así que el resultado es informativo. El
-# día que el repo sea público o de pago, los checks a marcar como obligatorios son los tres nombres
-# de job de abajo. Está anotado también en `docs/13-testing.md` §3.
+# día que el repo sea público o de pago, los checks a marcar como obligatorios son los tres primeros
+# nombres de job de abajo — `images` no, que no juzga nada y solo corre después de ellos. Está
+# anotado también en `docs/13-testing.md` §3.
 name: CI
 
 on:
@@ -201,3 +205,88 @@ jobs:
       - name: Logs del stack
         if: failure()
         run: docker compose -f compose.yaml -f compose.dev.yaml logs --no-color --tail=400
+
+  # Las tres imágenes de producción, publicadas en GHCR y etiquetadas por SHA. Es el insumo del
+  # despliegue de ADR-0023 (issue #55): `deploy.yml` recibe una etiqueta y Bicep la pasa a las tres
+  # container apps. Aquí no se despliega nada — construir y desplegar son dos decisiones distintas y
+  # el entorno de Azure es efímero a propósito.
+  #
+  # GHCR y no ACR (ADR-0023): Basic cuesta del orden de 5 USD/mes sobre un crédito anual de 100.
+  # **Los tres paquetes son públicos**, así que Container Apps hace el pull sin credencial alguna —
+  # es la misma línea que el OIDC federado del despliegue: el credencial que no existe no se filtra.
+  # El primer push de cada paquete lo crea PRIVADO y hay que marcarlo público una vez a mano, en la
+  # página del paquete; el síntoma de no haberlo hecho es un ImagePullBackOff en ACA, no un fallo
+  # aquí.
+  images:
+    name: images
+    runs-on: ubuntu-latest
+
+    # Solo desde main. Un pull request no publica: la etiqueta que `deploy.yml` toma por defecto
+    # tiene que corresponder a un commit que existe en la rama, no a una propuesta.
+    if: github.event_name == 'push'
+
+    # Y solo si las tres tandas han pasado. Alarga el camino hasta la imagen, y esa es la intención:
+    # sin protección de rama disponible en este repositorio (ver la cabecera de este fichero), esta
+    # dependencia es lo único que impide publicar una imagen que ningún test ha visto.
+    needs: [frontend, backend, e2e]
+
+    permissions:
+      contents: read
+      # Lo único que este trabajo necesita además de leer el código. El token de serie no lo trae.
+      packages: write
+
+    strategy:
+      # Sin `fail-fast`: si una imagen falla, las otras dos terminan igual. Son tres builds
+      # independientes y saber cuáles sobreviven es la mitad del diagnóstico.
+      fail-fast: false
+      matrix:
+        service: [ukun-api, ukun-auth, ukun-gateway]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # El token de serie del workflow. No hay ningún PAT en este repositorio.
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # El contexto es la raíz del repositorio para las tres, no el directorio del servicio: los
+      # Dockerfile copian gradlew, settings.gradle.kts y buildSrc/, y el de ukun-gateway además
+      # construye apps/ukun-web en su etapa `web`. Cada uno trae su propio Dockerfile.dockerignore,
+      # que BuildKit prefiere a cualquier .dockerignore de la raíz.
+      #
+      # LA CACHÉ NO ES AFINADO, es lo que hace este trabajo viable. Los Dockerfile compilan con
+      # Gradle dentro de la imagen y se apoyan en un `--mount=type=cache` sobre ~/.gradle que en un
+      # runner efímero no persiste entre ejecuciones: sin `type=gha` cada build vuelve a descargar la
+      # distribución de Gradle y todas las dependencias. El `scope` por servicio es obligatorio —
+      # con el ámbito por defecto los tres compartirían entrada y se desalojarían mutuamente.
+      #
+      # El aviso que va con ella: la caché de Actions tiene 10 GB por repositorio y desaloja por
+      # LRU, así que `mode=max` sobre tres imágenes con capa de dependencias Java es justo la clase
+      # de cosa que puede empezar a expulsar las cachés de Gradle del trabajo `backend`. Si eso pasa,
+      # lo que se baja es este `mode=max` a `mode=min`, no la caché del build.
+      #
+      # `linux/amd64` implícito, que es lo que corre Container Apps y lo que es el propio runner: un
+      # build multiplataforma aquí sería emulación QEMU sobre una compilación de Gradle, y no hay
+      # ningún destino arm64 al que servirla.
+      - name: Construir y publicar ${{ matrix.service }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          push: true
+          # El SHA es la etiqueta que despliega, y `main` solo un alias móvil para mirar qué hay
+          # publicado. `deploy.yml` recibe siempre un SHA: un despliegue tiene que poder repetirse
+          # dando el mismo resultado, y `main` no lo garantiza.
+          #
+          # El nombre del propietario va en minúsculas por exigencia de GHCR. `sandoretti` ya lo
+          # está; si algún día el repositorio cambia de dueño, esto es lo que hay que revisar.
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:main
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
