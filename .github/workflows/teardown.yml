@@ -1,0 +1,82 @@
+# Borra el entorno de Azure del despliegue de ADR-0023 (issue #55).
+#
+# No es limpieza opcional: la suscripción es Azure for Students y su límite de gasto SUSPENDE los
+# recursos en vez de facturarlos, así que un entorno que se queda encendido no manda una factura —
+# apaga el proyecto a mitad de curso y sin avisar. El entorno se levanta para una demo y se destruye
+# después; se puede hacer porque ADR-0007 declaró los datos desechables y el changelog con
+# `context: demo` vuelve a sembrar las bases en cada arranque.
+#
+# BORRA EL GRUPO DE RECURSOS ENTERO, que es la decisión frente a borrar recurso a recurso: una lista
+# de recursos a eliminar deja encendido cualquiera que alguien añada a la plantilla y olvide añadir
+# aquí, y ese es justo el fallo que este workflow existe para impedir. Por eso la asignación de rol
+# de la managed identity vive FUERA del grupo, a nivel de suscripción: si viviera dentro, este
+# workflow se llevaría por delante su propio permiso para volver a desplegar.
+name: Teardown
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Escribe el nombre del grupo de recursos para confirmar. Es destructivo y no hay papelera: se van las tres apps, el entorno, Log Analytics, el share de uploads y el servidor de Postgres con sus tres bases.'
+        required: true
+        type: string
+
+concurrency:
+  group: azure-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  teardown:
+    name: teardown
+    runs-on: ubuntu-latest
+
+    env:
+      RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'ukun-demo' }}
+
+    steps:
+      # La confirmación se comprueba ANTES de autenticarse. Escribir el nombre a mano es lo único que
+      # separa este botón de un borrado por accidente desde la pestaña de Actions.
+      - name: Confirmación
+        run: |
+          if [ "${{ inputs.confirm }}" != "$RESOURCE_GROUP" ]; then
+            echo "::error::Escribiste '${{ inputs.confirm }}' y el grupo es '$RESOURCE_GROUP'. No se borra nada."
+            exit 1
+          fi
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Que el grupo no exista no es un fallo: significa que ya está apagado, que es el estado que
+      # este workflow persigue. Salir en rojo ahí solo enseñaría a ignorar su resultado.
+      - name: Borrar el grupo de recursos
+        run: |
+          if ! az group exists --name "$RESOURCE_GROUP" | grep -q true; then
+            echo "El grupo '$RESOURCE_GROUP' no existe. Nada que borrar."
+            echo "El grupo \`$RESOURCE_GROUP\` no existía: nada que borrar." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "Recursos que se van:"
+          az resource list --resource-group "$RESOURCE_GROUP" --query '[].{tipo:type, nombre:name}' --output table
+
+          # `--no-wait` a propósito: el borrado de un Container Apps Environment con su Log Analytics
+          # tarda del orden de diez minutos, y esperarlos son minutos de runner por nada. Lo que
+          # importa es que Azure haya aceptado la orden.
+          az group delete --name "$RESOURCE_GROUP" --yes --no-wait
+
+          {
+            echo "## Entorno borrado"
+            echo
+            echo "Se ha pedido el borrado de \`$RESOURCE_GROUP\`. Azure lo completa en segundo plano,"
+            echo "del orden de diez minutos."
+            echo
+            echo "**Compruébalo en el portal antes de darlo por hecho.** Un borrado que falla a medias"
+            echo "deja recursos facturando, y este workflow no espera a verlo terminar."
+          } >> "$GITHUB_STEP_SUMMARY"
