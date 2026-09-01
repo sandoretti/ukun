@@ -242,18 +242,15 @@ resource databases 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-
   }
 ]
 
-// EL PUNTO FLOJO DECLARADO DE ESTE DESPLIEGUE, y conviene que se lea antes que se descubra.
+// La regla de ARRANQUE, y solo eso. Existe por una dependencia circular: la app tiene que existir
+// para conocer su IP saliente, y necesita la base alcanzable para que Liquibase arranque. El
+// 0.0.0.0 que Flexible Server interpreta como «recursos dentro de Azure» —NO como «todo internet»—
+// resuelve el arranque, pero deja entrar a cualquier recurso de Azure de cualquier suscripción, y
+// eso incluye a los runners de GitHub Actions, que corren en Azure.
 //
-// ADR-0023 pide restringir el acceso a la IP saliente del Container Apps Environment. Hay una
-// dependencia circular para hacerlo en la primera pasada: la app tiene que existir para conocer su
-// IP saliente, y necesita la base alcanzable para que Liquibase arranque. Así que el primer
-// despliegue abre con la regla de servicios de Azure (el 0.0.0.0 que Flexible Server interpreta como
-// «recursos dentro de Azure», NO como «todo internet») y el runbook de docs/15-despliegue.md dice
-// cómo estrecharla después con la IP que este despliegue devuelve como salida.
-//
-// Lo que esto NO es: acceso público con contraseña. Lo que sí es: cualquier recurso de Azure, de
-// cualquier suscripción, puede intentar conectarse. Se acepta en un entorno efímero de estudio con
-// datos desechables (ADR-0007), y es lo primero que se revisaría si dejara de serlo.
+// Por eso NO se queda: `deploy.yml` la sustituye, en cuanto las tres apps están en marcha, por una
+// regla con su IP saliente real, y borra ésta. Si alguien ve esta regla en un entorno desplegado, es
+// que ese paso no llegó a correr.
 resource allowAzureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
   parent: postgres
   name: 'AllowAzureServices'
@@ -705,8 +702,15 @@ output authUrl string = authUrl
 @description('FQDN del servidor de Postgres, para conectarse con psql desde una IP autorizada.')
 output postgresFqdn string = postgres.properties.fullyQualifiedDomainName
 
-@description('IP estática del entorno. Es con la que el runbook estrecha la regla de firewall que este despliegue deja abierta a los servicios de Azure — verifica antes que sea también la SALIENTE, que es lo que Postgres ve.')
+@description('''IP estática de ENTRADA del entorno. NO sirve para el firewall de Postgres, y decirlo
+importa porque es el error natural: comprobado sobre un entorno real, la de entrada y la saliente son
+direcciones distintas (51.11.234.46 frente a 20.74.0.153 en el primer despliegue). Lo que Postgres ve
+es `properties.outboundIpAddresses` de cada container app, que `deploy.yml` lee después de
+desplegar.''')
 output environmentStaticIp string = environment_.properties.staticIp
+
+@description('Nombre del servidor de Postgres, que es lo que piden los comandos `az postgres flexible-server` — distinto de su FQDN.')
+output postgresServerName string = postgres.name
 
 @description('Cuenta de almacenamiento del share de uploads.')
 output storageAccountName string = storage.name

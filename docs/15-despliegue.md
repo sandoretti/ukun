@@ -202,24 +202,35 @@ Hay que escribir el nombre del grupo a mano: es lo único que separa este botón
 
 **Compruébalo en el portal antes de darlo por hecho.** El workflow no espera a verlo terminar, y un borrado que falla a medias deja recursos facturando, que es justo lo que este paso existe para evitar.
 
-## 6. El firewall de Postgres, y por qué queda abierto
+## 6. El firewall de Postgres
 
-El despliegue deja una regla `AllowAzureServices` (el `0.0.0.0` que Flexible Server interpreta como «recursos dentro de Azure», **no** como «todo internet»). No es la intención final de ADR-0023, que pide restringir a la IP saliente del Container Apps Environment; hay una **dependencia circular** que lo impide en la primera pasada: la app tiene que existir para conocer su IP saliente, y necesita la base alcanzable para que Liquibase arranque.
+`deploy.yml` deja la base accesible **solo desde la IP saliente de las container apps**. No es lo que hace la plantilla: ésta crea una regla de arranque `AllowAzureServices` porque hay una dependencia circular —la app tiene que existir para conocer su IP saliente, y no arranca sin base—, y el workflow la sustituye en cuanto las tres apps están en marcha.
 
-Para estrecharla después, con la IP que el despliegue devuelve como salida:
+**Esa regla de arranque no es inocua y por eso no se queda.** El `0.0.0.0` de Flexible Server significa «cualquier recurso dentro de Azure», de cualquier suscripción, y eso incluye a los runners de GitHub Actions, que corren en Azure. Si ves `AllowAzureServices` en un entorno desplegado, es que ese paso no llegó a correr.
+
+**La IP que hay que autorizar es `outboundIpAddresses` de las container apps, NO `staticIp` del entorno.** Son direcciones distintas y confundirlas es el error natural, porque la segunda es la que suena a «la IP del entorno»: en el primer despliegue fueron `51.11.234.46` (entrada) y `20.74.0.153` (salida). La salida `environmentStaticIp` de la plantilla es la de entrada y lleva escrito que no sirve para esto.
+
+El paso se verifica a sí mismo: después de estrechar, comprueba que el propio runner ya **no** alcanza el 5432. Antes lo alcanzaba, precisamente por la regla de arranque.
+
+### Lo que esto no resuelve
+
+En un entorno Consumption **sin VNet, Azure no garantiza que la IP saliente sea estable.** Si cambia en caliente, las tres apps pierden la base hasta el siguiente despliegue, que vuelve a estrechar sobre la nueva. En un entorno que se levanta para una demo y se destruye, es asumible; el síntoma es claro (todo responde menos lo que toca la base) y el arreglo es volver a desplegar.
+
+La salida robusta es la **integración con VNet** de Flexible Server, y conviene decir por qué no está hecha: ADR-0023 descartó la red privada citando el coste del enlace privado, lo cual es cierto de un **Private Endpoint** pero no del modo *private access* con subnet delegada, que **no cuesta nada extra**. Lo que cuesta es complejidad —una VNet con subnet dedicada para el entorno, la delegación de Postgres, DNS privado para su FQDN— y que quien despliega pierde el `psql` desde su máquina sin un salto intermedio. Para un entorno efímero de estudio con datos desechables es desproporcionado; es la respuesta el día que deje de serlo.
+
+### A mano, si hace falta
 
 ```bash
-az postgres flexible-server firewall-rule create \
-  --resource-group ukun-demo --name <servidor> \
-  --rule-name aca-outbound --start-ip-address <IP> --end-ip-address <IP>
+SERVER=$(az postgres flexible-server list -g ukun-demo --query '[0].name' -o tsv)
+IP=$(az containerapp show -n ukun-api -g ukun-demo --query 'properties.outboundIpAddresses' -o tsv)
+BASE="https://management.azure.com/subscriptions/<sub>/resourceGroups/ukun-demo"
+BASE="$BASE/providers/Microsoft.DBforPostgreSQL/flexibleServers/$SERVER/firewallRules"
 
-az postgres flexible-server firewall-rule delete \
-  --resource-group ukun-demo --name <servidor> --rule-name AllowAzureServices --yes
+az rest --method put --url "$BASE/aca-outbound-$(echo $IP | tr . -)?api-version=2024-08-01" \
+  --body "{\"properties\":{\"startIpAddress\":\"$IP\",\"endIpAddress\":\"$IP\"}}"
 ```
 
-**Verifica antes que esa IP es la que Postgres ve.** `environmentStaticIp` es la IP de *entrada* del entorno; que coincida con la saliente hay que comprobarlo contra el entorno de verdad y no darlo por bueno leyendo documentación. Lo que resulte se escribe aquí.
-
-Lo que esto **no** es: acceso público con contraseña. Lo que sí es: cualquier recurso de Azure, de cualquier suscripción, puede intentar conectarse. Se acepta en un entorno efímero de estudio con datos desechables (ADR-0007), y es lo primero que se revisaría si dejara de serlo.
+La API REST y no `az postgres flexible-server firewall-rule`: ese comando cambia el significado de `--name` y retira `--rule-name` en la CLI 2.86, así que la sintaxis que funciona en una máquina rompe en otra más nueva.
 
 ## 7. Coste
 

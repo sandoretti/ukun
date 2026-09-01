@@ -103,6 +103,7 @@ jobs:
             echo "auth-url=$(jq -r .authUrl.value outputs.json)"
             echo "static-ip=$(jq -r .environmentStaticIp.value outputs.json)"
             echo "storage-account=$(jq -r .storageAccountName.value outputs.json)"
+            echo "postgres-server=$(jq -r .postgresServerName.value outputs.json)"
           } >> "$GITHUB_OUTPUT"
 
       # Las fotos de producto, al share que ukun-api monta en /opt/resources/uploads.
@@ -160,6 +161,74 @@ jobs:
         run: |
           timeout 300 bash -c \
             'until curl -sf "${{ steps.deployment.outputs.gateway-url }}/actuator/health" | grep -q "\"status\":\"UP\""; do sleep 10; done'
+
+      # El firewall deja de estar abierto a los servicios de Azure. Va aquí y no en la plantilla por la
+      # dependencia circular que la propia plantilla comenta: la IP saliente no se conoce hasta que
+      # las apps existen, y las apps no arrancan sin base.
+      #
+      # POR QUÉ NO BASTA LA REGLA DE ARRANQUE: el 0.0.0.0 de Flexible Server significa «cualquier
+      # recurso dentro de Azure», de cualquier suscripción — y los runners de GitHub Actions corren
+      # en Azure, así que la base era alcanzable desde cualquiera de ellos. El paso lo comprueba al
+      # final en vez de afirmarlo.
+      #
+      # `outboundIpAddresses`, no `staticIp` del entorno: son direcciones DISTINTAS y la segunda es
+      # la de entrada. Se leen las tres apps y se ordenan únicas porque hoy comparten una sola IP,
+      # pero nada garantiza que siga siendo así.
+      #
+      # Y el aviso que va con esto: en un entorno Consumption sin VNet, Azure no garantiza que esa IP
+      # saliente sea estable. Si cambia en caliente, las tres apps pierden la base hasta el siguiente
+      # despliegue, que vuelve a estrechar sobre la nueva. La salida robusta es la integración con
+      # VNet, que no cuesta dinero pero sí complejidad — está razonada en docs/15-despliegue.md §6.
+      - name: Estrechar el firewall de Postgres
+        env:
+          SERVER: ${{ steps.deployment.outputs.postgres-server }}
+          SUB: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          BASE="https://management.azure.com/subscriptions/$SUB/resourceGroups/$RESOURCE_GROUP"
+          BASE="$BASE/providers/Microsoft.DBforPostgreSQL/flexibleServers/$SERVER/firewallRules"
+
+          # `outboundIpAddresses` y NO `staticIp` del entorno: son direcciones distintas y la segunda
+          # es la de ENTRADA. Comprobado sobre un entorno real: 51.11.234.46 frente a 20.74.0.153.
+          # Se leen las tres apps y se ordenan únicas porque hoy comparten una sola, pero nada
+          # garantiza que siga siendo así.
+          IPS=$(for app in ukun-api ukun-auth ukun-gateway; do
+                  az containerapp show -n "$app" -g "$RESOURCE_GROUP" \
+                    --query 'properties.outboundIpAddresses' -o tsv
+                done | tr -d '\r' | sort -u)
+
+          if [ -z "$IPS" ]; then
+            echo "::error::Ninguna app declara outboundIpAddresses. No se toca el firewall: quedarse sin regla dejaría la base inalcanzable."
+            exit 1
+          fi
+
+          # La API REST y no `az postgres flexible-server firewall-rule`, que no es por gusto: ese
+          # comando cambia `--name` de significado y retira `--rule-name` en la versión 2.86 de la
+          # CLI, así que la sintaxis que funciona en una máquina rompe en un runner más nuevo. La API
+          # no se mueve.
+          for ip in $IPS; do
+            echo "Autorizando $ip"
+            az rest --method put \
+              --url "$BASE/aca-outbound-$(echo "$ip" | tr . -)?api-version=2024-08-01" \
+              --body "{\"properties\":{\"startIpAddress\":\"$ip\",\"endIpAddress\":\"$ip\"}}" \
+              --output none
+          done
+
+          # Y fuera la regla de arranque. El borrado es ASÍNCRONO —ARM responde 202 y `az rest` no
+          # espera—, así que comprobar el acceso justo después daría un falso negativo.
+          az rest --method delete --url "$BASE/AllowAzureServices?api-version=2024-08-01" --output none
+          timeout 180 bash -c \
+            "until ! az rest --method get --url '$BASE?api-version=2024-08-01' | grep -q AllowAzureServices; do sleep 10; done"
+
+          # La comprobación que convierte esto en verificación y no en intención: este runner corre en
+          # Azure, así que la regla de arranque le daba acceso al 5432. Si sigue alcanzándolo, el
+          # estrechamiento no ha servido de nada y hay que enterarse aquí.
+          FQDN=$(az postgres flexible-server show --resource-group "$RESOURCE_GROUP" --name "$SERVER" \
+                   --query fullyQualifiedDomainName -o tsv)
+          if timeout 15 bash -c "cat < /dev/null > /dev/tcp/$FQDN/5432" 2>/dev/null; then
+            echo "::error::Este runner todavía alcanza $FQDN:5432 tras estrechar el firewall."
+            exit 1
+          fi
+          echo "Comprobado: el 5432 ya no es alcanzable desde fuera de las apps."
 
       # Humo mínimo, y cada una de las tres comprueba algo que las otras no. Lo que este workflow no
       # puede validar es el recorrido de login → catálogo → carrito → pedido, que es la condición de

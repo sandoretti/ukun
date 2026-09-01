@@ -174,3 +174,21 @@ Es el mismo tipo de error que el de la variable: comprobar una cosa y creer que 
 ### Lo que queda de la lista de riesgos original
 
 Ninguno. Los cinco que ADR-0023 y la issue #55 dejaban abiertos —`azure.extensions` a tiempo, los tiempos de la sonda de arranque, el firewall, las `mountOptions` en lectura y en escritura, y el `iss` compuesto desde `defaultDomain`— están comprobados contra el entorno real. Y el coste quedó verificado antes contra la API de precios.
+
+## 2026-09-01 · El firewall, estrechado de verdad
+
+Era el único punto del checklist de la issue #55 que quedaba a medias, y arreglarlo destapó dos cosas.
+
+**La salida `environmentStaticIp` de la plantilla era la IP equivocada.** El runbook decía «verifica antes que sea también la saliente, que es lo que Postgres ve», y al verificarlo resultó que no: `staticIp` del entorno es `51.11.234.46` y lo que Postgres ve es `20.74.0.153`, el `outboundIpAddresses` de las container apps —una sola dirección compartida por las tres—. La salida sigue existiendo pero lleva escrito que no sirve para el firewall.
+
+**La regla de arranque dejaba entrar a los runners de GitHub.** El `0.0.0.0` de Flexible Server significa «cualquier recurso dentro de Azure» de cualquier suscripción, y los runners de Actions corren en Azure. Eso convierte el estrechamiento en algo más que higiene formal.
+
+`deploy.yml` gana un paso que lee la IP saliente real, crea su regla y borra la de arranque; después **comprueba que el propio runner ya no alcanza el 5432**, que es lo que separa una verificación de una intención. Tres detalles que costaron descubrirlos:
+
+- **Se usa la API REST y no `az postgres flexible-server firewall-rule`**: ese comando cambia el significado de `--name` y retira `--rule-name` en la CLI 2.86, así que la sintaxis que funciona en esta máquina (2.83) rompería en un runner más nuevo. La API no se mueve.
+- **El borrado de una regla es asíncrono.** ARM responde 202 y `az rest` no espera, de modo que comprobar el acceso justo después daba un falso negativo. Hay un bucle hasta que la regla desaparece de verdad.
+- Si ninguna app declara IP saliente, el paso falla en vez de continuar: quedarse sin regla dejaría la base inalcanzable.
+
+Probado a mano contra el entorno antes de escribirlo: con el firewall ya estrechado a `20.74.0.153`, el catálogo responde 200 y **un alta de cliente responde 201 en 0,6 s** — que es la operación que escribe en las dos bases.
+
+Y lo que este arreglo no resuelve, escrito en `15-despliegue.md` §6: en Consumption sin VNet, Azure no garantiza que esa IP saliente sea estable. La salida robusta es la integración con VNet, que **no cuesta dinero** —ADR-0023 descartó la red privada por el coste de un Private Endpoint, que no es lo mismo que el modo *private access* con subnet delegada— sino complejidad.
