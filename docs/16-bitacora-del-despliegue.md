@@ -52,3 +52,14 @@ Nada de Azure. Lo que falta es de GitHub y va en este orden:
 4. Actions → Deploy → `image-tag`: el SHA del merge.
 
 Y lo que sigue sin comprobarse porque solo se comprueba desplegando: que `environmentStaticIp` sirva para estrechar el firewall de Postgres, que las `mountOptions` basten para que `ukun-api` escriba en el share de Azure Files, que `azure.extensions` esté aplicado a tiempo para el primer Liquibase, si los tiempos de la sonda de arranque son suficientes, y el coste real. Cada uno de esos tiene su fila pendiente en `15-despliegue.md`.
+
+## 2026-09-01 · Coste verificado
+
+Se cierra el punto del checklist de la issue #55 que pedía «el coste verificado en la calculadora». No se usó la calculadora sino la **API de precios de Azure** (`prices.azure.com/api/retail/prices`), que es pública, no necesita autenticación y devuelve el precio por medidor y región — de modo que la comprobación es reproducible con un comando en vez de con capturas de una web. Las cifras y los escenarios están en `15-despliegue.md` §7.
+
+El resultado en una línea: **el uso puntual sale por céntimos** —0,07 USD una demo de tres horas, 0,30 USD un mes de cuatro demos— y **24/7 sale por 46,15 USD/mes**, que agota el crédito de estudiante en 2,2 meses. Los dos números que explican esa diferencia:
+
+- La **franja gratuita mensual de Container Apps** (180 000 vCPU-s y 360 000 GiB-s) se agota, con el reparto de recursos de esta plantilla, exactamente a las **40 horas encendido al mes**. Por debajo de eso el cómputo de las tres apps es gratis y solo corre el contador de Postgres, a 0,025 USD/h entre cómputo y disco.
+- Existe un medidor **`Environment Management Hour` de 0,125 USD/h** —91 USD/mes— que **no** aplica aquí porque es de los entornos con *workload profiles*, y `main.bicep` no declara ninguno. Queda anotado porque añadir un `workloadProfiles` parecería una mejora y sería el cambio más caro que se le puede hacer a esta plantilla.
+
+Nada de esto sustituye a mirar el consumo real: el primer despliegue es también la primera medida de verdad, y si difiere, la cifra que manda es la del portal y se corrige aquí.

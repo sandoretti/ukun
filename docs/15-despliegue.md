@@ -212,14 +212,39 @@ Lo que esto **no** es: acceso público con contraseña. Lo que sí es: cualquier
 
 ## 7. Coste
 
-**Sin verificar todavía.** ADR-0023 da órdenes de magnitud de agosto de 2026 y dice expresamente que hay que comprobarlas en la calculadora de Azure antes de desplegar; los precios de ACA y de los tier Burstable se mueven. Las partidas a mirar, en este orden:
+**Verificado el 2026-09-01** contra la [API de precios de Azure](https://prices.azure.com/api/retail/prices) para `francecentral`, en USD y a precio de lista al contado. Los precios se mueven: la forma de rehacer esta tabla es consultar esa misma API, no la calculadora, porque así queda reproducible.
 
-1. **Postgres B1ms**, que es la dominante y la única que corre encendida sin tráfico.
-2. **Container Apps**: con las tres a réplica mínima y mayormente ociosas, el consumo se apoya en la tarifa reducida de inactividad y en la franja gratuita mensual de vCPU-segundo y GiB-segundo.
-3. **Log Analytics**, que factura por GB ingerido con una franja gratuita mensual. Con `root: WARN` en el documento `!dev` (`docs/11` §7) el volumen es bajo.
-4. Azure Files y el tráfico de salida, que a esta escala son ruido.
+| Partida | Precio unitario | En este despliegue |
+|---|---|---|
+| Postgres B1ms (cómputo) | 0,019 USD/hora | 0,019 USD/h encendido |
+| Postgres, disco de 32 GB | 0,133 USD/GB/mes | 4,26 USD/mes → 0,0058 USD/h |
+| Postgres, backup 7 días | incluido hasta el tamaño aprovisionado | 0 |
+| Container Apps, vCPU en reposo | 0,000003 USD/vCPU-segundo | 1,25 vCPU entre las tres |
+| Container Apps, memoria | 0,000003 USD/GiB-segundo | 2,5 GiB entre las tres |
+| Log Analytics, ingesta | **5 GB/mes gratis**, después 2,76 USD/GB | ~0 con `root: WARN` |
+| Azure Files LRS | 0,075 USD/GB/mes | céntimos |
 
-Encendido de forma continua, el conjunto consumiría el crédito en unos meses; encendido solo para las demos, no debería costar nada apreciable. Esa diferencia es toda la justificación del entorno efímero. **Cuando se verifique, las cifras van aquí con su fecha.**
+**La franja gratuita mensual de Container Apps decide casi todo.** Son 180 000 vCPU-segundos y 360 000 GiB-segundos por suscripción y mes, y con el reparto de recursos de este despliegue —1,25 vCPU y 2,5 GiB sumando las tres apps— las dos se agotan exactamente a las **40 horas de entorno encendido al mes**. Por debajo de esa marca, Container Apps no cuesta nada y lo único que corre el contador es Postgres.
+
+| Escenario | Horas/mes | Coste |
+|---|--:|--:|
+| Una demo de 3 h | 3 | **0,07 USD** |
+| Una tarde de trabajo | 8 | **0,20 USD** |
+| Cuatro demos de 3 h | 12 | **0,30 USD** |
+| Una semana laboral de 8 h | 40 | **1,00 USD** |
+| Un fin de semana entero encendido | 48 | 1,52 USD |
+| Dos semanas laborales | 80 | 3,61 USD |
+| **Un mes 24/7** | 730 | **46,15 USD** |
+
+O sea: **el uso puntual para el que está pensado esto cuesta céntimos**, del orden de 0,025 USD por hora encendido mientras se esté por debajo de las 40 h/mes. Y dejarlo encendido sin querer cuesta 1,52 USD al día, con lo que el crédito de 100 USD se agota en **2,2 meses**. Esa diferencia —dos órdenes de magnitud— es toda la justificación del entorno efímero y de que `teardown.yml` exista.
+
+### El cargo que convertiría esto en otra cosa
+
+Container Apps tiene un medidor **`Environment Management Hour` de 0,125 USD/hora**, que son 91 USD al mes y se comería el crédito entero. **No aplica a este despliegue** y no es casualidad: ese cargo es de los entornos con *workload profiles*, y `main.bicep` no declara ninguno, así que el entorno es Consumption puro. Es la razón por la que añadir un `workloadProfiles` a la plantilla no es una mejora inocente.
+
+### Lo que estas cifras no incluyen
+
+Salida de datos y transacciones de almacenamiento, que a esta escala son ruido. Tampoco impuestos, que en una suscripción de estudiante no se aplican: se consume crédito, no se factura. Y la franja gratuita de Container Apps no viene en la API de precios —es una franja de producto, no un precio—, así que si algún día desapareciera habría que sumar 0,0405 USD por hora encendido.
 
 ## 8. Fallos que no dicen su causa
 
