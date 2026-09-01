@@ -104,3 +104,30 @@ Testcontainers + Postgres real para todo lo de persistencia (nunca H2 — las cl
 ## Sobreingeniería a evitar aquí
 
 No arquitectura hexagonal completa, no CQRS, no microservicios de dominio dentro de este monolito modular, no un `@Aspect` genérico de auditoría, no Hibernate Envers, no `@ApplicationModuleListener`/eventos asíncronos entre módulos (Spring Modulith se adopta por sus fronteras verificadas, no por su mecanismo de eventos — ver ADR-0017). Ver la tabla completa de "qué no hacer" en `docs/03-analisis-y-patrones.md`.
+
+## Trabajo programado (`@Scheduled`), desde v1.0
+
+Este servicio no tenía ningún job hasta v1.0. El primero es `orders/application/CheckoutPurgeJob`, la
+purga diaria que `docs/10` §4 daba por supuesta al decidir que `idempotency_key` y `checkout_attempt`
+no llevan índice — y que hasta entonces no existía, así que las dos tablas solo crecían (ADR-0024,
+issue #118). `@EnableScheduling` está en `UkunApiApplication`, no junto al job: es un interruptor
+global.
+
+**Cuándo lleva `@SchedulerLock`** (ShedLock sobre `ukun_app`, `shared/scheduling/SchedulerLockConfig`).
+Tres casos, y solo el primero es evidente:
+
+- **Obligatorio** si el efecto no es repetible entre réplicas: manda un correo, cobra, llama a un
+  tercero, o escribe estado derivado. Hoy no hay ningún job así en todo el sistema.
+- **Basta la idempotencia** en un `DELETE … WHERE`: N réplicas ejecutándolo es desperdicio, no un
+  defecto. `CheckoutPurgeJob` lo lleva igualmente porque es el molde del que se copiará el siguiente,
+  que puede ser el que sí mande algo.
+- **Prohibido** si el estado es de la JVM (un mapa en memoria, una caché local): ponerle lock dejaría a
+  todas las réplicas menos una sin purgar nunca lo suyo.
+
+Y una trampa medida: **`lockAtLeastFor` hace que el job se salte en silencio** durante ese tiempo tras
+cada ejecución, y con `usingDbTime()` no absorbe ningún desfase porque solo hay un reloj. No lo pongas.
+
+Dos ventanas y no una en la purga, porque son dos ciclos de vida: el intento caduca por su propia
+columna `expires_at` (30 minutos, ADR-0016) y la fila de idempotencia por `created_at` a más de 24 h
+(`docs/11`, retención). Compartir ventana significaría o guardar borradores un día o tirar la
+respuesta a un reintento media hora después de darla.

@@ -74,7 +74,7 @@ ukun-gateway (oauth2Login + TokenRelay) ──Bearer JWT──> ukun-api
 ukun-gateway <──code + PKCE, refresh rotation──> ukun-auth
 ```
 
-Por qué BFF y no token en el SPA: elimina el token del alcance de cualquier XSS, elimina el refresh silencioso desde JavaScript, y como el navegador solo habla con el gateway, front y API quedan de facto en el mismo origen (sin CORS, sin preflights). Coste asumido: el gateway tiene estado (sesión) — en memoria mientras haya una sola réplica; Redis solo si algún día hay más de una. Ver ADR-0003.
+Por qué BFF y no token en el SPA: elimina el token del alcance de cualquier XSS, elimina el refresh silencioso desde JavaScript, y como el navegador solo habla con el gateway, front y API quedan de facto en el mismo origen (sin CORS, sin preflights). Coste asumido: el gateway tiene estado (sesión). Desde v1.0 ese estado vive en Postgres, en la base propia `ukun_gateway`, y no en el heap — así sobrevive a un despliegue y deja de fijar el número de réplicas (ADR-0024, issue #118). No es Redis, que es lo que decía esta línea: el motivo del cambio es el presupuesto de despliegue de ADR-0023. Ver ADR-0003 y ADR-0024.
 
 ### Claims del access token
 

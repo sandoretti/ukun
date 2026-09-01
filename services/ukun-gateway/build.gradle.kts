@@ -41,6 +41,19 @@ dependencies {
     // `bucket4j-core` a secas que sale en cualquier ejemplo antiguo ya no existe (libs.versions.toml).
     implementation(libs.bucket4j.core)
 
+    // La sesión del BFF fuera del heap, en su propia base ukun_gateway (ADR-0024, issue #118). Tres
+    // piezas y ninguna es opcional: el núcleo de Spring Session da el contrato reactivo (la
+    // implementación sobre JDBC la escribe este repo — no existe), JdbcClient da el acceso, y
+    // Liquibase es el dueño del esquema igual que en los otros dos servicios.
+    //
+    // Es la primera vez que este servicio tiene persistencia, y ADR-0024 lo declara como el coste más
+    // alto de esa decisión: un BFF que enruta y autentica pasa a tener esquema. Lo que compra es que
+    // la sesión sobreviva a un despliegue, no concurrencia — el gateway sigue a una réplica.
+    implementation(libs.spring.session.core)
+    implementation(libs.spring.boot.starter.jdbc)
+    implementation(libs.spring.boot.liquibase)
+    runtimeOnly(libs.postgresql)
+
     // Genera spring-configuration-metadata.json para GatewayProperties: sin él el IDE marca
     // `ukun.gateway.api-uri` como propiedad no resuelta.
     annotationProcessor(platform(libs.spring.boot.bom))
@@ -55,6 +68,13 @@ dependencies {
     // SecurityMockServerConfigurers.mockUser(), para probar /api/admin/** por rol sin que exista
     // todavía ningún mecanismo de autenticación (issue #28).
     testImplementation(libs.spring.security.test)
+
+    // Postgres de verdad para la sesión de ADR-0024. Desde que este servicio tiene esquema, arrancar
+    // su contexto exige una base: la alternativa sería un repositorio en memoria solo para los tests,
+    // que es asertar sobre una implementación que no se despliega. Nunca H2 (skill `testing`).
+    testImplementation(libs.spring.boot.testcontainers)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
 
     // Las siete reglas de docs/03 §3, las mismas que ukun-api y ukun-auth. Varias no tienen nada que
     // comprobar en un servicio sin entidades, y se aplican igual: el conjunto entra entero desde el

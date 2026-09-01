@@ -22,7 +22,8 @@ import org.springframework.test.web.servlet.client.RestTestClient;
  * opt-in per release, never by default» — and until v1.0 nothing checked it. That is a gap worth
  * closing precisely because the way it breaks is by addition: exposing one more endpoint to debug
  * something is a one-word edit, and {@code /actuator/env} hands out every resolved property, which in
- * this system includes the datasource URL and the two OAuth2 client secrets.
+ * this system includes the datasource URL, the two OAuth2 client secrets and — since v1.0 — the
+ * private key every access token is signed with (ADR-0024).
  *
  * <p>Here the refusal takes a third shape, and it is worth knowing before reading the assertion: this
  * service has a login form, so its security chain answers an unauthorised request with a 302 to
@@ -31,7 +32,9 @@ import org.springframework.test.web.servlet.client.RestTestClient;
  * good news. What all three shapes have in common is the only answer that would be a defect: 200.
  */
 @AutoConfigureRestTestClient
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "ukun.signing-key=" + AbstractIntegrationTest.SIGNING_KEY)
 class ActuatorExposureIT extends AbstractIntegrationTest {
 
     @DynamicPropertySource

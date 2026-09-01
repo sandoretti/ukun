@@ -1,0 +1,56 @@
+# v1.0 — el presupuesto del límite de intentos de login, compartido entre réplicas (ADR-0024,
+# issue #118 punto 5).
+#
+# Hasta aquí `LoginAttemptBuckets` era un ConcurrentHashMap por JVM, así que con N réplicas el
+# presupuesto real era N×5/min: el límite existía y no limitaba. La otra mitad del mismo punto es
+# `forward-headers-strategy`, y sin ella esto tampoco sirve — un presupuesto compartido con la IP
+# equivocada cuenta todos los intentos del mundo contra un solo bucket.
+#
+# Las tres columnas son las que espera el proxy manager JDBC de Bucket4j, no un diseño de este repo:
+# la clave, el estado serializado del bucket, y el instante en que volverá a estar lleno. Sus nombres
+# se le pasan a mano al builder (`table`, `idColumn`, `stateColumn`, `expiresAtColumn`) precisamente
+# para que la tabla se pueda escribir aquí, en Liquibase, y no la cree la librería (regla 3).
+#
+# `expires_at` es BIGINT en milisegundos de época y no TIMESTAMPTZ como el resto de este esquema: es
+# lo que la librería escribe y lee. Es también el criterio de la purga, y por eso lleva índice —a
+# diferencia de las tablas de checkout de ukun_app, esta la escribe cada intento de login fallido de
+# cada dirección, así que no es «una página o dos» (docs/10 §4).
+databaseChangeLog:
+
+  - changeSet:
+      id: 004-01-table-login-attempt-bucket
+      author: sandoretti
+      comment: login_attempt_bucket — el presupuesto de intentos, fuera del heap (ADR-0024)
+      changes:
+        - createTable:
+            tableName: login_attempt_bucket
+            columns:
+              # La clave que compone LoginAttemptBuckets: dirección más correo en minúsculas. 320 es
+              # lo que ocupan una dirección IPv6 con puerto y un correo del ancho máximo, más el
+              # separador; no es un límite de negocio, es el ancho de una clave técnica.
+              - column:
+                  name: id
+                  type: VARCHAR(320)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_login_attempt_bucket
+              # Nullable: la librería inserta la fila antes de tener estado que escribir en ella.
+              - column:
+                  name: state
+                  type: BYTEA
+              - column:
+                  name: expires_at
+                  type: BIGINT
+
+  - changeSet:
+      id: 004-02-index-login-attempt-bucket-expires-at
+      author: sandoretti
+      comment: la consulta de la purga; la de cada intento va por clave primaria
+      changes:
+        - createIndex:
+            tableName: login_attempt_bucket
+            indexName: ix_login_attempt_bucket_expires_at
+            columns:
+              - column:
+                  name: expires_at

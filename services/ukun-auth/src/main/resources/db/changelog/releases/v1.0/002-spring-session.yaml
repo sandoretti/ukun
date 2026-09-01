@@ -1,0 +1,140 @@
+# v1.0 — la sesión de servlet fuera del heap, descubierta al hacer desplegable este servicio con más
+# de una réplica (ADR-0024, issue #118).
+#
+# Hasta aquí la sesión de este servicio vivía en memoria, y eso rompe dos cosas distintas: con dos
+# réplicas, el callback del código de autorización puede caer en la que no inició el flujo y no
+# encuentra la petición guardada; con una sola, cada despliegue cierra la sesión de todo el mundo.
+# El baseline no se toca (regla 1 de la skill `liquibase`): esto es un changeset nuevo.
+#
+# Las dos tablas son de spring-session-jdbc, no de este dominio, y las crea Liquibase y no el
+# `schema-postgresql.sql` que trae la librería. La regla 3 de la skill no hace excepción porque el
+# DDL venga de fuera: si lo aplicase la librería, el esquema de esta base tendría dos dueños y
+# `SchemaBaselineIT` no podría afirmar lo que afirma. De ahí `spring.session.jdbc.initialize-schema:
+# never` en application.yaml — sin eso la librería intentaría crearlas ella también.
+#
+# Tres diferencias respecto de ese fichero de la librería, todas deliberadas:
+#
+#   * Nombres en minúscula. Postgres pliega a minúscula todo identificador sin comillas, y las
+#     consultas de JdbcIndexedSessionRepository van sin comillas — así que `SPRING_SESSION` y
+#     `spring_session` son la misma tabla. Se escribe como se lee el resto de este esquema.
+#   * Los índices llevan el nombre de este repo (`ux_`/`ix_`) y no `SPRING_SESSION_IX1..3`. Ningún
+#     código los nombra: solo los usa el planificador.
+#   * **No se crea el índice sobre `principal_name`.** Lo usa `findByPrincipalName`, que es la API de
+#     FindByIndexNameSessionRepository (registro de sesiones, límite de sesiones concurrentes), y
+#     este servicio no la llama desde ningún sitio. docs/10 §4 pide que cada índice tenga detrás una
+#     consulta real, y `SchemaBaselineIT` existe justamente para que uno «por si acaso» falle.
+#
+# Los dos que sí están tienen su consulta: `session_id` es la búsqueda de cada petición, y
+# `expiry_time` es el `DELETE ... WHERE expiry_time < ?` que la librería programa cada minuto — sin
+# él, esa purga es un recorrido secuencial de la tabla sesenta veces por hora en cada réplica.
+databaseChangeLog:
+
+  - changeSet:
+      id: 002-01-table-spring-session
+      author: sandoretti
+      comment: spring_session — la sesión del login y del endpoint de autorización (ADR-0024)
+      changes:
+        - createTable:
+            tableName: spring_session
+            columns:
+              # CHAR(36) y no UUID: los tipos los fija la librería, que escribe y lee estas columnas
+              # con su propio SQL. Cambiarlos a lo que este esquema preferiría rompe sus consultas.
+              - column:
+                  name: primary_id
+                  type: CHAR(36)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_spring_session
+              - column:
+                  name: session_id
+                  type: CHAR(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: creation_time
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_access_time
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: max_inactive_interval
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expiry_time
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              # Nullable a propósito: la sesión existe antes de que nadie se autentique en ella — es
+              # la que guarda la petición de autorización mientras se teclea la contraseña.
+              - column:
+                  name: principal_name
+                  type: VARCHAR(100)
+
+  - changeSet:
+      id: 002-02-table-spring-session-attributes
+      author: sandoretti
+      comment: spring_session_attributes — un atributo por fila, serializado (ADR-0024)
+      changes:
+        - createTable:
+            tableName: spring_session_attributes
+            columns:
+              - column:
+                  name: session_primary_id
+                  type: CHAR(36)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_spring_session_attributes
+              - column:
+                  name: attribute_name
+                  type: VARCHAR(200)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              # El SecurityContext serializado. Este servicio no guarda tokens en su sesión —eso es
+              # el gateway—, pero sí la identidad de quien acaba de teclear la contraseña: la fila es
+              # material sensible y no se vuelca en ningún log (docs/11 §4).
+              - column:
+                  name: attribute_bytes
+                  type: BYTEA
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 002-03-index-spring-session
+      author: sandoretti
+      comment: los dos índices que tienen una consulta detrás; el de principal_name no la tiene
+      changes:
+        - createIndex:
+            tableName: spring_session
+            indexName: ux_spring_session_id
+            unique: true
+            columns:
+              - column:
+                  name: session_id
+        - createIndex:
+            tableName: spring_session
+            indexName: ix_spring_session_expiry
+            columns:
+              - column:
+                  name: expiry_time
+
+  - changeSet:
+      id: 002-04-foreign-key-spring-session-attributes
+      author: sandoretti
+      comment: un atributo no sobrevive a su sesión (docs/10 §6 — política de borrado explícita)
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_spring_session_attributes_session
+            baseTableName: spring_session_attributes
+            baseColumnNames: session_primary_id
+            referencedTableName: spring_session
+            referencedColumnNames: primary_id
+            onDelete: CASCADE

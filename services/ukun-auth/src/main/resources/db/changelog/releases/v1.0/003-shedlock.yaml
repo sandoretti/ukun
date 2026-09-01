@@ -1,0 +1,51 @@
+# v1.0 — la tabla de ShedLock (ADR-0024, issue #118).
+#
+# Una sola tabla, y la misma en las dos bases con esquema propio: ukun_auth y ukun_app. No es
+# duplicación que se pueda factorizar — la regla 6 de la skill `liquibase` dice que cada base lleva su
+# historial y ningún changeset nombra tablas de otra, y un lock que viviese en una sola base ataría
+# los dos servicios por la puerta de atrás.
+#
+# En este servicio lo lleva AccountReconciliationJob. NO lo llevan las dos purgas de mapas de
+# LoginAttemptBuckets: son estado de su propia JVM y tienen que correr en todas las réplicas, que es
+# la mitad de la regla que se olvida (skill `spring-auth`).
+
+databaseChangeLog:
+
+  - changeSet:
+      id: 003-01-table-shedlock
+      author: sandoretti
+      comment: shedlock — un job programado corre una vez por disparo, no una por réplica (ADR-0024)
+      changes:
+        - createTable:
+            tableName: shedlock
+            columns:
+              # El nombre del lock, que es el `name` de la anotación @SchedulerLock. Es la clave
+              # primaria: la exclusión mutua ES la restricción de unicidad, no una consulta.
+              - column:
+                  name: name
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: pk_shedlock
+              # TIMESTAMP sin zona, y no el TIMESTAMPTZ que usa el resto de este esquema: es lo que
+              # espera el proveedor JDBC de ShedLock, que además se configura con `usingDbTime()` para
+              # que quien decide si un lock ha caducado sea el reloj de Postgres y no el de cada JVM
+              # —que es justamente el reloj del que no hay que fiarse cuando hay varias—.
+              - column:
+                  name: lock_until
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: locked_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              # Quién lo tiene. No lo lee ningún código: existe para que, cuando un lock se quede
+              # colgado, la respuesta a «¿qué réplica lo cogió?» esté en la fila y no en un log.
+              - column:
+                  name: locked_by
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false

@@ -14,5 +14,14 @@ databaseChangeLog:
       file: baseline/001-esquema-inicial.yaml
       relativeToChangelogFile: true
   - include:
+      file: releases/v1.0/002-spring-session.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: releases/v1.0/003-shedlock.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: releases/v1.0/004-login-attempt-bucket.yaml
+      relativeToChangelogFile: true
+  - include:
       file: demo/001-datos-demo.yaml
       relativeToChangelogFile: true

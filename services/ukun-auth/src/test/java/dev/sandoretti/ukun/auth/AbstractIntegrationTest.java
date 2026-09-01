@@ -46,6 +46,14 @@ public abstract class AbstractIntegrationTest {
 
     protected static final String API_SECRET = "test-api-secret";
 
+    /**
+     * The signing key every {@code @SpringBootTest} of this suite has to supply, for the same reason
+     * and with one difference: {@code ukun.signing-key} has no default either (ADR-0024), but an
+     * unsupplied one stops the context rather than binding as literal text, because it has to parse
+     * as a PKCS#8 RSA key. The value itself lives in {@link SigningKeys}, which is 1.6 KB of base64.
+     */
+    protected static final String SIGNING_KEY = SigningKeys.TEST_KEY;
+
     /** Schema only: what the {@code prod} Liquibase context produces. */
     protected static final String SCHEMA_ONLY_DATABASE = "ukun_auth_schema";
 

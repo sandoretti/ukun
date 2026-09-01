@@ -13,7 +13,7 @@ El sistema actual no tiene CSRF real (mutaciones por `GET` en toda la aplicació
 - El token queda fuera del alcance de cualquier XSS del SPA — no hay dónde robarlo desde JavaScript.
 - No hace falta resolver refresh silencioso de tokens en el cliente: lo gestiona el gateway server-side.
 - Frontend y API quedan de facto en el mismo origen desde el punto de vista del navegador (el gateway es el único destino): sin CORS, sin preflights.
-- El gateway pasa a tener estado (sesión). Asumible con una sola réplica (sesión en memoria); si en el futuro hace falta más de una réplica, se añade Redis — no antes.
+- El gateway pasa a tener estado (sesión). Asumible con una sola réplica (sesión en memoria); si en el futuro hace falta más de una réplica, hay que sacar esa sesión del proceso. **Esa frase decía «se añade Redis», y ADR-0024 la revisa**: llegado el momento (issue #118) el almacén fue Postgres y no Redis, por el presupuesto de despliegue de ADR-0023. El coste está donde se decidió, no aquí.
 - Hace falta emitir y validar una cookie `XSRF-TOKEN` en cada mutación, ya que la protección CSRF que da "no hay token en JS" no cubre las cookies en sí mismas.
 
 ## Alternativas descartadas

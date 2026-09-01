@@ -1,5 +1,6 @@
 package dev.sandoretti.ukun.gateway;
 
+import dev.sandoretti.ukun.gateway.support.GatewayDatabase;
 import dev.sandoretti.ukun.gateway.support.UpstreamStub;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,8 +19,9 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * context cache key, so declaring it once is what lets five test classes share one application
  * context instead of starting five.
  *
- * <p>There is no Testcontainers here and no database — this service has neither. What it has is two
- * HTTP boundaries, and those are what the stubs stand in for.
+ * <p>Two HTTP boundaries, which the stubs stand in for, and — since v1.0 — a real Postgres. This
+ * service had no database until ADR-0024 put the BFF's session in one; now the context does not start
+ * without it, so {@link GatewayDatabase} is as much a part of this fixture as the stubs are.
  *
  * <p>The client is built by hand against the ephemeral port instead of being injected: Boot 4 no
  * longer contributes a {@code WebTestClient} for a running server ({@code RestTestClient} is its
@@ -33,6 +35,10 @@ abstract class GatewayIntegrationTest {
     @DynamicPropertySource
     static void upstreams(DynamicPropertyRegistry registry) {
         UpstreamStub.bind(registry);
+        // Since ADR-0024 the session lives in a table, so no context of this service starts without a
+        // database. Registered here and not in a shared method: this one is part of the context cache
+        // key (skill `testing`).
+        GatewayDatabase.bind(registry);
     }
 
     /**

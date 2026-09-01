@@ -14,6 +14,21 @@ spring:
   reactor:
     context-propagation: auto
 
+  # La base propia de este servicio desde v1.0 (ADR-0024, issue #118), y lo único que hay en ella: la
+  # sesión del BFF. Las credenciales vienen del entorno (compose.yaml inyecta SPRING_DATASOURCE_*) y
+  # aquí no hay default, igual que en los otros dos servicios: un despliegue mal configurado falla al
+  # arrancar en vez de apuntar en silencio a otro sitio.
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  # Liquibase es el dueño del esquema de ukun_gateway, y lo es solo (skill `liquibase`, regla 6).
+  # Sin `contexts`, a diferencia de ukun-auth y ukun-api: aquí no hay ningún changeset de datos que
+  # separar del esquema — nadie siembra una tabla que escribe quien inicia sesión.
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
   cloud:
     gateway:
       # El prefijo lleva `server.webflux` desde el tren 2025.x, igual que el artefacto: el
@@ -78,6 +93,11 @@ server:
 
   reactive:
     session:
+      # Desde v1.0 esta sesión vive en ukun_gateway y no en el heap (ADR-0024, issue #118): un
+      # despliegue ya no cierra la sesión de nadie. El tiempo se escribe aquí y no se deja al defecto
+      # de Boot porque es quien decide `web_session.expires_at`, que es la única columna por la que
+      # esa tabla se consulta sin ser por clave primaria.
+      timeout: 8h
       cookie:
         # El único credencial que el navegador maneja (ADR-0003). HttpOnly es lo que lo deja fuera
         # del alcance de cualquier XSS; SameSite=Lax permite la vuelta del callback de OAuth2, que
@@ -152,6 +172,15 @@ management:
         enabled: false
 
 ukun:
+  session:
+    # Cada cuánto barre JdbcWebSessionRepository las sesiones caducadas (ADR-0024). Nadie vuelve a
+    # pedir una sesión caducada, así que sin esta pasada su fila se quedaría para siempre y la tabla
+    # solo crecería — el mismo defecto que las dos tablas de checkout de ukun-api tenían hasta v1.0.
+    #
+    # Fuera del prefijo `ukun.gateway`: ese lo enlaza UkunGatewayProperties, que no la declara, y una
+    # propiedad suelta bajo un prefijo con record es una que nadie encuentra al leer el record.
+    sweep-interval: PT10M
+
   # El cliente OAuth2 que es este servicio (ADR-0003). Prefijo propio y no
   # spring.security.oauth2.client.*: esas propiedades no pueden expresar este despliegue, y el porqué
   # está en ClientRegistrationConfig — `issuer-uri` dispara un discovery en el arranque contra una URL
@@ -287,6 +316,21 @@ spring:
   config:
     activate:
       on-profile: "!dev"
+
+# Detrás del ingress que termina el TLS, y SOLO ahí (ADR-0024, issue #118 punto 5). Aquí lo que
+# depende de ello es el limitador de tasa: `RequestRateLimitWebFilter` cobra por dirección remota, y
+# detrás de un balanceador esa dirección es la misma para todo el mundo — 120 peticiones por minuto
+# para el planeta entero en vez de por cliente. Con esto, `ForwardedHeaderTransformer` reescribe la
+# dirección remota del intercambio ANTES de que corra el primer WebFilter, así que ese filtro no
+# cambia ni una línea: sigue leyendo `getRemoteAddress()` y ahora lee la buena.
+#
+# `framework` es la única opción que hay en WebFlux, y hay que decir lo que eso significa: a
+# diferencia de la variante `native` de ukun-auth, aquí NO hay lista de proxies de confianza — el
+# transformador se cree la cabecera venga de quien venga. Por eso vive en el documento `!dev` y no en
+# el general: en `tilt up` no hay proxy delante y confiar ahí en `X-Forwarded-For` sería dejar que
+# cualquiera se pusiera la dirección que quisiera y se saltara su propio presupuesto.
+server:
+  forward-headers-strategy: framework
 
 logging:
   structured:

@@ -4,11 +4,15 @@ import static dev.sandoretti.ukun.auth.AccountMother.PASSWORD;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sandoretti.ukun.auth.domain.Role;
+import io.github.bucket4j.distributed.jdbc.PrimaryKeyMapper;
+import io.github.bucket4j.distributed.proxy.ProxyManager;
+import io.github.bucket4j.postgresql.Bucket4jPostgreSQL;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /**
  * The login attempt limit of {@code docs/08-identidad-y-seguridad.md} §8, which is what stands
@@ -22,6 +26,53 @@ class LoginRateLimitIT extends LoginIntegrationTest {
 
     /** Matches the burst bandwidth of {@code LoginAttemptBuckets}. */
     private static final int BURST_CAPACITY = 5;
+
+    /**
+     * The budget is one budget and not one per replica (ADR-0024, issue #118 point 5) — the fact that
+     * makes this service deployable with more than one instance.
+     *
+     * <p>Asserted with a second {@code ProxyManager} over the same database, which is what a second
+     * replica <em>is</em> as far as this budget is concerned: it shares nothing with the application's
+     * bean except the table. Before v1.0 the buckets were a {@code ConcurrentHashMap}, so this second
+     * view would have started with a full five and the real budget would have been N×5 per minute.
+     *
+     * <p>It goes through the HTTP form rather than the bean so that what is being spent is the budget
+     * the limiter actually charges, key included — a test that consumed a key of its own invention
+     * would pass while the filter used another.
+     */
+    @Test
+    @DisplayName("another replica sees the same budget already spent")
+    void sharesTheBudgetWithEveryOtherReplica() {
+        String email = "shared-budget@ukun.dev";
+        accounts().account(email, PASSWORD, true, Role.CUSTOMER);
+
+        IntStream.range(0, BURST_CAPACITY).forEach(attempt -> logIn(email, "wrong-password"));
+
+        assertThat(remainingTokensOfAnotherReplica(email)).isZero();
+    }
+
+    /**
+     * Reads the row the limiter wrote, through the library's own API and a datasource of its own. The
+     * key is the one {@code LoginAttemptBuckets} composes: caller address and lower-cased email.
+     */
+    private long remainingTokensOfAnotherReplica(String email) {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(
+                jdbcUrlOf(ACCOUNTS_DATABASE), username(), password());
+
+        ProxyManager<String> otherReplica = Bucket4jPostgreSQL.selectForUpdateBasedBuilder(dataSource)
+                .primaryKeyMapper(PrimaryKeyMapper.STRING)
+                .table("login_attempt_bucket")
+                .idColumn("id")
+                .stateColumn("state")
+                .expiresAtColumn("expires_at")
+                .build();
+
+        return otherReplica
+                .getProxy("127.0.0.1|" + email, () -> {
+                    throw new IllegalStateException("The limiter should have created this bucket already");
+                })
+                .getAvailableTokens();
+    }
 
     /**
      * The attempts are made with a valid CSRF token, which is the only way this test measures what it

@@ -3,6 +3,7 @@ package dev.sandoretti.ukun.auth.application;
 import dev.sandoretti.ukun.auth.infra.AccountRepository;
 import java.time.Duration;
 import java.time.Instant;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,8 +56,21 @@ public class AccountReconciliationJob {
      *
      * <p>The schedule is a property so a test can run the service without waiting for it, and so an
      * operator can move it. The default is the behaviour {@code docs/08} §3 describes.
+     *
+     * <p><strong>Behind a lock since v1.0</strong> (ADR-0024), and not because two replicas running
+     * this at once would be wrong — it is a {@code DELETE … WHERE} and the second one would delete
+     * nothing. It is the template the next job in this service gets copied from, and by then the
+     * distinction may have stopped being free.
+     *
+     * <p><strong>No {@code lockAtLeastFor}</strong>, and that omission is load-bearing. It exists to
+     * absorb clock skew between nodes, and {@code SchedulerLockConfig} configures {@code usingDbTime}
+     * so there is only one clock to skew. Keeping it would make the job silently unrunnable for a
+     * minute after every run — which is not a production problem and is exactly how
+     * {@link dev.sandoretti.ukun.auth.AccountReconciliationIT} would start passing without running
+     * anything.
      */
     @Scheduled(cron = "${ukun.reconciliation.cron:0 30 3 * * *}")
+    @SchedulerLock(name = "account-reconciliation", lockAtMostFor = "PT10M")
     @Transactional
     public void collectAbandonedReservations() {
         // No injected Clock. What decides the outcome is `created_at`, which the database writes and a

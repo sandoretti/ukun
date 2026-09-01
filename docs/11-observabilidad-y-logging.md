@@ -254,6 +254,6 @@ Dos reglas que evitan la degeneración habitual:
 
 - **Log de aplicación:** a stdout, nunca a fichero desde la aplicación (`logging.file.name` sin usar). La rotación es responsabilidad del runtime: el ancla `x-log-rotation` de `compose.yaml` (`json-file`, `max-size: 10m`, `max-file: 3`, aplicada a los cinco servicios) evita el único riesgo real hoy, que un log llene el disco de la máquina de desarrollo — y pesa más desde que cada línea de producción es un JSON ECS y no el patrón corto. Un agregador (Loki + Grafana, o lo que traiga el destino de despliegue) es decisión de v1.0, no antes.
 - **Tabla `audit_log`:** se conserva sin purga automática. A este volumen (pocos miles de filas al año), un job de borrado es más código que el problema que evita. Se revisa el día que la tabla se acerque a ~1M de filas; y si llega ese día, la política será **particionar por `occurred_at`, no borrar** — un rastro de auditoría que se borra solo deja de servir para lo único para lo que sirve.
-- **`idempotency_key`:** sí se purga (>24h), pero eso no es auditoría, es estado técnico — ya está en el diseño acordado de `03-analisis-y-patrones.md`.
+- **`idempotency_key`:** sí se purga (>24h) — lo hace `CheckoutPurgeJob` desde v1.0 (ADR-0024), junto con `checkout_attempt`, que caduca por su propia columna a los 30 minutos —, pero eso no es auditoría, es estado técnico — ya está en el diseño acordado de `03-analisis-y-patrones.md`.
 
 Ver ADR-0014 para la decisión de auditoría-en-tabla-frente-a-agregador-de-logs con su alternativa descartada.

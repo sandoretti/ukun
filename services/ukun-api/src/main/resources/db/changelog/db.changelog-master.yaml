@@ -17,5 +17,8 @@ databaseChangeLog:
       file: releases/v0.6/003-checkout-attempt.yaml
       relativeToChangelogFile: true
   - include:
+      file: releases/v1.0/004-shedlock.yaml
+      relativeToChangelogFile: true
+  - include:
       file: demo/001-datos-demo.yaml
       relativeToChangelogFile: true

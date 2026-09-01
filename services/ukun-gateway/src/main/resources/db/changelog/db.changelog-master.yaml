@@ -1,0 +1,16 @@
+# Changelog master de ukun_gateway. Cada servicio con base propia gestiona el suyo (skill
+# `liquibase`, regla 6): no hay nada compartido con ukun_app ni con ukun_auth, y ningún changeset de
+# aquí nombra una tabla de las otras dos.
+#
+# Este master nace en v1.0 con ADR-0024, no en v0.5 con el servicio: hasta entonces el gateway no
+# tenía persistencia de ningún tipo. Lo que le da esquema es una sola cosa —la sesión del BFF fuera
+# del heap— y ese sigue siendo el límite: aquí no entra lógica de dominio (skill `spring-gateway`,
+# «Qué no construir aquí»), así que tampoco entran sus tablas.
+#
+# No hay carpeta `demo/` ni contexts: no hay dato de ejemplo que sembrar en una tabla cuyo contenido
+# lo escribe quien inicia sesión. Por eso application.yaml de este servicio tampoco fija
+# `spring.liquibase.contexts`, a diferencia de los otros dos.
+databaseChangeLog:
+  - include:
+      file: baseline/001-esquema-inicial.yaml
+      relativeToChangelogFile: true

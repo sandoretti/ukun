@@ -10,7 +10,7 @@ Tilt orquesta el stack de desarrollo vía `docker_compose()` (ADR-0005), con rei
 
 | Recurso | Qué es | Puerto | Variable | Desde |
 |---|---|:-:|:-:|:-:|
-| `db` | Postgres 17 con las dos bases: `ukun_app` y `ukun_auth` | 5432 | `DB_PORT` | v0.1 |
+| `db` | Postgres 17 con las tres bases: `ukun_app`, `ukun_auth` y `ukun_gateway` | 5432 | `DB_PORT` | v0.1 |
 | `ukun-api` | monolito de dominio (resource server) | 8081 · JDWP 5005 | `API_PORT` · `JDWP_API_PORT` | v0.2 |
 | `ukun-auth` | Authorization Server | 9000 · JDWP 5006 | `AUTH_PORT` · `JDWP_AUTH_PORT` | v0.4 |
 | `ukun-gateway` | BFF + único punto de entrada | 8080 · JDWP 5007 | `GATEWAY_PORT` · `JDWP_GATEWAY_PORT` | v0.5 |
@@ -100,6 +100,70 @@ no una casualidad — pruébala con `docker compose stop otel-collector` si tien
 El exportador es `debug`, que vuelca a stdout, y no hay Jaeger ni Prometheus en el stack. Cuando haga
 falta un waterfall de verdad, la imagen a la que cambiar es `grafana/otel-lgtm` — está descartada hoy
 por tamaño (~1,2 GB, y `compose.dev.yaml` lo levanta también el job `e2e` de CI), no por capacidad.
+
+## Al venir de una rama anterior a v1.0
+
+Dos cosas que hay que hacer una vez, y sin las cuales el stack no arranca (ADR-0024, issue #118):
+
+- **`UKUN_SIGNING_KEY` en tu `.env`.** La clave con la que `ukun-auth` firma los tokens salió del
+  arranque y pasó a ser configuración, sin valor por defecto — igual que los dos secretos de cliente.
+  Cómo generarla está en `.env.example`; sin ella el servicio se niega a arrancar, que es exactamente
+  lo que se quiere frente a una clave conocida. A cambio, reiniciar `ukun-auth` ya no cierra la sesión
+  de nadie.
+- **La base `ukun_gateway`.** El gateway tiene base propia desde v1.0 y la crea
+  `scripts/postgres-init-databases.sh`, que Postgres solo ejecuta **sobre un volumen virgen**: sobre
+  uno de antes de v1.0 esa base no existe y el gateway no encuentra dónde guardar la sesión. El
+  `db-reset` de más abajo la crea, pero se lleva por delante todo lo que hayas hecho probando; si
+  prefieres conservarlo, basta con crearla a mano una vez y dejar que Liquibase la migre al arrancar:
+
+  ```bash
+  docker compose exec db psql -U "$POSTGRES_USER" -d ukun_app -c 'CREATE DATABASE ukun_gateway'
+  ```
+
+## Comprobar el sistema con más de una réplica
+
+Fuera de Tilt y a mano, porque no es entorno de desarrollo sino la condición de salida del issue #118:
+
+```bash
+docker compose -f compose.yaml -f compose.replicas.yaml up --build -d \
+  db ukun-api ukun-auth ukun-auth-b auth-lb ukun-gateway
+./scripts/replicas-journey.sh
+```
+
+Levanta **dos** `ukun-api` y **dos** `ukun-auth`; el gateway sigue siendo uno y sigue publicando el
+8080, que es por donde se entra. La forma del override —por qué no se usa `compose.dev.yaml`, por qué
+`ukun-auth` lleva balanceador delante y `ukun-api` no— está explicada en la cabecera de
+`compose.replicas.yaml`, que es donde se lee al tocarlo.
+
+El script comprueba lo que se puede comprobar hablando por HTTP: el recorrido login → catálogo →
+carrito → pedido, doce peticiones seguidas **sin `401` intermitentes**, un solo `kid` en veinte
+lecturas del JWKS repartidas entre réplicas, y que el presupuesto del limitador de login corta al
+sexto intento y no al undécimo. Antes de v1.0 fallaban las cuatro, por motivos distintos (ADR-0024).
+
+Las dos que exigen parar una réplica se hacen a mano, y son las más concluyentes:
+
+```bash
+# La sesión se crea en una réplica y se usa en la otra: pide la página de login, mira en el log del
+# balanceador quién la sirvió, para ESA, y envía las credenciales. Si la superviviente las acepta, la
+# sesión salió del heap de verdad; antes de v1.0 responde /login?error.
+docker logs ukun-auth-lb-1 | grep 'GET /login '
+docker stop ukun-ukun-auth-1   # o -b, la que aparezca
+
+# La sesión del BFF sobrevive a un reinicio del gateway: inicia sesión, reinicia, y repite la
+# petición con la misma cookie. Antes de v1.0 responde 401; con la sesión a medias, un 302 hacia
+# /oauth2/authorize (que es lo que pasa si faltan los tokens y no la sesión — ADR-0024).
+docker restart ukun-ukun-gateway-1
+```
+
+Tres cosas que al leer los logs parecen fallos y no lo son:
+
+- La segunda réplica de `ukun-api` escribe `Waiting for changelog lock....` al arrancar. Las dos corren
+  Liquibase contra `ukun_app` y la segunda espera su turno (skill `liquibase`).
+- `ukun-auth` y `ukun-api` no escriben nada más en el log. Fuera del perfil `dev` el nivel raíz es
+  `WARN`, así que un arranque limpio es silencioso; `ukun-api` además no tiene access log, y probar
+  que sus dos réplicas sirven se hace parando una y viendo que el recorrido sigue en 200.
+- El balanceador parece mandarlo todo a una réplica durante las primeras peticiones. El round-robin de
+  nginx es estado por proceso worker; con treinta peticiones ya se ve el reparto.
 
 ## Resetear la base de datos
 
