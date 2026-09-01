@@ -195,6 +195,27 @@ ukun:
     # lo que evita repetir el defecto #17 (docs/08 §9).
     max-body-size: 5MB
 
+    # El limitador de tasa de docs/08 §8, por dirección remota y por tramo (RequestRateLimitBuckets).
+    #
+    # Los dos números son un presupuesto, no un afinado fino, y cada uno responde a una pregunta
+    # distinta. El de `api` tiene que ser invisible para quien navega la tienda: una pantalla del
+    # back-office dispara varias peticiones a la vez y TanStack Query reintenta, así que 120/min por
+    # IP deja sitio de sobra y sigue cortando un script. El de `signup` es lo contrario — dar de alta
+    # una cuenta es algo que una persona hace una vez—, y ahí el coste de equivocarse por estrecho lo
+    # paga una oficina entera detrás de un NAT, de modo que 5 cada 10 minutos es el punto donde el
+    # abuso se nota antes que la molestia.
+    #
+    # No hay tramo de login, y no es un olvido: el formulario de login se envía al origen de
+    # ukun-auth y no cruza este servicio (RequestRateLimitWebFilter lo explica). Su límite vive allí,
+    # en LoginRateLimiter.
+    rate-limit:
+      api:
+        capacity: 120
+        window: 1m
+      signup:
+        capacity: 5
+        window: 10m
+
     # 'unsafe-inline' aparece en style-src y SOLO ahí: react-bootstrap posiciona dropdowns, tooltips
     # y modales escribiendo el atributo `style` desde Popper, que la directiva cubre. script-src se
     # queda sin él a propósito — es la mitad que de verdad importa (docs/08 §8).

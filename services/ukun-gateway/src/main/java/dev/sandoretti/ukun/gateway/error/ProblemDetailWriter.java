@@ -1,6 +1,8 @@
 package dev.sandoretti.ukun.gateway.error;
 
+import java.util.function.Consumer;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -19,8 +21,9 @@ import tools.jackson.databind.ObjectMapper;
  *
  * There is one method per situation instead of a generic {@code write(ErrorCode, …)}, and
  * {@link ErrorCode} is package-private. The registry is closed ({@code docs/12} §4) and this service
- * may emit exactly three of its rows; an API shaped like this cannot produce a fourth by accident,
- * and {@link #payloadTooLarge} cannot forget its {@code maxBytes} extension.
+ * may emit exactly four of its rows; an API shaped like this cannot produce a fifth by accident,
+ * and {@link #payloadTooLarge} cannot forget its {@code maxBytes} extension, nor
+ * {@link #rateLimited} its {@code Retry-After} header.
  *
  * <h2>Why it is a bean and not a static helper</h2>
  *
@@ -35,6 +38,9 @@ public class ProblemDetailWriter {
     private static final String CODE = "code";
     private static final String TRACE_ID = "traceId";
     private static final String MAX_BYTES = "maxBytes";
+    private static final String RETRY_AFTER_SECONDS = "retryAfterSeconds";
+
+    private static final Consumer<HttpHeaders> NO_EXTRA_HEADERS = headers -> {};
 
     private final ObjectMapper objectMapper;
 
@@ -69,8 +75,30 @@ public class ProblemDetailWriter {
         return write(exchange, ErrorCode.PAYLOAD_TOO_LARGE, body);
     }
 
+    /**
+     * Out of budget, {@code docs/08-identidad-y-seguridad.md} §8. The number is published twice on
+     * purpose and they are not redundant: {@code Retry-After} is what a standard client — a proxy, a
+     * script, {@code curl} — acts on without knowing this contract, and {@code retryAfterSeconds} is
+     * what {@code t('errors:RATE_LIMITED', extensions)} interpolates, because the SPA reads the body
+     * and never the headers.
+     */
+    public Mono<Void> rateLimited(ServerWebExchange exchange, long retryAfterSeconds) {
+        ProblemDetail body = problem(ErrorCode.RATE_LIMITED, "Too many requests");
+        body.setProperty(RETRY_AFTER_SECONDS, retryAfterSeconds);
+
+        return write(
+                exchange,
+                ErrorCode.RATE_LIMITED,
+                body,
+                headers -> headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds)));
+    }
+
     private Mono<Void> write(ServerWebExchange exchange, ErrorCode code, String detail) {
         return write(exchange, code, problem(code, detail));
+    }
+
+    private Mono<Void> write(ServerWebExchange exchange, ErrorCode code, ProblemDetail body) {
+        return write(exchange, code, body, NO_EXTRA_HEADERS);
     }
 
     /**
@@ -78,7 +106,8 @@ public class ProblemDetailWriter {
      * actually about to be written, not when the chain is assembled. A committed response can no
      * longer carry a body, and forcing one there would corrupt the one already on the wire.
      */
-    private Mono<Void> write(ServerWebExchange exchange, ErrorCode code, ProblemDetail body) {
+    private Mono<Void> write(
+            ServerWebExchange exchange, ErrorCode code, ProblemDetail body, Consumer<HttpHeaders> extraHeaders) {
         ServerHttpResponse response = exchange.getResponse();
 
         return Mono.defer(() -> {
@@ -87,6 +116,9 @@ public class ProblemDetailWriter {
             }
             response.setStatusCode(code.status());
             response.getHeaders().setContentType(MediaType.APPLICATION_PROBLEM_JSON);
+            // Inside the defer, like the status: the headers of a committed response are read-only,
+            // and the check above is what guarantees this one is not.
+            extraHeaders.accept(response.getHeaders());
 
             DataBuffer buffer = response.bufferFactory().wrap(objectMapper.writeValueAsBytes(body));
 
