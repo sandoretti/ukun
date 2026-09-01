@@ -148,3 +148,29 @@ Dos correcciones, y la segunda importa más que la primera:
 ### Nota de operación: `teardown` y `deploy` se pisan
 
 `teardown.yml` usa `--no-wait` y termina en verde mientras Azure sigue borrando unos diez minutos. Desplegar en esa ventana falla con `ResourceGroupBeingDeleted`, en el paso 5 de 9. El mensaje es claro pero el fallo llega tarde; merece o una espera en `deploy.yml` o una línea en el resumen del teardown diciendo desde cuándo se puede volver a desplegar.
+
+## 2026-09-01 · Los tres recorridos, en verde contra Azure
+
+```
+✓ admin    · da de alta un tipo, un producto con foto y un empleado   27,9 s
+✓ cliente  · se da de alta, compra y encuentra su pedido              14,9 s
+✓ empleada · gestiona el stock y no puede entrar en administración    13,9 s
+```
+
+Lanzados con `E2E_BASE_URL` apuntando al FQDN de ACA. Es la condición de salida de la issue #55, y el recorrido de admin cubre además la **escritura** en el share de Azure Files —sube una foto de producto—, que era la mitad que faltaba de las `mountOptions`: hasta aquí solo se había probado la lectura.
+
+`UKUN_AUTH_BASE_URL` era la causa, confirmada en los logs de `ukun-api` antes de que llegara el arreglo:
+
+```
+ResourceAccessException: I/O error on POST request for "http://ukun-auth:9000/internal/accounts"
+```
+
+### El humo falló con la plantilla ya correcta, y eso era otro defecto
+
+El despliegue que llevaba el arreglo se declaró **fallido**: el humo corrió 32 segundos después de crearse la revisión nueva de `ukun-api`, con la JVM todavía arrancando. Pasó la espera previa porque **esa espera solo miraba el gateway**, y ese despliegue no lo tocaba —solo cambiaba una variable del API—, así que estaba sano desde el primer segundo.
+
+Es el mismo tipo de error que el de la variable: comprobar una cosa y creer que se ha comprobado otra. `deploy.yml` gana una espera anterior a la de salud, que aguarda a que `latestRevisionName` sea también `latestReadyRevisionName` **en las tres apps**. Son dos esperas porque comprueban cosas distintas: que el contenedor nuevo está en marcha, y que el stack responde.
+
+### Lo que queda de la lista de riesgos original
+
+Ninguno. Los cinco que ADR-0023 y la issue #55 dejaban abiertos —`azure.extensions` a tiempo, los tiempos de la sonda de arranque, el firewall, las `mountOptions` en lectura y en escritura, y el `iss` compuesto desde `defaultDomain`— están comprobados contra el entorno real. Y el coste quedó verificado antes contra la API de precios.
