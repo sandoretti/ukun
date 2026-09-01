@@ -51,12 +51,23 @@ El compilador de Bicep se descarga solo la primera vez que se invoca (`az bicep 
 ```bash
 az login
 az account set --subscription <ID de la suscripción>
+az account show --output table          # confirma que es la de estudiante y está Enabled
 
 # Sin esto, el primer despliegue falla al crear el recurso de un proveedor no registrado.
 for p in Microsoft.App Microsoft.OperationalInsights Microsoft.DBforPostgreSQL Microsoft.Storage; do
   az provider register --namespace "$p"
 done
 ```
+
+### La región no se elige libremente
+
+La suscripción de estudiante lleva una política **«Allowed resource deployment regions»** que restringe dónde se puede desplegar. `westeurope` **no** está permitida, que es la primera región que uno escribe. Consúltala antes de elegir, porque el error no llega al crear el grupo de recursos —eso funciona— sino al crear el primer recurso dentro, como `RequestDisallowedByAzure`:
+
+```bash
+az policy assignment list --query "[].{nombre:displayName, params:parameters}" -o json
+```
+
+Si la región elegida resulta prohibida, el grupo ya creado se queda con la ubicación mala: hay que borrarlo y rehacerlo, porque la ubicación de un grupo de recursos no se cambia.
 
 ### La identidad va en su propio grupo de recursos
 
@@ -109,8 +120,19 @@ gh variable set AZURE_LOCATION        --body westeurope
 
 Los cuatro valores sensibles, como secretos. Son los mismos que `.env.example` explica para el entorno local, generados igual:
 
+La contraseña de Postgres **no se puede generar con `openssl rand -hex`**, que es lo que usa el resto: Azure exige caracteres de al menos **tres** de las cuatro categorías (mayúsculas, minúsculas, dígitos, no alfanuméricos) y un hexadecimal solo tiene dos. El servidor se rechaza al crearlo, a mitad del despliegue y con el grupo de recursos ya montado. Alfanumérico de 32 con las tres categorías comprobadas:
+
 ```bash
-gh secret set POSTGRES_PASSWORD            --body "$(openssl rand -hex 32)"
+until PW=$(openssl rand -base64 48 | tr -d '\n=+/' | cut -c1-32) &&
+      printf '%s' "$PW" | grep -q '[A-Z]' &&
+      printf '%s' "$PW" | grep -q '[a-z]' &&
+      printf '%s' "$PW" | grep -q '[0-9]'; do :; done
+gh secret set POSTGRES_PASSWORD --body "$PW"
+```
+
+Los dos secretos de OAuth2 sí van en hexadecimal: no los valida Azure, solo tienen que coincidir entre sus dos lectores.
+
+```bash
 gh secret set UKUN_OAUTH2_GATEWAY_SECRET   --body "$(openssl rand -hex 32)"
 gh secret set UKUN_OAUTH2_API_SECRET       --body "$(openssl rand -hex 32)"
 

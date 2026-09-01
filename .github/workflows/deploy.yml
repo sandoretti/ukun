@@ -43,7 +43,11 @@ jobs:
 
     env:
       RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'ukun-demo' }}
-      LOCATION: ${{ vars.AZURE_LOCATION || 'westeurope' }}
+      # El respaldo es `francecentral` y no `westeurope`, que sería lo esperable: la suscripción de
+      # estudiante tiene una política «Allowed resource deployment regions» que solo admite cinco
+      # regiones y esa no está entre ellas. El fallo llega como RequestDisallowedByAzure al crear el
+      # PRIMER recurso, no al crear el grupo, así que un default prohibido deja un grupo vacío detrás.
+      LOCATION: ${{ vars.AZURE_LOCATION || 'francecentral' }}
 
     steps:
       - uses: actions/checkout@v7

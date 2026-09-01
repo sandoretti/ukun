@@ -61,7 +61,7 @@ Nothing here runs from a shell by default: the environment is driven by two `wor
 
 **The environment is ephemeral on purpose** — the subscription is Azure for Students, whose spending limit *suspends* resources rather than billing them, so leaving it running is what makes the credit disappear. Updating it means running `deploy.yml` again, never `az containerapp update --image`: that is faster and leaves the template out of sync with the environment. Whoever deploys by hand needs `az` (ADR-0023); nothing in the normal path does.
 
-The runbook — the one-time bootstrap, where each variable comes from, how to tear it down, and the failures whose error message does not name their cause — is `docs/15-despliegue.md`. The decision behind it is ADR-0023, and ADR-0024 is why only the gateway still carries `max=1`.
+The runbook — the one-time bootstrap, where each variable comes from, how to tear it down, and the failures whose error message does not name their cause — is `docs/15-despliegue.md`, and `docs/16-bitacora-del-despliegue.md` records what is actually provisioned right now and what broke while provisioning it (append-only, one entry per date). The decision behind it is ADR-0023, and ADR-0024 is why only the gateway still carries `max=1`.
 
 ## Architecture of the legacy (historical — read it in the `v0.0-legacy` tag)
 
