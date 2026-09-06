@@ -240,8 +240,19 @@ El paso pasa a `az containerapp delete`, que es el comando específico del prove
 
 **Lo que esto confirma de paso:** el certificado gestionado aparece en `az resource list` como recurso propio, de tipo `Microsoft.App/managedEnvironments/managedCertificates`. El filtro de conservación usa `starts_with` y no igualdad justamente por eso — con igualdad exacta, el apagado se habría llevado por delante el certificado del dominio.
 
+### El comando específico tampoco lo borró, y eso deja el diagnóstico a medias
+
+`az containerapp delete` **no arregló el caso ya atascado**. Tres intentos —el comando específico dos veces y un `DELETE` por la API REST— fueron aceptados por ARM (`Microsoft.App/containerApps/delete`, estado `Accepted` a las 22:04 UTC) y ninguno completó en más de media hora. No hay locks en el grupo ni en el recurso, y el certificado no era el culpable: la app ya tenía `customDomains: null`, así que no lo referenciaba.
+
+Lo que sí se sabe es que **la app ya no existe en el plano de Container Apps**: `az containerapp revision list` responde `ContainerAppNotFound`. Lo que queda es un registro huérfano en ARM, sin revisiones ni réplicas, y por tanto **sin coste**.
+
+Eso obliga a separar dos cosas que es cómodo confundir: el cambio a `az containerapp delete` está justificado —la operación genérica dejó el recurso en `Failed` con `customDomains: null`, que es una actualización parcial y no un borrado—, pero **no está demostrado que evite el atasco**, sólo que no lo provoca de la misma manera. Puede que lo que bloquea sea el estado `Failed` previo, el dominio atado, o algo del proveedor que no se ha visto. Se sabrá en el primer ciclo Deploy → Teardown completo con dominio, que es lo que hay que hacer antes de dar el arreglo por bueno.
+
+El resto del apagado se completó a mano con los comandos específicos: `az storage account delete` y `az postgres flexible-server delete`, las dos únicas partidas que facturaban. El grupo queda con `ukun-env`, `ukun-logs`, el certificado y el registro huérfano.
+
 ### Sigue sin comprobarse
 
-- Que el apagado termine dejando el grupo con lo que conserva y que su paso de verificación pase.
+- Si `az containerapp delete` basta en un ciclo limpio, o si el atasco se repite con dominio atado.
+- Que el apagado termine solo, sin intervención, y que su paso de verificación pase — hoy ese paso no llegó a ejecutarse.
 - Que el despliegue siguiente reutilice el entorno y el dominio responda **sin tocar Cloudflare**.
 - Que Cost analysis no muestre cargos con el entorno apagado. Los cargos de Azure tardan horas en consolidarse, así que esto se mira al día siguiente.
