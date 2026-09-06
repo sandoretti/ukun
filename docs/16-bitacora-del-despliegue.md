@@ -223,3 +223,25 @@ No cabe en una pasada de Bicep, así que la plantilla gana el parámetro `certif
 - Que el apagado deje el grupo con los dos recursos que conserva y que el paso de verificación pase.
 - Que el despliegue siguiente reutilice el entorno conservado y el dominio responda **sin tocar Cloudflare**, que es la afirmación central del montaje.
 - Que Cost analysis no muestre ningún cargo con el entorno apagado. De ese supuesto depende conservar el entorno; si resulta falso, se vuelve a `borrar_todo` y el CNAME pasa a reescribirse en cada ciclo.
+
+## 2026-09-06 (tarde) · El dominio, servido; y el apagado, atascado en la única app que lo llevaba
+
+`https://ukun.sandoretti.dev` sirve el stack entero. Comprobado contra el entorno real: binding `SniEnabled` sobre el certificado `ukun-sandoretti-dev` en estado `Succeeded`, cadena TLS válida desde fuera (`ssl_verify_result: 0`, emitido por GeoTrust/DigiCert, hasta 2027-03-06), `/actuator/health` en `UP`, el SPA, `/api/products` en 200, una foto de producto en `image/jpeg` —o sea el share montado y servido— y la redirección de login llevando `redirect_uri=https://ukun.sandoretti.dev/login/oauth2/code/ukun`, que es la prueba de que `RegisteredClientSeeder` reescribió las URIs sin que nadie tocara nada.
+
+El certificado se emitió a la segunda: el `certificateReady` de esta misma tarde hizo su trabajo.
+
+### El teardown se quedó colgado, y solo podía pasarle al gateway
+
+El apagado borró `ukun-auth` y `ukun-api` y se quedó esperando indefinidamente en `ukun-gateway`, que quedó en `provisioningState: Failed` con `customDomains: null`.
+
+La causa es el `az resource delete --ids` genérico del workflow. Sobre una container app **con un dominio propio atado**, la operación genérica de ARM hace una actualización parcial en vez de un borrado. Las otras dos cayeron sin problema porque no tenían dominio, y ahí está lo que lo hizo invisible: **el fallo no se reproduce en un entorno sin `gatewayHost`**, que es como se había probado todo hasta hoy. La primera vez que hubo un dominio fue también la primera vez que el teardown tuvo que borrarlo.
+
+El paso pasa a `az containerapp delete`, que es el comando específico del proveedor. El borrado por exclusión del resto se queda igual: esto no es una lista de recursos que mantener al día, sino un tipo tratado aparte porque su proveedor lo exige.
+
+**Lo que esto confirma de paso:** el certificado gestionado aparece en `az resource list` como recurso propio, de tipo `Microsoft.App/managedEnvironments/managedCertificates`. El filtro de conservación usa `starts_with` y no igualdad justamente por eso — con igualdad exacta, el apagado se habría llevado por delante el certificado del dominio.
+
+### Sigue sin comprobarse
+
+- Que el apagado termine dejando el grupo con lo que conserva y que su paso de verificación pase.
+- Que el despliegue siguiente reutilice el entorno y el dominio responda **sin tocar Cloudflare**.
+- Que Cost analysis no muestre cargos con el entorno apagado. Los cargos de Azure tardan horas en consolidarse, así que esto se mira al día siguiente.
