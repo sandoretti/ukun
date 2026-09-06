@@ -77,6 +77,32 @@ jobs:
       - name: Grupo de recursos
         run: az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
 
+      # En qué fase está el dominio, que decide si esta ejecución tiene que emitir el certificado.
+      #
+      # Azure no deja crear un certificado gestionado para un hostname que todavía no consta en el
+      # ingress (`RequireCustomHostnameInEnvironment`), y el binding con certificado no se puede
+      # escribir hasta que el certificado existe. Son tres estados y el paso de abajo los recorre en
+      # una sola ejecución; esto solo mira en cuál estamos para no repetir trabajo hecho.
+      #
+      # `|| true` porque la app puede no existir todavía —el primer despliegue del entorno—, y eso
+      # no es un fallo: significa que la respuesta es `false`.
+      - name: En qué fase está el dominio propio
+        id: dominio
+        env:
+          HOST: ${{ vars.UKUN_GATEWAY_HOST }}
+        run: |
+          READY=false
+          if [ -n "$HOST" ]; then
+            BIND=$(az containerapp show -n ukun-gateway -g "$RESOURCE_GROUP" \
+                     --query "properties.configuration.ingress.customDomains[?name=='$HOST'].bindingType | [0]" \
+                     -o tsv 2>/dev/null || true)
+            [ "$BIND" = "SniEnabled" ] && READY=true
+            echo "Hostname $HOST — binding actual: ${BIND:-ninguno}. Certificado listo: $READY"
+          else
+            echo "Sin UKUN_GATEWAY_HOST: no hay dominio propio que preparar."
+          fi
+          echo "ready=$READY" >> "$GITHUB_OUTPUT"
+
       # El despliegue entero, y de él salen las URLs. `UKUN_AUTH_ISSUER` no se escribe en ninguna
       # parte: la plantilla lo compone desde el `defaultDomain` del entorno, porque el FQDN cambia
       # con el nombre del entorno y el `iss` se compara literalmente contra el claim del token en
@@ -87,21 +113,40 @@ jobs:
       # se pasa como cadena vacía y la plantilla se comporta igual que antes de que esto existiera.
       - name: Desplegar
         id: deployment
+        env:
+          HOST: ${{ vars.UKUN_GATEWAY_HOST }}
+          READY: ${{ steps.dominio.outputs.ready }}
         run: |
-          az deployment group create \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "ukun-$(date +%Y%m%d%H%M%S)" \
-            --template-file deploy/azure/main.bicep \
-            --parameters \
-              imageTag='${{ inputs.image-tag }}' \
-              registry='ghcr.io/${{ github.repository_owner }}' \
-              postgresPassword='${{ secrets.POSTGRES_PASSWORD }}' \
-              oauth2GatewaySecret='${{ secrets.UKUN_OAUTH2_GATEWAY_SECRET }}' \
-              oauth2ApiSecret='${{ secrets.UKUN_OAUTH2_API_SECRET }}' \
-              signingKey='${{ secrets.UKUN_SIGNING_KEY }}' \
-              gatewayHost='${{ vars.UKUN_GATEWAY_HOST }}' \
-            --query properties.outputs \
-            --output json > outputs.json
+          desplegar() {
+            echo "::group::az deployment group create (certificateReady=$1)"
+            az deployment group create \
+              --resource-group "$RESOURCE_GROUP" \
+              --name "ukun-$(date +%Y%m%d%H%M%S)" \
+              --template-file deploy/azure/main.bicep \
+              --parameters \
+                imageTag='${{ inputs.image-tag }}' \
+                registry='ghcr.io/${{ github.repository_owner }}' \
+                postgresPassword='${{ secrets.POSTGRES_PASSWORD }}' \
+                oauth2GatewaySecret='${{ secrets.UKUN_OAUTH2_GATEWAY_SECRET }}' \
+                oauth2ApiSecret='${{ secrets.UKUN_OAUTH2_API_SECRET }}' \
+                signingKey='${{ secrets.UKUN_SIGNING_KEY }}' \
+                gatewayHost="$HOST" \
+                certificateReady="$1" \
+              --query properties.outputs \
+              --output json > outputs.json
+            echo "::endgroup::"
+          }
+
+          desplegar "$READY"
+
+          # La segunda fase, y solo la primera vez que se pone el dominio: ahora el hostname ya consta
+          # en el ingress, así que Azure acepta emitir el certificado y atarlo por SNI. Emitirlo tarda
+          # unos minutos y `az` espera. En las ejecuciones siguientes `READY` ya es `true` y esto no
+          # corre — el certificado existe y volver a declararlo es idempotente.
+          if [ -n "$HOST" ] && [ "$READY" != "true" ]; then
+            echo "El hostname ya está en el ingress. Segunda pasada para emitir el certificado."
+            desplegar true
+          fi
 
           {
             echo "gateway-url=$(jq -r .gatewayUrl.value outputs.json)"

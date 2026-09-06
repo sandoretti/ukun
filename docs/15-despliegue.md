@@ -235,13 +235,27 @@ El orden no se puede saltar, porque el certificado se emite validando el DNS y e
    | `CNAME` | `tienda` | `ukun-gateway.<defaultDomain>` — la salida `gatewayFqdn` |
    | `TXT` | `asuid.tienda` | la salida `customDomainVerificationId` |
 
-3. **Definir la variable y volver a desplegar.** Ahora la plantilla crea el certificado, lo ata al ingress y compone las URLs con tu dominio:
+3. **Definir la variable y volver a desplegar.** Ahora la plantilla da de alta el hostname, emite el certificado, lo ata al ingress y compone las URLs con tu dominio:
 
    ```bash
    gh variable set UKUN_GATEWAY_HOST --body tienda.ejemplo.com
    ```
 
 A partir de ahí es un solo paso para siempre: apagar y volver a levantar no toca el DNS.
+
+#### Por qué ese tercer paso despliega dos veces por dentro
+
+Azure impone un orden que no cabe en una sola pasada de Bicep, y el error que da si se ignora nombra la causa pero no la salida:
+
+```
+RequireCustomHostnameInEnvironment: Creating managed certificate requires hostname
+'tienda.ejemplo.com' added as a custom hostname to a container app or route in
+environment 'ukun-env'
+```
+
+El certificado no se puede emitir hasta que el hostname consta en el ingress, y el binding con certificado no se puede escribir hasta que el certificado existe. **Son tres estados, no dos:** el ingress declara el hostname con `bindingType: Disabled` —Azure valida ahí el CNAME y el `asuid`, y el dominio pasa a constar en el entorno—, después se emite el certificado y el binding pasa a `SniEnabled`.
+
+Lo recorre `deploy.yml`: un paso previo mira en qué fase está el dominio y, si hace falta, ejecuta la plantilla dos veces con `certificateReady` en `false` y luego en `true`. Quien despliega no ve la distinción — es el mismo botón. Y no se repite: en las ejecuciones siguientes el binding ya es `SniEnabled`, el paso lo detecta y solo hay una pasada.
 
 ### La nube tiene que estar gris
 
@@ -360,6 +374,7 @@ Salida de datos y transacciones de almacenamiento, que a esta escala son ruido. 
 | Un contenedor se reinicia solo, sin excepción en el log | Se pasó del límite de memoria y ACA lo mató. Mira el dimensionado de §8 antes de buscar una fuga |
 | `429` durante una demo con varias personas | El limitador cuenta por IP y todos salen por la misma NAT. Se sube con `UKUN_GATEWAY_RATELIMIT_API_CAPACITY` (y `UKUN_GATEWAY_RATELIMIT_SIGNUP_CAPACITY`, que son 5 cada 10 minutos y los agotan cinco altas seguidas desde la misma red) |
 | El despliegue falla creando el certificado gestionado, con la app ya sana | El CNAME no resuelve todavía, o resuelve a Cloudflare porque el proxy está en **naranja**. La validación es por CNAME y tiene que apuntar al FQDN de la app (§6) |
+| `RequireCustomHostnameInEnvironment` al crear el certificado | El hostname no está todavía en el ingress. Lo resuelve el paso «En qué fase está el dominio propio» de `deploy.yml`, que despliega dos veces la primera vez (§6); si sale a mano, es que se ejecutó el Bicep sin pasar por el workflow |
 | El dominio propio da un aviso de certificado en el navegador | Se llegó a él antes de que Azure terminara de emitirlo. Tarda unos minutos desde que el binding existe; el FQDN de Azure sirve mientras tanto |
 | El dominio dejó de resolver tras un apagado | Se usó `borrar_todo`, que se lleva el entorno y con él el `defaultDomain` al que apunta el CNAME. El valor nuevo está en el resumen del siguiente `deploy.yml` (§5) |
 | El `429` llega a todo el mundo a la vez, no a una persona | El proxy de Cloudflare está activado: el limitador ve una sola IP para todos los visitantes porque no lee `X-Forwarded-For` a propósito (§6) |
