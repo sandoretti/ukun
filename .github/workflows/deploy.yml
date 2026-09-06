@@ -77,10 +77,14 @@ jobs:
       - name: Grupo de recursos
         run: az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
 
-      # El despliegue entero, y de él salen las URLs. `UKUN_AUTH_ISSUER` y `UKUN_GATEWAY_BASE_URL` no
-      # se escriben en ninguna parte: la plantilla los compone desde el `defaultDomain` del entorno,
-      # porque el FQDN cambia con el nombre del entorno y el `iss` se compara literalmente contra el
-      # claim del token en ukun-api.
+      # El despliegue entero, y de él salen las URLs. `UKUN_AUTH_ISSUER` no se escribe en ninguna
+      # parte: la plantilla lo compone desde el `defaultDomain` del entorno, porque el FQDN cambia
+      # con el nombre del entorno y el `iss` se compara literalmente contra el claim del token en
+      # ukun-api.
+      #
+      # La excepción es `UKUN_GATEWAY_HOST`, y es una variable y no un secreto porque un nombre de
+      # dominio no autoriza nada. Sin definir —el caso por defecto, y el obligatorio la PRIMERA vez—
+      # se pasa como cadena vacía y la plantilla se comporta igual que antes de que esto existiera.
       - name: Desplegar
         id: deployment
         run: |
@@ -95,6 +99,7 @@ jobs:
               oauth2GatewaySecret='${{ secrets.UKUN_OAUTH2_GATEWAY_SECRET }}' \
               oauth2ApiSecret='${{ secrets.UKUN_OAUTH2_API_SECRET }}' \
               signingKey='${{ secrets.UKUN_SIGNING_KEY }}' \
+              gatewayHost='${{ vars.UKUN_GATEWAY_HOST }}' \
             --query properties.outputs \
             --output json > outputs.json
 
@@ -104,6 +109,8 @@ jobs:
             echo "static-ip=$(jq -r .environmentStaticIp.value outputs.json)"
             echo "storage-account=$(jq -r .storageAccountName.value outputs.json)"
             echo "postgres-server=$(jq -r .postgresServerName.value outputs.json)"
+            echo "gateway-fqdn=$(jq -r .gatewayFqdn.value outputs.json)"
+            echo "domain-verification-id=$(jq -r .customDomainVerificationId.value outputs.json)"
           } >> "$GITHUB_OUTPUT"
 
       # Las fotos de producto, al share que ukun-api monta en /opt/resources/uploads.
@@ -157,10 +164,23 @@ jobs:
       # Y la segunda: que la aplicación responda de verdad. Una revisión lista es un contenedor que
       # pasó su sonda, no necesariamente un stack que sirve — los mismos 300 segundos que espera el
       # trabajo `e2e` de ci.yml, y por el mismo motivo.
+      #
+      # Y va contra la URL PÚBLICA, que con `UKUN_GATEWAY_HOST` puesta es ya el dominio propio. Eso
+      # convierte este paso en la comprobación de que el CNAME resuelve y el certificado sirve, sin
+      # necesidad de un paso aparte que lo mire — pero también hace que un DNS mal puesto se
+      # manifieste aquí como un timeout mudo, así que el fallo dice dónde mirar.
       - name: Esperar a que el gateway esté sano
+        env:
+          GATEWAY: ${{ steps.deployment.outputs.gateway-url }}
         run: |
-          timeout 300 bash -c \
-            'until curl -sf "${{ steps.deployment.outputs.gateway-url }}/actuator/health" | grep -q "\"status\":\"UP\""; do sleep 10; done'
+          if ! timeout 300 bash -c \
+            'until curl -sf "$GATEWAY/actuator/health" | grep -q "\"status\":\"UP\""; do sleep 10; done'; then
+            echo "::error::$GATEWAY no responde UP en 300 s."
+            if [ -n "${{ vars.UKUN_GATEWAY_HOST }}" ]; then
+              echo "::error::Esa URL es el dominio propio. Comprueba en Cloudflare que el CNAME de ${{ vars.UKUN_GATEWAY_HOST }} apunta a ${{ steps.deployment.outputs.gateway-fqdn }} y que el proxy está DESACTIVADO (nube gris). El FQDN de Azure sigue sirviendo la aplicación mientras tanto."
+            fi
+            exit 1
+          fi
 
       # El firewall deja de estar abierto a los servicios de Azure. Va aquí y no en la plantilla por la
       # dependencia circular que la propia plantilla comenta: la IP saliente no se conoce hasta que
@@ -178,7 +198,7 @@ jobs:
       # Y el aviso que va con esto: en un entorno Consumption sin VNet, Azure no garantiza que esa IP
       # saliente sea estable. Si cambia en caliente, las tres apps pierden la base hasta el siguiente
       # despliegue, que vuelve a estrechar sobre la nueva. La salida robusta es la integración con
-      # VNet, que no cuesta dinero pero sí complejidad — está razonada en docs/15-despliegue.md §6.
+      # VNet, que no cuesta dinero pero sí complejidad — está razonada en docs/15-despliegue.md §7.
       - name: Estrechar el firewall de Postgres
         env:
           SERVER: ${{ steps.deployment.outputs.postgres-server }}
@@ -279,6 +299,10 @@ jobs:
           fi
 
       - name: Resumen
+        env:
+          HOST: ${{ vars.UKUN_GATEWAY_HOST }}
+          FQDN: ${{ steps.deployment.outputs.gateway-fqdn }}
+          ASUID: ${{ steps.deployment.outputs.domain-verification-id }}
         run: |
           {
             echo "## Entorno desplegado"
@@ -290,6 +314,37 @@ jobs:
             echo "| Imágenes | \`${{ inputs.image-tag }}\` |"
             echo "| Grupo de recursos | \`$RESOURCE_GROUP\` |"
             echo "| IP estática del entorno | \`${{ steps.deployment.outputs.static-ip }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Los registros de Cloudflare, ya rellenos. Se imprimen SIEMPRE y no sólo la primera vez:
+          # con la variable puesta sirven para comprobar que lo que hay en Cloudflare sigue siendo
+          # correcto, que es la pregunta que se hace cuando el dominio deja de responder.
+          {
+            echo
+            echo "### Dominio propio"
+            echo
+            if [ -z "$HOST" ]; then
+              echo "\`UKUN_GATEWAY_HOST\` no está definida: el entorno se sirve sólo por su FQDN de Azure."
+              echo "Para ponerle tu subdominio, crea estos dos registros en Cloudflare **con el proxy"
+              echo "desactivado (nube gris)** y define después la variable:"
+            else
+              echo "Servido por \`$HOST\`. Estos son los registros que lo sostienen, para cotejarlos"
+              echo "con lo que haya en Cloudflare si el dominio deja de resolver:"
+            fi
+            echo
+            echo "| Tipo | Nombre | Contenido | Proxy |"
+            echo "|---|---|---|---|"
+            echo "| CNAME | \`${HOST:-<tu-subdominio>}\` | \`$FQDN\` | DNS only |"
+            echo "| TXT | \`asuid.${HOST:-<tu-subdominio>}\` | \`$ASUID\` | — |"
+            echo
+            echo "El CNAME apunta al \`defaultDomain\` del entorno, que \`teardown.yml\` **conserva**:"
+            echo "una vez escrito no hay que volver a tocarlo aunque se destruya y se levante el resto."
+            echo
+            echo "La pantalla de contraseña se sirve desde \`ukun-auth\`, que se queda con su FQDN de"
+            echo "Azure: durante el login se ve esa URL y no el dominio propio. Es esperado."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          {
             echo
             echo "La regla de firewall de Postgres está abierta a los servicios de Azure. Para"
             echo "estrecharla a este entorno, ver \`docs/15-despliegue.md\`."

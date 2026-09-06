@@ -55,7 +55,7 @@ Y lo que sigue sin comprobarse porque solo se comprueba desplegando: que `enviro
 
 ## 2026-09-01 · Coste verificado
 
-Se cierra el punto del checklist de la issue #55 que pedía «el coste verificado en la calculadora». No se usó la calculadora sino la **API de precios de Azure** (`prices.azure.com/api/retail/prices`), que es pública, no necesita autenticación y devuelve el precio por medidor y región — de modo que la comprobación es reproducible con un comando en vez de con capturas de una web. Las cifras y los escenarios están en `15-despliegue.md` §7.
+Se cierra el punto del checklist de la issue #55 que pedía «el coste verificado en la calculadora». No se usó la calculadora sino la **API de precios de Azure** (`prices.azure.com/api/retail/prices`), que es pública, no necesita autenticación y devuelve el precio por medidor y región — de modo que la comprobación es reproducible con un comando en vez de con capturas de una web. Las cifras y los escenarios están en `15-despliegue.md` §8.
 
 El resultado en una línea: **el uso puntual sale por céntimos** —0,07 USD una demo de tres horas, 0,30 USD un mes de cuatro demos— y **24/7 sale por 46,15 USD/mes**, que agota el crédito de estudiante en 2,2 meses. Los dos números que explican esa diferencia:
 
@@ -73,7 +73,7 @@ Cambios en `main.bicep`:
 - `ukun-auth` pasa de 0,25 vCPU / 0,5 GiB a **0,5 vCPU / 1 GiB**. Las combinaciones de Consumption van en pares fijos, así que ese es el escalón siguiente.
 - Los tres reciben **`JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=70`**. Por defecto la JVM toma el 25 % de la memoria del contenedor, o sea 256 MiB de heap dentro de 1 GiB: el resto se paga sin usarse y el síntoma sería GC continuo con memoria libre en el panel.
 
-Efecto en el coste: **ninguno para el uso puntual** —una demo de tres horas sigue costando 0,07 USD, porque sigue dentro de la franja gratuita de Container Apps—. Lo que se estrecha es el margen: la franja pasa de cubrir 40 horas encendido al mes a cubrir 33, y el escenario 24/7 sube de 46,15 a 52,06 USD/mes. `15-despliegue.md` §7 lleva las cifras rehechas.
+Efecto en el coste: **ninguno para el uso puntual** —una demo de tres horas sigue costando 0,07 USD, porque sigue dentro de la franja gratuita de Container Apps—. Lo que se estrecha es el margen: la franja pasa de cubrir 40 horas encendido al mes a cubrir 33, y el escenario 24/7 sube de 46,15 a 52,06 USD/mes. `15-despliegue.md` §8 lleva las cifras rehechas.
 
 Y la respuesta a la pregunta que originó todo: **para cuatro personas concurrentes sobra**. Postgres B1ms admite del orden de 50 conexiones contra las 15 que abren los tres pools juntos, y ninguno de los servicios se acerca a su techo. Lo único que hay que vigilar es el limitador de tasa, que cuenta **por IP**: varias personas detrás de la misma NAT comparten los 120 req/min de `/api/**` y las 5 altas cada 10 minutos. No se ha cambiado el valor por defecto —el límite existe por algo (`08-identidad-y-seguridad.md` §8)— pero §8 del runbook dice ahora qué variable subir si aparece un `429` en mitad de una demo.
 
@@ -191,4 +191,4 @@ Era el único punto del checklist de la issue #55 que quedaba a medias, y arregl
 
 Probado a mano contra el entorno antes de escribirlo: con el firewall ya estrechado a `20.74.0.153`, el catálogo responde 200 y **un alta de cliente responde 201 en 0,6 s** — que es la operación que escribe en las dos bases.
 
-Y lo que este arreglo no resuelve, escrito en `15-despliegue.md` §6: en Consumption sin VNet, Azure no garantiza que esa IP saliente sea estable. La salida robusta es la integración con VNet, que **no cuesta dinero** —ADR-0023 descartó la red privada por el coste de un Private Endpoint, que no es lo mismo que el modo *private access* con subnet delegada— sino complejidad.
+Y lo que este arreglo no resuelve, escrito en `15-despliegue.md` §7: en Consumption sin VNet, Azure no garantiza que esa IP saliente sea estable. La salida robusta es la integración con VNet, que **no cuesta dinero** —ADR-0023 descartó la red privada por el coste de un Private Endpoint, que no es lo mismo que el modo *private access* con subnet delegada— sino complejidad.
