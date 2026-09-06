@@ -192,3 +192,34 @@ Era el único punto del checklist de la issue #55 que quedaba a medias, y arregl
 Probado a mano contra el entorno antes de escribirlo: con el firewall ya estrechado a `20.74.0.153`, el catálogo responde 200 y **un alta de cliente responde 201 en 0,6 s** — que es la operación que escribe en las dos bases.
 
 Y lo que este arreglo no resuelve, escrito en `15-despliegue.md` §7: en Consumption sin VNet, Azure no garantiza que esa IP saliente sea estable. La salida robusta es la integración con VNet, que **no cuesta dinero** —ADR-0023 descartó la red privada por el coste de un Private Endpoint, que no es lo mismo que el modo *private access* con subnet delegada— sino complejidad.
+
+## 2026-09-06 · El dominio propio, y el orden que Azure impone
+
+El entorno se levanta bajo `ukun.sandoretti.dev`, un subdominio de Cloudflare apuntando al gateway. El entorno de este ciclo es `victoriousbeach-ebf83981.francecentral`, y ese sufijo es justamente lo que el `teardown.yml` nuevo conserva para que el CNAME no haya que reescribirlo nunca más.
+
+**Solo el gateway lleva dominio.** `ukun-auth` se queda en su FQDN de Azure, así que `UKUN_AUTH_ISSUER` no se mueve y no hay ninguna ventana con tokens vivos cuyo `iss` haya cambiado. El precio, visible: durante el login se ve la URL larga de Azure en la pantalla de contraseña.
+
+### El primer despliegue con dominio falló, y el mensaje sí decía por qué
+
+```
+RequireCustomHostnameInEnvironment: Creating managed certificate requires hostname
+'ukun.sandoretti.dev' added as a custom hostname to a container app or route in
+environment 'ukun-env'
+```
+
+La plantilla tenía la dependencia invertida: el binding del ingress pedía el `certificateId`, así que Bicep creaba el certificado **antes** de tocar la app. Azure exige lo contrario — el hostname tiene que constar ya en el ingress para emitir el certificado —, y como el binding con certificado no se puede escribir sin certificado, **son tres estados y no dos**:
+
+1. Ingress con el hostname y `bindingType: Disabled`. Aquí Azure valida el CNAME y el TXT `asuid`.
+2. Certificado emitido, ya con el hostname constando en el entorno.
+3. Binding a `SniEnabled` apuntando al certificado.
+
+No cabe en una pasada de Bicep, así que la plantilla gana el parámetro `certificateReady` y `deploy.yml` recorre las dos primeras fases en una sola ejecución: un paso previo mira el `bindingType` actual y, si no es `SniEnabled`, despliega dos veces. Las ejecuciones siguientes hacen una sola pasada.
+
+**El fallo no dejó nada a medias**, que era lo que la plantilla prometía en su comentario: ARM creaba el certificado antes que la app, así que al fallar el certificado la app ni se tocó. Comprobado en caliente — `customDomains: null`, ningún certificado en el entorno, y el gateway respondiendo `200` en `/actuator/health` por su FQDN de Azure con el despliegue anterior intacto.
+
+### Lo que sigue sin comprobarse
+
+- Que el certificado se emita de verdad con las dos pasadas, y que el dominio sirva por HTTPS.
+- Que el apagado deje el grupo con los dos recursos que conserva y que el paso de verificación pase.
+- Que el despliegue siguiente reutilice el entorno conservado y el dominio responda **sin tocar Cloudflare**, que es la afirmación central del montaje.
+- Que Cost analysis no muestre ningún cargo con el entorno apagado. De ese supuesto depende conservar el entorno; si resulta falso, se vuelve a `borrar_todo` y el CNAME pasa a reescribirse en cada ciclo.

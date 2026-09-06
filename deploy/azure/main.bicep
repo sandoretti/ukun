@@ -83,6 +83,30 @@ A partir de ahí es un solo paso para siempre, porque `teardown.yml` conserva el
 Environment y con él su `defaultDomain`: el CNAME apuntará al mismo sitio en el siguiente ciclo.''')
 param gatewayHost string = ''
 
+@description('''Si el hostname de `gatewayHost` ya está dado de alta en el ingress del gateway. Lo
+calcula `deploy.yml` mirando el entorno, y no debería tocarse a mano.
+
+EXISTE PORQUE AZURE IMPONE UN ORDEN QUE NO SE PUEDE EXPRESAR EN UNA SOLA PASADA, y el error que da
+si se ignora nombra su causa pero no la salida:
+
+    RequireCustomHostnameInEnvironment: Creating managed certificate requires hostname
+    'ukun.sandoretti.dev' added as a custom hostname to a container app or route in
+    environment 'ukun-env'
+
+O sea: el certificado no se puede emitir hasta que el hostname está en el ingress, y el binding con
+certificado no se puede escribir hasta que el certificado existe. Son tres estados y no dos:
+
+  1. `false` — el ingress declara el hostname con `bindingType: Disabled`. No hay certificado y el
+     dominio todavía no sirve por HTTPS, pero Azure ya valida el CNAME y el TXT `asuid`, y a partir
+     de aquí el hostname consta en el entorno.
+  2. `true` — ahora sí se puede crear el certificado, y el binding pasa a `SniEnabled`.
+  3. Todas las veces siguientes van directas a `true`: el certificado ya existe y volver a
+     declararlo es idempotente.
+
+`deploy.yml` recorre 1 y 2 en una sola ejecución, así que quien despliega no ve esta distinción — es
+el mismo botón de siempre.''')
+param certificateReady bool = false
+
 // ---------------------------------------------------------------------------------------------
 // Nombres y URLs
 // ---------------------------------------------------------------------------------------------
@@ -122,6 +146,12 @@ var apiInternalUrl = 'https://${apiAppName}.internal.${environment_.properties.d
 // quien inicia sesión ve durante ese salto el FQDN largo de Azure y no el dominio propio. Es
 // estético y se arregla dando un segundo subdominio a auth; cuesta un CNAME y un certificado más.
 var hasCustomDomain = !empty(gatewayHost)
+
+// El hostname se declara en cuanto hay dominio; el certificado, solo cuando el paso anterior ya
+// dejó ese hostname en el entorno. Separarlos es lo único que hace desplegable el orden que Azure
+// impone, y por eso son dos condiciones y no una.
+var bindCertificate = hasCustomDomain && certificateReady
+
 var gatewayUrl = hasCustomDomain
   ? 'https://${gatewayHost}'
   : 'https://${gatewayAppName}.${environment_.properties.defaultDomain}'
@@ -185,8 +215,11 @@ resource environment_ 'Microsoft.App/managedEnvironments@2024-03-01' = {
 // Si no resuelve —o resuelve a Cloudflare porque el proxy está en naranja—, el despliegue falla
 // aquí, con la app ya sana y sirviendo por su FQDN de Azure. Es el fallo que se quiere: ruidoso y
 // sin consecuencias.
+//
+// Y la condición es `bindCertificate` y no `hasCustomDomain`: emitirlo exige que el hostname ya
+// conste en el ingress, que es lo que hace la pasada anterior. Ver `certificateReady`.
 resource gatewayCertificate 'Microsoft.App/managedEnvironments/managedCertificates@2024-03-01' =
-  if (hasCustomDomain) {
+  if (bindCertificate) {
     parent: environment_
     // Los puntos no valen en un nombre de recurso hijo. Un dominio distinto da un certificado
     // distinto, que es lo correcto: cambiar `gatewayHost` no debe reutilizar el anterior.
@@ -648,13 +681,18 @@ resource gateway 'Microsoft.App/containerApps@2024-03-01' = {
         // El FQDN de Azure NO desaparece al añadir el dominio propio: el ingress responde por los
         // dos. Eso es lo que deja una vía de entrada cuando el DNS o el certificado están a medias,
         // y lo que permite desplegar la primera vez sin dominio ninguno.
+        //
+        // El hostname se declara SIEMPRE que hay dominio, con o sin certificado. Esa es la fase que
+        // faltaba: hasta que no consta aquí, Azure se niega a emitir el certificado
+        // (`RequireCustomHostnameInEnvironment`). `Disabled` significa exactamente eso — hostname
+        // reconocido y validado, todavía sin TLS propio.
         customDomains: hasCustomDomain
           ? [
               {
                 name: gatewayHost
                 // SNI, que es el único modo que admite un certificado gestionado.
-                bindingType: 'SniEnabled'
-                certificateId: gatewayCertificate.id
+                bindingType: bindCertificate ? 'SniEnabled' : 'Disabled'
+                certificateId: bindCertificate ? gatewayCertificate.id : null
               }
             ]
           : []
