@@ -250,9 +250,18 @@ Eso obliga a separar dos cosas que es cómodo confundir: el cambio a `az contain
 
 El resto del apagado se completó a mano con los comandos específicos: `az storage account delete` y `az postgres flexible-server delete`, las dos únicas partidas que facturaban. El grupo queda con `ukun-env`, `ukun-logs`, el certificado y el registro huérfano.
 
+### El ciclo completo, verificado esa misma noche
+
+Con los dos arreglos ya en `main`, un **Deploy → Teardown** seguido cierra tres de los cuatro pendientes.
+
+**El despliegue reutilizó el entorno conservado, y eso es la afirmación central de todo el montaje.** El `defaultDomain` volvió a ser `victoriousbeach-ebf83981.francecentral.azurecontainerapps.io`, el mismo de antes del apagado, así que **el CNAME de Cloudflare no se tocó** y `https://ukun.sandoretti.dev` respondió con TLS válido, catálogo en 200 y las fotos servidas desde el share recreado. El binding `SniEnabled` se restauró solo sobre el certificado conservado.
+
+**Y se llevó por delante el registro huérfano.** `ukun-gateway` pasó de `provisioningState: Failed` a `Succeeded` al sobrescribirlo la plantilla: la salida de un borrado atascado es desplegar encima, no insistir en borrarlo. Vale la pena anotarlo porque el instinto es lo contrario, y tres intentos de borrado no habían servido de nada.
+
+**El apagado terminó solo y en verde**, con el paso «Comprobar que sólo queda lo que no factura» ejecutándose por primera vez y pasando. El grupo quedó con exactamente tres recursos: `ukun-logs`, `ukun-env` y el certificado `ukun-env/ukun-sandoretti-dev`.
+
+Queda demostrado, entonces, que `az containerapp delete` apaga limpio **cuando parte de un estado sano**. Lo que sigue sin saberse es si habría desatascado el caso ya roto — no lo hizo cuando se intentó a mano, y el arreglo evita llegar ahí en vez de curarlo. Es una distinción que conviene no perder si el atasco reaparece.
+
 ### Sigue sin comprobarse
 
-- Si `az containerapp delete` basta en un ciclo limpio, o si el atasco se repite con dominio atado.
-- Que el apagado termine solo, sin intervención, y que su paso de verificación pase — hoy ese paso no llegó a ejecutarse.
-- Que el despliegue siguiente reutilice el entorno y el dominio responda **sin tocar Cloudflare**.
-- Que Cost analysis no muestre cargos con el entorno apagado. Los cargos de Azure tardan horas en consolidarse, así que esto se mira al día siguiente.
+- Que Cost analysis no muestre cargos con el entorno apagado. Los cargos de Azure tardan horas en consolidarse, así que esto se mira al día siguiente — y de ese supuesto depende conservar el entorno.
