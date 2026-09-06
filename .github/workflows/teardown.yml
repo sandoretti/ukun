@@ -120,18 +120,31 @@ jobs:
       # share de Azure Files y conexiones abiertas contra Postgres, y borrar el almacenamiento por
       # debajo de un contenedor vivo es la clase de carrera que deja un recurso en estado de fallo en
       # vez de borrado.
+      #
+      # `az containerapp delete` Y NO EL `az resource delete` GENÉRICO QUE USA EL PASO SIGUIENTE, y
+      # esto costó un teardown atascado: sobre una container app con un dominio propio atado, la
+      # operación genérica de ARM dejó `ukun-gateway` en `provisioningState: Failed` con
+      # `customDomains: null` —o sea, una actualización parcial en vez de un borrado— y el paso se
+      # quedó esperando un borrado que nunca llegó. Las otras dos apps sí cayeron con el comando
+      # genérico, porque no tenían dominio: el fallo NO se reproduce en un entorno sin `gatewayHost`,
+      # que es lo que lo hizo pasar desapercibido.
+      #
+      # El borrado por exclusión del paso siguiente se mantiene tal cual. Éste no es una lista de
+      # recursos que haya que mantener al día: es un solo tipo tratado aparte porque su proveedor lo
+      # exige, y si mañana la plantilla gana otro recurso, se lo lleva el genérico como siempre.
       - name: Borrar las container apps
         if: steps.grupo.outputs.existe == 'true' && !inputs.borrar_todo
         run: |
-          IDS=$(az resource list -g "$RESOURCE_GROUP" \
-                  --resource-type Microsoft.App/containerApps --query '[].id' -o tsv)
-          if [ -z "$IDS" ]; then
+          NOMBRES=$(az resource list -g "$RESOURCE_GROUP" \
+                      --resource-type Microsoft.App/containerApps --query '[].name' -o tsv)
+          if [ -z "$NOMBRES" ]; then
             echo "No hay container apps en el grupo."
             exit 0
           fi
-          for id in $IDS; do
-            echo "Borrando ${id##*/}"
-            az resource delete --ids "$id" --output none
+          for app in $NOMBRES; do
+            echo "::group::Borrando $app"
+            az containerapp delete -n "$app" -g "$RESOURCE_GROUP" --yes --output none
+            echo "::endgroup::"
           done
 
       # Y lo que factura de verdad: Postgres y la cuenta de almacenamiento. Por exclusión, así que
