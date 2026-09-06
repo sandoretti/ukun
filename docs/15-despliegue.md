@@ -1,13 +1,13 @@
 # Despliegue en Azure Container Apps
 
-> **Fuente de verdad de:** cómo se levanta, se actualiza y se destruye el entorno desplegado, qué hay que preparar una vez a mano, y de dónde sale cada variable en producción.
+> **Fuente de verdad de:** cómo se levanta, se actualiza, se apaga y se publica bajo un dominio propio el entorno desplegado, qué hay que preparar una vez a mano, y de dónde sale cada variable en producción.
 > **Léelo si:** vas a desplegar, a cambiar la plantilla de Bicep, o estás mirando por qué el entorno desplegado se comporta distinto que `tilt up`.
 > **No decide:** por qué el destino es Container Apps y no otra cosa (ADR-0023), ni el entorno local (`06-entorno-local-tilt.md`), ni el reparto de tests en CI (`13-testing.md` §3).
 > **Idioma:** los nombres de recurso, variable y base de datos, en inglés (ADR-0018).
 
 El entorno es **efímero a propósito**. La suscripción es Azure for Students: 100 USD para doce meses, sin tarjeta y con límite de gasto activado, de modo que agotar el crédito no genera una factura — **suspende los recursos**. Apagar no es higiene, es el mecanismo que impide que el crédito se acabe solo. Se puede destruir sin pensarlo porque ADR-0007 declaró los datos desechables y el changelog con `context: demo` vuelve a sembrar las bases en cada arranque.
 
-Todo vive en tres sitios: `deploy/azure/main.bicep` (los recursos), `.github/workflows/deploy.yml` (levantar y actualizar) y `.github/workflows/teardown.yml` (destruir).
+Todo vive en tres sitios: `deploy/azure/main.bicep` (los recursos), `.github/workflows/deploy.yml` (levantar y actualizar) y `.github/workflows/teardown.yml` (apagar).
 
 ## 1. Qué se despliega
 
@@ -21,6 +21,7 @@ Tres contenedores Java y una base de datos — **no cuatro contenedores**: el ga
 | `ukun-api` | 0,5 vCPU / 1 GiB, `min=1`, `max=3` | Ingress **interno**. Solo lo alcanza el gateway |
 | PostgreSQL Flexible Server | Burstable B1ms, 32 GB, sin HA | Un servidor, **tres** bases: `ukun_app`, `ukun_auth`, `ukun_gateway` |
 | Azure Files | Standard, 5 GB | Montado en `ukun-api`, sustituye el bind mount de `resources/uploads` |
+| Certificado gestionado | — | Solo si hay dominio propio (§6). Hijo del entorno, emitido y renovado por Azure |
 
 **`max=1` es solo del gateway**, y el motivo está escrito al lado en la plantilla para que nadie lo suba «porque los otros dos ya se puede»: su limitador de tasa de `/api/**` guarda los buckets en memoria a propósito (ADR-0024). Todo lo demás que impedía desplegar con más de una réplica —clave de firma, sesión, purga, jobs y limitador de login— se resolvió en la issue #118 y vive en Postgres.
 
@@ -118,6 +119,8 @@ gh variable set AZURE_RESOURCE_GROUP  --body ukun-demo
 gh variable set AZURE_LOCATION        --body westeurope
 ```
 
+Y una quinta, **opcional y que no se define todavía**: `UKUN_GATEWAY_HOST`, el subdominio propio del gateway. Tampoco es un secreto —un nombre de dominio no autoriza nada— y sin ella el entorno se sirve solo por su FQDN de Azure. Se define **después** del primer despliegue, porque el certificado se emite validando un DNS que hasta entonces no se puede escribir: el procedimiento entero está en §6.
+
 Los cuatro valores sensibles, como secretos. Son los mismos que `.env.example` explica para el entorno local, generados igual:
 
 La contraseña de Postgres **no se puede generar con `openssl rand -hex`**, que es lo que usa el resto: Azure exige caracteres de al menos **tres** de las cuatro categorías (mayúsculas, minúsculas, dígitos, no alfanuméricos) y un hexadecimal solo tiene dos. El servidor se rechaza al crearlo, a mitad del despliegue y con el grupo de recursos ya montado. Alfanumérico de 32 con las tres categorías comprobadas:
@@ -166,7 +169,7 @@ Es la tabla que evita el fallo que no da un error claro. La partición que manda
 | Variable | Quién la lee | En Azure | En `tilt up` |
 |---|---|---|---|
 | `UKUN_AUTH_ISSUER` | los tres | `https://ukun-auth.<defaultDomain>` | `http://localhost:9000` |
-| `UKUN_GATEWAY_BASE_URL` | auth, gateway | `https://ukun-gateway.<defaultDomain>` | `http://localhost:8080` |
+| `UKUN_GATEWAY_BASE_URL` | auth, gateway | el dominio propio si `UKUN_GATEWAY_HOST` está definida (§6), y si no `https://ukun-gateway.<defaultDomain>` | `http://localhost:8080` |
 | `UKUN_AUTH_TOKEN_URI` / `_JWK_SET_URI` | api, gateway | el mismo FQDN de auth | nombre de contenedor `ukun-auth:9000` |
 | `UKUN_API_URI` | gateway | `https://ukun-api.internal.<defaultDomain>`, **sin puerto** | `http://ukun-api:8081` |
 | `UKUN_AUTH_BASE_URL` | api | el FQDN de auth | `http://ukun-auth:9000` (default del código) |
@@ -192,17 +195,71 @@ Cuatro cosas de esa tabla que no son evidentes:
 - **`?sslmode=require` no es opcional.** Flexible Server rechaza las conexiones en claro y el driver JDBC no lo negocia solo. Va con un `maximum-pool-size` de 5, porque un B1ms admite del orden de 50 conexiones para todo: tres servicios que pueden escalar, más Liquibase en cada arranque.
 - **Las variables de OTLP se quedan sin definir, y esa ausencia es la configuración** (`docs/11` §5): sin ellas no se instala exportador y los tres arrancan igual. Los logs van a stdout y los recoge Log Analytics, que es lo que ACA hace de serie. No hay colector desplegado.
 
-## 5. Destruir
+## 5. Apagar
 
 ```
 Actions → Teardown → Run workflow → confirm: <el nombre del grupo de recursos>
 ```
 
-Hay que escribir el nombre del grupo a mano: es lo único que separa este botón de un borrado por accidente. Borra el grupo **entero** —las tres apps, el entorno, Log Analytics, el share de uploads y el servidor de Postgres con sus tres bases—, y lo hace con `--no-wait` porque Azure tarda del orden de diez minutos.
+Hay que escribir el nombre del grupo a mano: es lo único que separa este botón de un borrado por accidente.
 
-**Compruébalo en el portal antes de darlo por hecho.** El workflow no espera a verlo terminar, y un borrado que falla a medias deja recursos facturando, que es justo lo que este paso existe para evitar.
+**Se lleva todo lo que factura y conserva lo que no.** Fuera las tres container apps, el servidor de Postgres con sus tres bases y la cuenta de almacenamiento con el share de uploads. Se quedan el **Container Apps Environment**, su **Log Analytics** y el **certificado gestionado del dominio propio**, que sin réplicas corriendo no tienen medidor: el cargo de Container Apps es por vCPU-segundo y GiB-segundo de las réplicas, y este entorno es Consumption puro (§8).
 
-## 6. El firewall de Postgres
+Conservarlos no es un descuido, es lo que sostiene el dominio propio: el CNAME de Cloudflare apunta al `defaultDomain` del entorno, que lleva un sufijo aleatorio y cambiaría si el entorno se recreara. Con esto, el registro DNS se escribe **una vez** y el ciclo de apagar y volver a levantar no lo toca.
+
+**El borrado es por exclusión y no por lista**, que era la propiedad de borrar el grupo entero y había que no perderla: se va todo lo que hay en el grupo salvo esos dos tipos, así que un recurso que la plantilla gane en el futuro se borra sin tocar el workflow. Y el último paso **lo comprueba** en vez de suponerlo — si queda algo que debería haberse ido, el workflow sale en rojo y lo nombra.
+
+Para liquidar de verdad, incluido el entorno, está el input **`borrar_todo`**. Úsalo solo si dejas de usar el despliegue: el siguiente `deploy.yml` creará un entorno con otro `defaultDomain` y habrá que reescribir el CNAME y esperar a que se reemita el certificado. Ese camino sí borra el grupo entero con `--no-wait`, así que **compruébalo en el portal**: no espera a verlo terminar y un borrado a medias deja recursos facturando.
+
+## 6. El dominio propio
+
+El gateway se sirve además por un subdominio tuyo —`tienda.ejemplo.com`— con certificado emitido y renovado por Azure, gratis. Lo aporta el parámetro `gatewayHost` de la plantilla, que `deploy.yml` rellena desde la variable de repositorio **`UKUN_GATEWAY_HOST`**. Sin esa variable no cambia nada: el entorno se sirve solo por su FQDN de Azure, que es como estaba antes de que esto existiera y como hay que desplegar la primera vez.
+
+### Un subdominio basta, y por qué
+
+De las tres URLs, la única que alguien teclea es la del gateway. `ukun-api` tiene ingress interno y no lo alcanza ningún navegador; `ukun-auth` sí lo alcanza, pero solo llegando de una redirección, así que **se queda con su FQDN de Azure y `UKUN_AUTH_ISSUER` no se mueve**. Eso es lo que hace barato el montaje: el `iss` que `ukun-api` compara **literalmente** contra el claim del token es el mismo antes y después de poner el dominio, y no hay ninguna ventana en la que un token emitido siga vivo con un issuer que cambió.
+
+Lo que sí cambia es `UKUN_GATEWAY_BASE_URL`, de donde salen las redirect URIs del cliente OAuth2. No hay que hacer nada por ello: `RegisteredClientSeeder` reescribe el cliente en cada arranque reutilizando su clave primaria, así que las URIs viejas se van solas.
+
+**El precio, para que no sorprenda:** la pantalla de contraseña la sirve `ukun-auth`, así que durante el login se ve el FQDN largo de Azure y no tu dominio. Es estético, y se arregla dando un segundo subdominio a auth — un CNAME y un certificado más, con `UKUN_AUTH_ISSUER` cambiando de valor.
+
+### El bootstrap, una vez
+
+El orden no se puede saltar, porque el certificado se emite validando el DNS y el DNS no se puede escribir hasta que la app existe:
+
+1. **Desplegar sin la variable.** El resumen del workflow imprime, ya rellenos, los dos registros que hay que crear.
+2. **Crearlos en Cloudflare**, con el proxy **desactivado** (nube gris):
+
+   | Tipo | Nombre | Contenido |
+   |---|---|---|
+   | `CNAME` | `tienda` | `ukun-gateway.<defaultDomain>` — la salida `gatewayFqdn` |
+   | `TXT` | `asuid.tienda` | la salida `customDomainVerificationId` |
+
+3. **Definir la variable y volver a desplegar.** Ahora la plantilla crea el certificado, lo ata al ingress y compone las URLs con tu dominio:
+
+   ```bash
+   gh variable set UKUN_GATEWAY_HOST --body tienda.ejemplo.com
+   ```
+
+A partir de ahí es un solo paso para siempre: apagar y volver a levantar no toca el DNS.
+
+### La nube tiene que estar gris
+
+Con el proxy de Cloudflare activado (nube naranja) **el certificado no se emite**: Azure resuelve el CNAME, encuentra IPs de Cloudflare en vez de tu app y la validación falla. Y no es solo la emisión — la renovación automática vuelve a validar meses después, así que activar el proxy más tarde rompe el dominio cuando ya nadie se acuerda de haberlo tocado.
+
+Hay una segunda razón, y es de este código: `RequestRateLimitWebFilter` usa la dirección remota como clave y **no lee `X-Forwarded-For` a propósito** (es una cabecera que pone quien llama). Detrás del proxy, todos los visitantes llegarían con la IP de Cloudflare y compartirían un solo presupuesto — el límite de `/api/**` y los 5 cada 10 minutos de `/api/signup` saltarían para todo el mundo a la vez.
+
+Lo que se pierde con la nube gris es el CDN y el ocultamiento de la IP de origen. Para un entorno de demo con datos desechables, es el intercambio correcto.
+
+### El FQDN de Azure no desaparece
+
+El ingress responde por los dos nombres. Eso es lo que deja una vía de entrada cuando el DNS o el certificado están a medias, y lo que permite que el paso 1 del bootstrap sea un despliegue normal y completo.
+
+### Si el dominio deja de responder
+
+El paso «Esperar a que el gateway esté sano» va contra la URL pública, así que con la variable puesta es él quien comprueba que el CNAME resuelve y el certificado sirve. Cuando falla lo dice y nombra el registro a revisar. Los dos valores correctos están en el resumen de **cualquier** ejecución de `deploy.yml`, no solo la primera: se imprimen siempre para poder cotejarlos con lo que haya en Cloudflare. Mientras tanto, la aplicación sigue en pie por su FQDN de Azure.
+
+## 7. El firewall de Postgres
 
 `deploy.yml` deja la base accesible **solo desde la IP saliente de las container apps**. No es lo que hace la plantilla: ésta crea una regla de arranque `AllowAzureServices` porque hay una dependencia circular —la app tiene que existir para conocer su IP saliente, y no arranca sin base—, y el workflow la sustituye en cuanto las tres apps están en marcha.
 
@@ -232,7 +289,7 @@ az rest --method put --url "$BASE/aca-outbound-$(echo $IP | tr . -)?api-version=
 
 La API REST y no `az postgres flexible-server firewall-rule`: ese comando cambia el significado de `--name` y retira `--rule-name` en la CLI 2.86, así que la sintaxis que funciona en una máquina rompe en otra más nueva.
 
-## 7. Coste
+## 8. Coste
 
 **Verificado el 2026-09-01** contra la [API de precios de Azure](https://prices.azure.com/api/retail/prices) para `francecentral`, en USD y a precio de lista al contado. Los precios se mueven: la forma de rehacer esta tabla es consultar esa misma API, no la calculadora, porque así queda reproducible.
 
@@ -260,13 +317,23 @@ La API REST y no `az postgres flexible-server firewall-rule`: ese comando cambia
 
 O sea: **el uso puntual para el que está pensado esto cuesta céntimos**, del orden de 0,025 USD por hora encendido mientras se esté por debajo de las 33 h/mes. Y dejarlo encendido sin querer cuesta 1,71 USD al día, con lo que el crédito de 100 USD se agota en **1,9 meses**. Esa diferencia —dos órdenes de magnitud— es toda la justificación del entorno efímero y de que `teardown.yml` exista.
 
+### Lo que cuesta el entorno apagado
+
+Cero, y de ese supuesto depende que `teardown.yml` conserve el Container Apps Environment (§5). Las tres partidas que sobreviven al apagado no tienen medidor sin carga:
+
+- **Container Apps Environment**: se factura por vCPU-segundo y GiB-segundo *de las réplicas*. Sin container apps no hay réplicas. El único cargo fijo que existe en ACA es `Environment Management Hour` (0,125 USD/hora, 91 USD/mes), y es de los entornos con *workload profiles*: `main.bicep` no declara ninguno a propósito, así que este entorno es Consumption puro y no lo tiene.
+- **Log Analytics**: cobra por ingesta, y sin apps no se ingiere nada. Los datos ya recogidos entran en los 5 GB/mes gratis, y `retentionInDays: 30` cae dentro de la retención sin coste.
+- **Certificado gestionado**: gratis, emisión y renovación incluidas.
+
+**Compruébalo en el portal la primera vez que apagues**, en Cost analysis del grupo, y si aparece cualquier cargo con el entorno apagado, esta decisión se cae y hay que volver a borrar el grupo entero (`borrar_todo`) a costa de reescribir el CNAME en cada ciclo.
+
 ### El dimensionado, y por qué es el que es
 
 Las cifras de arriba salen de 1,5 vCPU y 3 GiB repartidos en tres apps de 0,5/1 GiB cada una. **`ukun-auth` no lleva los 0,25 vCPU / 0,5 GiB que tabulaba ADR-0023**, y el motivo es una medida y no una precaución: sobre el stack local en reposo, `docker stats` da **368 MiB al gateway, 412 MiB a auth y 603 MiB a api**, sin nadie usando el sistema. Un límite de 512 MiB para algo que ocupa 412 en vacío no deja sitio para el primer login, y en Container Apps pasarse del límite no degrada el servicio: mata el contenedor.
 
 Los tres llevan además `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=70`. Sin él la JVM se queda con el 25 % de la memoria del contenedor —256 MiB de heap dentro de 1 GiB— y el resto se paga sin usarse; el síntoma no sería un contenedor muerto sino GC continuo mientras el panel enseña memoria libre, que es de los diagnósticos más difíciles de atribuir.
 
-**Para cuatro personas a la vez esto sobra**, y el cuello de botella no sería ninguno de los tres servicios: Postgres B1ms da 1 vCore y admite del orden de 50 conexiones, contra las 15 como mucho que abren los tres pools juntos (5 cada uno). Lo que hay que vigilar con varias personas no es la capacidad sino el **limitador de tasa**, que cuenta por IP: si todos navegan desde la misma red con NAT, el gateway ve una sola dirección y los 120 req/min de `/api/**` se reparten entre todos. Ver §8.
+**Para cuatro personas a la vez esto sobra**, y el cuello de botella no sería ninguno de los tres servicios: Postgres B1ms da 1 vCore y admite del orden de 50 conexiones, contra las 15 como mucho que abren los tres pools juntos (5 cada uno). Lo que hay que vigilar con varias personas no es la capacidad sino el **limitador de tasa**, que cuenta por IP: si todos navegan desde la misma red con NAT, el gateway ve una sola dirección y los 120 req/min de `/api/**` se reparten entre todos. Ver §9.
 
 ### El cargo que convertiría esto en otra cosa
 
@@ -276,7 +343,7 @@ Container Apps tiene un medidor **`Environment Management Hour` de 0,125 USD/hor
 
 Salida de datos y transacciones de almacenamiento, que a esta escala son ruido. Tampoco impuestos, que en una suscripción de estudiante no se aplican: se consume crédito, no se factura. Y la franja gratuita de Container Apps no viene en la API de precios —es una franja de producto, no un precio—, así que si algún día desapareciera habría que sumar 0,0486 USD por hora encendido.
 
-## 8. Fallos que no dicen su causa
+## 9. Fallos que no dicen su causa
 
 | Síntoma | Causa |
 |---|---|
@@ -290,6 +357,10 @@ Salida de datos y transacciones de almacenamiento, que a esta escala son ruido. 
 | El alta de un cliente no responde, con todo lo demás funcionando | `UKUN_AUTH_BASE_URL`. La saga es el único camino que hace hablar a `ukun-api` con `ukun-auth`, así que es lo único que se rompe |
 | El catálogo sale vacío y no hay con qué iniciar sesión | `SPRING_LIQUIBASE_CONTEXTS` no llegó a `demo`, y `application.yaml` trae `prod` por defecto |
 | El catálogo se pinta pero cada foto da 404 | No se subieron las imágenes al share, o se subieron a un subdirectorio: van a la raíz, que es lo que se monta en `/opt/resources/uploads` |
-| Un contenedor se reinicia solo, sin excepción en el log | Se pasó del límite de memoria y ACA lo mató. Mira el dimensionado de §7 antes de buscar una fuga |
+| Un contenedor se reinicia solo, sin excepción en el log | Se pasó del límite de memoria y ACA lo mató. Mira el dimensionado de §8 antes de buscar una fuga |
 | `429` durante una demo con varias personas | El limitador cuenta por IP y todos salen por la misma NAT. Se sube con `UKUN_GATEWAY_RATELIMIT_API_CAPACITY` (y `UKUN_GATEWAY_RATELIMIT_SIGNUP_CAPACITY`, que son 5 cada 10 minutos y los agotan cinco altas seguidas desde la misma red) |
+| El despliegue falla creando el certificado gestionado, con la app ya sana | El CNAME no resuelve todavía, o resuelve a Cloudflare porque el proxy está en **naranja**. La validación es por CNAME y tiene que apuntar al FQDN de la app (§6) |
+| El dominio propio da un aviso de certificado en el navegador | Se llegó a él antes de que Azure terminara de emitirlo. Tarda unos minutos desde que el binding existe; el FQDN de Azure sirve mientras tanto |
+| El dominio dejó de resolver tras un apagado | Se usó `borrar_todo`, que se lleva el entorno y con él el `defaultDomain` al que apunta el CNAME. El valor nuevo está en el resumen del siguiente `deploy.yml` (§5) |
+| El `429` llega a todo el mundo a la vez, no a una persona | El proxy de Cloudflare está activado: el limitador ve una sola IP para todos los visitantes porque no lee `X-Forwarded-For` a propósito (§6) |
 | El servicio arranca y no dice «Started …» | Es lo esperado: `root: WARN` en producción apaga los INFO de arranque de Spring (`docs/11` §7). Quien responde por él es `/actuator/health` |

@@ -1,25 +1,44 @@
-# Borra el entorno de Azure del despliegue de ADR-0023 (issue #55).
+# Apaga el entorno de Azure del despliegue de ADR-0023 (issue #55).
 #
 # No es limpieza opcional: la suscripción es Azure for Students y su límite de gasto SUSPENDE los
 # recursos en vez de facturarlos, así que un entorno que se queda encendido no manda una factura —
-# apaga el proyecto a mitad de curso y sin avisar. El entorno se levanta para una demo y se destruye
+# apaga el proyecto a mitad de curso y sin avisar. El entorno se levanta para una demo y se apaga
 # después; se puede hacer porque ADR-0007 declaró los datos desechables y el changelog con
 # `context: demo` vuelve a sembrar las bases en cada arranque.
 #
-# BORRA EL GRUPO DE RECURSOS ENTERO, que es la decisión frente a borrar recurso a recurso: una lista
-# de recursos a eliminar deja encendido cualquiera que alguien añada a la plantilla y olvide añadir
-# aquí, y ese es justo el fallo que este workflow existe para impedir. Por eso la asignación de rol
-# de la managed identity vive FUERA del grupo, a nivel de suscripción: si viviera dentro, este
-# workflow se llevaría por delante su propio permiso para volver a desplegar.
+# SE LLEVA TODO LO QUE FACTURA Y CONSERVA LO QUE NO. Fuera: las tres container apps, el servidor de
+# Postgres con sus tres bases y la cuenta de almacenamiento con el share de uploads. Se quedan el
+# Container Apps Environment, su Log Analytics y el certificado gestionado del dominio propio, que
+# sin réplicas corriendo no tienen medidor — el cargo de Container Apps es por vCPU-segundo y
+# GiB-segundo de las réplicas, y este entorno es Consumption puro sin workload profiles, que es lo
+# que evita el medidor `Environment Management Hour` (`docs/15-despliegue.md`).
+#
+# CONSERVARLOS NO ES DESCUIDO, ES LO QUE SOSTIENE EL DOMINIO PROPIO. El CNAME de Cloudflare apunta al
+# `defaultDomain` del entorno, y ese nombre lleva un sufijo aleatorio que cambiaría si el entorno se
+# recreara: borrarlo obligaría a reescribir el DNS y a reemitir el certificado en cada ciclo. Con
+# esto, el registro se escribe una vez y vale para siempre.
+#
+# EL BORRADO ES POR EXCLUSIÓN Y NO POR LISTA, que es la propiedad que tenía borrar el grupo entero y
+# que aquí había que no perder: se borra todo lo que hay en el grupo salvo los dos tipos que se
+# conservan, así que un recurso nuevo que alguien añada a la plantilla y olvide añadir aquí se va
+# igual. Y el último paso lo comprueba en vez de suponerlo.
+#
+# Para liquidar de verdad —incluido el entorno, con lo que el CNAME deja de apuntar a nada— está el
+# input `borrar_todo`.
 name: Teardown
 
 on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Escribe el nombre del grupo de recursos para confirmar. Es destructivo y no hay papelera: se van las tres apps, el entorno, Log Analytics, el share de uploads y el servidor de Postgres con sus tres bases.'
+        description: 'Escribe el nombre del grupo de recursos para confirmar. Es destructivo y no hay papelera: se van las tres apps, el share de uploads y el servidor de Postgres con sus tres bases.'
         required: true
         type: string
+      borrar_todo:
+        description: 'Borra ADEMÁS el Container Apps Environment, su Log Analytics y el certificado del dominio — o sea, el grupo de recursos entero. Sólo si vas a dejar de usar el entorno: el `defaultDomain` cambia al recrearlo y hay que reescribir el CNAME de Cloudflare y reemitir el certificado.'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: azure-deploy
@@ -36,6 +55,10 @@ jobs:
 
     env:
       RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP || 'ukun-demo' }}
+      # Los dos tipos que sobreviven al apagado normal. `starts_with` y no igualdad para que cubra
+      # también a los hijos del entorno —el certificado gestionado del dominio propio es uno de
+      # ellos—, que es justo lo que no se puede perder.
+      KEEP_QUERY: "[?!starts_with(type, 'Microsoft.App/managedEnvironments') && type != 'Microsoft.OperationalInsights/workspaces']"
 
     steps:
       # La confirmación se comprueba ANTES de autenticarse. Escribir el nombre a mano es lo único que
@@ -55,28 +78,113 @@ jobs:
 
       # Que el grupo no exista no es un fallo: significa que ya está apagado, que es el estado que
       # este workflow persigue. Salir en rojo ahí solo enseñaría a ignorar su resultado.
-      - name: Borrar el grupo de recursos
+      - name: El grupo existe
+        id: grupo
         run: |
           if ! az group exists --name "$RESOURCE_GROUP" | grep -q true; then
             echo "El grupo '$RESOURCE_GROUP' no existe. Nada que borrar."
             echo "El grupo \`$RESOURCE_GROUP\` no existía: nada que borrar." >> "$GITHUB_STEP_SUMMARY"
+            echo "existe=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          echo "Recursos que se van:"
+          echo "existe=true" >> "$GITHUB_OUTPUT"
+          echo "Recursos que hay ahora mismo:"
           az resource list --resource-group "$RESOURCE_GROUP" --query '[].{tipo:type, nombre:name}' --output table
 
+      # El camino de salida completo, y por eso lleva su propia condición en vez de un `if` dentro
+      # del script: borra el grupo y con él el entorno, o sea el `defaultDomain` al que apunta el
+      # CNAME de Cloudflare.
+      - name: Borrar el grupo entero
+        if: steps.grupo.outputs.existe == 'true' && inputs.borrar_todo
+        run: |
           # `--no-wait` a propósito: el borrado de un Container Apps Environment con su Log Analytics
           # tarda del orden de diez minutos, y esperarlos son minutos de runner por nada. Lo que
           # importa es que Azure haya aceptado la orden.
           az group delete --name "$RESOURCE_GROUP" --yes --no-wait
 
           {
-            echo "## Entorno borrado"
+            echo "## Entorno borrado del todo"
             echo
-            echo "Se ha pedido el borrado de \`$RESOURCE_GROUP\`. Azure lo completa en segundo plano,"
-            echo "del orden de diez minutos."
+            echo "Se ha pedido el borrado de \`$RESOURCE_GROUP\` **entero**, incluido el Container Apps"
+            echo "Environment. Azure lo completa en segundo plano, del orden de diez minutos."
             echo
-            echo "**Compruébalo en el portal antes de darlo por hecho.** Un borrado que falla a medias"
-            echo "deja recursos facturando, y este workflow no espera a verlo terminar."
+            echo "**El dominio propio deja de resolver.** El siguiente despliegue crea un entorno con"
+            echo "otro \`defaultDomain\`, así que habrá que reescribir el CNAME de Cloudflare con el"
+            echo "valor que imprima el resumen de \`deploy.yml\` y dejar que reemita el certificado."
+            echo
+            echo "**Compruébalo en el portal antes de darlo por hecho.** Este workflow no espera a"
+            echo "verlo terminar, y un borrado que falla a medias deja recursos facturando."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # El camino normal. Las apps PRIMERO y esperando a cada una: mientras corren tienen montado el
+      # share de Azure Files y conexiones abiertas contra Postgres, y borrar el almacenamiento por
+      # debajo de un contenedor vivo es la clase de carrera que deja un recurso en estado de fallo en
+      # vez de borrado.
+      - name: Borrar las container apps
+        if: steps.grupo.outputs.existe == 'true' && !inputs.borrar_todo
+        run: |
+          IDS=$(az resource list -g "$RESOURCE_GROUP" \
+                  --resource-type Microsoft.App/containerApps --query '[].id' -o tsv)
+          if [ -z "$IDS" ]; then
+            echo "No hay container apps en el grupo."
+            exit 0
+          fi
+          for id in $IDS; do
+            echo "Borrando ${id##*/}"
+            az resource delete --ids "$id" --output none
+          done
+
+      # Y lo que factura de verdad: Postgres y la cuenta de almacenamiento. Por exclusión, así que
+      # cualquier recurso que la plantilla gane en el futuro se va sin tocar este workflow.
+      - name: Borrar todo lo demás salvo el entorno y sus logs
+        if: steps.grupo.outputs.existe == 'true' && !inputs.borrar_todo
+        run: |
+          IDS=$(az resource list -g "$RESOURCE_GROUP" --query "$KEEP_QUERY.id" -o tsv)
+          if [ -z "$IDS" ]; then
+            echo "Ya no queda nada que borrar."
+            exit 0
+          fi
+
+          # Sin `--no-wait`: el paso siguiente comprueba que el grupo quedó limpio, y con borrados en
+          # vuelo esa comprobación daría un falso negativo. Un Flexible Server tarda unos minutos.
+          FALLOS=0
+          for id in $IDS; do
+            echo "::group::${id##*/}"
+            az resource delete --ids "$id" --output none || { echo "::warning::No se pudo borrar $id"; FALLOS=1; }
+            echo "::endgroup::"
+          done
+          exit $FALLOS
+
+      # La comprobación que convierte esto en verificación y no en intención. Lo que este workflow
+      # existe para impedir es un recurso que se queda facturando en silencio, así que no basta con
+      # haber pedido los borrados: hay que mirar qué queda y que sean exactamente los dos tipos que
+      # se conservan a propósito.
+      - name: Comprobar que sólo queda lo que no factura
+        if: steps.grupo.outputs.existe == 'true' && !inputs.borrar_todo
+        run: |
+          SOBRA=$(az resource list -g "$RESOURCE_GROUP" --query "$KEEP_QUERY.{tipo:type, nombre:name}" -o tsv)
+          if [ -n "$SOBRA" ]; then
+            echo "::error::Queda algo en $RESOURCE_GROUP que debería haberse borrado y puede estar facturando:"
+            echo "$SOBRA"
+            exit 1
+          fi
+
+          {
+            echo "## Entorno apagado"
+            echo
+            echo "Fuera las tres container apps, el servidor de Postgres con sus tres bases y la"
+            echo "cuenta de almacenamiento. Comprobado: en \`$RESOURCE_GROUP\` no queda ningún recurso"
+            echo "aparte de los que se conservan."
+            echo
+            echo "**Se quedan, y no facturan sin réplicas corriendo:**"
+            echo
+            az resource list -g "$RESOURCE_GROUP" --query '[].{tipo:type, nombre:name}' -o tsv \
+              | while IFS=$'\t' read -r tipo nombre; do echo "- \`$nombre\` — $tipo"; done
+            echo
+            echo "Conservarlos es lo que mantiene el \`defaultDomain\` del entorno, y con él el CNAME"
+            echo "de Cloudflare y el certificado del dominio propio. El siguiente \`deploy.yml\` vuelve"
+            echo "a levantar el resto sobre ellos y el dominio responde sin tocar nada."
+            echo
+            echo "**Compruébalo en el portal la primera vez.** Un borrado que falla a medias deja"
+            echo "recursos facturando; a partir de ahí, este paso lo verifica solo."
           } >> "$GITHUB_STEP_SUMMARY"

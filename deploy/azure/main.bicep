@@ -1,6 +1,10 @@
 // Infraestructura del despliegue de ukun en Azure Container Apps (ADR-0023, issue #55).
 //
-// Es EFÍMERA a propósito: `deploy.yml` la levanta entera y `teardown.yml` borra el grupo de recursos.
+// Es EFÍMERA a propósito: `deploy.yml` la levanta entera y `teardown.yml` se lleva todo lo que
+// factura —las tres apps, Postgres y el share—, conservando el Container Apps Environment, su Log
+// Analytics y el certificado del dominio propio, que no cuestan nada sin réplicas corriendo. Eso
+// último no es una excepción a la limpieza sino lo que sostiene el dominio de `gatewayHost`: el
+// `defaultDomain` del entorno es lo que apunta el CNAME de Cloudflare, y sobrevive al ciclo.
 // La suscripción es Azure for Students —100 USD para doce meses, con límite de gasto que SUSPENDE los
 // recursos en vez de facturarlos—, así que apagar no es higiene sino el mecanismo que impide que el
 // crédito se agote solo. Se puede hacer porque ADR-0007 declaró los datos desechables: el changelog
@@ -60,6 +64,25 @@ param liquibaseContexts string = 'demo'
 @description('Clave RSA con la que ukun-auth firma los access tokens: PKCS#8, base64 del DER, en una línea (ADR-0024). Sin valor por defecto a propósito — un servicio que arranca con una clave conocida es peor que uno que se niega a arrancar.')
 param signingKey string
 
+@description('''Subdominio propio con el que se llega al gateway, sin esquema y sin barra:
+`tienda.ejemplo.com`. Vacío —el valor por defecto— deja el entorno exactamente como estaba, servido
+solo por el FQDN de Azure, y ése es el modo en el que hay que desplegar la PRIMERA vez.
+
+EL ORDEN IMPORTA Y NO SE PUEDE SALTAR, porque el certificado gestionado se emite validando el DNS y
+el DNS no se puede escribir hasta que la app existe:
+
+  1. Desplegar con este parámetro vacío. El resumen del workflow imprime los dos registros que hay
+     que crear, ya rellenos.
+  2. Crearlos en Cloudflare, **con el proxy desactivado** (nube gris). Con la nube naranja Azure
+     resuelve el CNAME, encuentra IPs de Cloudflare en vez de la app, y la emisión falla — igual que
+     su renovación automática meses después.
+  3. Volver a desplegar con este parámetro puesto. Ahora sí: certificado, binding y las URLs que los
+     servicios comparan entre sí.
+
+A partir de ahí es un solo paso para siempre, porque `teardown.yml` conserva el Container Apps
+Environment y con él su `defaultDomain`: el CNAME apuntará al mismo sitio en el siguiente ciclo.''')
+param gatewayHost string = ''
+
 // ---------------------------------------------------------------------------------------------
 // Nombres y URLs
 // ---------------------------------------------------------------------------------------------
@@ -82,8 +105,26 @@ var suffix = uniqueString(resourceGroup().id)
 // de ACA escucha en 443 y enruta al targetPort. Escribir aquí `:8081` es el error que no da un
 // mensaje claro.
 var authUrl = 'https://${authAppName}.${environment_.properties.defaultDomain}'
-var gatewayUrl = 'https://${gatewayAppName}.${environment_.properties.defaultDomain}'
 var apiInternalUrl = 'https://${apiAppName}.internal.${environment_.properties.defaultDomain}'
+
+// El dominio propio afecta a UNA de las tres URLs y a ninguna de las otras dos, y merece decir por
+// qué: sólo el gateway es un origen que alguien teclea. `ukun-api` no lo alcanza ningún navegador, y
+// `ukun-auth` sí, pero sólo llegando de una redirección — así que se queda con su FQDN de Azure y
+// `UKUN_AUTH_ISSUER` no se mueve. Eso es lo que hace que un subdominio baste: el `iss` que ukun-api
+// compara LITERALMENTE contra el claim del token es el mismo antes y después de poner el dominio, y
+// no hay ninguna ventana en la que un token emitido siga siendo válido con un issuer que cambió.
+//
+// Lo que sí cambia es `UKUN_GATEWAY_BASE_URL`, de donde salen las redirect URIs del cliente OAuth2.
+// No hace falta tocar nada por ello: `RegisteredClientSeeder` reescribe el cliente en cada arranque
+// reutilizando su clave primaria, así que las URIs viejas se van solas al desplegar.
+//
+// EL PRECIO, PARA QUE NO SORPRENDA: la pantalla de contraseña se sirve desde `ukun-auth`, así que
+// quien inicia sesión ve durante ese salto el FQDN largo de Azure y no el dominio propio. Es
+// estético y se arregla dando un segundo subdominio a auth; cuesta un CNAME y un certificado más.
+var hasCustomDomain = !empty(gatewayHost)
+var gatewayUrl = hasCustomDomain
+  ? 'https://${gatewayHost}'
+  : 'https://${gatewayAppName}.${environment_.properties.defaultDomain}'
 
 // `sslmode=require` no es opcional: Flexible Server rechaza las conexiones en claro, y el driver JDBC
 // no lo negocia solo. El pool se baja de los 10 de serie porque un B1ms admite del orden de 50
@@ -130,6 +171,32 @@ resource environment_ 'Microsoft.App/managedEnvironments@2024-03-01' = {
     }
   }
 }
+
+// ---------------------------------------------------------------------------------------------
+// Certificado del dominio propio
+// ---------------------------------------------------------------------------------------------
+
+// Gestionado por Azure: lo emite y lo RENUEVA solo, sin cron, sin secreto y sin coste. Es hijo del
+// entorno y no de la container app, y ahí está lo que hace que todo esto funcione con un CNAME
+// puesto a mano una sola vez: `teardown.yml` conserva el entorno, así que el certificado sobrevive
+// al ciclo de destruir y levantar igual que el `defaultDomain` al que apunta el CNAME.
+//
+// `domainControlValidation: 'CNAME'` es lo que exige que el registro exista ANTES de este recurso.
+// Si no resuelve —o resuelve a Cloudflare porque el proxy está en naranja—, el despliegue falla
+// aquí, con la app ya sana y sirviendo por su FQDN de Azure. Es el fallo que se quiere: ruidoso y
+// sin consecuencias.
+resource gatewayCertificate 'Microsoft.App/managedEnvironments/managedCertificates@2024-03-01' =
+  if (hasCustomDomain) {
+    parent: environment_
+    // Los puntos no valen en un nombre de recurso hijo. Un dominio distinto da un certificado
+    // distinto, que es lo correcto: cambiar `gatewayHost` no debe reutilizar el anterior.
+    name: replace(gatewayHost, '.', '-')
+    location: location
+    properties: {
+      subjectName: gatewayHost
+      domainControlValidation: 'CNAME'
+    }
+  }
 
 // ---------------------------------------------------------------------------------------------
 // Azure Files — las fotos de producto
@@ -578,6 +645,19 @@ resource gateway 'Microsoft.App/containerApps@2024-03-01' = {
         targetPort: 8080
         transport: 'auto'
         allowInsecure: false
+        // El FQDN de Azure NO desaparece al añadir el dominio propio: el ingress responde por los
+        // dos. Eso es lo que deja una vía de entrada cuando el DNS o el certificado están a medias,
+        // y lo que permite desplegar la primera vez sin dominio ninguno.
+        customDomains: hasCustomDomain
+          ? [
+              {
+                name: gatewayHost
+                // SNI, que es el único modo que admite un certificado gestionado.
+                bindingType: 'SniEnabled'
+                certificateId: gatewayCertificate.id
+              }
+            ]
+          : []
       }
       secrets: [
         {
@@ -693,8 +773,20 @@ resource gateway 'Microsoft.App/containerApps@2024-03-01' = {
 // Salidas
 // ---------------------------------------------------------------------------------------------
 
-@description('La URL que se abre en el navegador. Cambia en cada entorno: el FQDN depende del nombre del Container Apps Environment.')
+@description('La URL que se abre en el navegador: el dominio propio si `gatewayHost` viene puesto, y el FQDN de Azure si no.')
 output gatewayUrl string = gatewayUrl
+
+@description('''Los dos valores con los que se escriben los registros de Cloudflare, y la razón de
+que sean una salida en vez de algo que buscar en el portal: hasta que la app no existe no se conocen,
+y son exactamente lo que hay que copiar entre la primera pasada y la segunda.
+
+`gatewayFqdn` es el destino del CNAME. `customDomainVerificationId` es el contenido del TXT en
+`asuid.<subdominio>`, y es estable por suscripción: se escribe una vez y no cambia aunque se borre y
+se vuelva a crear todo.''')
+output gatewayFqdn string = gateway.properties.configuration.ingress.fqdn
+
+@description('Contenido del registro TXT `asuid.<subdominio>` que prueba a Azure que el dominio es tuyo.')
+output customDomainVerificationId string = gateway.properties.customDomainVerificationId
 
 @description('El origen del Authorization Server, que es también el `iss` de todos los tokens.')
 output authUrl string = authUrl
