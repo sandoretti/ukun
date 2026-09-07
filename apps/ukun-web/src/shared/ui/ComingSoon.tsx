@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Nav } from 'react-bootstrap';
 
 /**
- * The sections of the shell whose screen is not built yet — news and the about page.
+ * The one section of the shell whose screen is not built yet: the about page.
  *
  * They are rendered as **disabled buttons, never as links**: a destination that does not exist is not
  * an `<a>`, and pointing one at a blank screen is worse than not offering it at all. It is the same

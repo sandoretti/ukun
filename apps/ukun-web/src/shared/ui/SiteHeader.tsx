@@ -13,11 +13,17 @@ import { ProductSearchBox } from './ProductSearchBox';
  * exist yet: the entry is still shown, but as a disabled button instead of a link (see
  * `ComingSoon`). Keeping it as data is what stops the bar from becoming six near-identical blocks of
  * JSX, and puts "this one is not built yet" in a single place.
+ *
+ * There used to be a fourth entry, `news`, permanently in that second state. It was not a screen
+ * waiting to be built: no requirement of `docs/02-requisitos.md` asks for it and no item of
+ * `docs/04-roadmap.md` plans it. What it did do was hold a slot in the bar on every route and make a
+ * screen reader announce "News, coming soon" on all of them, which is a promise the product was not
+ * making. `about` is the one entry left in that state, and it is one that does have something to
+ * show.
  */
 const NAV_ITEMS = [
   { key: 'catalog', to: '/products' },
   { key: 'stores', to: '/stores' },
-  { key: 'news' },
   { key: 'about' },
 ] as const satisfies readonly { key: string; to?: string }[];
 

@@ -5,7 +5,7 @@ import { renderWithProviders } from '../test/renderWithProviders';
 import { AppLayout } from './AppLayout';
 
 /** Every caption of the shell whose screen is not built yet. */
-const NOT_BUILT_YET = ['Novedades', 'Sobre Ukun'];
+const NOT_BUILT_YET = ['Sobre Ukun'];
 
 function renderShell() {
   renderWithProviders(<AppLayout />);
