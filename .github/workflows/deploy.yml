@@ -165,9 +165,9 @@ jobs:
       # contra un directorio que en v1.1 pasa a ser un bucket (issue #57). Meterlas en la imagen del
       # API las volvería inmutables y haría de la subida de RF-10 una excepción al mismo mecanismo.
       #
-      # Son las 24 de `resources/uploads`, que es exactamente el conjunto al que apuntan las
-      # `image_key` de los 100 productos del changelog demo — cada tipo reutiliza las suyas. Sin este
-      # paso el catálogo se pinta entero y cada ficha da un 404 en su foto.
+      # Son las 100 de `resources/uploads`, una por producto: exactamente el conjunto al que apuntan
+      # las `image_key` del changelog demo, que desde que cada producto tiene la suya no repite
+      # ninguna. Sin este paso el catálogo se pinta entero y cada ficha da un 404 en su foto.
       #
       # `upload-batch` sobreescribe, así que redesplegar no duplica nada. Y va después del
       # despliegue porque el share no existe hasta que la plantilla lo crea; no hace falta reiniciar
