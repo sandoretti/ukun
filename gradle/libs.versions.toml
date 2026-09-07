@@ -18,7 +18,7 @@ spring-modulith = "2.1.1"
 
 # No cubiertas por ningún BOM de plataforma.
 mapstruct = "1.6.3"
-lombok = "1.18.46"
+lombok = "1.18.48"
 lombok-mapstruct-binding = "0.2.0"
 springdoc = "3.1.0"
 archunit = "1.5.0"
