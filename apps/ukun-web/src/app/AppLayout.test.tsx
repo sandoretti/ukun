@@ -4,9 +4,6 @@ import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '../test/renderWithProviders';
 import { AppLayout } from './AppLayout';
 
-/** Every caption of the shell whose screen is not built yet. */
-const NOT_BUILT_YET = ['Sobre Ukun'];
-
 function renderShell() {
   renderWithProviders(<AppLayout />);
   // The footer repeats some of these captions, so every assertion is scoped to the bar. Both
@@ -24,11 +21,20 @@ describe('AppLayout', () => {
     expect(within(brand).getByRole('img').getAttribute('alt')).toBe('Ukun');
   });
 
-  it('only links the sections that exist', () => {
+  it('links every section of the bar, and offers no control that goes nowhere', () => {
     const bar = renderShell();
 
     const links = bar.getAllByRole('link').map((link) => link.getAttribute('href'));
-    expect(links).toEqual(['/', '/products', '/stores', '/signup']);
+    expect(links).toEqual(['/', '/products', '/stores', '/about', '/signup']);
+
+    // What this replaced: the bar used to carry two captions rendered as disabled buttons, for
+    // screens that did not exist. «Novedades» went for good and «Sobre Ukun» became a route, so the
+    // only button left in the bar is the way in — asserted below to be enabled. A dimmed control
+    // reappearing here means someone added an entry before its screen.
+    const disabled = bar
+      .getAllByRole('button')
+      .filter((control) => control.hasAttribute('disabled'));
+    expect(disabled).toEqual([]);
   });
 
   it('offers the way in to a visitor, and it is not a route of this router', () => {
@@ -50,15 +56,12 @@ describe('AppLayout', () => {
     expect(bar.getByRole('link', { name: 'Crear cuenta' }).getAttribute('href')).toBe('/signup');
   });
 
-  it.each(NOT_BUILT_YET)('offers %s without turning it into a dead link', (label) => {
+  it('sends «Sobre Ukun» to its own screen and not to the catalogue', () => {
     const bar = renderShell();
 
-    // A destination that does not exist is never an `<a>`: a link to a blank screen is worse than
-    // no link. It is a disabled button, and what the dimming says is also written for a screen
-    // reader — the accessible name carries the "coming soon" qualifier.
-    expect(bar.queryByRole('link', { name: new RegExp(label) })).toBeNull();
-
-    const control = bar.getByRole('button', { name: `${label} (próximamente)` });
-    expect(control.hasAttribute('disabled')).toBe(true);
+    // It was the last disabled button of the bar. The assertion is on the `href` and not merely on
+    // the caption being a link, because the entry existing without a route was exactly the state
+    // this replaced.
+    expect(bar.getByRole('link', { name: 'Sobre Ukun' }).getAttribute('href')).toBe('/about');
   });
 });

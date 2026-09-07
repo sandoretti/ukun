@@ -27,6 +27,13 @@ export const CART_PATH = '/cart';
  */
 export const CATALOG_PATH = '/products';
 
+/**
+ * «Sobre Ukun». It is `features/about`'s screen and it comes up here for the same reason the others
+ * did: a second place writes it, and that place is `shared/ui/SiteHeader` — the bar cannot import a
+ * feature, and until this route existed the entry was not a link at all.
+ */
+export const ABOUT_PATH = '/about';
+
 export const productPath = (id: number) => `${CATALOG_PATH}/${id}`;
 
 /**

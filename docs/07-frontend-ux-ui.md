@@ -80,10 +80,13 @@ apps/ukun-web/src/
 │   ├── api/        # cliente HTTP (axios, ver ADR-0010) + hooks de TanStack Query
 │   └── hooks/      # hooks transversales (useAuth, useDebounce, ...)
 ├── i18n/           # namespaces de react-i18next: common, catalog, cart,
-│                   # checkout, profile, backoffice, errors — ver ADR-0019
+│                   # checkout, profile, backoffice, errors, y los de las
+│                   # pantallas sin feature: home, about, stores — ver ADR-0019
 ├── test/msw/       # dobles HTTP de Vitest — NUNCA los ve el navegador
 └── types/api.d.ts  # generado por openapi-typescript — NUNCA editar a mano
 ```
+
+**Las dos pantallas de contenido público se reparten el relato, no lo repiten.** `features/home` es la portada y vende: cubierta con buscador, índice de categorías, dos bloques narrativos y la llamada al catálogo. `features/about` es «Sobre Ukun» (`/about`) y se lee: cifras de marca, línea de tiempo, materiales, quién atiende, los compromisos y las preguntas frecuentes. La portada llevaba las nueve bandas y por eso se partió — quien entra a comprar una mesa no tiene que atravesar doce años de historia del taller para llegar al pie—, así que las claves de i18n **se movieron** de `home` a `about` en vez de copiarse: ningún texto vive en las dos. Lo que las dos usan —`NarrativeSection` y el cierre de página— está en `shared/`, que es la regla de abajo aplicada a este caso.
 
 `features/backoffice` cubre las pantallas de empleado y de admin: stock (RF-09), CRUD de productos con su imagen (RF-10), CRUD de tipos de producto (RF-13) y empleados (RF-11). Todo lo que sea solo de admin habla contra `/api/admin/**` (ADR-0020) y cuelga de la rama `/admin/*` del router, así que la decisión de pintar o no la entrada al back-office se toma en un sitio, con los roles que devuelve `GET /api/me` — no hay una lista de rutas privilegiadas repartida por los componentes.
 
@@ -228,7 +231,7 @@ Los cuatro juntos son `<QueryBoundary query={...} data={...} empty={...}>`, que 
 
 Con el backend emitiendo solo `code`s (`docs/12-error-contract.md`) y ningún texto de usuario, **todo** el texto de la aplicación vive aquí, en los dos idiomas soportados (`es`/`en`).
 
-- **Namespaces por feature**: `common`, `catalog`, `cart`, `checkout`, `orders`, `profile`, `signup`, `backoffice`, `errors` — un fichero JSON por namespace y por idioma en `src/i18n/{es,en}/`, cargados perezosamente por ruta. Una pantalla que no es ninguna de estas features estrena namespace propio (así entraron `home` y `stores`) en vez de engordar `common`; lo que sí vive en `common` es el vocabulario que **comparten** dos pantallas — la dirección, la tarjeta y sus mensajes de validación los piden por igual el perfil y el alta.
+- **Namespaces por feature**: `common`, `catalog`, `cart`, `checkout`, `orders`, `profile`, `signup`, `backoffice`, `errors` — un fichero JSON por namespace y por idioma en `src/i18n/{es,en}/`, cargados perezosamente por ruta. Una pantalla que no es ninguna de estas features estrena namespace propio (así entraron `home`, `stores` y `about`) en vez de engordar `common`; lo que sí vive en `common` es el vocabulario que **comparten** dos pantallas — la dirección, la tarjeta y sus mensajes de validación los piden por igual el perfil y el alta.
 - **`errors.json` indexado por `code`**, con las extensiones del `ProblemDetail` como parámetros de interpolación: `t('errors:INSUFFICIENT_STOCK', { sku, available, requested })`. Todo `code` del registro tiene entrada en los dos idiomas — verificado por el test de paridad de traducciones (`docs/13-testing.md`).
 - **Selector de idioma en la barra de navegación**, siempre visible. Idioma activo: `customer.locale` si hay sesión (viaja entre dispositivos), `localStorage` ?? `navigator.language` ?? `es` si es anónimo.
 - **`<html lang>`** se actualiza al cambiar de idioma — requisito de accesibilidad, no cosmética; entra en la revisión de a11y de cada componente base junto al resto de criterios de la sección de arriba.

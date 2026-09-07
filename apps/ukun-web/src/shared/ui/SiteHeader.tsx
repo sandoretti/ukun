@@ -3,29 +3,29 @@ import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 import { Container, Nav, Navbar } from 'react-bootstrap';
 
+import { ABOUT_PATH } from '../routes';
 import { BrandMark } from './BrandMark';
-import { ComingSoonNavItem } from './ComingSoon';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ProductSearchBox } from './ProductSearchBox';
 
 /**
- * The entries of the navigation bar, in order. A `to` that is missing means the screen does not
- * exist yet: the entry is still shown, but as a disabled button instead of a link (see
- * `ComingSoon`). Keeping it as data is what stops the bar from becoming six near-identical blocks of
- * JSX, and puts "this one is not built yet" in a single place.
+ * The entries of the navigation bar, in order. Keeping it as data is what stops the bar from
+ * becoming three near-identical blocks of JSX with three chances to drift.
  *
- * There used to be a fourth entry, `news`, permanently in that second state. It was not a screen
- * waiting to be built: no requirement of `docs/02-requisitos.md` asks for it and no item of
- * `docs/04-roadmap.md` plans it. What it did do was hold a slot in the bar on every route and make a
- * screen reader announce "News, coming soon" on all of them, which is a promise the product was not
- * making. `about` is the one entry left in that state, and it is one that does have something to
- * show.
+ * **Every entry is a link now, and the shape of this list is the proof.** It used to allow a missing
+ * `to`, meaning "the screen does not exist yet": that entry was rendered as a disabled button rather
+ * than an `<a>`, because a link to a blank screen is worse than no link. Two entries lived there.
+ * `news` went for good — no requirement of `docs/02-requisitos.md` asked for it and no item of
+ * `docs/04-roadmap.md` planned it, so it was holding a slot in the bar on every route and making a
+ * screen reader announce "News, coming soon" on all of them. `about` went the other way and became a
+ * screen. With none left, `ComingSoon` had no callers and was deleted; if a future entry needs that
+ * treatment again, it comes back with the screen it is waiting for, not before.
  */
 const NAV_ITEMS = [
   { key: 'catalog', to: '/products' },
   { key: 'stores', to: '/stores' },
-  { key: 'about' },
-] as const satisfies readonly { key: string; to?: string }[];
+  { key: 'about', to: ABOUT_PATH },
+] as const satisfies readonly { key: string; to: string }[];
 
 type SiteHeaderProps = {
   /**
@@ -59,15 +59,11 @@ export function SiteHeader({ children }: SiteHeaderProps) {
         <Navbar.Toggle aria-label={t('nav.toggle')} />
         <Navbar.Collapse>
           <Nav>
-            {NAV_ITEMS.map((item) =>
-              'to' in item ? (
-                <Nav.Link key={item.key} as={NavLink} to={item.to}>
-                  {t(`nav.${item.key}`)}
-                </Nav.Link>
-              ) : (
-                <ComingSoonNavItem key={item.key} label={t(`nav.${item.key}`)} />
-              ),
-            )}
+            {NAV_ITEMS.map((item) => (
+              <Nav.Link key={item.key} as={NavLink} to={item.to}>
+                {t(`nav.${item.key}`)}
+              </Nav.Link>
+            ))}
           </Nav>
           {/* El buscador es la acción principal de una tienda, así que vive en la barra y no dentro
               del formulario de filtros. Los controles vuelven al tema claro: un campo oscuro sobre

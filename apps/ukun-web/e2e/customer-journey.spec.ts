@@ -41,6 +41,31 @@ test('un cliente nuevo se da de alta, compra y encuentra su pedido en el histori
     await expect(page.getByRole('button', { name: customer.email })).toBeVisible();
   });
 
+  await test.step('llega a «Sobre Ukun» desde la barra y la lee entera', async () => {
+    await page.goto('/');
+
+    // Desde la barra y no con un `goto`: la entrada era un botón deshabilitado, y que ahora sea un
+    // enlace que llega a algún sitio es la mitad de lo que este paso comprueba.
+    await page.getByRole('link', { name: 'Sobre Ukun' }).click();
+    await expect(page).toHaveURL(/\/about$/);
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Doce años haciendo muebles que aguanten' }),
+    ).toBeVisible();
+
+    // El acordeón de las preguntas, que es el único control de la pantalla: se audita abierto,
+    // porque una respuesta plegada no tiene texto que contrastar.
+    await page.getByRole('button', { name: /¿Cuánto tarda el envío\?/ }).click();
+    await expect(page.getByText(/Entre dos y cinco días laborables/)).toBeVisible();
+
+    // Aquí es donde esta pantalla se gana el paso: el filete de los compromisos y el título sobre la
+    // banda `soft` son color nuevo, y el contraste no se puede auditar sin CSS de verdad — es
+    // exactamente el defecto que costó dos CI en la slice de accesibilidad.
+    await expectNoA11yViolations(page, 'sobre Ukun');
+
+    await page.getByRole('link', { name: 'Ver el catálogo' }).click();
+    await expect(page).toHaveURL(/\/products$/);
+  });
+
   const productName = await test.step('elige del catálogo un producto disponible', async () => {
     await page.goto('/products');
 
