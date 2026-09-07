@@ -11,6 +11,8 @@ import esCatalog from './es/catalog.json';
 import enCatalog from './en/catalog.json';
 import esHome from './es/home.json';
 import enHome from './en/home.json';
+import esAbout from './es/about.json';
+import enAbout from './en/about.json';
 import esStores from './es/stores.json';
 import enStores from './en/stores.json';
 import esProfile from './es/profile.json';
@@ -30,13 +32,14 @@ import enBackoffice from './en/backoffice.json';
  * The namespaces of `docs/07-frontend-ux-ui.md §i18n`, one JSON per namespace and language. The
  * document lists the ones foreseen for the whole application; a screen that is not a feature of that
  * list still gets its own namespace rather than crowding `common` — `home` was the first, `stores`
- * the second.
+ * the second and `about` the third.
  */
 export type Namespace =
   | 'common'
   | 'errors'
   | 'catalog'
   | 'home'
+  | 'about'
   | 'stores'
   | 'profile'
   | 'cart'
@@ -59,6 +62,7 @@ export const resources = {
     errors: esErrors,
     catalog: esCatalog,
     home: esHome,
+    about: esAbout,
     stores: esStores,
     profile: esProfile,
     cart: esCart,
@@ -72,6 +76,7 @@ export const resources = {
     errors: enErrors,
     catalog: enCatalog,
     home: enHome,
+    about: enAbout,
     stores: enStores,
     profile: enProfile,
     cart: enCart,

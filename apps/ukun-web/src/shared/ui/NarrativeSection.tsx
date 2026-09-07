@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { Col, Row } from 'react-bootstrap';
 
-import { Illustration } from '../../../shared/ui/Illustration';
-import { Section } from '../../../shared/ui/Section';
+import { Illustration } from './Illustration';
+import { Section } from './Section';
 
 type NarrativeSectionProps = {
   title: string;
@@ -28,6 +28,12 @@ type NarrativeSectionProps = {
  *
  * Side and background travel together: consecutive blocks alternate both, and that alternation is
  * what tells one from the next without the coloured rule the legacy page drew between them.
+ *
+ * It sits in `shared/ui/` and not in the screen that first needed it because two screens use it now
+ * — the landing page and «Sobre Ukun» — and features never import each other (`docs/07` §Estructura).
+ * Nothing had to change for the move: it knows no namespace and takes its prose as `children`, so
+ * each screen maps its own keys onto it. The landing does that in `StoryBlock`, which is where the
+ * `home` namespace lives; the about page calls this component directly.
  */
 export function NarrativeSection({ title, children, illustration, layout }: NarrativeSectionProps) {
   const mediaFirst = layout === 'media-start';

@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
 
-import { NarrativeSection } from './NarrativeSection';
+import { NarrativeSection } from '../../../shared/ui/NarrativeSection';
 
 type StoryBlockProps = {
   /** Key under `home:story` — it resolves the heading and the two paragraphs of the block. */
-  storyKey: 'design' | 'price' | 'people';
+  storyKey: 'design' | 'price';
   illustration: string;
   layout: 'media-end' | 'media-start';
 };

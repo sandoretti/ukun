@@ -15,6 +15,7 @@ import { NEW_STOCK_LINE_PATH } from '../features/backoffice/routes';
 import { PRODUCT_ROUTE } from '../features/catalog/routes';
 import { SIGN_IN_PATH } from '../shared/auth/signIn';
 import {
+  ABOUT_PATH,
   ADMIN_PATH,
   BACKOFFICE_PATH,
   BACKOFFICE_STOCK_PATH,
@@ -34,6 +35,7 @@ const HomePage = lazy(() => import('../features/home/HomePage'));
 const CatalogPage = lazy(() => import('../features/catalog/CatalogPage'));
 const ProductDetailPage = lazy(() => import('../features/catalog/ProductDetailPage'));
 const StoresPage = lazy(() => import('../features/stores/StoresPage'));
+const AboutPage = lazy(() => import('../features/about/AboutPage'));
 const AccountPage = lazy(() => import('../features/auth/AccountPage'));
 const ProfilePage = lazy(() => import('../features/profile/ProfilePage'));
 const CartPage = lazy(() => import('../features/cart/CartPage'));
@@ -62,6 +64,10 @@ function App() {
         <Route path={CATALOG_PATH} element={<CatalogPage />} />
         <Route path={PRODUCT_ROUTE} element={<ProductDetailPage />} />
         <Route path="/stores" element={<StoresPage />} />
+        {/* «Sobre Ukun»: el relato de marca que la portada llevaba dentro. No pide datos ni sesión,
+            así que es la ruta más simple del router — y hasta que existió, su entrada en la barra
+            era un botón deshabilitado. */}
+        <Route path={ABOUT_PATH} element={<AboutPage />} />
         {/* Las rutas con sesión. La cuenta dice quién eres y cómo salir; el perfil son los datos de
             cliente de RF-05, que son otro recurso (`/api/me/profile`) y otra pantalla. */}
         <Route

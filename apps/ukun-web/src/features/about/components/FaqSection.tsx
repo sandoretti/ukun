@@ -16,7 +16,7 @@ import { SectionHeading } from '../../../shared/ui/SectionHeading';
 const QUESTIONS = ['delivery', 'assembly', 'returns', 'warranty', 'stores', 'payment'] as const;
 
 export function FaqSection() {
-  const { t } = useTranslation('home');
+  const { t } = useTranslation('about');
 
   return (
     // La medida se acota: una línea de texto larga a todo el ancho de la página se lee mal.

@@ -1,0 +1,118 @@
+@use "../bootstrap";
+@use "../tokens";
+
+// Lo propio de «Sobre Ukun». Tres de sus cuatro bloques venían de la portada —las cifras, la línea
+// de tiempo y las preguntas frecuentes— y se mudaron aquí con sus componentes: la hoja sigue al
+// bloque, no al revés. Van tal cual estaban; lo único nuevo de este fichero es la entradilla y los
+// compromisos.
+
+// --- Entradilla -----------------------------------------------------------------------------------
+
+// Se acota la medida, no la columna: lo que se limita es el largo de una línea de texto, y eso es
+// tipografía. Por eso va en el contenedor de la banda y no en un `<Col>` de la rejilla.
+.about-intro {
+  max-width: 46rem;
+}
+
+// Como el de la cubierta: escala con el ancho en vez de saltar por breakpoints. Un grado menos de
+// tamaño, porque esta pantalla se lee y aquélla se ve.
+.about-intro__title {
+  font-size: clamp(1.625rem, 3.75vw, 2.5rem);
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+// --- Banda de cifras ------------------------------------------------------------------------------
+
+.stat-band__value {
+  font-family: tokens.$display-font;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.1;
+  color: tokens.$primary;
+}
+
+.stat-band__label {
+  color: var(--bs-secondary-color);
+  font-size: 0.9375rem;
+}
+
+// --- Línea de tiempo ------------------------------------------------------------------------------
+
+// El hito cuelga de una línea vertical continua; el punto es el `::before` de cada uno, centrado
+// sobre esa línea. Es decoración pura: el orden lo lleva el `<ol>` y el año va escrito.
+.timeline__list {
+  position: relative;
+  padding-inline-start: 2rem;
+  border-inline-start: bootstrap.$border-width solid var(--bs-border-color);
+}
+
+.timeline__item {
+  position: relative;
+}
+
+.timeline__item + .timeline__item {
+  margin-block-start: 2.5rem;
+}
+
+.timeline__item::before {
+  content: "";
+  position: absolute;
+  top: 0.4rem;
+  // Medio punto más el grosor del filete: así el círculo queda centrado sobre la línea.
+  left: calc(-2rem - 0.375rem - #{bootstrap.$border-width} / 2);
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  // $accent (3.34:1) vale aquí: es un punto, no texto.
+  background-color: tokens.$accent;
+}
+
+.timeline__year {
+  font-family: tokens.$display-font;
+  font-size: 1.125rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: tokens.$primary;
+}
+
+@include bootstrap.media-breakpoint-up(md) {
+  .timeline__list {
+    max-width: 44rem;
+  }
+}
+
+// --- Preguntas frecuentes -------------------------------------------------------------------------
+
+// Una línea de texto larga se lee mal a todo el ancho de la página; las respuestas se acotan.
+.faq__container {
+  max-width: 52rem;
+}
+
+// El ordinal de la pregunta, con el mismo papel que el del índice de categorías.
+.faq__number {
+  min-width: 1.75rem;
+  color: var(--bs-secondary-color);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+// El encabezado del acordeón es un `<h3>` y react-bootstrap le mete dentro el botón: sin esto el
+// título hereda el tamaño de un h3 y desequilibra la lista.
+.faq .accordion-header {
+  margin-bottom: 0;
+  font-size: 1rem;
+}
+
+// --- Compromisos ----------------------------------------------------------------------------------
+
+// Un `<dl>` en dos columnas. El término lleva el filete de arriba, que es lo que agrupa cada
+// compromiso con su párrafo sin necesidad de una tarjeta con borde y sombra.
+.commitment__term {
+  padding-block-start: 0.75rem;
+  border-block-start: bootstrap.$border-width * 2 solid tokens.$accent;
+  margin-block-end: 0.5rem;
+}
+
+.commitment__body {
+  color: var(--bs-secondary-color);
+}

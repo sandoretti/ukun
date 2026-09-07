@@ -33,15 +33,15 @@ describe('HomePage', () => {
     expect(headingOne[0].textContent).toBe('Diseño que cabe en tu casa y en tu presupuesto');
 
     // Everything else is a section heading: four `<h1>` on one page was the legacy home's defect.
+    // The list is exact and in order because the sequence of bands is the whole content of
+    // `HomePage`, and it is now four and not eight: the figures, the timeline, the materials, the
+    // people and the questions live in `/about` (`features/about/AboutPage.test.tsx` asserts them
+    // there). A heading reappearing here means a band came back and the split leaked.
     const headingTwo = await screen.findAllByRole('heading', { level: 2 });
     expect(headingTwo.map((heading) => heading.textContent)).toEqual([
       'Empieza por una categoría',
       'Descubre el equilibrio perfecto',
       'Precios asequibles sin compromisos',
-      'Cómo hemos llegado hasta aquí',
-      'Crea ambientes que reflejen tu estilo',
-      'De qué está hecho y cómo llega',
-      'Preguntas frecuentes',
       'Explora nuestra colección',
     ]);
   });

@@ -1,0 +1,132 @@
+{
+  "intro": {
+    "title": "Doce años haciendo muebles que aguanten",
+    "lead": "Empezamos en una nave alquilada de Alcalá de Henares haciendo mesas por encargo para quien no encontraba la medida que necesitaba. Hoy somos ocho tiendas y seguimos entrando pocas referencias al año, porque un catálogo corto es lo que nos permite responder por cada pieza que hay en él.",
+    "body": "Esta página cuenta de dónde venimos, de qué está hecho lo que vendemos y a qué nos comprometemos cuando te llevas algo a casa. Lo que no vas a encontrar es una declaración de intenciones: cada afirmación de aquí abajo se puede comprobar en el catálogo, en la garantía o en el papel que va dentro de la caja."
+  },
+  "stats": {
+    "years": {
+      "value": "{{value}}",
+      "label": "años amueblando casas"
+    },
+    "stores": {
+      "value": "{{value}}",
+      "label": "tiendas en la península"
+    },
+    "products": {
+      "value": "{{value}}+",
+      "label": "referencias en catálogo"
+    },
+    "orders": {
+      "value": "{{value}}+",
+      "label": "pedidos entregados"
+    }
+  },
+  "timeline": {
+    "title": "Cómo hemos llegado hasta aquí",
+    "lead": "Doce años, un taller que se quedó pequeño y la manía de no rebajar la calidad para bajar el precio.",
+    "milestones": {
+      "workshop": {
+        "year": "2014",
+        "title": "Un taller en Alcalá de Henares",
+        "body": "Empezamos siendo tres personas y una nave alquilada, haciendo mesas por encargo para quien no encontraba la medida que necesitaba. El primer año se vendieron cuarenta y una piezas y todas se entregaron en la furgoneta de segunda mano que todavía guardamos aparcada detrás del almacén."
+      },
+      "firstStore": {
+        "year": "2017",
+        "title": "La primera tienda",
+        "body": "Abrimos un local pequeño para que la gente pudiera sentarse en los sofás antes de comprarlos. Ese día aprendimos algo que sigue mandando en el catálogo: nadie compra una silla que no ha probado, y casi nadie devuelve una que sí."
+      },
+      "online": {
+        "year": "2021",
+        "title": "El catálogo en línea",
+        "body": "Sacamos la tienda a internet con una idea incómoda para el sector: enseñar la disponibilidad real de cada producto, tienda por tienda, aunque la respuesta sea que no queda ninguno. Preferimos perder una venta a que alguien haga cincuenta kilómetros para nada."
+      },
+      "today": {
+        "year": "Hoy",
+        "title": "Ocho tiendas y el mismo criterio",
+        "body": "Seguimos entrando pocas referencias al año y sacando las que dejan de convencernos. El taller original continúa abierto: ahí se montan los prototipos y se reparan las piezas que vuelven en garantía, que es la mejor forma que conocemos de saber qué diseñamos mal."
+      }
+    }
+  },
+  "materials": {
+    "title": "De qué está hecho y cómo llega",
+    "lead": "Tres decisiones que explican por qué un mueble aguanta diez años o se descuelga en dos.",
+    "topics": {
+      "wood": {
+        "title": "Madera con origen",
+        "body": "Roble y haya de bosques con certificado de gestión sostenible, y tablero contrachapado —no aglomerado— en todo lo que soporta peso. Las uniones van encoladas y espigadas, nunca solo grapadas: es más lento de fabricar y es la razón de que una estantería cargada de libros no se abra por las esquinas."
+      },
+      "upholstery": {
+        "title": "Tapicería que se quita y se lava",
+        "body": "Todas las fundas son desenfundables y se lavan en casa a treinta grados. Las telas pasan la prueba de abrasión Martindale por encima de los treinta mil ciclos, que es el umbral del uso doméstico intenso, y cada modelo se puede pedir suelto años después: un sofá no se tira porque se manche un brazo."
+      },
+      "packaging": {
+        "title": "Embalaje plano y sin plástico",
+        "body": "Todo viaja desmontado en cartón reciclado, con las esquinas protegidas en pulpa moldeada y ni un metro de film retráctil. El montaje se hace con una sola llave, que va dentro de la caja, y las instrucciones son de dibujos: si necesitas leer un párrafo para saber dónde va un tornillo, el diseño está mal hecho."
+      }
+    }
+  },
+  "people": {
+    "title": "Crea ambientes que reflejen tu estilo",
+    "body": "Ya quieras dar un aire nuevo al salón, montar un escritorio en el que apetezca trabajar o rematar ese rincón que lleva meses vacío, detrás hay gente que conoce el producto y te ayuda a decidir. Tú pones el estilo; nosotros, las piezas y el criterio.",
+    "bodySecondary": "En tienda puedes llevarte muestras de tela y de madera a casa para verlas con tu luz, que nunca es la del expositor. Y si dudas entre dos medidas, te damos la plantilla en papel para que la pongas en el suelo: es más barato que devolver un armario que no entra por el pasillo."
+  },
+  "commitments": {
+    "title": "A qué nos comprometemos",
+    "lead": "Cuatro cosas que puedes exigirnos, escritas aquí para no tener que preguntarlas.",
+    "items": {
+      "warranty": {
+        "title": "Cinco años en estructuras, dos en tapicería",
+        "body": "Cubre defectos de fabricación y de materiales. No cubre el desgaste normal ni los daños por un uso distinto del previsto, y lo decimos así porque una garantía que promete todo no se puede reclamar: nadie sabe qué entra en ella."
+      },
+      "spares": {
+        "title": "Repuestos sueltos, también con la garantía vencida",
+        "body": "Fundas, tornillería, patas y mecanismos se piden por separado años después de comprar la pieza. Un sofá no se tira porque se manche un brazo, y un armario no se cambia porque falle una bisagra."
+      },
+      "availability": {
+        "title": "La disponibilidad real, tienda por tienda",
+        "body": "El catálogo enseña lo que hay en cada tienda aunque la respuesta sea que no queda ninguna unidad. Preferimos perder una venta a que alguien haga cincuenta kilómetros para nada."
+      },
+      "payment": {
+        "title": "De tu tarjeta guardamos cuatro cifras",
+        "body": "El cobro lo procesa la pasarela del banco. Nosotros conservamos la marca y los cuatro últimos dígitos, para que reconozcas el pedido, y nunca el número completo ni el código de seguridad."
+      }
+    }
+  },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "lead": "Lo que más se pregunta antes de comprar un mueble sin haberlo visto en persona.",
+    "items": {
+      "delivery": {
+        "question": "¿Cuánto tarda el envío?",
+        "answer": "Entre dos y cinco días laborables en península para lo que hay en almacén, y de tres a seis semanas para las piezas que se fabrican bajo pedido, que van marcadas como tales en el catálogo. El transportista avisa la víspera con una franja de dos horas."
+      },
+      "assembly": {
+        "question": "¿Los muebles vienen montados?",
+        "answer": "Llegan desmontados, con las herramientas y las instrucciones dentro de la caja. Una mesa se monta en unos veinte minutos y un armario grande en algo más de una hora. Si prefieres no hacerlo, en el paso de pago puedes añadir montaje a domicilio."
+      },
+      "returns": {
+        "question": "¿Puedo devolver algo que no me encaja?",
+        "answer": "Tienes treinta días desde que recibes el pedido para devolverlo, montado o sin montar, siempre que esté en buen estado. Recogemos en casa sin coste y el importe vuelve al mismo método de pago en un plazo máximo de catorce días."
+      },
+      "warranty": {
+        "question": "¿Qué cubre la garantía?",
+        "answer": "Cinco años en estructuras y mecanismos, y dos en tapicería y acabados. Cubre defectos de fabricación y de materiales, no el desgaste normal ni los daños por un uso distinto del previsto. Las piezas de repuesto se pueden pedir sueltas aunque la garantía ya haya vencido."
+      },
+      "stores": {
+        "question": "¿Puedo ver el producto antes de comprarlo?",
+        "answer": "Sí. El catálogo muestra la disponibilidad de cada producto tienda por tienda, así que puedes comprobar dónde está expuesto antes de desplazarte. En tienda también puedes llevarte muestras de tela y de madera a casa."
+      },
+      "payment": {
+        "question": "¿Qué formas de pago aceptáis?",
+        "answer": "Tarjeta de crédito y de débito, y pago en tienda al recoger. No guardamos los datos completos de la tarjeta: el cobro lo procesa la pasarela del banco y nosotros solo conservamos los cuatro últimos dígitos para identificar el pedido."
+      }
+    }
+  },
+  "closing": {
+    "title": "Ya sabes de dónde sale",
+    "lead": "El catálogo está a un clic, con el precio y la disponibilidad de cada producto a la vista. Y si prefieres sentarte en el sofá antes de comprarlo, las tiendas siguen ahí.",
+    "catalog": "Ver el catálogo",
+    "stores": "Ver las tiendas"
+  }
+}

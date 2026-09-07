@@ -3,7 +3,7 @@
 // configura Bootstrap (docs/07-frontend-ux-ui.md §Qué se descarta — nada de CSS suelto por pantalla).
 //
 // El orden importa: es el de la cascada. Bootstrap primero, para que todo lo de abajo lo matice;
-// `components/section` antes que `components/home`, porque la portada afina sobre las bandas que el
+// `components/section` antes que `components/home` y `components/about`, porque esas dos afinan sobre las bandas que el
 // componente <Section> ya define y, a igual especificidad, gana la última regla en llegar.
 @use "bootstrap";
 @use "fonts";
@@ -28,3 +28,4 @@
 @use "components/admin-product";
 @use "components/stock-warning";
 @use "components/home";
+@use "components/about";

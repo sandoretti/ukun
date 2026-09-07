@@ -28,3 +28,29 @@
 
 .illustration--sm { max-width: 8rem; }
 .illustration--md { max-width: 14rem; }
+
+// --- Bloques narrativos (<NarrativeSection>) -----------------------------------------------------
+
+// El bloque puede traer más de un párrafo, así que la separación entre ellos la pone el contenedor
+// y no un margen que cada pantalla tendría que recordar quitarle al último.
+.narrative__body > p:last-child {
+  margin-bottom: 0;
+}
+
+// --- Cierre de página -----------------------------------------------------------------------------
+
+// La llamada final de una pantalla larga (<ClosingBand>). Está aquí y no en la hoja de la portada
+// porque la banda vive en `shared/ui/`: la usan la portada y «Sobre Ukun», que es el mismo criterio
+// por el que subió `NarrativeSection`.
+
+// El color lo pone `.section--brand` ($primary): el pie usa el verde más oscuro, y con los dos
+// bloques del mismo color se leían como una sola masa verde de siete rem en la que no se sabía dónde
+// acababa la página. El aire extra por abajo separa la llamada del pie sin depender solo del salto
+// de color.
+.closing-cta {
+  padding-block: 4rem 5rem;
+}
+
+.closing-cta__lead {
+  max-width: 44rem;
+}

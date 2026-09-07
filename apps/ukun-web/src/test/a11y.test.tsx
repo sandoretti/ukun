@@ -16,6 +16,7 @@ import { employeeState, staff } from './msw/employeeHandlers';
 import { stockState } from './msw/stockHandlers';
 
 import HomePage from '../features/home/HomePage';
+import AboutPage from '../features/about/AboutPage';
 import CatalogPage from '../features/catalog/CatalogPage';
 import ProductDetailPage from '../features/catalog/ProductDetailPage';
 import StoresPage from '../features/stores/StoresPage';
@@ -68,6 +69,7 @@ type Audited = {
 const SCREENS: Audited[] = [
   // ── Recorrido de cliente ────────────────────────────────────────────────────────────────────
   { name: 'portada', path: '/', route: '/', element: <HomePage /> },
+  { name: 'sobre Ukun', path: '/about', route: '/about', element: <AboutPage /> },
   { name: 'catálogo', path: '/products', route: '/products', element: <CatalogPage /> },
   {
     name: 'ficha de producto',

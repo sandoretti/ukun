@@ -14,7 +14,7 @@ import { SectionHeading } from '../../../shared/ui/SectionHeading';
 const MILESTONES = ['workshop', 'firstStore', 'online', 'today'] as const;
 
 export function BrandTimeline() {
-  const { t } = useTranslation('home');
+  const { t } = useTranslation('about');
 
   return (
     <Section spacing="spacious">

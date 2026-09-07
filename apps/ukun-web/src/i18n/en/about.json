@@ -1,0 +1,132 @@
+{
+  "intro": {
+    "title": "Twelve years making furniture that lasts",
+    "lead": "We started in a rented unit in Alcalá de Henares, building tables to order for anyone who could not find the size they needed. Today we are eight stores and we still bring in few new products a year, because a short catalogue is what lets us answer for every piece in it.",
+    "body": "This page is where we come from, what the things we sell are made of, and what we commit to when you take one home. What you will not find is a statement of intent: every claim below can be checked in the catalogue, in the warranty, or on the sheet of paper inside the box."
+  },
+  "stats": {
+    "years": {
+      "value": "{{value}}",
+      "label": "years furnishing homes"
+    },
+    "stores": {
+      "value": "{{value}}",
+      "label": "stores across the country"
+    },
+    "products": {
+      "value": "{{value}}+",
+      "label": "products in the catalogue"
+    },
+    "orders": {
+      "value": "{{value}}+",
+      "label": "orders delivered"
+    }
+  },
+  "timeline": {
+    "title": "How we got here",
+    "lead": "Twelve years, a workshop that outgrew itself, and a stubborn refusal to drop the quality in order to drop the price.",
+    "milestones": {
+      "workshop": {
+        "year": "2014",
+        "title": "A workshop in Alcalá de Henares",
+        "body": "We started as three people in a rented unit, building tables to order for anyone who could not find the size they needed. Forty-one pieces sold that first year, every one of them delivered in the second-hand van we still keep parked behind the warehouse."
+      },
+      "firstStore": {
+        "year": "2017",
+        "title": "The first store",
+        "body": "We opened a small shop so people could sit on the sofas before buying them. That day we learned something that still rules the catalogue: nobody buys a chair they have not tried, and almost nobody returns one they have."
+      },
+      "online": {
+        "year": "2021",
+        "title": "The catalogue goes online",
+        "body": "We took the shop to the web with an idea the trade finds uncomfortable: showing the real availability of every product, store by store, even when the answer is that there are none left. We would rather lose a sale than have someone drive fifty kilometres for nothing."
+      },
+      "today": {
+        "year": "Today",
+        "title": "Eight stores, the same judgement",
+        "body": "We still bring in few new products a year and drop the ones that stop convincing us. The original workshop is still open: it is where prototypes get built and where pieces returned under warranty get repaired, which is the best way we know of finding out what we designed badly."
+      }
+    }
+  },
+  "materials": {
+    "title": "What it is made of, and how it arrives",
+    "lead": "Three decisions that explain why a piece of furniture lasts ten years or sags in two.",
+    "topics": {
+      "wood": {
+        "title": "Wood with a source",
+        "body": "Oak and beech from certified sustainably managed forests, and plywood — not chipboard — anywhere that carries weight. Joints are glued and dowelled, never merely stapled: slower to build, and the reason a shelf full of books does not pull apart at the corners."
+      },
+      "upholstery": {
+        "title": "Covers that come off and wash",
+        "body": "Every cover is removable and washes at thirty degrees at home. The fabrics pass the Martindale abrasion test above thirty thousand cycles, the threshold for heavy domestic use, and each one can be ordered on its own years later: a sofa should not be thrown out because one arm got stained."
+      },
+      "packaging": {
+        "title": "Flat-packed, no plastic",
+        "body": "Everything ships knocked down in recycled cardboard, corners protected with moulded pulp and not a metre of shrink wrap. Assembly takes a single key, which is in the box, and the instructions are drawings: if you need to read a paragraph to work out where a screw goes, the design is at fault."
+      }
+    }
+  },
+  "people": {
+    "title": "Build rooms that look like you",
+    "body": "Whether you are freshening up the living room, putting together a desk you actually want to work at, or finishing off that corner that has been empty for months, there are people behind this who know the range and help you decide. You bring the style; we bring the pieces and the judgement.",
+    "bodySecondary": "In store you can take fabric and wood samples home to see them in your own light, which is never the light of a showroom. And if you are torn between two sizes, we hand you the paper template to lay on the floor: cheaper than sending back a wardrobe that will not fit down the hallway."
+  },
+  "commitments": {
+    "title": "What we commit to",
+    "lead": "Four things you can hold us to, written down so nobody has to ask.",
+    "items": {
+      "warranty": {
+        "title": "Five years on frames, two on upholstery",
+        "body": "It covers manufacturing and material defects. It does not cover normal wear or damage from use the piece was not designed for, and we say so plainly because a warranty that promises everything cannot be claimed on: nobody knows what is in it."
+      },
+      "spares": {
+        "title": "Spare parts on their own, warranty or no warranty",
+        "body": "Covers, fixings, legs and mechanisms can be ordered separately years after the piece was bought. A sofa should not be thrown out because one arm got stained, and a wardrobe should not be replaced because a hinge failed."
+      },
+      "availability": {
+        "title": "Real availability, store by store",
+        "body": "The catalogue shows what each store has even when the answer is that there is none left. We would rather lose a sale than have someone drive fifty kilometres for nothing."
+      },
+      "payment": {
+        "title": "Of your card we keep four digits",
+        "body": "The charge is processed by the bank's gateway. We keep the brand and the last four digits so that you recognise the order, and never the full number or the security code."
+      }
+    }
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "lead": "What people ask most before buying furniture they have not seen in person.",
+    "items": {
+      "delivery": {
+        "question": "How long does delivery take?",
+        "answer": "Two to five working days for anything in the warehouse, and three to six weeks for made-to-order pieces, which are marked as such in the catalogue. The carrier calls the day before with a two-hour window."
+      },
+      "assembly": {
+        "question": "Does the furniture arrive assembled?",
+        "answer": "It arrives flat-packed, with the tools and the instructions inside the box. A table takes about twenty minutes and a large wardrobe a little over an hour. If you would rather not, you can add home assembly at checkout."
+      },
+      "returns": {
+        "question": "Can I return something that does not fit?",
+        "answer": "You have thirty days from delivery to return an order, assembled or not, as long as it is in good condition. We collect from your home at no cost and the money goes back to the same payment method within fourteen days."
+      },
+      "warranty": {
+        "question": "What does the warranty cover?",
+        "answer": "Five years on frames and mechanisms, two on upholstery and finishes. It covers manufacturing and material defects, not normal wear or damage from use the piece was not designed for. Spare parts can be ordered separately even once the warranty has run out."
+      },
+      "stores": {
+        "question": "Can I see a product before buying it?",
+        "answer": "Yes. The catalogue shows availability store by store, so you can check where a product is on display before making the trip. In store you can also take fabric and wood samples home with you."
+      },
+      "payment": {
+        "question": "Which payment methods do you accept?",
+        "answer": "Credit and debit card, and payment in store on collection. We do not keep full card details: the charge is processed by the bank's gateway and we only keep the last four digits to identify the order."
+      }
+    }
+  },
+  "closing": {
+    "title": "Now you know where it comes from",
+    "lead": "The catalogue is one click away, with the price and availability of each product in plain sight. And if you would rather sit on the sofa before buying it, the stores are still there.",
+    "catalog": "Browse the catalogue",
+    "stores": "See the stores"
+  }
+}

@@ -20,7 +20,7 @@ const TOPICS = [
 ] as const;
 
 export function MaterialsSection() {
-  const { t } = useTranslation('home');
+  const { t } = useTranslation('about');
 
   return (
     <Section tone="muted" spacing="spacious">
