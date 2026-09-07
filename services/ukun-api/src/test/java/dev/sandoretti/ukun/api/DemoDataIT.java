@@ -96,6 +96,12 @@ class DemoDataIT extends AbstractIntegrationTest {
                         "SELECT count(*) FROM product WHERE image_key IS NULL OR image_key !~ '\\.jpg$'",
                         Long.class))
                 .isZero();
+
+        // And a picture of its own: the dataset used to point its 100 products at 24 files, ten
+        // sofas at the same photo. Distinctness is what makes a reassignment that quietly shares one
+        // again fail here instead of in a catalogue grid.
+        assertThat(jdbc.queryForObject("SELECT count(DISTINCT image_key) FROM product", Long.class))
+                .isEqualTo(100);
     }
 
     @Test

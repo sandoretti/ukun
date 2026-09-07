@@ -173,8 +173,24 @@ databaseChangeLog:
   # `sku` does not exist in the legacy schema (ADR-0015): it is derived from the name — accents
   # stripped, uppercased, hyphenated — so it satisfies ck_product_sku and stays readable.
   # `image_key` is a storage key, not a path (docs/08 §5): the API composes the servable URL. Every
-  # value points at a file that really exists under resources/uploads/, so the 24 images are reused
-  # across the products of their type.
+  # value points at a file that really exists under resources/uploads/, and no two products share
+  # one — `DemoDataIT` asserts the 100 keys are distinct. The 24 photos of the legacy stay with the
+  # products they belong to; the other 76 are designed placeholders on the brand palette, committed
+  # as assets like any other file under resources/uploads/. They are not produced by a build step:
+  # nothing regenerates them, and RF-10 replaces one by uploading over it.
+  #
+  # THIS CHANGESET WAS EDITED AFTER BEING APPLIED, when every product got a picture of its own. That
+  # rewrote data/products.csv, so its checksum no longer matches a database that ran the old file:
+  # a local database needs `db-reset` (docs/06) and there is nothing to do in a deployed one, which
+  # `teardown.yml` recreates from scratch. It is the deliberate exception to rule 1 of the
+  # `liquibase` skill, and it holds only because these rows are demo data over disposable data
+  # (ADR-0007). A schema changeset is never edited — that one is corrected with a new changeset.
+  #
+  # It bites in BOTH directions, which is the part that surprises: checking out a branch from before
+  # this change against a database that already ran it fails the same way, and the message names the
+  # two checksums but not the branch you just switched to. `ukun-api` then does not start at all and
+  # the gateway answers 500 to everything, catalogue included. The fix is the same either way:
+  # `db-reset`, then let the services come back up.
   - changeSet:
       id: demo-04-products
       author: sandoretti
