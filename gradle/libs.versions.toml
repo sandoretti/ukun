@@ -30,7 +30,7 @@ archunit = "1.5.0"
 bucket4j = "8.19.0"
 
 # Exclusión mutua de los @Scheduled entre réplicas (ADR-0024, issue #118). No lo gestiona ningún BOM.
-shedlock = "6.6.0"
+shedlock = "7.10.1"
 
 # Plugins de Gradle. La versión de Gradle en sí vive en gradle/wrapper/gradle-wrapper.properties.
 test-logger = "4.0.0"
