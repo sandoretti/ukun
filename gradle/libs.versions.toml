@@ -27,7 +27,7 @@ archunit = "1.5.0"
 # Maven Central. Ojo al artefacto: desde 8.10 Bucket4j se publica partido por JDK
 # (`bucket4j_jdkNN-core`), y el `bucket4j-core` a secas que aparece en cualquier ejemplo antiguo ya
 # no se publica — comprobado resolviendo las tres variantes, no supuesto.
-bucket4j = "8.19.0"
+bucket4j = "8.20.0"
 
 # Exclusión mutua de los @Scheduled entre réplicas (ADR-0024, issue #118). No lo gestiona ningún BOM.
 shedlock = "6.6.0"
