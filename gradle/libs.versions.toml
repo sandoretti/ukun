@@ -21,7 +21,7 @@ mapstruct = "1.6.3"
 lombok = "1.18.46"
 lombok-mapstruct-binding = "0.2.0"
 springdoc = "3.1.0"
-archunit = "1.5.0"
+archunit = "1.5.1"
 # Límite de intentos de login en ukun-auth (docs/08-identidad-y-seguridad.md §8). La serie 8.19.x es
 # la que fija docs/05-stack-y-versiones.md, y 8.19.0 es su última: 8.19.1 y 8.20.0 no existen en
 # Maven Central. Ojo al artefacto: desde 8.10 Bucket4j se publica partido por JDK
